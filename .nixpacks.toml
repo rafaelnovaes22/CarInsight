@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm ci --omit=dev"]
+
+[phases.build]
+cmds = ["npx prisma generate", "npx prisma db push"]
+
+[phases.start]
+cmds = ["npm start"]
+
+[variables]
+NODE_ENV = "production"
+PORT = "3000"

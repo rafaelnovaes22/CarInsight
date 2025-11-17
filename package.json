@@ -1,0 +1,61 @@
+{
+  "name": "faciliauto-mvp",
+  "version": "1.0.0",
+  "description": "MVP - Assistente de Vendas WhatsApp com IA para Concessionárias",
+  "main": "dist/index.js",
+  "scripts": {
+    "heroku-prebuild": "echo 'Skipping TypeScript build, using tsx directly'",
+    "heroku-postbuild": "npx prisma generate && npm run db:seed",
+    "heroku-cleanup": "echo 'Build completed successfully!'",
+    "start:heroku": "npx tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "dev:api": "tsx watch src/api-test-server.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:prod": "tsx src/index.ts",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx src/scripts/seed.ts",
+    "db:seed:renatinhu": "tsx src/scripts/seed-renatinhu.ts",
+    "db:seed:complete": "tsx src/scripts/seed-renatinhu-complete.ts",
+    "db:migrate": "prisma migrate deploy",
+    "postinstall": "prisma generate"
+    "test:bot": "tsx src/test-bot.ts",
+    "test:guardrails": "tsx src/test-guardrails.ts",
+    "heroku-status": "heroku ps --app faciliauto-mvp",
+    "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
+    "heroku-open": "heroku open --app faciliauto-mvp"
+  },
+  "keywords": [
+    "whatsapp",
+    "ai",
+    "carros",
+    "vendas"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "@prisma/client": "^5.7.0",
+    "@whiskeysockets/baileys": "^6.6.0",
+    "axios": "^1.13.2",
+    "chromadb": "^3.1.4",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "groq-sdk": "^0.35.0",
+    "ioredis": "^5.3.2",
+    "openai": "^4.104.0",
+    "pino": "^8.16.2",
+    "pino-pretty": "^10.3.0",
+    "qrcode-terminal": "^0.12.0",
+    "venom-bot": "^5.3.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "prisma": "^5.7.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.2"
+  }
+}

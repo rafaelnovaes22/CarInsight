@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Veículos no estoque
+model Vehicle {
+  id          String   @id @default(uuid())
+  marca       String
+  modelo      String
+  versao      String?
+  ano         Int
+  km          Int
+  preco       Float
+  cor         String
+  carroceria  String   // hatch, sedan, SUV, picape
+  combustivel String   @default("Flex")
+  cambio      String   @default("Manual")
+  
+  // Opcionais básicos
+  arCondicionado     Boolean @default(false)
+  direcaoHidraulica  Boolean @default(false)
+  airbag            Boolean @default(false)
+  abs               Boolean @default(false)
+  
+  // Opcionais adicionais
+  vidroEletrico     Boolean @default(false)
+  travaEletrica     Boolean @default(false)
+  alarme            Boolean @default(false)
+  rodaLigaLeve      Boolean @default(false)
+  som               Boolean @default(false)
+  portas            Int     @default(4)
+  
+  // Mídia
+  fotoUrl       String?
+  fotosUrls     String   @default("") // JSON string array
+  
+  // URL do veículo no site da loja
+  url           String?
+  
+  // Descrição
+  descricao     String?
+  
+  // Status
+  disponivel    Boolean  @default(true)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  recommendations Recommendation[]
+}
+
+// Conversas no WhatsApp
+model Conversation {
+  id              String   @id @default(uuid())
+  phoneNumber     String
+  customerName    String?
+  
+  // Estado da conversa
+  status          String   @default("active") // active, qualified, converted, abandoned
+  currentStep     String   @default("greeting") // greeting, quiz, recommendation, closed
+  
+  // Dados do quiz (JSON as string)
+  quizAnswers     String?
+  profileData     String?
+  
+  // Timestamps
+  startedAt       DateTime @default(now())
+  lastMessageAt   DateTime @default(now())
+  closedAt        DateTime?
+  
+  // Relations
+  events          Event[]
+  messages        Message[]
+  recommendations Recommendation[]
+  lead            Lead?
+}
+
+// Eventos/Actions na conversa
+model Event {
+  id              String   @id @default(uuid())
+  conversationId  String
+  eventType       String   // started, quiz_question, quiz_completed, recommendation_sent, visit_scheduled, sold
+  metadata        String?
+  timestamp       DateTime @default(now())
+  
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+// Recomendações geradas
+model Recommendation {
+  id              String   @id @default(uuid())
+  conversationId  String
+  vehicleId       String
+  
+  matchScore      Int      // 0-100
+  reasoning       String   // Justificativa da recomendação
+  position        Int      @default(1) // 1, 2, 3 (top 3)
+  
+  // Cliente interagiu?
+  clicked         Boolean  @default(false)
+  interested      Boolean  @default(false)
+  
+  createdAt       DateTime @default(now())
+  
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  vehicle         Vehicle      @relation(fields: [vehicleId], references: [id])
+  
+  @@index([conversationId])
+  @@index([matchScore])
+}
+
+// Leads qualificados
+model Lead {
+  id              String   @id @default(uuid())
+  conversationId  String   @unique
+  
+  // Dados do cliente
+  name            String
+  phone           String
+  email           String?
+  
+  // Perfil
+  budget          Float?
+  usage           String?  // urbano, viagem, trabalho
+  people          Int?
+  hasTradeIn      Boolean  @default(false)
+  tradeInInfo     String?
+  
+  // Interesse
+  interestedVehicles String? // JSON array de vehicle IDs
+  urgency         String?  // urgente, 1mes, 3meses, pesquisando
+  
+  // Status
+  status          String   @default("new") // new, contacted, visited, sold, lost
+  
+  // Atribuição
+  source          String   @default("whatsapp_bot")
+  
+  // Venda
+  soldAt          DateTime?
+  soldVehicleId   String?
+  saleValue       Float?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // CRM
+  crmSynced       Boolean  @default(false)
+  crmId           String?
+  
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
+  
+  @@index([phone])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Mensagens (log opcional)
+model Message {
+  id              String   @id @default(uuid())
+  conversationId  String
+  
+  direction       String   // incoming, outgoing
+  content         String
+  messageType     String   @default("text") // text, image, button
+  
+  // WhatsApp metadata
+  waMessageId     String?
+  
+  timestamp       DateTime @default(now())
+  
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  @@index([conversationId])
+  @@index([timestamp])
+}

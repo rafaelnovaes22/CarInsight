@@ -1,0 +1,58 @@
+{
+  "name": "FaciliAuto MVP",
+  "description": "Assistente de Vendas WhatsApp com IA para Concessionárias",
+  "repository": "https://github.com/rafaelnovaes22/faciliauto-mvp",
+  "logo": "https://raw.githubusercontent.com/rafaelnovaes22/faciliauto-mvp/main/public/icon.png",
+  "keywords": ["whatsapp", "ai", "chatbot", "typescript", "prisma"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment",
+      "value": "production",
+      "required": true
+    },
+    "NPM_CONFIG_PRODUCTION": {
+      "description": "Install dev dependencies for postinstall",
+      "value": "false"
+    },
+    "DATABASE_URL": {
+      "description": "PostgreSQL connection string (Heroku will set this)",
+      "required": false
+    },
+    "GROQ_API_KEY": {
+      "description": "Groq API Key - https://console.groq.com/keys",
+      "required": true
+    },
+    "META_WHATSAPP_TOKEN": {
+      "description": "Meta WhatsApp Token",
+      "required": true
+    },
+    "META_WHATSAPP_PHONE_NUMBER_ID": {
+      "description": "Phone Number ID from Meta developers",
+      "required": true
+    },
+    "META_WHATSAPP_BUSINESS_ACCOUNT_ID": {
+      "description": "Business Account ID",
+      "required": true
+    },
+    "META_WEBHOOK_VERIFY_TOKEN": {
+      "description": "Webhook verification token",
+      "value": "faciliauto_webhook_2025",
+      "required": true
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "stack": "heroku-22",
+  "scripts": {
+    "postdeploy": "npx prisma generate && npx prisma db push && npm run db:seed"
+  }
+}

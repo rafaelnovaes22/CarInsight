@@ -1,0 +1,25 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "nixpacks",
+    "buildCommand": "npm ci && npx prisma generate && npm run db:seed"
+    "startCommand": "npm run start:prod"
+    "nixpacks": {
+      "nodeVersion": "20",
+      "installCmd": "npm ci --omit=dev",
+      "pruneDevDependencies": true
+    }
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 3
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "production",
+        "PORT": "3000"
+      }
+    }
+  }
+}
