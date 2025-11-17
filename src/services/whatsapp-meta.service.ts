@@ -129,17 +129,29 @@ export class WhatsAppMetaService {
       await this.markMessageAsRead(message.id);
 
       // Process with our bot
+      logger.info('🤖 Processing with bot...');
       const response = await this.messageHandler.handleMessage(phoneNumber, messageText);
+      
+      logger.info('📤 Sending response...', {
+        to: phoneNumber,
+        responseLength: response.length,
+        responsePreview: response.substring(0, 100),
+      });
 
       // Send response back
       await this.sendMessage(phoneNumber, response);
 
-      logger.info('✅ Response sent', {
+      logger.info('✅ Response sent successfully', {
         to: phoneNumber,
         length: response.length,
       });
-    } catch (error) {
-      logger.error({ error, message }, 'Error handling incoming message');
+    } catch (error: any) {
+      logger.error({ 
+        error: error.message,
+        stack: error.stack,
+        message 
+      }, '❌ Error handling incoming message');
+      throw error;
     }
   }
 
