@@ -171,9 +171,12 @@ export class WhatsAppMetaService {
   async sendMessage(to: string, text: string): Promise<void> {
     try {
       logger.info('🔄 Calling Meta API...', {
-        to,
+        to: to,
+        toLength: to.length,
+        toPreview: to.substring(0, 20),
         apiUrl: this.apiUrl,
         textLength: text.length,
+        textPreview: text.substring(0, 100),
       });
 
       const response = await axios.post(
