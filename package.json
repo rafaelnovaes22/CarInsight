@@ -24,8 +24,7 @@
     "test:guardrails": "tsx src/test-guardrails.ts",
     "heroku-status": "heroku ps --app faciliauto-mvp",
     "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
-    "heroku-open": "heroku open --app faciliauto-mvp",
-    "prepare": "husky"
+    "heroku-open": "heroku open --app faciliauto-mvp"
   },
   "keywords": [
     "whatsapp",
@@ -38,18 +37,13 @@
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@prisma/client": "^5.7.0",
-    "@whiskeysockets/baileys": "^6.6.0",
     "axios": "^1.13.2",
-    "chromadb": "^3.1.4",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "groq-sdk": "^0.35.0",
-    "ioredis": "^5.3.2",
     "openai": "^4.104.0",
     "pino": "^8.16.2",
     "pino-pretty": "^10.3.0",
-    "qrcode-terminal": "^0.12.0",
-    "venom-bot": "^5.3.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
