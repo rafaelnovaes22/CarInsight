@@ -19,12 +19,13 @@
     "db:seed:renatinhu": "tsx src/scripts/seed-renatinhu.ts",
     "db:seed:complete": "tsx src/scripts/seed-renatinhu-complete.ts",
     "db:migrate": "prisma migrate deploy",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
     "test:bot": "tsx src/test-bot.ts",
     "test:guardrails": "tsx src/test-guardrails.ts",
     "heroku-status": "heroku ps --app faciliauto-mvp",
     "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
-    "heroku-open": "heroku open --app faciliauto-mvp"
+    "heroku-open": "heroku open --app faciliauto-mvp",
+    "prepare": "husky"
   },
   "keywords": [
     "whatsapp",
@@ -54,8 +55,15 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "prisma": "^5.7.0",
     "tsx": "^4.7.0",
     "typescript": "^5.3.2"
+  },
+  "lint-staged": {
+    "*.{js,ts,md,json,txt}": [
+      "bash -c 'if grep -rE \"(gsk_[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})\" --include=*.js --include=*.ts --include=*.md --include=*.json .; then exit 1; fi'"
+    ]
   }
 }
