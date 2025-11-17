@@ -170,6 +170,12 @@ export class WhatsAppMetaService {
    */
   async sendMessage(to: string, text: string): Promise<void> {
     try {
+      logger.info('🔄 Calling Meta API...', {
+        to,
+        apiUrl: this.apiUrl,
+        textLength: text.length,
+      });
+
       const response = await axios.post(
         this.apiUrl,
         {
@@ -187,10 +193,11 @@ export class WhatsAppMetaService {
             'Authorization': `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
           },
+          timeout: 10000, // 10 seconds timeout
         }
       );
 
-      logger.debug('✅ Message sent via Meta API', {
+      logger.info('✅ Message sent via Meta API', {
         messageId: response.data.messages?.[0]?.id,
         to: to,
       });
