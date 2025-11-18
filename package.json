@@ -18,6 +18,7 @@
     "db:seed": "tsx src/scripts/seed.ts",
     "db:seed:renatinhu": "tsx src/scripts/seed-renatinhu.ts",
     "db:seed:complete": "tsx src/scripts/seed-renatinhu-complete.ts",
+    "db:seed:real": "tsx src/scripts/seed-renatinhu-real.ts",
     "db:migrate": "prisma migrate deploy",
     "postinstall": "prisma generate",
     "test": "vitest",
