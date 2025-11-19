@@ -186,7 +186,7 @@ Bot: 🚗 Encontrei estes carros perfeitos:
 ### Dados
 - ✅ **28/28 veículos** com dados completos
 - ✅ **28/28 veículos** com URLs funcionais
-- ⏳ **11/28 veículos** com embeddings (39%)
+- ✅ **28/28 veículos** com embeddings (100%)
 
 ### Performance
 - ⚡ **Embeddings:** ~1s por veículo
@@ -375,7 +375,7 @@ npm run db:studio
 - ✅ Versionado (Git)
 
 **Falta apenas:**
-- ⏳ Completar embeddings (11/28)
+- ✅ Completar embeddings (28/28)
 - ⏳ Atualizar preços reais
 - ⏳ Deploy no Railway
 - ⏳ Testar com WhatsApp real
