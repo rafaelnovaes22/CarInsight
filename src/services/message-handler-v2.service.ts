@@ -4,6 +4,7 @@ import { logger } from '../lib/logger';
 import { guardrails } from './guardrails.service';
 import { conversationGraph } from '../graph/conversation-graph';
 import { ConversationState } from '../types/state.types';
+import { dataRightsService } from './data-rights.service';
 
 /**
  * MessageHandlerV2 - New implementation using LangGraph
@@ -20,6 +21,12 @@ export class MessageHandlerV2 {
 
       // Use sanitized input
       const sanitizedMessage = inputValidation.sanitizedInput || message;
+
+      // 🔒 LGPD: Check for data rights commands
+      const lgpdResponse = await this.handleDataRightsCommands(phoneNumber, sanitizedMessage);
+      if (lgpdResponse) {
+        return lgpdResponse;
+      }
 
       // Get or create conversation
       let conversation = await this.getOrCreateConversation(phoneNumber);
@@ -208,5 +215,109 @@ export class MessageHandlerV2 {
     } catch (error) {
       logger.error({ error, conversationId: conversation.id }, 'Error creating lead');
     }
+  }
+
+  /**
+   * LGPD Compliance: Handle data rights commands
+   * Art. 18 - Direitos do titular (esquecimento, portabilidade)
+   */
+  private async handleDataRightsCommands(phoneNumber: string, message: string): Promise<string | null> {
+    const lowerMessage = message.toLowerCase().trim();
+
+    // Check for pending confirmation
+    const confirmationKey = `lgpd:confirmation:${phoneNumber}`;
+    const pendingAction = await cache.get(confirmationKey);
+
+    // Handle confirmation responses
+    if (pendingAction) {
+      if (lowerMessage === 'sim') {
+        await cache.del(confirmationKey);
+
+        if (pendingAction === 'DELETE_DATA') {
+          logger.info({ phoneNumber }, 'LGPD: User confirmed data deletion');
+          const success = await dataRightsService.deleteUserData(phoneNumber);
+          
+          if (success) {
+            return '✅ Seus dados foram excluídos com sucesso!\n\nObrigado por usar a FaciliAuto. Se precisar de algo no futuro, estaremos aqui! 👋';
+          } else {
+            return '❌ Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: suporte@faciliauto.com.br';
+          }
+        }
+      } else if (lowerMessage === 'não' || lowerMessage === 'nao' || lowerMessage === 'cancelar') {
+        await cache.del(confirmationKey);
+        return '✅ Operação cancelada. Como posso ajudar você?';
+      } else {
+        return '⚠️ Por favor, responda *SIM* para confirmar ou *NÃO* para cancelar.';
+      }
+    }
+
+    // Check for data deletion command
+    if (lowerMessage.includes('deletar meus dados') || 
+        lowerMessage.includes('excluir meus dados') ||
+        lowerMessage.includes('remover meus dados') ||
+        lowerMessage.includes('apagar meus dados')) {
+      
+      logger.info({ phoneNumber }, 'LGPD: Data deletion request received');
+      
+      // Check if user has data
+      const hasData = await dataRightsService.hasUserData(phoneNumber);
+      if (!hasData) {
+        return '✅ Não encontramos dados associados ao seu número.';
+      }
+
+      // Set pending confirmation (expires in 5 minutes)
+      await cache.set(confirmationKey, 'DELETE_DATA', 300);
+      
+      return `⚠️ *Confirmação de Exclusão de Dados*
+
+Você solicitou a exclusão de todos os seus dados pessoais (LGPD Art. 18).
+
+Isso incluirá:
+• Histórico de conversas
+• Recomendações de veículos
+• Informações de cadastro
+
+Esta ação é *irreversível*.
+
+Tem certeza que deseja continuar?
+
+Digite *SIM* para confirmar ou *NÃO* para cancelar.
+
+_Esta confirmação expira em 5 minutos._`;
+    }
+
+    // Check for data export command
+    if (lowerMessage.includes('exportar meus dados') || 
+        lowerMessage.includes('baixar meus dados') ||
+        lowerMessage.includes('meus dados')) {
+      
+      logger.info({ phoneNumber }, 'LGPD: Data export request received');
+      
+      try {
+        const data = await dataRightsService.exportUserData(phoneNumber);
+        
+        // Note: WhatsApp Cloud API can send documents
+        // For now, we'll provide a summary
+        return `✅ *Seus Dados Pessoais (LGPD Art. 18)*
+
+📊 *Resumo:*
+• Total de registros: ${data.totalRegistros}
+• Mensagens trocadas: ${data.mensagens.length}
+• Recomendações: ${data.recomendacoes.length}
+• Status: ${data.conversa?.status || 'N/A'}
+
+📧 Para receber seus dados completos em formato JSON, por favor entre em contato:
+• Email: privacidade@faciliauto.com.br
+• Assunto: "Exportação de Dados - ${phoneNumber}"
+
+Responderemos em até 15 dias úteis, conforme LGPD.`;
+      } catch (error) {
+        logger.error({ error, phoneNumber }, 'LGPD: Error exporting data');
+        return '❌ Desculpe, houve um erro ao exportar seus dados. Por favor, tente novamente ou contate suporte@faciliauto.com.br';
+      }
+    }
+
+    // No data rights command detected
+    return null;
   }
 }

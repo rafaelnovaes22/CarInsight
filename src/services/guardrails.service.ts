@@ -1,4 +1,5 @@
 import { logger } from '../lib/logger';
+import { autoAddDisclaimers } from '../config/disclosure.messages';
 
 export interface GuardrailResult {
   allowed: boolean;
@@ -61,6 +62,7 @@ export class GuardrailsService {
 
   /**
    * Validate AI-generated output before sending
+   * ISO 42001 Compliance: Adds automatic disclaimers for transparency
    */
   validateOutput(output: string): GuardrailResult {
     // 1. Check output length (max 4096 for WhatsApp)
@@ -90,9 +92,12 @@ export class GuardrailsService {
       };
     }
 
+    // 4. ISO 42001: Add automatic disclaimers for transparency
+    const outputWithDisclaimers = autoAddDisclaimers(output);
+
     return {
       allowed: true,
-      sanitizedInput: output,
+      sanitizedInput: outputWithDisclaimers,
     };
   }
 

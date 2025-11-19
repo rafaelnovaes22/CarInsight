@@ -77,4 +77,5 @@ chroma_data/
 
 # UPLOADS (if any)
 uploads/
-*.upload
+*.upload.env.save
+test-meta-auth.js

@@ -1,8 +1,10 @@
 import { ConversationState, StateUpdate } from '../../types/state.types';
 import { logger } from '../../lib/logger';
+import { DISCLOSURE_MESSAGES } from '../../config/disclosure.messages';
 
 /**
  * GreetingNode - First interaction with the customer
+ * ISO 42001 Compliance: Includes AI disclosure in first message
  */
 export async function greetingNode(state: ConversationState): Promise<StateUpdate> {
   logger.info({ conversationId: state.conversationId }, 'GreetingNode: Starting greeting');
@@ -13,10 +15,8 @@ export async function greetingNode(state: ConversationState): Promise<StateUpdat
   let greetingMessage: string;
 
   if (isFirstMessage) {
-    // First time greeting
-    greetingMessage = `Olá! 👋 Bem-vindo à FaciliAuto!
-
-Sou seu assistente virtual e estou aqui para ajudar você a encontrar o carro usado perfeito.
+    // ISO 42001: First time greeting with AI disclosure
+    greetingMessage = `${DISCLOSURE_MESSAGES.INITIAL_GREETING}
 
 🎯 Vou fazer 8 perguntas rápidas para entender suas necessidades e recomendar os melhores veículos para você.
 
