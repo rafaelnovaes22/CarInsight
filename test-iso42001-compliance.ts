@@ -122,6 +122,9 @@ async function runTests() {
       const validation = guardrails.validateInput(TEST_PHONE, input);
       if (!validation.allowed) {
         passedCount++;
+        console.log(`  ✅ Bloqueado: "${input.substring(0, 40)}..."`);
+      } else {
+        console.log(`  ❌ Passou: "${input.substring(0, 40)}..."`);
       }
     }
 

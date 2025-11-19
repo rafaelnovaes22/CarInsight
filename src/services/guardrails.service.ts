@@ -138,16 +138,27 @@ export class GuardrailsService {
 
     // Common prompt injection patterns
     const injectionPatterns = [
-      // System prompt manipulation
-      /ignore\s+(previous|above|all)\s+(instructions|prompts|rules)/i,
-      /forget\s+(previous|above|all)\s+(instructions|prompts|rules)/i,
-      /disregard\s+(previous|above|all)\s+(instructions|prompts|rules)/i,
+      // System prompt manipulation (English)
+      /ignore\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
+      /forget\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
+      /disregard\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
       
-      // Role manipulation
+      // System prompt manipulation (Portuguese)
+      /ignore\s+(as|todas)\s+(instru[çc][õo]es|regras|prompts)/i,
+      /esqueça\s+(as|todas)\s+(instru[çc][õo]es|regras)/i,
+      /desconsidere\s+(as|todas)\s+(instru[çc][õo]es|regras)/i,
+      
+      // Role manipulation (English)
       /you\s+are\s+now/i,
+      /you\s+are\s+(now\s+)?(a|an)\s+(admin|administrator|developer|system)/i,
       /from\s+now\s+on/i,
       /new\s+(instructions|role|prompt)/i,
       /act\s+as\s+(a\s+)?(developer|admin|system)/i,
+      
+      // Role manipulation (Portuguese)
+      /voc[êe]\s+(agora\s+)?[ée]\s+(um|uma)\s+(admin|administrador|desenvolvedor|sistema)/i,
+      /a\s+partir\s+de\s+agora/i,
+      /nova\s+(instru[çc][ãa]o|regra|fun[çc][ãa]o)/i,
       
       // Jailbreak attempts
       /dan\s+mode/i,
@@ -167,10 +178,15 @@ export class GuardrailsService {
       /\\x[0-9a-f]{2}/i,
       /%[0-9a-f]{2}/i,
       
-      // Prompt extraction
+      // Prompt extraction (English)
       /show\s+(me\s+)?(your|the)\s+(prompt|instructions|system|rules)/i,
       /what\s+(are|is)\s+(your|the)\s+(prompt|instructions|system|rules)/i,
       /reveal\s+(your|the)\s+(prompt|instructions)/i,
+      /(tell|give)\s+me\s+(your|the)\s+(prompt|instructions)/i,
+      
+      // Prompt extraction (Portuguese)
+      /me\s+(diga|mostre|revele)\s+(seu|sua|o|a)\s+(prompt|instru[çc][ãa]o|sistema)/i,
+      /qual\s+([ée]|s[ãa]o)\s+(seu|sua|suas)\s+(instru[çc][õo]es|prompt|regras)/i,
       
       // SQL injection patterns (extra safety)
       /;\s*(drop|delete|insert|update)\s+/i,
