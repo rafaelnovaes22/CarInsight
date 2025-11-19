@@ -77,5 +77,22 @@ chroma_data/
 
 # UPLOADS (if any)
 uploads/
-*.upload.env.save
-test-meta-auth.js
+
+# CAREER DOCUMENTS (private)
+career-docs/
+ANALISE_VAGA*.md
+CV_*.md
+RESUMO_LINKEDIN*.md
+*_VAGA_*.md
+
+# TEST SCRIPTS (not for production)
+test-scripts/
+test-*.ts
+test-*.js
+server.log
+*.log
+
+# DEVELOPMENT DOCS (already in docs/)
+*_STATUS.md
+*_PASSOS_*.md
+RECOMENDACOES_*.md
