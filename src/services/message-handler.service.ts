@@ -141,13 +141,8 @@ export class MessageHandler {
   }
 
   private async handleGreeting(conversation: any, message: string, context: any): Promise<string> {
-    // Check if this is the FIRST message (no previous messages)
-    const messageCount = await prisma.message.count({
-      where: { conversationId: conversation.id }
-    });
-
-    // If first message, send greeting and start quiz
-    if (messageCount <= 1) {
+    // Check if this is the FIRST interaction (no quiz context yet)
+    if (!context.quizProgress && context.quizProgress !== 0) {
       // Update to quiz step
       await prisma.conversation.update({
         where: { id: conversation.id },
@@ -158,14 +153,19 @@ export class MessageHandler {
       context.quizProgress = 0;
       context.quizAnswers = {};
       
+      // Save context to cache
+      const contextKey = `conversation:${conversation.id}:context`;
+      await cache.set(contextKey, JSON.stringify(context), 86400);
+      
       // Return greeting + first question
+      const firstQuestion = await this.quizAgent.getQuestion(0);
       const greetingMessage = `Olá! 👋 Bem-vindo à FaciliAuto!
 
 Sou seu assistente virtual e estou aqui para ajudar você a encontrar o carro usado perfeito.
 
 🚗 Vamos começar! Vou fazer algumas perguntas para entender suas necessidades.
 
-${await this.quizAgent.getQuestion(0)}`;
+${firstQuestion}`;
 
       return greetingMessage;
     }
