@@ -123,8 +123,14 @@ async function main() {
   console.log(`📦 Carregados ${vehiclesData.length} veículos do JSON\n`);
   
   console.log('🗑️  Limpando base de dados atual...');
+  
+  // Deletar recomendações primeiro (foreign key)
+  await prisma.recommendation.deleteMany();
+  console.log('✅ Recomendações deletadas');
+  
+  // Agora deletar veículos
   await prisma.vehicle.deleteMany();
-  console.log('✅ Base limpa!\n');
+  console.log('✅ Veículos deletados!\n');
   
   console.log('📝 Inserindo veículos da Robust Car...\n');
   
