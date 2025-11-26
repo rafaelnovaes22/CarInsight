@@ -94,7 +94,30 @@ function generateDescription(vehicle: RobustCarVehicle): string {
 async function main() {
   console.log('🚀 Iniciando seed da Robust Car...\n');
   
-  const jsonPath = join(process.cwd(), 'scripts', 'robustcar-vehicles.json');
+  // Tentar múltiplos caminhos possíveis
+  const possiblePaths = [
+    join(process.cwd(), 'scripts', 'robustcar-vehicles.json'),
+    join(__dirname, '..', 'scripts', 'robustcar-vehicles.json'),
+    join(process.cwd(), '..', 'scripts', 'robustcar-vehicles.json'),
+  ];
+  
+  let jsonPath: string | null = null;
+  for (const path of possiblePaths) {
+    try {
+      if (readFileSync(path, 'utf-8')) {
+        jsonPath = path;
+        console.log(`✅ Arquivo encontrado: ${path}`);
+        break;
+      }
+    } catch (e) {
+      console.log(`⏭️  Tentando: ${path} - não encontrado`);
+    }
+  }
+  
+  if (!jsonPath) {
+    throw new Error('❌ Arquivo robustcar-vehicles.json não encontrado em nenhum caminho possível');
+  }
+  
   const vehiclesData: RobustCarVehicle[] = JSON.parse(readFileSync(jsonPath, 'utf-8'));
   
   console.log(`📦 Carregados ${vehiclesData.length} veículos do JSON\n`);
