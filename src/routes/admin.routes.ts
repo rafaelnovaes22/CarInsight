@@ -375,7 +375,7 @@ async function updateUberWithWhitelist(req: any, res: any) {
       details: error.message
     });
   }
-});
+}
 
 /**
  * GET /admin/vehicles-uber
