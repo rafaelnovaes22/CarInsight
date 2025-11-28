@@ -40,6 +40,7 @@
     "benchmark:llms": "tsx src/scripts/benchmark-llms.ts",
     "conversations:reset": "tsx scripts/reset-conversations.ts",
     "conversations:reset:all": "tsx scripts/reset-conversations.ts --all",
+    "vehicles:update-uber": "tsx scripts/update-uber-eligibility.ts",
     "heroku-status": "heroku ps --app faciliauto-mvp",
     "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
     "heroku-open": "heroku open --app faciliauto-mvp"

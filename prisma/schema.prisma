@@ -53,6 +53,13 @@ model Vehicle {
   // Status
   disponivel    Boolean  @default(true)
   
+  // Contextos de uso
+  aptoUber      Boolean  @default(false)  // Apto para Uber/99/apps
+  aptoUberBlack Boolean  @default(false)  // Apto para Uber Black
+  aptoFamilia   Boolean  @default(true)   // Recomendado para família
+  aptoTrabalho  Boolean  @default(true)   // Bom para trabalho/cidade
+  economiaCombustivel String? // baixa, media, alta
+  
   // Timestamps
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

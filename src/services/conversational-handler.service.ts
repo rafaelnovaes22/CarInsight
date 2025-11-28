@@ -7,6 +7,7 @@
 
 import { logger } from '../lib/logger';
 import { vehicleExpert } from '../agents/vehicle-expert.agent';
+import { onboardingHandler } from './onboarding-handler.service';
 import { ConversationState, CustomerProfile } from '../types/state.types';
 import { ConversationContext, ConversationMode } from '../types/conversation.types';
 
@@ -21,6 +22,49 @@ export class ConversationalHandler {
     const startTime = Date.now();
     
     try {
+      // Check if needs onboarding (greeting + name + context)
+      if (onboardingHandler.needsOnboarding(state)) {
+        logger.debug({
+          conversationId: state.conversationId,
+          messageCount: state.messages.length
+        }, 'Conversational: handling onboarding');
+        
+        const onboardingResult = await onboardingHandler.handleOnboarding(message, state);
+        
+        // Update state with onboarding data
+        const updatedState: ConversationState = {
+          ...state,
+          profile: {
+            ...state.profile,
+            ...onboardingResult.updatedProfile
+          },
+          messages: [
+            ...state.messages,
+            {
+              role: 'assistant',
+              content: onboardingResult.response,
+              timestamp: new Date()
+            }
+          ],
+          metadata: {
+            ...state.metadata,
+            lastMessageAt: new Date(),
+          }
+        };
+        
+        logger.info({
+          conversationId: state.conversationId,
+          hasName: !!updatedState.profile.customerName,
+          hasContext: !!updatedState.profile.usoPrincipal,
+          processingTime: Date.now() - startTime
+        }, 'Conversational: onboarding processed');
+        
+        return {
+          response: onboardingResult.response,
+          updatedState
+        };
+      }
+      
       // Build conversation context from state
       const context = this.buildConversationContext(state);
       

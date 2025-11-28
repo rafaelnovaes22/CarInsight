@@ -29,6 +29,8 @@ CAMPOS POSSÍVEIS:
 - budgetMax: number (se mencionar "até X")
 - people: number (passageiros + motorista)
 - usage: "cidade" | "viagem" | "trabalho" | "misto"
+- usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "outro"
+- tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
 - bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan"
 - minYear: number (ano mínimo aceito)
 - maxKm: number (quilometragem máxima)
@@ -37,7 +39,7 @@ CAMPOS POSSÍVEIS:
 - color: string
 - brand: string (marca preferida)
 - model: string (modelo específico)
-- priorities: string[] (ex: ["economico", "conforto", "espaco"])
+- priorities: string[] (ex: ["economico", "conforto", "espaco", "apto_uber"])
 - dealBreakers: string[] (ex: ["leilao", "alta_quilometragem"])
 
 EXEMPLOS:
@@ -75,6 +77,34 @@ Saída: {
   "confidence": 0.85,
   "reasoning": "Deal breakers e ano mínimo identificados",
   "fieldsExtracted": ["dealBreakers", "minYear"]
+}
+
+Entrada: "Preciso de um carro para Uber, até 60 mil"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "budget": 60000,
+    "budgetMax": 60000,
+    "priorities": ["apto_uber"],
+    "minYear": 2012
+  },
+  "confidence": 0.95,
+  "reasoning": "Contexto Uber identificado, orçamento definido, ano mínimo implícito",
+  "fieldsExtracted": ["usoPrincipal", "budget", "budgetMax", "priorities", "minYear"]
+}
+
+Entrada: "Quero trabalhar com Uber Black, precisa ser sedan"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "tipoUber": "black",
+    "bodyType": "sedan",
+    "priorities": ["apto_uber"],
+    "minYear": 2018
+  },
+  "confidence": 0.9,
+  "reasoning": "Uber Black requer sedan, ano mínimo 2018",
+  "fieldsExtracted": ["usoPrincipal", "tipoUber", "bodyType", "priorities", "minYear"]
 }
 
 Entrada: "Oi, tudo bem?"
