@@ -31,6 +31,20 @@ export const cache = {
   async exists(key: string): Promise<boolean> {
     return memoryCache.has(key);
   },
+
+  async keys(pattern: string): Promise<string[]> {
+    // Convert Redis pattern to regex
+    const regexPattern = pattern.replace(/\*/g, '.*');
+    const regex = new RegExp(`^${regexPattern}$`);
+
+    const matchingKeys: string[] = [];
+    for (const key of memoryCache.keys()) {
+      if (regex.test(key)) {
+        matchingKeys.push(key);
+      }
+    }
+    return matchingKeys;
+  },
 };
 
 export default cache;

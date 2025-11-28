@@ -28,7 +28,7 @@ export interface VehicleInfo {
 }
 
 export class UberEligibilityValidator {
-  
+
   private readonly UBER_CRITERIA_PROMPT = `Você é um especialista em requisitos do Uber/99 no Brasil.
 
 CRITÉRIOS OFICIAIS UBER (2024):
@@ -91,7 +91,7 @@ Seja RIGOROSO. Em caso de dúvida, marque false.`;
    */
   async validateEligibility(vehicle: VehicleInfo): Promise<UberEligibilityResult> {
     const startTime = Date.now();
-    
+
     try {
       const prompt = `${this.UBER_CRITERIA_PROMPT}
 
@@ -111,12 +111,12 @@ Retorne APENAS o JSON, sem texto adicional:`;
         { role: 'user', content: prompt }
       ], {
         temperature: 0.1, // Baixa temperatura para consistência
-        max_tokens: 300
+        maxTokens: 300
       });
 
       // Parse JSON response
       const result = JSON.parse(response.trim());
-      
+
       logger.info({
         vehicle: `${vehicle.marca} ${vehicle.modelo}`,
         result,
@@ -130,29 +130,29 @@ Retorne APENAS o JSON, sem texto adicional:`;
         reasoning: result.reasoning || 'No reasoning provided',
         confidence: result.confidence || 0.8
       };
-      
+
     } catch (error) {
       logger.error({ error, vehicle }, 'Error validating Uber eligibility');
-      
+
       // Fallback: conservative validation
       return this.fallbackValidation(vehicle);
     }
   }
-  
+
   /**
    * Fallback validation if LLM fails (conservative approach)
    */
   private fallbackValidation(vehicle: VehicleInfo): UberEligibilityResult {
     const carrNorm = vehicle.carroceria.toLowerCase();
-    
+
     // Conservative: reject if any doubt
-    const isMinivan = carrNorm.includes('minivan') || 
-                      vehicle.modelo.toLowerCase().includes('spin');
+    const isMinivan = carrNorm.includes('minivan') ||
+      vehicle.modelo.toLowerCase().includes('spin');
     const isSUV = carrNorm.includes('suv');
     const isPickup = carrNorm.includes('pickup') || carrNorm.includes('picape');
     const isSedan = carrNorm.includes('sedan');
     const isHatch = carrNorm.includes('hatch');
-    
+
     // Never allowed types
     if (isPickup || vehicle.portas < 4 || !vehicle.arCondicionado) {
       return {
@@ -163,23 +163,23 @@ Retorne APENAS o JSON, sem texto adicional:`;
         confidence: 0.9
       };
     }
-    
+
     // Uber X: Only sedan/hatch, 2012+
-    const uberX = (isSedan || isHatch) && 
-                  !isSUV && 
-                  !isMinivan && 
-                  vehicle.ano >= 2012;
-    
+    const uberX = (isSedan || isHatch) &&
+      !isSUV &&
+      !isMinivan &&
+      vehicle.ano >= 2012;
+
     // Uber Comfort: Sedan, minivan, SUV médio, 2015+
-    const uberComfort = (isSedan || isMinivan || isSUV) && 
-                        vehicle.ano >= 2015;
-    
+    const uberComfort = (isSedan || isMinivan || isSUV) &&
+      vehicle.ano >= 2015;
+
     // Uber Black: Only sedan, 2018+
-    const uberBlack = isSedan && 
-                      !isMinivan && 
-                      !isSUV && 
-                      vehicle.ano >= 2018;
-    
+    const uberBlack = isSedan &&
+      !isMinivan &&
+      !isSUV &&
+      vehicle.ano >= 2018;
+
     return {
       uberX,
       uberComfort,
@@ -188,20 +188,20 @@ Retorne APENAS o JSON, sem texto adicional:`;
       confidence: 0.6
     };
   }
-  
+
   /**
    * Batch validate multiple vehicles
    */
   async validateBatch(vehicles: VehicleInfo[]): Promise<Map<string, UberEligibilityResult>> {
     const results = new Map<string, UberEligibilityResult>();
-    
+
     logger.info({ count: vehicles.length }, 'Starting batch validation');
-    
+
     // Process in batches of 10 to avoid rate limits
     const batchSize = 10;
     for (let i = 0; i < vehicles.length; i += batchSize) {
       const batch = vehicles.slice(i, i + batchSize);
-      
+
       const batchResults = await Promise.all(
         batch.map(async (vehicle) => {
           const key = `${vehicle.marca}-${vehicle.modelo}-${vehicle.ano}`;
@@ -209,49 +209,49 @@ Retorne APENAS o JSON, sem texto adicional:`;
           return { key, result };
         })
       );
-      
+
       batchResults.forEach(({ key, result }) => {
         results.set(key, result);
       });
-      
+
       // Small delay between batches
       if (i + batchSize < vehicles.length) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
-    
-    logger.info({ 
+
+    logger.info({
       total: vehicles.length,
       uberX: Array.from(results.values()).filter(r => r.uberX).length,
       uberComfort: Array.from(results.values()).filter(r => r.uberComfort).length,
       uberBlack: Array.from(results.values()).filter(r => r.uberBlack).length
     }, 'Batch validation completed');
-    
+
     return results;
   }
-  
+
   /**
    * Get explanation for user about Uber eligibility
    */
   getExplanation(vehicle: VehicleInfo, result: UberEligibilityResult): string {
     const vehicleName = `${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}`;
-    
+
     const eligible: string[] = [];
     if (result.uberX) eligible.push('Uber X / 99Pop');
     if (result.uberComfort) eligible.push('Uber Comfort / XL / Bag');
     if (result.uberBlack) eligible.push('Uber Black');
-    
+
     if (eligible.length === 0) {
       return `❌ ${vehicleName} não é apto para Uber/99.\n\n${result.reasoning}`;
     }
-    
+
     return `✅ ${vehicleName} é apto para: ${eligible.join(', ')}
 
 ${result.reasoning}
 
 ${eligible.length < 3 ? `\n⚠️ NÃO é apto para: ${this.getNotEligible(result).join(', ')}` : ''}`;
   }
-  
+
   private getNotEligible(result: UberEligibilityResult): string[] {
     const notEligible: string[] = [];
     if (!result.uberX) notEligible.push('Uber X');

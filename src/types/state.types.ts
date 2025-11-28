@@ -14,42 +14,47 @@ export interface QuizAnswers {
 }
 
 export interface CustomerProfile {
+  // Customer info
+  customerName?: string;
+
   // Budget
   budget?: number;
   budgetMin?: number;
   budgetMax?: number;
   budgetFlexibility?: number; // percentage (e.g., 10 = +/- 10%)
-  
+  orcamento?: number; // alias for budget (Portuguese)
+
   // Usage
   usage?: 'cidade' | 'viagem' | 'trabalho' | 'misto';
   usagePattern?: string; // legacy support
-  
+  usoPrincipal?: string; // alias for usage (Portuguese)
+
   // People
   people?: number;
   familySize?: number; // legacy support
-  
+
   // Vehicle preferences
   bodyType?: 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan';
   vehicleType?: string; // legacy support
   transmission?: 'manual' | 'automatico';
   fuelType?: 'gasolina' | 'flex' | 'diesel' | 'hibrido' | 'eletrico';
-  
+
   // Constraints
   minYear?: number;
   maxKm?: number;
-  
+
   // Specific preferences
   color?: string;
   brand?: string;
   model?: string;
-  
+
   // Priorities and deal breakers
   priorities?: string[]; // ['economico', 'conforto', 'espaco']
   dealBreakers?: string[]; // ['leilao', 'alta_quilometragem', 'muito_antigo']
-  
+
   // Trade-in
   hasTradeIn?: boolean;
-  
+
   // Urgency
   urgency?: 'imediato' | '1mes' | '3meses' | 'flexivel';
 }
@@ -91,22 +96,22 @@ export interface ConversationState {
   // === Identification ===
   conversationId: string;
   phoneNumber: string;
-  
+
   // === Messages (compatible with LangChain) ===
   messages: BotMessage[];
-  
+
   // === Quiz State ===
   quiz: QuizState;
-  
+
   // === Customer Profile (generated after quiz) ===
   profile: CustomerProfile | null;
-  
+
   // === Recommendations ===
   recommendations: VehicleRecommendation[];
-  
+
   // === Graph Context ===
   graph: GraphContext;
-  
+
   // === Metadata ===
   metadata: {
     startedAt: Date;

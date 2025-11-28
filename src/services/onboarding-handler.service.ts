@@ -17,7 +17,7 @@ export interface OnboardingStep {
 }
 
 export class OnboardingHandler {
-  
+
   /**
    * Check if conversation needs onboarding
    */
@@ -25,20 +25,20 @@ export class OnboardingHandler {
     const messageCount = state.messages.filter(m => m.role === 'user').length;
     const hasName = !!(state.profile && state.profile.customerName);
     const hasContext = !!(state.profile && state.profile.usoPrincipal);
-    
+
     // First message always needs greeting
     if (messageCount === 0) return true;
-    
+
     // If no name, still in onboarding
     if (!hasName && messageCount < 3) return true;
-    
+
     // If has name but no context yet, continue onboarding
     if (hasName && !hasContext && messageCount < 4) return true;
-    
+
     // Onboarding complete
     return false;
   }
-  
+
   /**
    * Determine current onboarding step
    */
@@ -46,7 +46,7 @@ export class OnboardingHandler {
     const messageCount = state.messages.filter(m => m.role === 'user').length;
     const hasName = !!(state.profile && state.profile.customerName);
     const hasContext = !!(state.profile && (state.profile.usoPrincipal || state.profile.orcamento));
-    
+
     if (messageCount === 0) {
       return {
         step: 'greeting',
@@ -55,7 +55,7 @@ export class OnboardingHandler {
         isComplete: false
       };
     }
-    
+
     if (!hasName) {
       return {
         step: 'name_collection',
@@ -64,7 +64,7 @@ export class OnboardingHandler {
         isComplete: false
       };
     }
-    
+
     if (!hasContext) {
       return {
         step: 'context_discovery',
@@ -73,7 +73,7 @@ export class OnboardingHandler {
         isComplete: false
       };
     }
-    
+
     return {
       step: 'complete',
       needsName: false,
@@ -81,7 +81,7 @@ export class OnboardingHandler {
       isComplete: true
     };
   }
-  
+
   /**
    * Handle onboarding message
    */
@@ -90,28 +90,28 @@ export class OnboardingHandler {
     state: ConversationState
   ): Promise<{ response: string; updatedProfile: Partial<CustomerProfile> }> {
     const step = this.getCurrentStep(state);
-    
+
     logger.debug({
       conversationId: state.conversationId,
       step: step.step,
       messageCount: state.messages.length
     }, 'Onboarding: processing step');
-    
+
     switch (step.step) {
       case 'greeting':
         return this.handleGreeting(message);
-      
+
       case 'name_collection':
         return this.handleNameCollection(message, state);
-      
+
       case 'context_discovery':
         return this.handleContextDiscovery(message, state);
-      
+
       default:
         return { response: '', updatedProfile: {} };
     }
   }
-  
+
   /**
    * Handle initial greeting
    */
@@ -121,7 +121,7 @@ export class OnboardingHandler {
   }> {
     // Check if user already provided their name in first message
     const extractedName = await this.extractName(message);
-    
+
     if (extractedName) {
       // User said: "Oi, meu nome é João" or "Olá, sou a Maria"
       const response = `Olá, ${extractedName}! 😊 Prazer em conhecê-lo.
@@ -133,7 +133,7 @@ Me conta: o que você está procurando?`;
         updatedProfile: { customerName: extractedName }
       };
     }
-    
+
     // Standard greeting (no name provided)
     const response = `Olá! 😊 Bem-vindo à Robust Car!
 
@@ -146,7 +146,7 @@ Como posso te chamar?`;
       updatedProfile: {}
     };
   }
-  
+
   /**
    * Handle name collection
    */
@@ -155,7 +155,7 @@ Como posso te chamar?`;
     state: ConversationState
   ): Promise<{ response: string; updatedProfile: Partial<CustomerProfile> }> {
     const extractedName = await this.extractName(message);
-    
+
     if (!extractedName) {
       // Couldn't extract name, ask again politely
       return {
@@ -163,7 +163,7 @@ Como posso te chamar?`;
         updatedProfile: {}
       };
     }
-    
+
     const response = `Prazer, ${extractedName}! 🤝
 
 Me conta: o que você está procurando?`;
@@ -173,7 +173,7 @@ Me conta: o que você está procurando?`;
       updatedProfile: { customerName: extractedName }
     };
   }
-  
+
   /**
    * Handle context discovery (uso principal)
    */
@@ -183,28 +183,28 @@ Me conta: o que você está procurando?`;
   ): Promise<{ response: string; updatedProfile: Partial<CustomerProfile> }> {
     // Extract context using LLM
     const context = await this.extractContext(message);
-    
+
     const customerName = state.profile.customerName || 'amigo';
-    
+
     let response = '';
-    
+
     if (context.usoPrincipal === 'uber' || context.usoPrincipal === 'aplicativo') {
       response = `Legal! Para Uber/99, temos vários modelos aptos. Qual categoria você quer e qual seu orçamento?`;
-      
+
     } else if (context.usoPrincipal === 'familia') {
       response = `Ótimo! Para família temos SUVs e Sedans espaçosos. Me conta mais: quantas pessoas e qual seu orçamento?`;
-      
+
     } else if (context.usoPrincipal === 'trabalho') {
       response = `Entendi! Para trabalho temos opções econômicas. Qual seu orçamento aproximado?`;
-      
+
     } else if (context.usoPrincipal === 'viagem') {
       response = `Perfeito! Para viagens temos SUVs e Sedans confortáveis. Qual seu orçamento?`;
-      
+
     } else {
       // Generic response - let VehicleExpert handle it
       response = `Entendi! Me conta mais sobre o que você busca e qual seu orçamento aproximado?`;
     }
-    
+
     return {
       response,
       updatedProfile: {
@@ -213,7 +213,7 @@ Me conta: o que você está procurando?`;
       }
     };
   }
-  
+
   /**
    * Extract name from message using LLM
    */
@@ -239,24 +239,24 @@ Nome:`;
         { role: 'user', content: prompt }
       ], {
         temperature: 0,
-        max_tokens: 20
+        maxTokens: 20
       });
-      
+
       const extracted = response.trim();
-      
+
       if (extracted === 'NULL' || extracted.length === 0 || extracted.length > 30) {
         return null;
       }
-      
+
       // Capitalize first letter
       return extracted.charAt(0).toUpperCase() + extracted.slice(1).toLowerCase();
-      
+
     } catch (error) {
       logger.error({ error }, 'Error extracting name');
       return null;
     }
   }
-  
+
   /**
    * Extract context (uso principal) from message
    */
@@ -297,16 +297,16 @@ JSON:`;
         { role: 'user', content: prompt }
       ], {
         temperature: 0,
-        max_tokens: 100
+        maxTokens: 100
       });
-      
+
       const json = JSON.parse(response);
-      
+
       return {
         usoPrincipal: json.usoPrincipal === 'null' ? null : json.usoPrincipal,
         orcamento: json.orcamento
       };
-      
+
     } catch (error) {
       logger.error({ error }, 'Error extracting context');
       return { usoPrincipal: null, orcamento: null };
