@@ -164,9 +164,102 @@ function isInWhitelist(marca: string, modelo: string, whitelist: any): boolean {
 
 /**
  * POST /admin/update-uber
- * Mark vehicles eligible for Uber/99 (with whitelist)
+ * Mark vehicles eligible for Uber/99 (LLM-based, no static whitelist)
  */
 router.post('/update-uber', requireSecret, async (req, res) => {
+  // Check if should use LLM validation (new method)
+  const useLLM = req.query.llm === 'true' || req.body.useLLM === true;
+  
+  if (useLLM) {
+    return router.handle(req, res, updateUberWithLLM);
+  }
+  
+  // Legacy whitelist method (keeping for comparison)
+  return updateUberWithWhitelist(req, res);
+});
+
+/**
+ * Update Uber eligibility using LLM (recommended)
+ */
+async function updateUberWithLLM(req: any, res: any) {
+  try {
+    logger.info('🚖 Admin: Updating Uber eligibility with LLM...');
+    
+    const { uberEligibilityValidator } = await import('../services/uber-eligibility-validator.service');
+    const vehicles = await prisma.vehicle.findMany();
+    
+    let uberXCount = 0;
+    let uberComfortCount = 0;
+    let uberBlackCount = 0;
+    const results: any[] = [];
+    
+    for (const vehicle of vehicles) {
+      const eligibility = await uberEligibilityValidator.validateEligibility({
+        marca: vehicle.marca,
+        modelo: vehicle.modelo,
+        ano: vehicle.ano,
+        carroceria: vehicle.carroceria,
+        arCondicionado: vehicle.arCondicionado,
+        portas: vehicle.portas,
+        cambio: vehicle.cambio,
+        cor: vehicle.cor
+      });
+      
+      await prisma.vehicle.update({
+        where: { id: vehicle.id },
+        data: {
+          aptoUber: eligibility.uberX,
+          aptoUberBlack: eligibility.uberBlack
+        }
+      });
+      
+      if (eligibility.uberX) uberXCount++;
+      if (eligibility.uberComfort) uberComfortCount++;
+      if (eligibility.uberBlack) uberBlackCount++;
+      
+      if (eligibility.uberX || eligibility.uberComfort || eligibility.uberBlack) {
+        results.push({
+          marca: vehicle.marca,
+          modelo: vehicle.modelo,
+          ano: vehicle.ano,
+          uberX: eligibility.uberX,
+          uberComfort: eligibility.uberComfort,
+          uberBlack: eligibility.uberBlack,
+          reasoning: eligibility.reasoning,
+          confidence: eligibility.confidence
+        });
+      }
+    }
+    
+    logger.info({ uberXCount, uberComfortCount, uberBlackCount }, '✅ Admin: Uber eligibility updated (LLM)');
+    
+    res.json({
+      success: true,
+      message: 'Uber eligibility updated (LLM validation)',
+      method: 'llm',
+      summary: {
+        totalVehicles: vehicles.length,
+        uberX: uberXCount,
+        uberComfort: uberComfortCount,
+        uberBlack: uberBlackCount
+      },
+      results: results.slice(0, 10)
+    });
+    
+  } catch (error: any) {
+    logger.error({ error }, '❌ Admin: Update Uber eligibility with LLM failed');
+    res.status(500).json({
+      success: false,
+      error: 'Update failed',
+      details: error.message
+    });
+  }
+}
+
+/**
+ * Legacy: Update with whitelist (keeping for comparison)
+ */
+async function updateUberWithWhitelist(req: any, res: any) {
   try {
     logger.info('🚖 Admin: Updating Uber eligibility (whitelist mode)...');
     

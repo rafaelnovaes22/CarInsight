@@ -104,17 +104,46 @@
 
 ---
 
+## 🚙 Uber Comfort / XL / Bag (Categorias Especiais)
+
+### Critérios:
+- **Ano:** 2015 ou mais recente
+- **Tipo:** Minivans e SUVs médios PERMITIDOS
+- **Lugares:** 5-7 lugares
+- **Espaço:** Amplo (para bagagens)
+
+### ✅ Modelos Permitidos:
+**Minivans:**
+- Chevrolet: Spin
+- Fiat: Grand Siena 7 lugares
+- Renault: Lodgy (se disponível)
+
+**SUVs Médios:**
+- Jeep: Compass
+- Hyundai: Tucson
+- VW: Tiguan
+- Nissan: Kicks
+
+**IMPORTANTE:**
+- Spin → ✅ Uber Comfort, XL, Bag
+- Spin → ❌ Uber X (minivan não permitida)
+- Spin → ❌ Uber Black (não é sedan premium)
+
+---
+
 ## 🚫 NUNCA Permitido para Uber:
 
 ### Tipos de Veículo:
-- ❌ SUVs grandes (Pajero, Hilux SW4, Tiguan Allspace, etc)
-- ❌ Picapes (Hilux, Ranger, S10, etc)
-- ❌ Minivans (Spin, Zafira, etc) - apenas UberXL específico
+- ❌ SUVs grandes premium (Pajero, Hilux SW4, Land Cruiser)
+- ❌ Picapes (Hilux, Ranger, S10, L200, etc)
 - ❌ Caminhonetes
+- ❌ Vans grandes (Master, Sprinter, etc)
 - ❌ Veículos 2 portas
 - ❌ Conversíveis
 - ❌ Carros esportivos
 - ❌ Veículos rebaixados
+- ❌ Veículos adesivados
+- ❌ Placa vermelha
 - ❌ GNV (alguns estados)
 
 ### Marcas Geralmente NÃO Aceitas:
