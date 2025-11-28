@@ -22,24 +22,37 @@ export class ConversationalHandler {
     const startTime = Date.now();
     
     try {
+      // Add user message to state BEFORE checking onboarding
+      const stateWithUserMessage: ConversationState = {
+        ...state,
+        messages: [
+          ...state.messages,
+          {
+            role: 'user',
+            content: message,
+            timestamp: new Date()
+          }
+        ]
+      };
+      
       // Check if needs onboarding (greeting + name + context)
-      if (onboardingHandler.needsOnboarding(state)) {
+      if (onboardingHandler.needsOnboarding(stateWithUserMessage)) {
         logger.debug({
-          conversationId: state.conversationId,
-          messageCount: state.messages.length
+          conversationId: stateWithUserMessage.conversationId,
+          messageCount: stateWithUserMessage.messages.length
         }, 'Conversational: handling onboarding');
         
-        const onboardingResult = await onboardingHandler.handleOnboarding(message, state);
+        const onboardingResult = await onboardingHandler.handleOnboarding(message, stateWithUserMessage);
         
         // Update state with onboarding data
         const updatedState: ConversationState = {
-          ...state,
+          ...stateWithUserMessage,
           profile: {
-            ...state.profile,
+            ...stateWithUserMessage.profile,
             ...onboardingResult.updatedProfile
           },
           messages: [
-            ...state.messages,
+            ...stateWithUserMessage.messages,
             {
               role: 'assistant',
               content: onboardingResult.response,
@@ -47,7 +60,7 @@ export class ConversationalHandler {
             }
           ],
           metadata: {
-            ...state.metadata,
+            ...stateWithUserMessage.metadata,
             lastMessageAt: new Date(),
           }
         };
@@ -65,11 +78,11 @@ export class ConversationalHandler {
         };
       }
       
-      // Build conversation context from state
-      const context = this.buildConversationContext(state);
+      // Build conversation context from state (with user message already added)
+      const context = this.buildConversationContext(stateWithUserMessage);
       
       logger.debug({
-        conversationId: state.conversationId,
+        conversationId: stateWithUserMessage.conversationId,
         mode: context.mode,
         messageCount: context.metadata.messageCount,
         profileFields: Object.keys(context.profile).length
@@ -79,15 +92,15 @@ export class ConversationalHandler {
       const response = await vehicleExpert.chat(message, context);
       
       // Update state with extracted preferences
-      const updatedProfile = this.mergeProfiles(state.profile, response.extractedPreferences);
+      const updatedProfile = this.mergeProfiles(stateWithUserMessage.profile, response.extractedPreferences);
       
       // Update state
       const updatedState: ConversationState = {
-        ...state,
+        ...stateWithUserMessage,
         profile: updatedProfile,
-        recommendations: response.recommendations || state.recommendations,
+        recommendations: response.recommendations || stateWithUserMessage.recommendations,
         messages: [
-          ...state.messages,
+          ...stateWithUserMessage.messages,
           {
             role: 'assistant',
             content: response.response,
