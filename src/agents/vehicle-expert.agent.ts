@@ -142,10 +142,26 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         const userAccepts = this.detectAffirmativeResponse(userMessage);
         
         if (userAccepts) {
-          logger.info({ userMessage }, 'User accepted suggestions');
+          logger.info({ userMessage, searchedItem: context.profile?._searchedItem }, 'User accepted suggestions');
           
-          // Search for alternatives (SUVs, etc)
-          const alternatives = await vehicleSearchAdapter.search('suv utilitário espaço', {
+          // Build search query based on what was originally searched
+          const searchedItem = context.profile?._searchedItem || '';
+          const wasPickup = updatedProfile.bodyType === 'pickup' || 
+            searchedItem.toLowerCase().includes('pickup') || 
+            searchedItem.toLowerCase().includes('picape') ||
+            searchedItem.toLowerCase().includes('strada') ||
+            searchedItem.toLowerCase().includes('s10') ||
+            searchedItem.toLowerCase().includes('hilux');
+          
+          // Search for alternatives based on context
+          let searchQuery = 'carro usado popular';
+          if (wasPickup) {
+            searchQuery = 'suv utilitário espaço carga';
+          } else if (updatedProfile.bodyType) {
+            searchQuery = updatedProfile.bodyType;
+          }
+          
+          const alternatives = await vehicleSearchAdapter.search(searchQuery, {
             maxPrice: updatedProfile.budget,
             minYear: updatedProfile.minYear,
             limit: 5,
@@ -160,7 +176,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             
             return {
               response: `Ótimo! Aqui estão algumas opções que podem te interessar:\n\n${formattedResponse}`,
-              extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: false },
+              extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: false, _searchedItem: undefined },
               needsMoreInfo: [],
               canRecommend: true,
               recommendations: alternatives,
@@ -171,12 +187,25 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                 llmUsed: 'gpt-4o-mini'
               }
             };
+          } else {
+            return {
+              response: `Puxa, não encontrei veículos disponíveis no momento com esses critérios. 😕\n\nQuer ajustar o orçamento ou ver outras categorias?`,
+              extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: false, _searchedItem: undefined },
+              needsMoreInfo: ['budget', 'bodyType'],
+              canRecommend: false,
+              nextMode: 'discovery',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.7,
+                llmUsed: 'gpt-4o-mini'
+              }
+            };
           }
         } else {
           // User declined suggestions
           return {
             response: `Sem problemas! 🙂 Me avisa se quiser ver outros tipos de veículos ou se tiver alguma outra dúvida.`,
-            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: false },
+            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: false, _searchedItem: undefined },
             needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'discovery',
@@ -222,17 +251,18 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             }
           };
         } else {
-          // Model not found in inventory
-          const notFoundResponse = `Desculpe, não tenho ${extracted.extracted.model || extracted.extracted.brand} disponível no momento. 
+          // Model/brand not found in inventory - ask if user wants suggestions
+          const searchedItem = extracted.extracted.model || extracted.extracted.brand;
+          const notFoundResponse = `Não temos ${searchedItem} disponível no estoque no momento. 😕
 
-Posso te mostrar modelos similares? Me conta mais sobre o que você busca (uso, orçamento, etc).`;
+Quer que eu te mostre algumas sugestões de veículos similares?`;
 
           return {
             response: notFoundResponse,
-            extractedPreferences: extracted.extracted,
-            needsMoreInfo: ['usage', 'budget'],
+            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: searchedItem },
+            needsMoreInfo: [],
             canRecommend: false,
-            nextMode: 'discovery',
+            nextMode: 'clarification',
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.8,

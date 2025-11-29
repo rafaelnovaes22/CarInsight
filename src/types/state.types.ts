@@ -61,6 +61,7 @@ export interface CustomerProfile {
   
   // Internal state flags (used for conversation flow)
   _waitingForSuggestionResponse?: boolean; // Indicates we offered suggestions and waiting for user response
+  _searchedItem?: string; // The item (model/brand/category) that was not found
 }
 
 export interface VehicleRecommendation {
