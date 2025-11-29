@@ -7,6 +7,7 @@ import { ConversationState } from '../types/state.types';
 import { dataRightsService } from './data-rights.service';
 import { featureFlags } from '../lib/feature-flags';
 import { conversationalHandler } from './conversational-handler.service';
+import { langGraphHandler } from '../graph/langgraph-flow';
 
 /**
  * MessageHandlerV2 - New implementation using LangGraph
@@ -114,25 +115,58 @@ Para começar, qual é o seu nome?`;
         }
       }
 
-      // 🚦 FEATURE FLAG: Decide between conversational or quiz mode
-      const useConversational = featureFlags.shouldUseConversationalMode(phoneNumber);
+      // 🚦 Use LangGraph for all conversations
+      const useLangGraph = true; // Always use LangGraph now
 
       logger.info({
         conversationId: conversation.id,
         phoneNumber: phoneNumber.substring(0, 8) + '****',
-        useConversational,
+        useLangGraph,
         hasCache: !!currentState,
-        currentNode: currentState?.graph.currentNode,
+        currentNode: currentState?.graph?.currentNode,
       }, 'Routing decision');
 
       let newState: ConversationState;
       let response: string;
 
-      if (useConversational) {
-        // 🆕 Use conversational mode (VehicleExpertAgent)
-        logger.debug({ conversationId: conversation.id }, 'Processing with Conversational mode');
+      if (useLangGraph) {
+        // 🆕 Use LangGraph real
+        logger.debug({ conversationId: conversation.id }, 'Processing with LangGraph');
 
-        // Initialize state if new conversation
+        // Load LangGraph state from cache
+        const lgStateKey = `langgraph:${conversation.id}:state`;
+        const cachedLgState = await cache.get(lgStateKey);
+        let lgState: any = null;
+
+        if (cachedLgState) {
+          try {
+            lgState = JSON.parse(cachedLgState);
+          } catch (e) {
+            lgState = null;
+          }
+        }
+
+        const result = await langGraphHandler.handleMessage(
+          conversation.id,
+          phoneNumber,
+          sanitizedMessage,
+          lgState
+        );
+
+        response = result.response;
+
+        // Save LangGraph state to cache
+        await cache.set(lgStateKey, JSON.stringify(result.newState), 86400);
+
+        // Convert to ConversationState for compatibility
+        newState = currentState || this.initializeState(conversation.id, phoneNumber);
+        newState.graph.currentNode = result.newState.currentNode;
+        newState.metadata.lastMessageAt = new Date();
+
+      } else {
+        // 📋 Use legacy mode (fallback)
+        logger.debug({ conversationId: conversation.id }, 'Processing with legacy mode');
+
         if (!currentState) {
           currentState = this.initializeState(conversation.id, phoneNumber);
         }
@@ -140,19 +174,6 @@ Para começar, qual é o seu nome?`;
         const result = await conversationalHandler.handleMessage(sanitizedMessage, currentState);
         newState = result.updatedState;
         response = result.response;
-
-      } else {
-        // 📋 Use legacy quiz mode (LangGraph)
-        logger.debug({ conversationId: conversation.id }, 'Processing with LangGraph (quiz mode)');
-
-        newState = await conversationGraph.invoke({
-          conversationId: conversation.id,
-          phoneNumber,
-          message: sanitizedMessage,
-          currentState,
-        });
-
-        response = conversationGraph.getLastResponse(newState);
       }
 
       // 🛡️ GUARDRAIL: Validate output

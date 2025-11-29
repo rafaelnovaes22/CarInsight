@@ -439,24 +439,35 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
       const isUberX = profile.usoPrincipal === 'uber' && !isUberBlack;
 
-      // Detect family requirements
+      // Detect family requirements (only if explicitly mentioned, not just by people count)
       const isFamily = profile.usoPrincipal === 'familia' ||
         profile.priorities?.includes('familia') ||
         profile.priorities?.includes('cadeirinha') ||
-        profile.priorities?.includes('crianca') ||
-        (profile.people && profile.people >= 4);
+        profile.priorities?.includes('crianca');
+
+      // Detect pickup/work requirements
+      const wantsPickup = profile.bodyType === 'pickup' ||
+        profile.priorities?.includes('pickup') ||
+        profile.priorities?.includes('carga') ||
+        profile.priorities?.includes('cacamba');
+
+      const isWork = profile.usoPrincipal === 'trabalho' ||
+        profile.usage === 'trabalho' ||
+        profile.priorities?.includes('trabalho');
 
       // Search vehicles
       const results = await vehicleSearchAdapter.search(query.searchText, {
         maxPrice: query.filters.maxPrice,
         minYear: query.filters.minYear,
-        bodyType: query.filters.bodyType?.[0],
+        bodyType: wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
         limit: 10, // Get more to filter
         // Apply Uber filters
         aptoUber: isUberX || undefined,
         aptoUberBlack: isUberBlack || undefined,
-        // Apply family filter
-        aptoFamilia: isFamily || undefined,
+        // Apply family filter (only if family, not for pickup/work)
+        aptoFamilia: (isFamily && !wantsPickup) || undefined,
+        // Apply work filter
+        aptoTrabalho: isWork || undefined,
       });
 
       // Post-filter: apply family-specific rules
