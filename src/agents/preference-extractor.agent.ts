@@ -49,8 +49,12 @@ CAMPOS POSSÍVEIS:
 - color: string
 - brand: string (marca preferida)
 - model: string (modelo específico)
-- priorities: string[] (ex: ["economico", "conforto", "espaco", "apto_uber"])
-- dealBreakers: string[] (ex: ["leilao", "alta_quilometragem"])
+- priorities: string[] (ex: ["economico", "conforto", "espaco", "apto_uber", "familia", "cadeirinha", "crianca", "espaco_traseiro"])
+- dealBreakers: string[] (ex: ["leilao", "alta_quilometragem", "hatch_pequeno"])
+
+REGRAS ESPECIAIS:
+- Se mencionar "cadeirinha", "bebê conforto", "criança", "filho", "filhos" → usoPrincipal: "familia", priorities: ["cadeirinha", "espaco_traseiro"]
+- Para família com crianças, NUNCA recomendar hatch pequeno (Mobi, Kwid, Up, Uno)
 
 EXEMPLOS:
 
@@ -156,37 +160,37 @@ Saída: {
     config: ExtractionConfig = {}
   ): Promise<ExtractionResult> {
     const startTime = Date.now();
-    
+
     try {
       // Build context string if available
       let contextString = '';
       if (config.currentProfile && Object.keys(config.currentProfile).length > 0) {
         contextString = `\n\nPERFIL ATUAL DO CLIENTE:\n${JSON.stringify(config.currentProfile, null, 2)}`;
       }
-      
+
       if (config.conversationHistory && config.conversationHistory.length > 0) {
         const recentHistory = config.conversationHistory.slice(-3).join('\n');
         contextString += `\n\nMENSAGENS RECENTES:\n${recentHistory}`;
       }
-      
+
       // Call LLM
       const result = await chatCompletion([
-        { 
-          role: 'system', 
+        {
+          role: 'system',
           content: this.EXTRACTION_PROMPT + contextString
         },
-        { 
-          role: 'user', 
+        {
+          role: 'user',
           content: `MENSAGEM DO CLIENTE: "${message}"\n\nRetorne APENAS o JSON de extração:`
         }
       ], {
         temperature: 0.1, // Low temperature for deterministic extraction
         maxTokens: 400
       });
-      
+
       // Parse result
       const parsed = this.parseExtractionResult(result);
-      
+
       // Validate confidence
       const minConfidence = config.minConfidence ?? 0.5;
       if (parsed.confidence < minConfidence) {
@@ -196,7 +200,7 @@ Saída: {
           minConfidence
         }, 'Extraction confidence below threshold');
       }
-      
+
       // Log extraction
       logger.info({
         message: message.substring(0, 100),
@@ -204,12 +208,12 @@ Saída: {
         confidence: parsed.confidence,
         processingTime: Date.now() - startTime
       }, 'Preferences extracted');
-      
+
       return parsed;
-      
+
     } catch (error) {
       logger.error({ error, message }, 'Failed to extract preferences');
-      
+
       // Return empty extraction on error
       return {
         extracted: {},
@@ -219,7 +223,7 @@ Saída: {
       };
     }
   }
-  
+
   /**
    * Parse and validate LLM response
    */
@@ -232,42 +236,42 @@ Saída: {
       } else if (cleaned.startsWith('```')) {
         cleaned = cleaned.replace(/```\n?/g, '');
       }
-      
+
       // Parse JSON
       const parsed = JSON.parse(cleaned);
-      
+
       // Validate structure
       if (!parsed.extracted || typeof parsed.confidence !== 'number') {
         throw new Error('Invalid extraction result structure');
       }
-      
+
       // Ensure fieldsExtracted is present
       if (!parsed.fieldsExtracted) {
         parsed.fieldsExtracted = Object.keys(parsed.extracted || {});
       }
-      
+
       // Normalize confidence to 0-1 range
       if (parsed.confidence > 1) {
         parsed.confidence = parsed.confidence / 100;
       }
-      
+
       // Sanitize extracted data
       parsed.extracted = this.sanitizeExtracted(parsed.extracted);
-      
+
       return parsed as ExtractionResult;
-      
+
     } catch (error) {
       logger.error({ error, llmResponse }, 'Failed to parse extraction result');
       throw new Error(`Parse error: ${error.message}`);
     }
   }
-  
+
   /**
    * Sanitize and validate extracted data
    */
   private sanitizeExtracted(extracted: Partial<CustomerProfile>): Partial<CustomerProfile> {
     const sanitized: Partial<CustomerProfile> = {};
-    
+
     // Budget validation
     if (extracted.budget !== undefined && extracted.budget !== null) {
       sanitized.budget = Math.max(0, Math.floor(extracted.budget));
@@ -278,46 +282,46 @@ Saída: {
     if (extracted.budgetMax !== undefined && extracted.budgetMax !== null) {
       sanitized.budgetMax = Math.max(0, Math.floor(extracted.budgetMax));
     }
-    
+
     // People validation (1-10)
     if (extracted.people !== undefined && extracted.people !== null) {
       sanitized.people = Math.max(1, Math.min(10, Math.floor(extracted.people)));
     }
-    
+
     // Usage validation
     const validUsage = ['cidade', 'viagem', 'trabalho', 'misto'];
     if (extracted.usage && validUsage.includes(extracted.usage)) {
       sanitized.usage = extracted.usage;
     }
-    
+
     // Body type validation
     const validBodyTypes = ['sedan', 'suv', 'hatch', 'pickup', 'minivan'];
     if (extracted.bodyType && validBodyTypes.includes(extracted.bodyType)) {
       sanitized.bodyType = extracted.bodyType;
     }
-    
+
     // Year validation (2000-2025)
     if (extracted.minYear !== undefined && extracted.minYear !== null) {
       sanitized.minYear = Math.max(2000, Math.min(2025, Math.floor(extracted.minYear)));
     }
-    
+
     // Km validation (0-500000)
     if (extracted.maxKm !== undefined && extracted.maxKm !== null) {
       sanitized.maxKm = Math.max(0, Math.min(500000, Math.floor(extracted.maxKm)));
     }
-    
+
     // Transmission validation
     const validTransmission = ['manual', 'automatico'];
     if (extracted.transmission && validTransmission.includes(extracted.transmission)) {
       sanitized.transmission = extracted.transmission;
     }
-    
+
     // Fuel type validation
     const validFuelTypes = ['gasolina', 'flex', 'diesel', 'hibrido', 'eletrico'];
     if (extracted.fuelType && validFuelTypes.includes(extracted.fuelType)) {
       sanitized.fuelType = extracted.fuelType;
     }
-    
+
     // String fields (sanitize)
     if (extracted.color) {
       sanitized.color = extracted.color.toLowerCase().trim();
@@ -328,7 +332,7 @@ Saída: {
     if (extracted.model) {
       sanitized.model = extracted.model.trim();
     }
-    
+
     // Array fields
     if (Array.isArray(extracted.priorities)) {
       sanitized.priorities = extracted.priorities.filter(p => typeof p === 'string' && p.length > 0);
@@ -336,16 +340,16 @@ Saída: {
     if (Array.isArray(extracted.dealBreakers)) {
       sanitized.dealBreakers = extracted.dealBreakers.filter(d => typeof d === 'string' && d.length > 0);
     }
-    
+
     return sanitized;
   }
-  
+
   /**
    * Normalize brand names
    */
   private normalizeBrand(brand: string): string {
     const normalized = brand.toLowerCase().trim();
-    
+
     const brandMap: Record<string, string> = {
       'volkswagen': 'volkswagen',
       'vw': 'volkswagen',
@@ -362,10 +366,10 @@ Saída: {
       'citroen': 'citroen',
       'peugeot': 'peugeot',
     };
-    
+
     return brandMap[normalized] || normalized;
   }
-  
+
   /**
    * Merge extracted preferences with existing profile
    */
@@ -376,13 +380,13 @@ Saída: {
     return {
       ...currentProfile,
       ...extracted,
-      
+
       // Merge arrays intelligently
       priorities: [
         ...(currentProfile.priorities || []),
         ...(extracted.priorities || [])
       ].filter((v, i, a) => a.indexOf(v) === i), // unique
-      
+
       dealBreakers: [
         ...(currentProfile.dealBreakers || []),
         ...(extracted.dealBreakers || [])

@@ -426,25 +426,56 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
       const isUberX = profile.usoPrincipal === 'uber' && !isUberBlack;
 
+      // Detect family requirements
+      const isFamily = profile.usoPrincipal === 'familia' ||
+        profile.priorities?.includes('familia') ||
+        profile.priorities?.includes('cadeirinha') ||
+        profile.priorities?.includes('crianca') ||
+        (profile.people && profile.people >= 4);
+
       // Search vehicles
       const results = await vehicleSearchAdapter.search(query.searchText, {
         maxPrice: query.filters.maxPrice,
         minYear: query.filters.minYear,
         bodyType: query.filters.bodyType?.[0],
-        limit: 5,
+        limit: 10, // Get more to filter
         // Apply Uber filters
         aptoUber: isUberX || undefined,
         aptoUberBlack: isUberBlack || undefined,
+        // Apply family filter
+        aptoFamilia: isFamily || undefined,
       });
+
+      // Post-filter: exclude small hatchbacks for family use
+      let filteredResults = results;
+      if (isFamily) {
+        const smallHatchModels = ['mobi', 'kwid', 'up', 'uno', 'gol', 'ka', 'hb20', 'onix'];
+        filteredResults = results.filter(rec => {
+          const model = rec.vehicle.model?.toLowerCase() || '';
+          const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
+
+          // Exclude small hatchbacks
+          if (bodyType.includes('hatch')) {
+            return !smallHatchModels.some(small => model.includes(small));
+          }
+          return true;
+        });
+
+        // If we filtered too much, include some back
+        if (filteredResults.length < 3 && results.length >= 3) {
+          filteredResults = results.slice(0, 5);
+        }
+      }
 
       logger.info({
         profileKeys: Object.keys(profile),
-        resultsCount: results.length,
+        resultsCount: filteredResults.length,
         isUberBlack,
-        isUberX
+        isUberX,
+        isFamily
       }, 'Generated recommendations');
 
-      return results;
+      return filteredResults.slice(0, 5);
 
     } catch (error) {
       logger.error({ error, profile }, 'Failed to get recommendations');
@@ -472,9 +503,10 @@ Me diz o que prefere!`;
     }
 
     try {
-      const top3 = recommendations.slice(0, 3);
+      // Show all recommendations (up to 5)
+      const vehiclesToShow = recommendations.slice(0, 5);
 
-      const vehiclesList = top3.map((rec, i) => {
+      const vehiclesList = vehiclesToShow.map((rec, i) => {
         const v = rec.vehicle;
         const link = v.detailsUrl || v.url;
         let item = `${i + 1}. ${i === 0 ? '🏆 ' : ''}*${v.brand} ${v.model} ${v.year}*
@@ -489,7 +521,7 @@ Me diz o que prefere!`;
         return item;
       }).join('\n\n');
 
-      const intro = this.generateRecommendationIntro(profile, recommendations.length);
+      const intro = this.generateRecommendationIntro(profile, vehiclesToShow.length);
 
       const outro = `\n\nQual te interessou mais? Posso dar mais detalhes! 😊
 

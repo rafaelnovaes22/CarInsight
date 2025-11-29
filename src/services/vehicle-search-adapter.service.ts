@@ -21,6 +21,8 @@ interface SearchFilters {
   // Uber filters
   aptoUber?: boolean;
   aptoUberBlack?: boolean;
+  // Family filter
+  aptoFamilia?: boolean;
 }
 
 export class VehicleSearchAdapter {
@@ -58,6 +60,8 @@ export class VehicleSearchAdapter {
           // Uber filters
           ...(filters.aptoUber && { aptoUber: true }),
           ...(filters.aptoUberBlack && { aptoUberBlack: true }),
+          // Family filter
+          ...(filters.aptoFamilia && { aptoFamilia: true }),
         },
         take: limit,
       });
