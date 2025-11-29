@@ -144,16 +144,35 @@ export class RecommendationAgent {
       score += 5; // Perfect fit
     }
 
-    // Usage (10% weight)
+    // Usage (10-30% weight depending on type)
     const usage = answers.usage;
-    if (usage === 'cidade' && vehicle.carroceria.toLowerCase().includes('hatch')) {
+    const carroceria = vehicle.carroceria.toLowerCase();
+    
+    if (usage === 'cidade' && carroceria.includes('hatch')) {
       score += 10;
     }
-    if (usage === 'viagem' && (vehicle.carroceria.toLowerCase().includes('sedan') || vehicle.carroceria.toLowerCase().includes('suv'))) {
+    if (usage === 'viagem' && (carroceria.includes('sedan') || carroceria.includes('suv'))) {
       score += 10;
     }
-    if (usage === 'trabalho' && vehicle.carroceria.toLowerCase().includes('picape')) {
-      score += 15;
+    
+    // Trabalho leve: sedans e hatches são bons, picapes ok
+    if (usage === 'trabalho_leve' || usage === 'trabalho') {
+      if (carroceria.includes('sedan') || carroceria.includes('hatch')) {
+        score += 10;
+      } else if (carroceria.includes('picape')) {
+        score += 5;
+      }
+    }
+    
+    // Trabalho pesado (obra, carga, campo): PRIORIZA FORTEMENTE picapes
+    if (usage === 'trabalho_pesado') {
+      if (carroceria.includes('picape') || carroceria.includes('pickup') || carroceria.includes('utilitário') || carroceria.includes('utilitario')) {
+        score += 30; // Grande bônus para picapes
+      } else if (carroceria.includes('suv') || carroceria.includes('van')) {
+        score += 5; // SUVs e vans podem servir em alguns casos
+      } else {
+        score -= 40; // Penaliza fortemente carros não adequados para obra
+      }
     }
 
     // Has trade-in (5% bonus)

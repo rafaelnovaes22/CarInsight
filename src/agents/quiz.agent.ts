@@ -18,9 +18,9 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 'usage',
-    question: `🚗 Qual será o uso principal do veículo?\n\n1️⃣ Cidade (urbano)\n2️⃣ Viagem (estrada)\n3️⃣ Trabalho\n4️⃣ Misto (cidade + viagem)\n\n_Digite o número da opção_${EXIT_FOOTER}`,
+    question: `🚗 Qual será o uso principal do veículo?\n\n1️⃣ Cidade (urbano)\n2️⃣ Viagem (estrada)\n3️⃣ Trabalho leve (escritório, visitas)\n4️⃣ Trabalho pesado (obra, carga, campo)\n5️⃣ Misto (cidade + viagem)\n\n_Digite o número da opção_${EXIT_FOOTER}`,
     type: 'choice',
-    options: ['cidade', 'viagem', 'trabalho', 'misto'],
+    options: ['cidade', 'viagem', 'trabalho_leve', 'trabalho_pesado', 'misto'],
   },
   {
     id: 'people',
@@ -139,6 +139,27 @@ export class QuizAgent {
         const optLower = opt.toLowerCase();
         // Direct match
         if (cleanAnswer.includes(optLower)) return true;
+        
+        // Match for usage question - detect work context
+        if (question.id === 'usage') {
+          // Trabalho pesado: obra, construção, carga, pedreiro, campo, fazenda, rural, material
+          const trabalhoPoesadoKeywords = ['obra', 'constru', 'carga', 'pedreiro', 'campo', 'fazenda', 'rural', 
+            'material', 'ferramenta', 'entulho', 'terra', 'areia', 'tijolo', 'cimento', 'madeira',
+            'agricultur', 'agrícola', 'frete', 'carregar', 'transportar', 'caçamba', 'pesado'];
+          if (optLower === 'trabalho_pesado' && trabalhoPoesadoKeywords.some(k => cleanAnswer.includes(k))) return true;
+          
+          // Trabalho leve: escritório, vendas, visitas, representante, comercial
+          const trabalhoLeveKeywords = ['escritório', 'escritorio', 'vendas', 'visita', 'representante', 
+            'comercial', 'cliente', 'reunião', 'reuniao', 'empresa'];
+          if (optLower === 'trabalho_leve' && trabalhoLeveKeywords.some(k => cleanAnswer.includes(k))) return true;
+          
+          // Match genérico "trabalho" - default para trabalho_leve, exceto se tiver contexto pesado
+          if (cleanAnswer.includes('trabalho') || cleanAnswer.includes('trabalhar')) {
+            if (optLower === 'trabalho_pesado' && trabalhoPoesadoKeywords.some(k => cleanAnswer.includes(k))) return true;
+            if (optLower === 'trabalho_leve' && !trabalhoPoesadoKeywords.some(k => cleanAnswer.includes(k))) return true;
+          }
+        }
+        
         // Match for urgency question
         if (optLower === '3meses' && (cleanAnswer.includes('3') && cleanAnswer.includes('mes'))) return true;
         if (optLower === '1mes' && (cleanAnswer.includes('1') && cleanAnswer.includes('mes'))) return true;
@@ -153,7 +174,7 @@ export class QuizAgent {
 
       return {
         valid: false,
-        error: `❌ Opção inválida. Por favor, *escolha uma das opções digitando o número* (1, 2, 3 ou 4).`,
+        error: `❌ Opção inválida. Por favor, *escolha uma das opções digitando o número* (1, 2, 3, 4 ou 5).`,
       };
     }
 
