@@ -954,6 +954,82 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/debug-vehicles
+ * Mostra estatísticas dos veículos no banco para debug
+ */
+router.get('/debug-vehicles', requireSecret, async (req, res) => {
+  try {
+    // Total de veículos
+    const total = await prisma.vehicle.count();
+    const available = await prisma.vehicle.count({ where: { disponivel: true } });
+    
+    // Agrupar por carroceria
+    const byBodyType = await prisma.vehicle.groupBy({
+      by: ['carroceria'],
+      _count: true,
+      where: { disponivel: true },
+      orderBy: { _count: { carroceria: 'desc' } }
+    });
+    
+    // Buscar pickups especificamente (case insensitive não funciona no groupBy)
+    const pickups = await prisma.vehicle.findMany({
+      where: {
+        disponivel: true,
+        OR: [
+          { carroceria: { contains: 'pickup', mode: 'insensitive' } },
+          { carroceria: { contains: 'picape', mode: 'insensitive' } },
+          { modelo: { contains: 'strada', mode: 'insensitive' } },
+          { modelo: { contains: 'toro', mode: 'insensitive' } },
+          { modelo: { contains: 'saveiro', mode: 'insensitive' } },
+          { modelo: { contains: 'hilux', mode: 'insensitive' } },
+        ]
+      },
+      select: {
+        id: true,
+        marca: true,
+        modelo: true,
+        ano: true,
+        carroceria: true,
+        disponivel: true,
+        preco: true
+      }
+    });
+    
+    // Listar todos os valores únicos de carroceria
+    const allBodyTypes = await prisma.vehicle.findMany({
+      where: { disponivel: true },
+      select: { carroceria: true },
+      distinct: ['carroceria']
+    });
+    
+    res.json({
+      success: true,
+      summary: {
+        total,
+        available,
+        byBodyType: byBodyType.map(b => ({ type: b.carroceria, count: b._count }))
+      },
+      uniqueBodyTypes: allBodyTypes.map(b => b.carroceria),
+      pickupsFound: pickups.length,
+      pickups: pickups.map(p => ({
+        id: p.id,
+        name: `${p.marca} ${p.modelo} ${p.ano}`,
+        carroceria: p.carroceria,
+        disponivel: p.disponivel,
+        preco: p.preco
+      }))
+    });
+    
+  } catch (error: any) {
+    logger.error({ error }, '❌ Admin: Debug vehicles failed');
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Endpoint de verificação
 router.get('/health', (req, res) => {
   res.json({
@@ -966,6 +1042,7 @@ router.get('/health', (req, res) => {
       validateUrls: 'POST /admin/validate-urls?secret=YOUR_SECRET',
       scrapeRobustcar: 'POST /admin/scrape-robustcar?secret=YOUR_SECRET',
       refreshInventory: 'POST /admin/refresh-inventory?secret=YOUR_SECRET',
+      debugVehicles: '/admin/debug-vehicles?secret=YOUR_SECRET',
       debug: '/admin/debug-env?secret=YOUR_SECRET'
     }
   });
