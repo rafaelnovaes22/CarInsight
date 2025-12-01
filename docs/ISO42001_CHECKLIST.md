@@ -142,11 +142,12 @@
   - Prioridade: 🟡 ALTA
 
 #### 3.2 Viés e Discriminação (Risco 6/9 - Alto)
-- [ ] ❌ **Diretrizes anti-viés no system prompt**
-  - Adicionar: "NUNCA faça suposições baseadas em gênero, idade, localização"
-  - Adicionar: "Recomende APENAS baseado em orçamento/necessidade declarados"
-  - Exemplos: "❌ Esse carro é muito grande para você"
-  - Prioridade: 🔴 CRÍTICA
+- [x] ✅ **Diretrizes anti-viés no system prompt**
+  - Adicionado em: `src/agents/vehicle-expert.agent.ts` e `src/lib/groq.ts`
+  - Regras: "NUNCA faça suposições baseadas em gênero, idade, localização"
+  - Regras: "Recomende APENAS baseado em orçamento/necessidade declarados"
+  - Exemplos proibidos documentados
+  - Status: ✅ IMPLEMENTADO (2025-12-01)
 
 - [ ] ⚠️ **Testes de viés manuais**
   - Personas: Gênero (Maria vs João), Idade (25 vs 70), CEP (periferia vs nobre)
@@ -269,12 +270,13 @@
 ## 🎯 PRIORIZAÇÃO DE AÇÕES
 
 ### 🔴 P0 - CRÍTICO (Esta Semana)
-1. [ ] Integrar aviso de IA na mensagem inicial
-2. [ ] Integrar comando "deletar meus dados"
-3. [ ] Adicionar diretrizes anti-viés no system prompt
+1. [x] ✅ Integrar aviso de IA na mensagem inicial (greeting.node.ts)
+2. [x] ✅ Integrar comando "deletar meus dados" (message-handler-v2.service.ts)
+3. [x] ✅ Adicionar diretrizes anti-viés no system prompt (vehicle-expert.agent.ts + groq.ts)
 
 **Impacto:** Conformidade legal básica
 **Esforço:** ~4 horas
+**Status:** ✅ CONCLUÍDO (2025-12-01)
 
 ---
 

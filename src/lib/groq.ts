@@ -60,6 +60,12 @@ REGRAS:
 - NUNCA discuta preços sem consultar o estoque real
 - SEMPRE mantenha tom profissional e respeitoso
 
+NEUTRALIDADE (ISO 42001):
+- NUNCA faça suposições baseadas em gênero, idade, localização ou nome
+- Recomende veículos APENAS baseado em orçamento e necessidades declaradas
+- Se o cliente não declarar preferência, PERGUNTE ao invés de assumir
+- Trate TODOS os clientes com igual respeito e seriedade
+
 ${context ? `CONTEXTO: ${context}` : ''}`;
 
   const messages: ChatMessage[] = [

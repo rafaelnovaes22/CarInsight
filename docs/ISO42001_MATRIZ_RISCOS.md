@@ -236,13 +236,20 @@ Problema: Assumir incapacidade por idade
 
 #### Controles Implementados
 
-⚠️ **NENHUM CONTROLE ESPECÍFICO IMPLEMENTADO**
+✅ **DIRETRIZES ANTI-VIÉS IMPLEMENTADAS (2025-12-01)**
 
-Current system prompts:
+System prompts atualizados em:
+- `src/agents/vehicle-expert.agent.ts` (GPT-4o-mini primário)
+- `src/lib/groq.ts` (Llama 3.1 fallback)
+
 ```typescript
-"Seja amigável, profissional e objetivo"
+// Seção adicionada aos system prompts:
+"⚖️ NEUTRALIDADE E ANTI-VIÉS (ISO 42001):
+- NUNCA faça suposições baseadas em gênero, idade, localização ou nome
+- Recomende veículos APENAS baseado em orçamento e necessidades declaradas
+- Se o cliente não declarar preferência, PERGUNTE ao invés de assumir
+- Trate TODOS os clientes com igual respeito e seriedade"
 ```
-Não há diretrizes explícitas sobre neutralidade.
 
 #### Controles Recomendados
 
@@ -424,7 +431,7 @@ async function chatWithFallback(messages) {
 |-------|---------------|---------|-------|-----------|--------|
 | Alucinações | Alta (3) | Alto (3) | 🔴 9 | Parcial | ⚠️ Requer fact-checking |
 | Prompt Injection | Média (2) | Médio (2) | 🟡 4 | Adequado | ✅ Monitorar |
-| Viés/Discriminação | Média (2) | Alto (3) | 🔴 6 | Insuficiente | 🔴 Urgente |
+| Viés/Discriminação | Média (2) | Alto (3) | 🔴 6 | Adequado | ✅ Implementado |
 | Vazamento Dados | Baixa (1) | Alto (3) | 🟡 3 | Adequado | ✅ OK |
 | Disponibilidade | Média (2) | Baixo (1) | 🟡 2 | Parcial | 🟡 Melhorar |
 
@@ -434,7 +441,7 @@ async function chatWithFallback(messages) {
 
 ### Semana 1-2
 1. ✅ Implementar disclaimers (concluído)
-2. 🔴 Adicionar diretrizes anti-viés ao system prompt
+2. ✅ Adicionar diretrizes anti-viés ao system prompt (concluído 2025-12-01)
 3. 🔴 Implementar fact-checking básico (validar preços contra DB)
 
 ### Semana 3-4
