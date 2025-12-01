@@ -70,6 +70,7 @@ export interface ConversationResponse {
     confidence?: number;
     llmUsed?: string;
     noPickupsFound?: boolean; // Indicates no pickups were found for user request
+    noSevenSeaters?: boolean; // Indicates no 7-seat vehicles were found for user request
   };
 }
 
@@ -137,6 +138,7 @@ export interface VehicleSearchQuery {
     minPrice?: number;
     minYear?: number;
     maxKm?: number;
+    minSeats?: number; // Número mínimo de lugares (ex: 7)
     bodyType?: string[];
     transmission?: string[];
     fuelType?: string[];

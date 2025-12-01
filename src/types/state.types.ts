@@ -43,6 +43,7 @@ export interface CustomerProfile {
   // Constraints
   minYear?: number;
   maxKm?: number;
+  minSeats?: number; // Número mínimo de lugares (ex: 7 lugares)
 
   // Specific preferences
   color?: string;

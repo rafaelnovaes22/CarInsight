@@ -38,6 +38,7 @@ CAMPOS POSSÍVEIS:
 - budgetMin: number (se mencionar "a partir de X")
 - budgetMax: number (se mencionar "até X")
 - people: number (passageiros + motorista)
+- minSeats: number (número MÍNIMO de lugares, ex: "7 lugares" → minSeats: 7)
 - usage: "cidade" | "viagem" | "trabalho" | "misto"
 - usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "outro"
 - tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
@@ -57,6 +58,9 @@ REGRAS ESPECIAIS:
 - Para família com crianças, NUNCA recomendar hatch pequeno (Mobi, Kwid, Up, Uno)
 - Se mencionar "picape", "pickup", "caminhonete", "caçamba", "carga pesada", "obra", "material" → bodyType: "pickup", priorities incluir "pickup"
 - Modelos de pickup conhecidos: Strada, S10, Hilux, Ranger, Saveiro, Toro, L200, Amarok → bodyType: "pickup"
+- IMPORTANTE: Se mencionar "X lugares" (ex: "7 lugares", "5 lugares") → minSeats: X (número inteiro)
+- Modelos conhecidos de 7 lugares: Spin, SW4, Pajero, Outlander, Commander, Taos, Tiggo 8, Captiva → minSeats: 7
+- Modelos conhecidos de 5 lugares são a maioria dos carros, não precisa especificar minSeats
 
 EXEMPLOS:
 
@@ -177,6 +181,42 @@ Saída: {
   "confidence": 0.0,
   "reasoning": "Apenas saudação, sem preferências sobre veículos",
   "fieldsExtracted": []
+}
+
+Entrada: "Quero uma SUV de 7 lugares"
+Saída: {
+  "extracted": {
+    "bodyType": "suv",
+    "minSeats": 7,
+    "priorities": ["espaco", "familia"]
+  },
+  "confidence": 0.95,
+  "reasoning": "SUV com requisito explícito de 7 lugares - OBRIGATÓRIO",
+  "fieldsExtracted": ["bodyType", "minSeats", "priorities"]
+}
+
+Entrada: "Preciso de um carro de 7 lugares pra família"
+Saída: {
+  "extracted": {
+    "minSeats": 7,
+    "usoPrincipal": "familia",
+    "priorities": ["familia", "espaco"]
+  },
+  "confidence": 0.95,
+  "reasoning": "Requisito explícito de 7 lugares para família",
+  "fieldsExtracted": ["minSeats", "usoPrincipal", "priorities"]
+}
+
+Entrada: "Spin ou algum carro de 7 lugares"
+Saída: {
+  "extracted": {
+    "brand": "chevrolet",
+    "model": "spin",
+    "minSeats": 7
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo específico (Spin é Chevrolet e tem 7 lugares) ou alternativas de 7 lugares",
+  "fieldsExtracted": ["brand", "model", "minSeats"]
 }`;
 
   /**
@@ -335,6 +375,11 @@ Saída: {
     // Km validation (0-500000)
     if (extracted.maxKm !== undefined && extracted.maxKm !== null) {
       sanitized.maxKm = Math.max(0, Math.min(500000, Math.floor(extracted.maxKm)));
+    }
+
+    // Seats validation (2-9)
+    if (extracted.minSeats !== undefined && extracted.minSeats !== null) {
+      sanitized.minSeats = Math.max(2, Math.min(9, Math.floor(extracted.minSeats)));
     }
 
     // Transmission validation

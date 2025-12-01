@@ -23,6 +23,28 @@ import {
 // Helper para capitalizar primeira letra do modelo
 const capitalize = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
+// Mapeamento de modelos conhecidos de 7 lugares
+const SEVEN_SEAT_MODELS: string[] = [
+  'spin', 'livina', 'zafira', 'meriva', // Minivans/MPVs
+  'sw4', 'pajero', 'pajero sport', 'outlander', // SUVs grandes
+  'commander', 'taos', 'tiggo 8', 'captiva', // SUVs médios 7 lugares
+  'journey', 'freemont', 'grand vitara', 'vera cruz', // SUVs antigos
+  'tiguan allspace', 'discovery', 'discovery sport', // Premium
+  'sorento', 'santa fe', 'prado', // SUVs médios
+];
+
+// Função para verificar se um modelo tem 7 lugares
+const isSevenSeater = (model: string): boolean => {
+  const modelLower = model.toLowerCase();
+  return SEVEN_SEAT_MODELS.some(m => modelLower.includes(m));
+};
+
+// Função para verificar se um modelo tem 5 lugares (a maioria dos carros)
+const isFiveSeater = (model: string): boolean => {
+  // Se não é de 7 lugares, assume 5 lugares
+  return !isSevenSeater(model);
+};
+
 export class VehicleExpertAgent {
 
   private readonly SYSTEM_PROMPT = `Você é um especialista em vendas de veículos usados da FaciliAuto (loja Robust Car).
@@ -176,7 +198,36 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           const userDeclines = this.detectNegativeResponse(userMessage);
           
           if (userAccepts) {
-            logger.info({ userMessage, searchedItem: context.profile?._searchedItem }, 'User accepted to answer questions for suggestions');
+            const searchedItem = context.profile?._searchedItem;
+            const wasLookingForSevenSeater = searchedItem?.includes('lugares') || context.profile?.minSeats;
+            
+            logger.info({ userMessage, searchedItem, wasLookingForSevenSeater }, 'User accepted to answer questions for suggestions');
+            
+            // Se estava procurando 7 lugares, oferecer alternativas espaçosas
+            if (wasLookingForSevenSeater) {
+              // Limpar o requisito de minSeats para mostrar alternativas
+              const altProfile = { 
+                ...extracted.extracted, 
+                _waitingForSuggestionResponse: false, 
+                _searchedItem: undefined,
+                minSeats: undefined, // Remover requisito de lugares
+                bodyType: 'suv' as const, // Mostrar SUVs espaçosos como alternativa
+                priorities: [...(extracted.extracted.priorities || []), 'espaco']
+              };
+              
+              return {
+                response: `Ótimo! Vou te mostrar SUVs e opções espaçosas que temos disponíveis! 🚗\n\n💰 Até quanto você pretende investir?`,
+                extractedPreferences: altProfile,
+                needsMoreInfo: ['budget'],
+                canRecommend: false,
+                nextMode: 'clarification',
+                metadata: {
+                  processingTime: Date.now() - startTime,
+                  confidence: 0.9,
+                  llmUsed: 'gpt-4o-mini'
+                }
+              };
+            }
             
             // Start asking questions to build profile for suggestions
             return {
@@ -436,6 +487,28 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
               confidence: 0.9,
               llmUsed: 'gpt-4o-mini',
               noPickupsFound: true
+            }
+          };
+        }
+
+        // Se não encontrou veículos de 7 lugares, informar e perguntar se quer alternativas
+        if (result.noSevenSeaters) {
+          const seatsText = result.requiredSeats === 7 ? '7 lugares' : `${result.requiredSeats} lugares`;
+          const noSevenSeaterResponse = `No momento não temos veículos de ${seatsText} disponíveis no estoque. 🚗
+
+Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alternativa?`;
+
+          return {
+            response: noSevenSeaterResponse,
+            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: `veículo de ${seatsText}` },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'clarification',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.9,
+              llmUsed: 'gpt-4o-mini',
+              noSevenSeaters: true
             }
           };
         }
@@ -712,11 +785,11 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
   /**
    * Get vehicle recommendations based on profile
-   * Returns { recommendations, noPickupsFound } to indicate if category was not found
+   * Returns { recommendations, noPickupsFound, noSevenSeaters } to indicate if category was not found
    */
   private async getRecommendations(
     profile: Partial<CustomerProfile>
-  ): Promise<{ recommendations: VehicleRecommendation[], noPickupsFound?: boolean, wantsPickup?: boolean }> {
+  ): Promise<{ recommendations: VehicleRecommendation[], noPickupsFound?: boolean, wantsPickup?: boolean, noSevenSeaters?: boolean, requiredSeats?: number }> {
     try {
       // Build search query
       const query = this.buildSearchQuery(profile);
@@ -787,6 +860,32 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
       if (wantsPickup && results.length === 0) {
         logger.info({ profile }, 'No pickups found in inventory');
         return { recommendations: [], noPickupsFound: true, wantsPickup: true };
+      }
+
+      // Post-filter: apply minimum seats requirement (RIGOROSO)
+      const requiredSeats = profile.minSeats;
+      if (requiredSeats && requiredSeats >= 7) {
+        logger.info({ requiredSeats, resultsBeforeFilter: results.length }, 'Filtering for 7+ seat vehicles');
+        
+        // Filtrar APENAS veículos de 7 lugares
+        const sevenSeaterResults = results.filter(rec => {
+          const modelLower = (rec.vehicle.model || '').toLowerCase();
+          return isSevenSeater(modelLower);
+        });
+
+        logger.info({ 
+          requiredSeats, 
+          sevenSeaterResults: sevenSeaterResults.length,
+          filteredModels: sevenSeaterResults.map(r => r.vehicle.model)
+        }, 'Seven seater filter results');
+
+        if (sevenSeaterResults.length === 0) {
+          // Não encontrou veículos de 7 lugares - NÃO retornar alternativas automaticamente
+          return { recommendations: [], noSevenSeaters: true, requiredSeats };
+        }
+
+        // Retornar APENAS os veículos de 7 lugares
+        return { recommendations: sevenSeaterResults.slice(0, 5), requiredSeats };
       }
 
       // Post-filter: apply family-specific rules
@@ -995,6 +1094,7 @@ _Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`
         minPrice: profile.budgetMin,
         minYear: profile.minYear,
         maxKm: profile.maxKm,
+        minSeats: profile.minSeats, // Número mínimo de lugares
         bodyType: profile.bodyType ? [profile.bodyType] : undefined,
         transmission: profile.transmission ? [profile.transmission] : undefined,
         brand: profile.brand ? [profile.brand] : undefined,
