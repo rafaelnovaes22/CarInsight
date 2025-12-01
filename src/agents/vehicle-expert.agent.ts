@@ -20,6 +20,9 @@ import {
   VehicleSearchQuery
 } from '../types/conversation.types';
 
+// Helper para capitalizar primeira letra do modelo
+const capitalize = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
 export class VehicleExpertAgent {
 
   private readonly SYSTEM_PROMPT = `Você é um especialista em vendas de veículos usados da FaciliAuto (loja Robust Car).
@@ -261,7 +264,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         } else {
           // Model/brand not found in inventory - ask if user wants to answer questions for suggestions
           const searchedItem = extracted.extracted.model || extracted.extracted.brand;
-          const notFoundResponse = `Não temos ${searchedItem} disponível no estoque no momento. 😕
+          const notFoundResponse = `Não temos ${capitalize(searchedItem)} disponível no estoque no momento. 😕
 
 Quer responder algumas perguntas rápidas para eu te dar sugestões personalizadas?`;
 

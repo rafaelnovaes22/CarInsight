@@ -23,6 +23,9 @@ interface SpecificModelResult {
   message: string;
 }
 
+// Helper para capitalizar primeira letra do modelo
+const capitalize = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+
 export class RecommendationAgent {
   async generateRecommendations(
     conversationId: string,
@@ -177,7 +180,7 @@ export class RecommendationAgent {
       requestedModel,
       exactMatches: [],
       similarSuggestions,
-      message: `Infelizmente não temos ${requestedModel} disponível no momento.`,
+      message: `Infelizmente não temos ${capitalize(requestedModel)} disponível no momento.`,
     };
   }
 
@@ -360,7 +363,7 @@ Sugira as 3 melhores alternativas similares.`
           return {
             vehicle,
             matchScore: s.score || 75,
-            reasoning: `⚠️ Não temos ${requestedModel} disponível. ${s.reasoning}`,
+            reasoning: `⚠️ Não temos ${capitalize(requestedModel)} disponível. ${s.reasoning}`,
           };
         })
         .filter((m: VehicleMatch) => m.vehicle);
@@ -386,7 +389,7 @@ Sugira as 3 melhores alternativas similares.`
     return sortedVehicles.slice(0, 3).map((vehicle, index) => ({
       vehicle,
       matchScore: 70 - index * 5,
-      reasoning: `⚠️ Não temos ${requestedModel} disponível. ${vehicle.marca} ${vehicle.modelo} pode ser uma alternativa.`,
+      reasoning: `⚠️ Não temos ${capitalize(requestedModel)} disponível. ${vehicle.marca} ${vehicle.modelo} pode ser uma alternativa.`,
     }));
   }
 
