@@ -13,6 +13,8 @@ export const DISCLOSURE_MESSAGES = {
 
 📋 *Seus dados:* Usamos suas mensagens apenas para atendê-lo melhor. Você pode solicitar a exclusão dos seus dados a qualquer momento.
 
+💡 _A qualquer momento, digite *sair* para encerrar a conversa._
+
 Como posso ajudar você hoje?`,
 
   /**
