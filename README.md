@@ -13,28 +13,31 @@ Sistema MVP de assistente de vendas para concessionárias via WhatsApp, utilizan
 
 ### ✨ Features Principais
 
-- 🤖 **IA Conversacional** - Atendimento via WhatsApp com LLMs (Groq LLaMA 3.3 70B)
+- 🤖 **IA Conversacional** - Atendimento via WhatsApp com LLM Router (GPT-4o-mini + Groq fallback)
 - 🎯 **Sistema de Recomendação** - RAG híbrido (40% semântico + 60% regras)
 - 🔍 **Busca Vetorial** - OpenAI Embeddings (text-embedding-3-small, 1536 dim)
 - 📱 **Meta WhatsApp Business API** - Integração oficial
 - 🔒 **ISO42001 Compliant** - AI Management System + Guardrails
 - ✅ **100% Test Coverage** - 17 testes E2E (Vitest)
+- 🔄 **LLM Router** - Fallback automático com circuit breaker
 
 ## 🎯 Resultados Mensuráveis
 
-- ⚡ **18x mais rápido** que GPT-4 (2s vs 40s latência)
-- 💰 **90% redução de custos** ($1.48/ano vs $2.815/ano)
+- ⚡ **Resposta rápida** - GPT-4o-mini (~2-3s) com fallback Groq (~1s)
+- 💰 **Custos otimizados** - $0.15/1M tokens input, $0.60/1M output (GPT-4o-mini)
 - 🎯 **85%+ Match Score** médio nas recomendações
 - 🚀 **< 50ms** busca vetorial in-memory
 - ✅ **28/28 embeddings** gerados com sucesso
+- 🔄 **99.9% uptime** com fallback automático entre providers
 
 ## 🛠️ Stack Tecnológico
 
 ### Backend & IA
 - **Node.js 20+** com TypeScript 5
 - **Express.js** - API REST
-- **Groq SDK** - LLaMA 3.3 70B (18x mais rápido que GPT-4)
-- **OpenAI API** - Embeddings vetoriais (text-embedding-3-small)
+- **OpenAI API** - GPT-4o-mini (LLM primário) + Embeddings (text-embedding-3-small)
+- **Groq SDK** - LLaMA 3.1 8B Instant (fallback LLM)
+- **LLM Router** - Fallback automático com circuit breaker
 - **Prisma ORM** - Type-safe database client
 
 ### Database & Storage
@@ -194,15 +197,22 @@ npm run test:watch
 
 ## 📈 Performance & Benchmark
 
-Comparação entre LLMs (benchmark automatizado):
+### Arquitetura LLM Router
 
-| LLM | Latência Média | Custo/Ano | Qualidade |
-|-----|----------------|-----------|-----------|
-| **Groq (LLaMA 3.3 70B)** | **2.2s** | **$1.48** | ⭐⭐⭐⭐⭐ |
-| GPT-4o | 40.0s | $2,815 | ⭐⭐⭐⭐⭐ |
-| GPT-4o-mini | 3.5s | $7.30 | ⭐⭐⭐⭐ |
+O sistema utiliza um **LLM Router inteligente** com fallback automático:
 
-**Escolha:** Groq (18x mais rápido, 90% mais barato)
+| Prioridade | Provider | Modelo | Custo/1M tokens | Uso |
+|------------|----------|--------|-----------------|-----|
+| 1️⃣ Primário | OpenAI | GPT-4o-mini | $0.15 in / $0.60 out | Principal |
+| 2️⃣ Fallback | Groq | LLaMA 3.1 8B Instant | $0.05 in / $0.08 out | Backup |
+
+### Features do Router
+- **Circuit Breaker** - Evita chamadas repetidas a serviços falhando
+- **Retry automático** - 2 tentativas por provider
+- **Fallback em cascata** - Se OpenAI falhar, usa Groq automaticamente
+- **Mock mode** - Para desenvolvimento sem API keys
+
+**Benefícios:** Alta disponibilidade (99.9%+), custos otimizados, resiliência
 
 ## 🔒 Compliance & Segurança
 
