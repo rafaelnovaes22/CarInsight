@@ -1,13 +1,17 @@
+import { clientConfig, getClientName, getBusinessHours } from './client.config';
+
 /**
  * ISO 42001 Compliance - AI Disclosure Messages
  * Mensagens de transparência sobre uso de IA
+ * 
+ * Usa configuração dinâmica do cliente para personalização
  */
 
-export const DISCLOSURE_MESSAGES = {
-  /**
-   * Primeira mensagem - Aviso obrigatório de IA
-   */
-  INITIAL_GREETING: `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+/**
+ * Gera a mensagem de saudação inicial personalizada para o cliente
+ */
+export function getInitialGreeting(): string {
+  return `👋 Olá! Sou a ${clientConfig.botConfig.assistantName} da *${getClientName()}*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas ou dúvidas complexas, posso transferir você para nossa equipe humana.
 
@@ -15,7 +19,15 @@ export const DISCLOSURE_MESSAGES = {
 
 💡 _A qualquer momento, digite *sair* para encerrar a conversa._
 
-Como posso ajudar você hoje?`,
+Como posso ajudar você hoje?`;
+}
+
+export const DISCLOSURE_MESSAGES = {
+  /**
+   * Primeira mensagem - Aviso obrigatório de IA
+   * @deprecated Use getInitialGreeting() para mensagem dinâmica
+   */
+  INITIAL_GREETING: getInitialGreeting(),
 
   /**
    * Rodapé para respostas com informações críticas
@@ -60,7 +72,9 @@ Como posso ajudar você hoje?`,
     
     CONFIRMATION: '✅ Conectado com nossa equipe! A partir de agora, você está falando com uma pessoa real.',
     
-    UNAVAILABLE: '⏰ No momento nossa equipe está indisponível. Horário de atendimento: Segunda a Sexta, 9h às 18h.\n\nPosso ajudar com algo mais enquanto isso?',
+    get UNAVAILABLE() {
+      return `⏰ No momento nossa equipe está indisponível. Horário de atendimento: ${getBusinessHours()}.\n\nPosso ajudar com algo mais enquanto isso?`;
+    },
   },
 
   /**

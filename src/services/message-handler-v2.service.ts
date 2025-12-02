@@ -8,6 +8,8 @@ import { ConversationState } from '../types/state.types';
 import { dataRightsService } from './data-rights.service';
 import { featureFlags } from '../lib/feature-flags';
 import { conversationalHandler } from './conversational-handler.service';
+import { getClientName, getBusinessHours, clientConfig } from '../config/client.config';
+import { getInitialGreeting } from '../config/disclosure.messages';
 
 /**
  * MessageHandlerV2 - New implementation using LangGraph
@@ -34,7 +36,7 @@ export class MessageHandlerV2 {
       if (exitCommands.some(cmd => lowerMessage.includes(cmd))) {
         await this.resetConversation(phoneNumber);
         logger.info({ phoneNumber }, 'User requested exit');
-        return `Obrigado por usar a FaciliAuto! 👋
+        return `Obrigado por usar a ${getClientName()}! 👋
 
 Foi um prazer ajudar você.
 
@@ -48,7 +50,7 @@ Até logo! 🚗`;
         logger.info({ phoneNumber }, 'User requested restart');
         return `🔄 Conversa reiniciada!
 
-👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+👋 Olá! Sou a ${clientConfig.botConfig.assistantName} da *${getClientName()}*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
 
@@ -70,7 +72,7 @@ Para começar, qual é o seu nome?`;
           logger.info({ phoneNumber }, 'User sent greeting, restarting conversation');
         }
 
-        return `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+        return `👋 Olá! Sou a ${clientConfig.botConfig.assistantName} da *${getClientName()}*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
 
