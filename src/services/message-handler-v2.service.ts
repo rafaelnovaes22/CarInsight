@@ -10,10 +10,19 @@ import { featureFlags } from '../lib/feature-flags';
 import { conversationalHandler } from './conversational-handler.service';
 
 /**
+ * Options for audio message handling
+ * Requirements: 5.4
+ */
+export interface AudioMessageOptions {
+  /** Original media ID from Meta API for audio messages */
+  mediaId?: string;
+}
+
+/**
  * MessageHandlerV2 - New implementation using LangGraph
  */
 export class MessageHandlerV2 {
-  async handleMessage(phoneNumber: string, message: string): Promise<string> {
+  async handleMessage(phoneNumber: string, message: string, audioOptions?: AudioMessageOptions): Promise<string> {
     try {
       // 🛡️ GUARDRAIL: Validate input
       const inputValidation = guardrails.validateInput(phoneNumber, message);
@@ -88,13 +97,18 @@ Para começar, qual é o seu nome?`;
       // Get or create conversation
       let conversation = await this.getOrCreateConversation(phoneNumber);
 
+      // Determine message type based on audio options (Requirement 5.4)
+      const isAudioMessage = !!audioOptions?.mediaId;
+      const messageType = isAudioMessage ? 'audio_transcription' : 'text';
+
       // Log incoming message to database
       await prisma.message.create({
         data: {
           conversationId: conversation.id,
           direction: 'incoming',
           content: sanitizedMessage,
-          messageType: 'text',
+          messageType,
+          originalMediaId: audioOptions?.mediaId,
         },
       });
 

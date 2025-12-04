@@ -186,10 +186,13 @@ model Message {
   
   direction       String   // incoming, outgoing
   content         String
-  messageType     String   @default("text") // text, image, button
+  messageType     String   @default("text") // text, image, button, audio_transcription
   
   // WhatsApp metadata
   waMessageId     String?
+  
+  // Audio message metadata (for audio_transcription type)
+  originalMediaId String?  // Meta media ID for audio messages
   
   timestamp       DateTime @default(now())
   
