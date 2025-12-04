@@ -81,6 +81,7 @@
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.10",
     "@vitest/ui": "^4.0.10",
+    "fast-check": "^4.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "supertest": "^7.1.4",

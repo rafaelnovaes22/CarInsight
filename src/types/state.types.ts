@@ -59,11 +59,24 @@ export interface CustomerProfile {
 
   // Urgency
   urgency?: 'imediato' | '1mes' | '3meses' | 'flexivel';
-  
+
   // Internal state flags (used for conversation flow)
   _waitingForSuggestionResponse?: boolean; // Indicates we offered suggestions and waiting for user response
   _searchedItem?: string; // The item (model/brand/category) that was not found
   _skipOnboarding?: boolean; // Skip remaining onboarding steps (user asked for specific brand/model)
+}
+
+/**
+ * Metadata from exact search results
+ * **Feature: exact-vehicle-search**
+ */
+export interface ExactSearchMetadata {
+  type: 'exact' | 'year_alternatives' | 'suggestions' | 'unavailable';
+  message: string;
+  availableYears?: number[];
+  requestedModel: string;
+  requestedYear: number;
+  matchType: 'exact' | 'year_alternative' | 'suggestion';
 }
 
 export interface VehicleRecommendation {
@@ -73,6 +86,7 @@ export interface VehicleRecommendation {
   highlights: string[];
   concerns: string[];
   vehicle?: any; // Full vehicle object from DB
+  exactSearchMetadata?: ExactSearchMetadata; // Metadata from exact search (Feature: exact-vehicle-search)
 }
 
 export interface BotMessage {

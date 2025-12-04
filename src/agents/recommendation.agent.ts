@@ -1,6 +1,8 @@
 import { prisma } from '../lib/prisma';
 import { chatCompletion, ChatMessage } from '../lib/groq';
 import { logger } from '../lib/logger';
+import { exactSearchParser } from '../services/exact-search-parser.service';
+import { exactSearchService, ExactSearchResult, Vehicle } from '../services/exact-search.service';
 
 interface VehicleMatch {
   vehicle: any;
@@ -18,9 +20,13 @@ interface LLMVehicleEvaluation {
 interface SpecificModelResult {
   found: boolean;
   requestedModel: string | null;
+  requestedYear: number | null;
   exactMatches: any[];
+  yearAlternatives: VehicleMatch[];
   similarSuggestions: VehicleMatch[];
+  availableYears?: number[];
   message: string;
+  resultType: 'exact' | 'year_alternatives' | 'suggestions' | 'unavailable' | 'none';
 }
 
 // Helper para capitalizar primeira letra do modelo
@@ -44,12 +50,15 @@ export class RecommendationAgent {
 
       // 1. Verificar se o usuário pediu um modelo específico
       const specificModelResult = await this.handleSpecificModelRequest(vehicles, answers);
-      
+
       if (specificModelResult.requestedModel) {
-        logger.info({ 
+        logger.info({
           requestedModel: specificModelResult.requestedModel,
+          requestedYear: specificModelResult.requestedYear,
           found: specificModelResult.found,
           exactMatches: specificModelResult.exactMatches.length,
+          yearAlternatives: specificModelResult.yearAlternatives.length,
+          resultType: specificModelResult.resultType,
         }, 'Specific model requested');
 
         // Se encontrou o modelo exato, retornar com prioridade
@@ -57,7 +66,24 @@ export class RecommendationAgent {
           const matches = specificModelResult.exactMatches.slice(0, 3).map((vehicle, index) => ({
             vehicle,
             matchScore: 100 - index * 5, // 100, 95, 90 para os primeiros
-            reasoning: `✅ ${vehicle.marca} ${vehicle.modelo} - Exatamente o que você procura!`,
+            reasoning: `✅ ${vehicle.marca} ${vehicle.modelo} ${vehicle.ano} - Exatamente o que você procura!`,
+          }));
+
+          await this.saveRecommendations(conversationId, matches);
+          return matches;
+        }
+
+        // Se tem alternativas de ano (mesmo modelo, anos diferentes)
+        // **Feature: exact-vehicle-search** - Requirements: 3.1, 3.4
+        if (specificModelResult.yearAlternatives.length > 0) {
+          const yearMessage = specificModelResult.availableYears
+            ? `Anos disponíveis: ${specificModelResult.availableYears.join(', ')}`
+            : '';
+
+          const matches = specificModelResult.yearAlternatives.slice(0, 3).map((match, index) => ({
+            vehicle: match.vehicle,
+            matchScore: match.matchScore,
+            reasoning: `📅 ${match.reasoning}${yearMessage ? ` | ${yearMessage}` : ''}`,
           }));
 
           await this.saveRecommendations(conversationId, matches);
@@ -73,7 +99,7 @@ export class RecommendationAgent {
 
       // 2. Fluxo normal: pré-filtrar e avaliar com LLM
       const filteredVehicles = this.preFilterVehicles(vehicles, answers);
-      
+
       if (filteredVehicles.length === 0) {
         logger.warn('No vehicles passed pre-filter');
         return [];
@@ -141,47 +167,181 @@ export class RecommendationAgent {
 
   /**
    * Detecta e processa pedido de modelo específico
+   * 
+   * **Feature: exact-vehicle-search**
+   * Requirements: 2.1, 3.1, 4.1 - Handle exact search results with year alternatives and suggestions
    */
   private async handleSpecificModelRequest(
     vehicles: any[],
     answers: Record<string, any>
   ): Promise<SpecificModelResult> {
-    // Detectar modelo específico mencionado pelo usuário
-    const requestedModel = await this.detectSpecificModel(answers);
-    
+    // Build query from user answers to extract model and year
+    const userText = [
+      answers.usage || '',
+      answers.bodyType || '',
+      answers.preferredModel || '',
+      answers.freeText || '',
+    ].join(' ');
+
+    // Use ExactSearchParser to extract model and year
+    const extractedFilters = exactSearchParser.parse(userText);
+
+    // If no model detected by parser, try LLM detection as fallback
+    let requestedModel = extractedFilters.model;
+    if (!requestedModel) {
+      requestedModel = await this.detectSpecificModel(answers);
+    }
+
     if (!requestedModel) {
       return {
         found: false,
         requestedModel: null,
+        requestedYear: null,
         exactMatches: [],
+        yearAlternatives: [],
         similarSuggestions: [],
         message: '',
+        resultType: 'none',
       };
     }
 
-    // Buscar modelo exato no estoque
+    // Convert database vehicles to Vehicle interface for ExactSearchService
+    const inventory: Vehicle[] = vehicles.map(v => ({
+      id: v.id,
+      marca: v.marca,
+      modelo: v.modelo,
+      versao: v.versao,
+      ano: v.ano,
+      km: v.km,
+      preco: typeof v.preco === 'string' ? parseFloat(v.preco) : v.preco,
+      cor: v.cor,
+      carroceria: v.carroceria,
+      combustivel: v.combustivel,
+      cambio: v.cambio,
+      disponivel: v.disponivel,
+      fotoUrl: v.fotoUrl,
+      url: v.url,
+    }));
+
+    // If we have both model and year, use ExactSearchService
+    if (extractedFilters.model && (extractedFilters.year || extractedFilters.yearRange)) {
+      // Use ExactSearchService for model+year searches
+      const exactResult = exactSearchService.search(extractedFilters, inventory);
+
+      logger.info({
+        requestedModel: exactResult.requestedModel,
+        requestedYear: exactResult.requestedYear,
+        resultType: exactResult.type,
+        vehiclesFound: exactResult.vehicles.length,
+        availableYears: exactResult.availableYears,
+      }, 'ExactSearchService result in recommendation agent');
+
+      return this.convertExactSearchResult(exactResult, vehicles);
+    }
+
+    // Fallback: model only (no year specified) - use original logic
     const exactMatches = this.findExactModelMatches(vehicles, requestedModel, answers);
-    
+
     if (exactMatches.length > 0) {
       return {
         found: true,
         requestedModel,
+        requestedYear: null,
         exactMatches,
+        yearAlternatives: [],
         similarSuggestions: [],
         message: `Encontramos ${exactMatches.length} ${requestedModel} disponível(is)!`,
+        resultType: 'exact',
       };
     }
 
     // Não encontrou - buscar sugestões similares via LLM
     const similarSuggestions = await this.findSimilarModels(vehicles, requestedModel, answers);
-    
+
     return {
       found: false,
       requestedModel,
+      requestedYear: null,
       exactMatches: [],
+      yearAlternatives: [],
       similarSuggestions,
       message: `Infelizmente não temos ${capitalize(requestedModel)} disponível no momento.`,
+      resultType: 'suggestions',
     };
+  }
+
+  /**
+   * Convert ExactSearchResult to SpecificModelResult
+   * 
+   * **Feature: exact-vehicle-search**
+   * Requirements: 2.1, 3.1, 4.1
+   */
+  private convertExactSearchResult(
+    result: ExactSearchResult,
+    originalVehicles: any[]
+  ): SpecificModelResult {
+    // Map vehicle IDs back to original vehicle objects
+    const getOriginalVehicle = (id: string) => originalVehicles.find(v => v.id === id);
+
+    switch (result.type) {
+      case 'exact':
+        return {
+          found: true,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          exactMatches: result.vehicles.map(m => getOriginalVehicle(m.vehicle.id)).filter(Boolean),
+          yearAlternatives: [],
+          similarSuggestions: [],
+          message: result.message,
+          resultType: 'exact',
+        };
+
+      case 'year_alternatives':
+        return {
+          found: false,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          exactMatches: [],
+          yearAlternatives: result.vehicles.map(m => ({
+            vehicle: getOriginalVehicle(m.vehicle.id),
+            matchScore: m.matchScore,
+            reasoning: m.reasoning,
+          })).filter(m => m.vehicle),
+          similarSuggestions: [],
+          availableYears: result.availableYears,
+          message: result.message,
+          resultType: 'year_alternatives',
+        };
+
+      case 'suggestions':
+        return {
+          found: false,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          exactMatches: [],
+          yearAlternatives: [],
+          similarSuggestions: result.vehicles.map(m => ({
+            vehicle: getOriginalVehicle(m.vehicle.id),
+            matchScore: m.matchScore,
+            reasoning: m.reasoning,
+          })).filter(m => m.vehicle),
+          message: result.message,
+          resultType: 'suggestions',
+        };
+
+      case 'unavailable':
+      default:
+        return {
+          found: false,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          exactMatches: [],
+          yearAlternatives: [],
+          similarSuggestions: [],
+          message: result.message,
+          resultType: 'unavailable',
+        };
+    }
   }
 
   /**
@@ -233,7 +393,7 @@ Exemplos:
       });
 
       const detected = response.trim();
-      
+
       if (detected === 'NENHUM' || detected.length < 2) {
         return null;
       }
@@ -262,9 +422,9 @@ Exemplos:
     return vehicles.filter(v => {
       // Verificar se modelo ou marca contém o termo buscado
       const matchesModel = v.modelo.toLowerCase().includes(modelLower) ||
-                          v.marca.toLowerCase().includes(modelLower) ||
-                          `${v.marca} ${v.modelo}`.toLowerCase().includes(modelLower);
-      
+        v.marca.toLowerCase().includes(modelLower) ||
+        `${v.marca} ${v.modelo}`.toLowerCase().includes(modelLower);
+
       if (!matchesModel) return false;
 
       // Aplicar filtros de orçamento/ano/km (com tolerância de 20% no orçamento)
@@ -296,7 +456,7 @@ Exemplos:
   ): Promise<VehicleMatch[]> {
     // Pré-filtrar veículos por critérios básicos
     const filteredVehicles = this.preFilterVehicles(vehicles, answers);
-    
+
     if (filteredVehicles.length === 0) {
       return [];
     }
@@ -351,7 +511,7 @@ Sugira as 3 melhores alternativas similares.`
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
-      
+
       if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
         return this.fallbackSimilarSuggestions(filteredVehicles, requestedModel);
       }
@@ -427,7 +587,7 @@ Sugira as 3 melhores alternativas similares.`
   ): Promise<LLMVehicleEvaluation[]> {
     // Construir descrição do perfil do usuário
     const userContext = this.buildUserContext(answers);
-    
+
     // Construir lista de veículos para avaliação
     const vehiclesList = vehicles.map(v => ({
       id: v.id,
@@ -488,14 +648,14 @@ Avalie cada veículo e retorne o JSON com as avaliações.`
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
-      
+
       if (!parsed.evaluations || !Array.isArray(parsed.evaluations)) {
         logger.error('LLM response missing evaluations array');
         return this.fallbackEvaluation(vehicles, answers);
       }
 
       logger.info({ evaluationsCount: parsed.evaluations.length }, 'LLM evaluations received');
-      
+
       return parsed.evaluations;
     } catch (error) {
       logger.error({ error }, 'Error in LLM vehicle evaluation');
