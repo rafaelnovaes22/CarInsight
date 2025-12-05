@@ -192,38 +192,92 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         }, 'Post-recommendation intent detection');
 
         if (postRecommendationIntent === 'want_others') {
-          // User wants to see other options - start recommendation flow
-          logger.info({ userMessage }, 'User wants other options after seeing recommendation');
+          // User wants to see other options - search for similar vehicles directly
+          logger.info({ userMessage, lastShownVehicles }, 'User wants other options after seeing recommendation');
 
           const firstVehicle = lastShownVehicles[0];
           const wasSpecificSearch = lastSearchType === 'specific';
 
-          // Clear the recommendation state
-          const clearedProfile = {
-            ...extracted.extracted,
-            _showedRecommendation: false,
-            _lastShownVehicles: undefined,
-            _lastSearchType: undefined,
-            _waitingForSuggestionResponse: true,
-            _searchedItem: wasSpecificSearch ? `${firstVehicle.brand} ${firstVehicle.model}` : undefined
-          };
+          // Use the shown vehicle's profile to find similar ones
+          const referencePrice = firstVehicle.price;
+          const referenceBrand = firstVehicle.brand;
+          const referenceModel = firstVehicle.model;
+          const referenceYear = firstVehicle.year;
 
-          const otherOptionsResponse = wasSpecificSearch
-            ? `Entendi! Vamos encontrar outras opções para você. 🚗\n\n💰 Qual é o seu orçamento máximo?`
-            : `Sem problemas! Vou buscar outras opções.\n\n📋 O que você gostaria de ajustar nas recomendações?\n- Orçamento diferente?\n- Outro tipo de veículo?\n- Características específicas?`;
-
-          return {
-            response: otherOptionsResponse,
-            extractedPreferences: clearedProfile,
-            needsMoreInfo: ['budget', 'bodyType'],
-            canRecommend: false,
-            nextMode: 'discovery',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.9,
-              llmUsed: 'gpt-4o-mini'
+          // Search for similar vehicles (same body type or brand, similar price range)
+          const similarResults = await vehicleSearchAdapter.search(
+            `${referenceBrand} similar`,
+            {
+              maxPrice: Math.round(referencePrice * 1.3), // Up to 30% more expensive
+              minYear: referenceYear - 3, // Up to 3 years older
+              limit: 10
             }
-          };
+          );
+
+          // Filter out vehicles already shown and prioritize similar characteristics
+          const shownVehicleIds = lastShownVehicles.map(v => v.vehicleId);
+          const newResults = similarResults.filter(r => !shownVehicleIds.includes(r.vehicleId));
+
+          if (newResults.length > 0) {
+            // Found similar vehicles - show them directly
+            const formattedResponse = await this.formatRecommendations(
+              newResults.slice(0, 5),
+              updatedProfile,
+              context,
+              'recommendation' // Treat as recommendation since we're suggesting alternatives
+            );
+
+            const intro = wasSpecificSearch
+              ? `Entendi! Aqui estão outras opções similares ao ${referenceBrand} ${referenceModel}:\n\n`
+              : `Sem problemas! Encontrei outras opções para você:\n\n`;
+
+            return {
+              response: intro + formattedResponse.replace(/^.*?\n\n/, ''), // Remove intro duplicada
+              extractedPreferences: {
+                ...extracted.extracted,
+                _showedRecommendation: true,
+                _lastSearchType: 'recommendation' as const,
+                _lastShownVehicles: newResults.slice(0, 5).map(r => ({
+                  vehicleId: r.vehicleId,
+                  brand: r.vehicle.brand,
+                  model: r.vehicle.model,
+                  year: r.vehicle.year,
+                  price: r.vehicle.price
+                }))
+              },
+              needsMoreInfo: [],
+              canRecommend: true,
+              recommendations: newResults.slice(0, 5),
+              nextMode: 'recommendation',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.9,
+                llmUsed: 'gpt-4o-mini'
+              }
+            };
+          } else {
+            // No similar vehicles found - ask for preferences
+            const noSimilarResponse = `Não encontrei mais opções similares ao ${referenceBrand} ${referenceModel}. 🤔\n\n📋 Me conta o que você busca:\n- Qual seu orçamento máximo?\n- Prefere algum tipo específico (SUV, sedan, hatch)?`;
+
+            return {
+              response: noSimilarResponse,
+              extractedPreferences: {
+                ...extracted.extracted,
+                _showedRecommendation: false,
+                _lastShownVehicles: undefined,
+                _lastSearchType: undefined,
+                _waitingForSuggestionResponse: true
+              },
+              needsMoreInfo: ['budget', 'bodyType'],
+              canRecommend: false,
+              nextMode: 'discovery',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.8,
+                llmUsed: 'gpt-4o-mini'
+              }
+            };
+          }
         }
 
         if (postRecommendationIntent === 'want_details') {
