@@ -211,6 +211,67 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         };
       }
 
+      // 2.3. Intercept Pending Similar Vehicles Approval
+      if (context.profile?._waitingForSimilarApproval) {
+        const isYes = /sim|claro|pode|quero|manda|gostaria|ok|beleza|sim pode|com certeza/i.test(userMessage);
+        const isNo = /n[ãa]o|agora n[ãa]o|depois|nenhum|parar|cancela|deixa/i.test(userMessage);
+
+        if (isYes) {
+          const pending = context.profile._pendingSimilarResults || [];
+          if (pending.length > 0) {
+            const formattedResponse = await this.formatRecommendations(
+              pending,
+              updatedProfile,
+              context,
+              'similar'
+            );
+
+            const intro = `Ótimo! Aqui estão as opções similares que encontrei:\n\n`;
+
+            return {
+              response: intro + formattedResponse.replace(/^.*?\n\n/, ''),
+              extractedPreferences: {
+                ...extracted.extracted,
+                _waitingForSimilarApproval: false,
+                _pendingSimilarResults: undefined,
+                _showedRecommendation: true,
+                _lastShownVehicles: pending.map(r => ({
+                  vehicleId: r.vehicleId,
+                  brand: r.vehicle?.brand || '',
+                  model: r.vehicle?.model || '',
+                  year: r.vehicle?.year || 0,
+                  price: r.vehicle?.price || 0,
+                  bodyType: r.vehicle?.bodyType
+                }))
+              },
+              needsMoreInfo: [],
+              canRecommend: true,
+              recommendations: pending,
+              nextMode: 'recommendation',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.95,
+                llmUsed: 'rule-based'
+              }
+            };
+          }
+        } else if (isNo || this.detectUserQuestion(userMessage)) {
+          // If user says no or asks something else, clear flag and continue
+          updatedProfile._waitingForSimilarApproval = false;
+
+          if (isNo) {
+            return {
+              response: "Entendido. O que você gostaria de buscar então?",
+              extractedPreferences: { ...extracted.extracted, _waitingForSimilarApproval: false },
+              canRecommend: false,
+              needsMoreInfo: [],
+              nextMode: 'discovery',
+              metadata: { processingTime: Date.now() - startTime, confidence: 0.9, llmUsed: 'rule-based' }
+            }
+          }
+        }
+      }
+
       // 2.5. Check if we offered to ask questions for suggestions and user is responding
       const wasWaitingForSuggestionResponse = context.profile?._waitingForSuggestionResponse;
       const availableYears = context.profile?._availableYears;
@@ -905,38 +966,23 @@ Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
             );
 
             if (similarResults.length > 0) {
-              // Sort by price (most expensive first)
-              similarResults.sort((a, b) => b.vehicle.price - a.vehicle.price);
+              // Sort by price (cheapest first) to be friendly to budget-conscious buyers
+              similarResults.sort((a, b) => a.vehicle.price - b.vehicle.price);
 
-              const formattedResponse = await this.formatRecommendations(
-                similarResults.slice(0, 5),
-                updatedProfile,
-                context,
-                'similar'
-              );
+              const firstPrice = similarResults[0].vehicle.price.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
 
-              const intro = `Não temos ${vehicleDescription} disponível, mas temos outras ${bodyTypeName} que podem te interessar:\n\n`;
+              const intro = `Não temos ${vehicleDescription} disponível no momento. 😕\n\nMas encontrei algumas opções de ${bodyTypeName || inferredBodyType} similares (a partir de R$ ${firstPrice}).\n\nGostaria de ver essas opções?`;
 
               return {
-                response: intro + formattedResponse.replace(/^.*?\n\n/, ''), // Remove intro duplicada
+                response: intro,
                 extractedPreferences: {
                   ...extracted.extracted,
-                  bodyType: inferredBodyType as any,
-                  _showedRecommendation: true,
-                  _lastSearchType: 'similar' as const,
-                  _lastShownVehicles: similarResults.slice(0, 5).map(r => ({
-                    vehicleId: r.vehicleId,
-                    brand: r.vehicle.brand,
-                    model: r.vehicle.model,
-                    year: r.vehicle.year,
-                    price: r.vehicle.price,
-                    bodyType: r.vehicle.bodyType
-                  }))
+                  _waitingForSimilarApproval: true,
+                  _pendingSimilarResults: similarResults.slice(0, 5) // Store pending results
                 },
                 needsMoreInfo: [],
-                canRecommend: true,
-                recommendations: similarResults.slice(0, 5),
-                nextMode: 'recommendation',
+                canRecommend: false,
+                nextMode: 'clarification',
                 metadata: {
                   processingTime: Date.now() - startTime,
                   confidence: 0.85,
