@@ -76,6 +76,17 @@ export interface CustomerProfile {
   _searchedItem?: string; // The item (model/brand/category) that was not found
   _skipOnboarding?: boolean; // Skip remaining onboarding steps (user asked for specific brand/model)
   _availableYears?: number[]; // Anos disponíveis quando modelo não encontrado no ano pedido
+
+  // Post-recommendation tracking
+  _lastShownVehicles?: Array<{
+    vehicleId: string;
+    brand: string;
+    model: string;
+    year: number;
+    price: number;
+  }>; // Veículos mostrados na última recomendação
+  _lastSearchType?: 'specific' | 'recommendation'; // Tipo da última busca realizada
+  _showedRecommendation?: boolean; // Indica que acabou de mostrar uma recomendação
 }
 
 /**

@@ -176,6 +176,107 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
       // 2.5. Check if we offered to ask questions for suggestions and user is responding
       const wasWaitingForSuggestionResponse = context.profile?._waitingForSuggestionResponse;
       const availableYears = context.profile?._availableYears;
+      const showedRecommendation = context.profile?._showedRecommendation;
+      const lastShownVehicles = context.profile?._lastShownVehicles;
+      const lastSearchType = context.profile?._lastSearchType;
+
+      // 2.55. Check if user is responding after seeing a recommendation
+      if (showedRecommendation && lastShownVehicles && lastShownVehicles.length > 0) {
+        const postRecommendationIntent = this.detectPostRecommendationIntent(userMessage, lastShownVehicles);
+
+        logger.info({
+          userMessage,
+          postRecommendationIntent,
+          lastSearchType,
+          lastShownCount: lastShownVehicles.length
+        }, 'Post-recommendation intent detection');
+
+        if (postRecommendationIntent === 'want_others') {
+          // User wants to see other options - start recommendation flow
+          logger.info({ userMessage }, 'User wants other options after seeing recommendation');
+
+          const firstVehicle = lastShownVehicles[0];
+          const wasSpecificSearch = lastSearchType === 'specific';
+
+          // Clear the recommendation state
+          const clearedProfile = {
+            ...extracted.extracted,
+            _showedRecommendation: false,
+            _lastShownVehicles: undefined,
+            _lastSearchType: undefined,
+            _waitingForSuggestionResponse: true,
+            _searchedItem: wasSpecificSearch ? `${firstVehicle.brand} ${firstVehicle.model}` : undefined
+          };
+
+          const otherOptionsResponse = wasSpecificSearch
+            ? `Entendi! Vamos encontrar outras opções para você. 🚗\n\n💰 Qual é o seu orçamento máximo?`
+            : `Sem problemas! Vou buscar outras opções.\n\n📋 O que você gostaria de ajustar nas recomendações?\n- Orçamento diferente?\n- Outro tipo de veículo?\n- Características específicas?`;
+
+          return {
+            response: otherOptionsResponse,
+            extractedPreferences: clearedProfile,
+            needsMoreInfo: ['budget', 'bodyType'],
+            canRecommend: false,
+            nextMode: 'discovery',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.9,
+              llmUsed: 'gpt-4o-mini'
+            }
+          };
+        }
+
+        if (postRecommendationIntent === 'want_details') {
+          // User wants more details about shown vehicle
+          const firstVehicle = lastShownVehicles[0];
+
+          const detailsResponse = lastShownVehicles.length === 1
+            ? `Claro! Sobre o ${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year}:\n\n📋 Para informações detalhadas como quilometragem exata, opcionais, histórico e fotos, sugiro falar com nosso vendedor que pode te passar tudo em tempo real!\n\n_Digite "vendedor" para ser atendido por nossa equipe._`
+            : `Qual dos veículos você gostaria de saber mais detalhes?\n\n${lastShownVehicles.map((v, i) => `${i + 1}. ${v.brand} ${v.model} ${v.year}`).join('\n')}\n\n_Ou digite "vendedor" para falar com nossa equipe._`;
+
+          return {
+            response: detailsResponse,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _showedRecommendation: true, // Mantém o estado
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'recommendation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.9,
+              llmUsed: 'gpt-4o-mini'
+            }
+          };
+        }
+
+        if (postRecommendationIntent === 'want_schedule') {
+          // User wants to schedule/talk to seller
+          const scheduleResponse = `Perfeito! 🙌\n\nPara agendar uma visita ou falar diretamente com nosso vendedor, me envia seu nome completo que já passo para a equipe te atender!\n\n📍 Estamos na Robust Car\n📞 Ou se preferir, digite "vendedor" para iniciar o atendimento.`;
+
+          return {
+            response: scheduleResponse,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _showedRecommendation: false,
+              _lastShownVehicles: lastShownVehicles, // Mantém para referência
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'recommendation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'gpt-4o-mini'
+            }
+          };
+        }
+
+        // If 'none', clear the recommendation state and continue normal processing
+        // The user might be asking something else or making a new search
+        updatedProfile._showedRecommendation = false;
+      }
 
       // 2.6. Check if user selected an alternative year (direct return without questions)
       if (availableYears && availableYears.length > 0) {
@@ -216,7 +317,16 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                   minYear: selectedYear,
                   _availableYears: undefined,
                   _waitingForSuggestionResponse: false,
-                  _searchedItem: undefined
+                  _searchedItem: undefined,
+                  _showedRecommendation: true,
+                  _lastSearchType: 'specific' as const,
+                  _lastShownVehicles: matchingResults.map(r => ({
+                    vehicleId: r.vehicleId,
+                    brand: r.vehicle.brand,
+                    model: r.vehicle.model,
+                    year: r.vehicle.year,
+                    price: r.vehicle.price
+                  }))
                 },
                 needsMoreInfo: [],
                 canRecommend: true,
@@ -395,7 +505,18 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
 
           return {
             response: formattedResponse,
-            extractedPreferences: extracted.extracted,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _showedRecommendation: true,
+              _lastSearchType: 'specific' as const,
+              _lastShownVehicles: matchingResults.map(r => ({
+                vehicleId: r.vehicleId,
+                brand: r.vehicle.brand,
+                model: r.vehicle.model,
+                year: r.vehicle.year,
+                price: r.vehicle.price
+              }))
+            },
             needsMoreInfo: [],
             canRecommend: true,
             recommendations: matchingResults,
@@ -534,7 +655,19 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
 
           return {
             response: intro + vehicleList + footer,
-            extractedPreferences: { ...extracted.extracted, bodyType: normalizedBodyType },
+            extractedPreferences: {
+              ...extracted.extracted,
+              bodyType: normalizedBodyType,
+              _showedRecommendation: true,
+              _lastSearchType: 'recommendation' as const,
+              _lastShownVehicles: categoryResults.map(r => ({
+                vehicleId: r.vehicleId,
+                brand: r.vehicle.brand,
+                model: r.vehicle.model,
+                year: r.vehicle.year,
+                price: r.vehicle.price
+              }))
+            },
             needsMoreInfo: [],
             canRecommend: true,
             recommendations: categoryResults,
@@ -639,7 +772,18 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
         return {
           response: formattedResponse,
-          extractedPreferences: extracted.extracted,
+          extractedPreferences: {
+            ...extracted.extracted,
+            _showedRecommendation: true,
+            _lastSearchType: 'recommendation' as const,
+            _lastShownVehicles: result.recommendations.map(r => ({
+              vehicleId: r.vehicleId,
+              brand: r.vehicle.brand,
+              model: r.vehicle.model,
+              year: r.vehicle.year,
+              price: r.vehicle.price
+            }))
+          },
           needsMoreInfo: [],
           canRecommend: true,
           recommendations: result.recommendations,
@@ -820,6 +964,90 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
     ];
 
     return negativePatterns.some(pattern => pattern.test(normalized));
+  }
+
+  /**
+   * Detect user intent after showing a recommendation
+   * Returns: 'want_others' | 'want_details' | 'want_schedule' | 'new_search' | 'none'
+   */
+  private detectPostRecommendationIntent(
+    message: string,
+    lastShownVehicles?: Array<{ brand: string; model: string; year: number; price: number }>
+  ): 'want_others' | 'want_details' | 'want_schedule' | 'new_search' | 'none' {
+    const normalized = message.toLowerCase().trim();
+
+    // Patterns for wanting OTHER options
+    const wantOthersPatterns = [
+      /tem\s*(outr[oa]s?|mais)/i,
+      /quer[oi]?\s*(ver\s*)?(outr[oa]s?|mais)/i,
+      /mostra\s*(outr[oa]s?|mais)/i,
+      /mais\s*(opç|carros?|veículos?)/i,
+      /outras?\s*(opç|alternativ)/i,
+      /^(outro|outra|outros|outras)$/i,
+      /muito\s*(caro|cara)/i,
+      /acima\s*do\s*(meu\s*)?(orçamento|budget)/i,
+      /fora\s*do\s*(meu\s*)?(orçamento|budget)/i,
+      /não\s*(gost|curt)[eiao]/i,
+      /não\s*(é|era)\s*(bem\s*)?(isso|esse|o\s*que)/i,
+      /prefer[io]\s*outro/i,
+      /algo\s*(mais\s*)?(barato|em conta|acessível)/i,
+      /tem\s*algo\s*(mais\s*)?(barato|em conta)/i,
+      /não\s*me\s*interess/i,
+      /ver\s*mais\s*opç/i,
+    ];
+
+    // Patterns for wanting MORE DETAILS about shown vehicle
+    const wantDetailsPatterns = [
+      /mais\s*detalhes?/i,
+      /conta\s*mais/i,
+      /fal[ae]\s*mais/i,
+      /quero\s*saber\s*mais/i,
+      /como\s*(é|está)\s*(esse|o)\s*(carro|veículo)/i,
+      /quilometragem/i,
+      /km\??$/i,
+      /procedência/i,
+      /histórico/i,
+      /dono|proprietário/i,
+      /ipva|documentação|documento/i,
+      /opcional|opcionais/i,
+      /cor\??$/i,
+      /foto|imagem|vídeo/i,
+      /interessei?\s*(nesse|nele|no\s*primeiro)/i,
+      /gost[eiao]\s*(desse|dele|do\s*primeiro)/i,
+    ];
+
+    // Patterns for wanting to SCHEDULE/TALK
+    const wantSchedulePatterns = [
+      /vendedor/i,
+      /atendente/i,
+      /humano/i,
+      /pessoa\s*real/i,
+      /agendar/i,
+      /visita/i,
+      /ver\s*pessoalmente/i,
+      /ir\s*até\s*(a\s*)?(loja|vocês)/i,
+      /quero\s*(comprar|fechar|levar)/i,
+      /vou\s*(levar|ficar\s*com)/i,
+      /como\s*(faço|faz)\s*(pra|para)\s*(comprar|visitar)/i,
+      /endereço/i,
+      /onde\s*(fica|vocês\s*ficam)/i,
+      /whatsapp|telefone|ligar/i,
+    ];
+
+    // Check patterns in order of priority
+    if (wantSchedulePatterns.some(p => p.test(normalized))) {
+      return 'want_schedule';
+    }
+
+    if (wantDetailsPatterns.some(p => p.test(normalized))) {
+      return 'want_details';
+    }
+
+    if (wantOthersPatterns.some(p => p.test(normalized))) {
+      return 'want_others';
+    }
+
+    return 'none';
   }
 
   /**
