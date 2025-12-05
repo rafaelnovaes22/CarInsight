@@ -11,8 +11,8 @@
 
 import { logger } from '../lib/logger';
 import { vehicleExpert } from '../agents/vehicle-expert.agent';
-import { preferenceExtractor } from '../agents/preference-extractor.agent';
-import { ConversationState, CustomerProfile, BotMessage, VehicleRecommendation } from '../types/state.types';
+import { exactSearchParser } from '../services/exact-search-parser.service';
+import { CustomerProfile, ConversationState, BotMessage, VehicleRecommendation } from '../types/state.types';
 import { ConversationContext, ConversationMode, ConversationResponse } from '../types/conversation.types';
 
 /**
@@ -355,7 +355,37 @@ export class LangGraphConversation {
     // Tentar extrair nome da resposta
     const name = this.extractName(message);
 
+    // Também tentar extrair intenção de carro (busca exata) na saudação
+    // Ex: "Oi, meu nome é Rafael e quero um Civic 2017"
+    // Feature: exact-vehicle-search - capture intent early
+    const exactMatch = exactSearchParser.parse(message);
+    const earlyProfileUpdate: Partial<CustomerProfile> = {};
+
+    if (exactMatch.model) {
+      earlyProfileUpdate.model = exactMatch.model;
+      if (exactMatch.year) earlyProfileUpdate.minYear = exactMatch.year;
+
+      // Se encontramos modelo na saudação, já marcamos para pular perguntas genéricas
+      // O VehicleExpertAgent vai usar isso para buscar direto
+    }
+
     if (name) {
+      // Se detectou carro na saudação, muda a resposta para confirmar
+      if (earlyProfileUpdate.model) {
+        const carText = earlyProfileUpdate.minYear
+          ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
+          : earlyProfileUpdate.model;
+
+        return {
+          nextState: 'DISCOVERY', // Vai para discovery, mas com perfil já populado
+          response: `Prazer, ${name}! 😊\n\nVi que você tem interesse em um *${carText}*.\n\nVou verificar nosso estoque agora mesmo! 🚗`,
+          profile: {
+            customerName: name,
+            ...earlyProfileUpdate
+          },
+        };
+      }
+
       return {
         nextState: 'DISCOVERY',
         response: `Prazer, ${name}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico`,
@@ -363,7 +393,21 @@ export class LangGraphConversation {
       };
     }
 
-    // Não conseguiu extrair nome, perguntar novamente
+    // Se detectou carro mas NÃO detectou nome
+    if (earlyProfileUpdate.model) {
+      // Salva o interesse no perfil mesmo sem nome, e pergunta o nome contextualizado
+      const carText = earlyProfileUpdate.minYear
+        ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
+        : earlyProfileUpdate.model;
+
+      return {
+        nextState: 'GREETING',
+        response: `Olá! Vi que você busca um *${carText}*. Ótima escolha! 🚗\n\nAntes de eu buscar as melhores opções para você, qual é o seu nome?`,
+        profile: earlyProfileUpdate,
+      };
+    }
+
+    // Não conseguiu extrair nome nem carro
     return {
       nextState: 'GREETING',
       response: `Desculpe, não entendi seu nome. 😅\n\nPode me dizer como posso te chamar?`,

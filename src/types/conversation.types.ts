@@ -72,6 +72,8 @@ export interface ConversationResponse {
     llmUsed?: string;
     noPickupsFound?: boolean; // Indicates no pickups were found for user request
     noSevenSeaters?: boolean; // Indicates no 7-seat vehicles were found for user request
+    exactMatch?: boolean;     // Indicates if response comes from exact model+year search
+    alternativeYears?: boolean; // Indicates if response suggests alternative years
   };
 }
 

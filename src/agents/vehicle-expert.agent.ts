@@ -185,47 +185,110 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         extracted.extracted
       );
 
-      // 2.1. Intercept Negotiation Mode
-      if (context.mode === 'negotiation' && updatedProfile.hasTradeIn && updatedProfile.tradeInModel && updatedProfile.financingDownPayment !== undefined) {
-        const lastConfig = context.profile._lastShownVehicles?.[0];
-        const vehicleText = lastConfig ? capitalize(lastConfig.model) : 'seu veículo de interesse';
+      // 2.1. Intercept Specific Model + Year Search (Exact Intent)
+      // Requirements: Return immediately if user provides model and year OR if profile has it (from greeting)
+      const exactMatch = exactSearchParser.parse(userMessage);
 
-        return {
-          response: `Recebido! 📝\n\nResumo da proposta:\n• Veículo: ${vehicleText}\n• Troca: ${capitalize(updatedProfile.tradeInModel || '')} ${updatedProfile.tradeInYear || ''}\n• Entrada: R$ ${updatedProfile.financingDownPayment}\n\nJá registrei esses dados. Gostaria de agendar uma visita para avaliarmos seu carro e finalizarmos a proposta?`,
-          extractedPreferences: extracted.extracted,
-          needsMoreInfo: ['schedule'],
-          canRecommend: false,
-          nextMode: 'negotiation',
-          metadata: {
-            processingTime: Date.now() - startTime,
-            confidence: 1.0,
-            llmUsed: 'rule-based'
+      // Check if we have model+year in message OR in profile (captured in Greeting)
+      const targetModel = exactMatch.model || updatedProfile.model;
+      const targetYear = exactMatch.year || updatedProfile.minYear;
+
+      if (targetModel && targetYear) {
+        // Ignorar se estivermos no meio de um fluxo de negociação ou se for menção de troca
+        const isTradeInMention = /tenho|minha|meu|troca/i.test(userMessage) && !updatedProfile.model;
+
+        if (!isTradeInMention) {
+          logger.info({ model: targetModel, year: targetYear }, 'Intercepting Exact Search intent');
+
+          // 1. Tentar busca exata
+          const exactResults = await vehicleSearchAdapter.search(userMessage.length > 3 ? userMessage : targetModel, {
+            limit: 5,
+            model: targetModel,
+            minYear: targetYear
+          });
+
+          // Verificamos se o PRIMEIRO resultado bate com o ano solicitado
+          const foundExact = exactResults.length > 0 && exactResults[0].vehicle.year === targetYear;
+
+          if (foundExact) {
+            // Encontrou exatamente o que queria
+            logger.info('Exact match found - returning recommendation immediately');
+
+            // Extrair anos disponíveis
+            const availableYears = [...new Set(exactResults.map(r => r.vehicle.year))].sort((a, b) => b - a);
+
+            const formattedResponse = await this.formatRecommendations(
+              exactResults,
+              updatedProfile,
+              context,
+              'specific'
+            );
+
+            return {
+              response: formattedResponse,
+              extractedPreferences: {
+                ...updatedProfile,
+                minYear: targetYear,
+                model: targetModel,
+                _availableYears: availableYears,
+                _showedRecommendation: true,
+                _lastSearchType: 'specific',
+                _searchedItem: targetModel,
+                _lastShownVehicles: exactResults.map(r => ({
+                  vehicleId: r.vehicleId,
+                  brand: r.vehicle.brand,
+                  model: r.vehicle.model,
+                  year: r.vehicle.year,
+                  price: r.vehicle.price,
+                  bodyType: r.vehicle.bodyType
+                }))
+              },
+              needsMoreInfo: [],
+              canRecommend: true,
+              recommendations: exactResults,
+              nextMode: 'recommendation',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 1.0,
+                llmUsed: 'rule-based',
+                exactMatch: true
+              } as any
+            };
+          } else {
+            // Não encontrou o ano exato - verificar se O MODELO existe em outros anos
+            const modelResults = await vehicleSearchAdapter.search(targetModel, {
+              model: targetModel,
+              limit: 20
+            });
+
+            if (modelResults.length > 0) {
+              const availableYears = [...new Set(modelResults.map(r => r.vehicle.year))].sort((a, b) => b - a);
+              logger.info({ availableYears }, 'Exact year not found, but model exists in other years');
+
+              return {
+                response: `Não encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. 😕\n\nMas tenho esse modelo nos anos: **${availableYears.join(', ')}**.\n\nQuer ver alguma dessas opções?`,
+                extractedPreferences: {
+                  ...updatedProfile,
+                  _searchedItem: targetModel,
+                  _availableYears: availableYears,
+                  _waitingForSuggestionResponse: true
+                },
+                needsMoreInfo: [],
+                canRecommend: false,
+                nextMode: 'clarification',
+                metadata: {
+                  processingTime: Date.now() - startTime,
+                  confidence: 0.9,
+                  llmUsed: 'rule-based',
+                  alternativeYears: true
+                } as any
+              };
+            }
           }
-        };
+        }
       }
 
-      // 2.2. Intercept Trade-In context
-      // If user indicated they have a trade-in, but we lack details, ASK IMMEDIATELY.
-      // This priority overrides normal flow to capture the lead's vehicle details.
-      if (updatedProfile.hasTradeIn && (!updatedProfile.tradeInModel || !updatedProfile.tradeInYear)) {
-        logger.info('User has trade-in but missing details - Intercepting flow to ask about trade-in vehicle');
-        return {
-          response: 'Legal! Qual é o carro que você tem na troca? (Marca, modelo e ano, por favor) 🚗',
-          extractedPreferences: extracted.extracted,
-          needsMoreInfo: ['tradeInModel', 'tradeInYear'],
-          canRecommend: false,
-          nextMode: 'negotiation',
-          metadata: {
-            processingTime: Date.now() - startTime,
-            confidence: 0.95,
-            llmUsed: 'rule-based'
-          }
-        };
-      }
-
-      // 2.2.1. Intercept Hard Constraints (FAIL FAST)
-      // If user asks for something we definitely don't have (e.g., 7 seats), 
-      // inform immediately instead of asking qualification questions.
+      // 2.2. Intercept Hard Constraints (FAIL FAST) - 7 seats
       if (updatedProfile.minSeats && updatedProfile.minSeats >= 7 && !context.profile?._waitingForSuggestionResponse) {
         // Search specifically for 7 seaters to check availability
         const results = await vehicleSearchAdapter.search('7 lugares', {
@@ -254,7 +317,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               confidence: 1.0,
               llmUsed: 'rule-based',
               noSevenSeaters: true
-            }
+            } as any
           };
         }
       }
