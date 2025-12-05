@@ -193,43 +193,45 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
 
         if (postRecommendationIntent === 'want_others') {
           // User wants to see other options - search for similar vehicles directly
-          logger.info({ userMessage, lastShownVehicles }, 'User wants other options after seeing recommendation');
+          logger.info({ userMessage, lastShownVehicles, extractedBudget: extracted.extracted.budget }, 'User wants other options after seeing recommendation');
 
           const firstVehicle = lastShownVehicles[0];
           const wasSpecificSearch = lastSearchType === 'specific';
 
-          // Use the shown vehicle's profile to find similar ones
+          // Use extracted budget if user provided one, otherwise use reference price
           const referencePrice = firstVehicle.price;
+          const userBudget = extracted.extracted.budget || extracted.extracted.budgetMax;
+          const searchMaxPrice = userBudget || Math.round(referencePrice * 1.5);
+
           const referenceBrand = firstVehicle.brand;
           const referenceModel = firstVehicle.model;
           const referenceYear = firstVehicle.year;
 
-          // Determine vehicle category based on price range for semantic search
-          // Low-price hatch like Celta, Palio, Gol, Uno = "hatch econômico popular"
-          // Mid-price = "hatch compacto"
-          // Higher = "sedan" or based on actual type
+          // For economic hatchbacks, search by category rather than brand
           const isEconomicHatch = referencePrice <= 40000;
           const searchQuery = isEconomicHatch
-            ? `hatch popular econômico usado até ${Math.round(referencePrice * 1.3)}`
+            ? `hatch popular econômico compacto usado`
             : `carro similar ${referenceBrand} ${referenceModel}`;
 
           logger.info({
+            searchQuery,
+            searchMaxPrice,
+            userBudget,
             referencePrice,
-            isEconomicHatch,
-            searchQuery
-          }, 'Searching for similar vehicles with improved query');
+            isEconomicHatch
+          }, 'Searching for similar vehicles');
 
-          // Search for similar vehicles by price range and type, not just brand
+          // Search for similar vehicles with broader criteria
           const similarResults = await vehicleSearchAdapter.search(
             searchQuery,
             {
-              maxPrice: Math.round(referencePrice * 1.5), // Up to 50% more expensive
+              maxPrice: searchMaxPrice,
               minYear: referenceYear - 5, // Up to 5 years older
               limit: 15
             }
           );
 
-          // Filter out vehicles already shown and prioritize similar characteristics
+          // Filter out vehicles already shown
           const shownVehicleIds = lastShownVehicles.map(v => v.vehicleId);
           const newResults = similarResults.filter(r => !shownVehicleIds.includes(r.vehicleId));
 
@@ -1160,6 +1162,12 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       /tem\s*algo\s*(mais\s*)?(barato|em conta)/i,
       /não\s*me\s*interess/i,
       /ver\s*mais\s*opç/i,
+      // Patterns with budget/price imply wanting other options
+      /tem\s*(opç|algo|carro).*(até|ate)\s*\d/i, // "tem opções até 30000"
+      /(até|ate)\s*\d+\s*(mil|k|reais|r\$)/i, // "até 30 mil", "até 30k"
+      /opç.*(até|ate)\s*\d/i, // "opções até 30000"
+      /na\s*faixa\s*de\s*\d/i, // "na faixa de 30000"
+      /entre\s*\d+\s*e\s*\d+/i, // "entre 25000 e 35000"
     ];
 
     // Patterns for wanting MORE DETAILS about shown vehicle
