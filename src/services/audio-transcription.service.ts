@@ -114,10 +114,15 @@ export class AudioTranscriptionService {
     async transcribeAudio(audioBuffer: Buffer): Promise<{ text: string; duration?: number; language?: string }> {
         const file = new File([audioBuffer], 'audio.ogg', { type: 'audio/ogg' });
 
+        // Prompt para dar contexto ao Whisper e melhorar precisão com nomes de carros
+        const automotivePrompt = `Contexto: Conversa sobre compra de veículos usados. Modelos comuns: Civic, Corolla, Onix, HB20, Creta, Kicks, T-Cross, Tracker, Compass, HR-V, Fit, City, Sentra, Versa, Yaris, Polo, Virtus, Voyage, Gol, Fox, Kwid, Mobi, Argo, Cronos, Toro, Strada, Hilux, S10, Ranger, SW4, Pajero, Outlander, Tiggo. Anos: 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024. Marcas: Honda, Toyota, Chevrolet, Volkswagen, Hyundai, Nissan, Fiat, Jeep, Mitsubishi, Ford.`;
+
         const transcription = await groq.audio.transcriptions.create({
             file,
             model: 'whisper-large-v3-turbo',
             response_format: 'verbose_json',
+            language: 'pt', // Forçar português
+            prompt: automotivePrompt,
         });
 
         // Cast to any to access verbose_json properties (duration, language)
