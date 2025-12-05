@@ -69,6 +69,15 @@ REGRAS ESPECIAIS:
 - Modelos conhecidos de 7 lugares: Spin, SW4, Pajero, Outlander, Commander, Taos, Tiggo 8, Captiva → minSeats: 7
 - Modelos conhecidos de 5 lugares são a maioria dos carros, não precisa especificar minSeats
 
+CONTEXTO DE CONVERSA (IMPORTANTE):
+- Se a ÚLTIMA MENSAGEM do assistente foi perguntando sobre "carro na troca", "troca", "seu carro atual":
+  - A resposta do usuário (ex: "É um Gol 2015", "Tenho um Palio") deve ser extraída como:
+    - tradeInModel: "Gol"
+    - tradeInYear: 2015
+    - tradeInBrand: "Volkswagen"
+  - NÃO preencha 'model' ou 'year' (carro desejado) neste caso, use 'tradeIn...'
+  - hasTradeIn: true
+
 EXEMPLOS:
 
 Entrada: "Quero um carro até 50 mil para 5 pessoas"
@@ -158,6 +167,29 @@ Saída: {
 }
 
 Entrada: "Onix 2019" ou "Quero um Onix 2019" ou "Tem Onix 2019?"
+Saída: {
+  "extracted": {
+    "brand": "chevrolet",
+    "model": "onix",
+    "minYear": 2019
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo e ano desejados",
+  "fieldsExtracted": ["brand", "model", "minYear"]
+}
+
+Entrada: "É um Sandero 2018" (Com contexto anterior: "Qual carro você tem na troca?")
+Saída: {
+  "extracted": {
+    "hasTradeIn": true,
+    "tradeInBrand": "renault",
+    "tradeInModel": "sandero",
+    "tradeInYear": 2018
+  },
+  "confidence": 0.95,
+  "reasoning": "Resposta sobre carro de troca identificada pelo contexto",
+  "fieldsExtracted": ["hasTradeIn", "tradeInBrand", "tradeInModel", "tradeInYear"]
+}
 Saída: {
   "extracted": {
     "brand": "chevrolet",

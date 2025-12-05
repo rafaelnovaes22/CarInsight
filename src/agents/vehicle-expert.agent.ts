@@ -173,6 +173,25 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         extracted.extracted
       );
 
+      // 2.1. Intercept Trade-In context
+      // If user indicated they have a trade-in, but we lack details, ASK IMMEDIATELY.
+      // This priority overrides normal flow to capture the lead's vehicle details.
+      if (updatedProfile.hasTradeIn && (!updatedProfile.tradeInModel || !updatedProfile.tradeInYear)) {
+        logger.info('User has trade-in but missing details - Intercepting flow to ask about trade-in vehicle');
+        return {
+          response: 'Legal! Qual é o carro que você tem na troca? (Marca, modelo e ano, por favor) 🚗',
+          extractedPreferences: extracted.extracted,
+          needsMoreInfo: ['tradeInModel', 'tradeInYear'],
+          canRecommend: false,
+          nextMode: 'clarification',
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 0.95,
+            llmUsed: 'rule-based'
+          }
+        };
+      }
+
       // 2.5. Check if we offered to ask questions for suggestions and user is responding
       const wasWaitingForSuggestionResponse = context.profile?._waitingForSuggestionResponse;
       const availableYears = context.profile?._availableYears;
