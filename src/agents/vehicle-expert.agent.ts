@@ -205,7 +205,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               const formattedResponse = await this.formatRecommendations(
                 matchingResults,
                 { ...updatedProfile, _availableYears: undefined, _waitingForSuggestionResponse: false, _searchedItem: undefined },
-                context
+                context,
+                'specific' // Usuário escolheu um ano alternativo - busca específica
               );
 
               return {
@@ -388,7 +389,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           const formattedResponse = await this.formatRecommendations(
             matchingResults,
             updatedProfile,
-            context
+            context,
+            'specific' // Usuário pediu modelo/ano específico
           );
 
           return {
@@ -631,7 +633,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         const formattedResponse = await this.formatRecommendations(
           result.recommendations,
           updatedProfile,
-          context
+          context,
+          'recommendation' // Fluxo de recomendação personalizada
         );
 
         return {
@@ -1147,11 +1150,13 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
   /**
    * Format recommendations into natural language message
+   * @param searchType - 'specific' for model/year searches, 'recommendation' for personalized suggestions
    */
   private async formatRecommendations(
     recommendations: VehicleRecommendation[],
     profile: Partial<CustomerProfile>,
-    context: ConversationContext
+    context: ConversationContext,
+    searchType: 'specific' | 'recommendation' = 'recommendation'
   ): Promise<string> {
     if (recommendations.length === 0) {
       return `Hmm, não encontrei veículos que atendam exatamente suas preferências. 🤔
@@ -1164,6 +1169,8 @@ Posso ajustar os critérios? Por exemplo:
 Me diz o que prefere!`;
     }
 
+    const isSpecificSearch = searchType === 'specific';
+
     try {
       // Show all recommendations (up to 5)
       const vehiclesToShow = recommendations.slice(0, 5);
@@ -1171,8 +1178,16 @@ Me diz o que prefere!`;
       const vehiclesList = vehiclesToShow.map((rec, i) => {
         const v = rec.vehicle;
         const link = v.detailsUrl || v.url;
-        const matchScore = rec.matchScore ? `${Math.round(rec.matchScore)}%` : '';
-        let item = `${i + 1}. ${i === 0 ? '🏆 ' : ''}*${v.brand} ${v.model} ${v.year}*${matchScore ? ` (${matchScore} match)` : ''}
+
+        // Só mostrar % match em recomendações, não em buscas específicas
+        const matchScore = (!isSpecificSearch && rec.matchScore) ? `${Math.round(rec.matchScore)}%` : '';
+
+        // Em busca específica com 1 resultado, não numerar
+        const prefix = (isSpecificSearch && vehiclesToShow.length === 1)
+          ? '🚗 '
+          : `${i + 1}. ${i === 0 ? '🏆 ' : ''}`;
+
+        let item = `${prefix}*${v.brand} ${v.model} ${v.year}*${matchScore ? ` (${matchScore} match)` : ''}
    💰 R$ ${v.price.toLocaleString('pt-BR')}
    🛣️ ${v.mileage?.toLocaleString('pt-BR') || '?'} km
    🚗 ${v.bodyType || 'N/A'}${v.transmission ? ` | ${v.transmission}` : ''}`;
@@ -1184,11 +1199,25 @@ Me diz o que prefere!`;
         return item;
       }).join('\n\n');
 
-      const intro = this.generateRecommendationIntro(profile, vehiclesToShow.length);
+      const intro = this.generateRecommendationIntro(profile, vehiclesToShow.length, searchType, vehiclesToShow[0]?.vehicle);
 
-      const outro = `\n\nQual te interessou mais? Posso dar mais detalhes! 😊
+      // Outro diferente para busca específica vs recomendação
+      let outro: string;
+      if (isSpecificSearch) {
+        if (vehiclesToShow.length === 1) {
+          outro = `\n\nQuer saber mais detalhes ou agendar uma visita? 😊
 
 _Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+        } else {
+          outro = `\n\nQuer mais detalhes de algum desses? 😊
+
+_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+        }
+      } else {
+        outro = `\n\nQual te interessou mais? Posso dar mais detalhes! 😊
+
+_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+      }
 
       return `${intro}\n\n${vehiclesList}${outro}`;
 
@@ -1204,16 +1233,29 @@ _Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`
   }
 
   /**
-   * Generate intro for recommendations based on profile
+   * Generate intro for recommendations based on profile and search type
    */
   private generateRecommendationIntro(
     profile: Partial<CustomerProfile>,
-    count: number
+    count: number,
+    searchType: 'specific' | 'recommendation' = 'recommendation',
+    firstVehicle?: { brand: string; model: string; year: number }
   ): string {
+    // Para busca específica, usar mensagem direta
+    if (searchType === 'specific') {
+      if (count === 1 && firstVehicle) {
+        return `Encontramos o ${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year} que você procurava! ✅`;
+      } else if (firstVehicle) {
+        return `Encontramos ${count} opções de ${firstVehicle.brand} ${firstVehicle.model} disponíveis:`;
+      }
+      return `Encontramos ${count} opção${count > 1 ? 'ões' : ''} para você:`;
+    }
+
+    // Para recomendações personalizadas, usar mensagem com critérios
     const parts: string[] = [];
 
     if (profile.usage) {
-      const usageMap = {
+      const usageMap: Record<string, string> = {
         cidade: 'uso urbano',
         viagem: 'viagens',
         trabalho: 'trabalho',
