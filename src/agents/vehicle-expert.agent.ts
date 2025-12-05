@@ -212,6 +212,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
 
           // Determine body type for search based on vehicle type or infer from model
           let bodyTypeKeyword = '';
+          let vehicleCategory = ''; // compacto, medio, etc.
+
           if (referenceBodyType.includes('sedan')) {
             bodyTypeKeyword = 'sedan';
           } else if (referenceBodyType.includes('hatch')) {
@@ -236,10 +238,36 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             }
           }
 
-          // Build search query focused on same TYPE of vehicle
-          const searchQuery = bodyTypeKeyword
-            ? `${bodyTypeKeyword} popular usado econômico`
-            : `carro usado econômico popular`;
+          // Determine vehicle category based on price range for more specific search
+          // Sedans compactos: Voyage, Prisma, Logan, Versa, HB20S (~35-55k)
+          // Sedans médios: Cruze, Focus, Civic, Corolla, Sentra (~55-90k)
+          const sedanCompactModels = ['voyage', 'prisma', 'logan', 'versa', 'hb20s', 'cronos', 'virtus', 'onix plus'];
+          const sedanMediumModels = ['cruze', 'focus', 'civic', 'corolla', 'sentra', 'jetta', 'city'];
+          const modelLower = referenceModel.toLowerCase();
+
+          if (bodyTypeKeyword === 'sedan') {
+            if (sedanCompactModels.some(m => modelLower.includes(m)) || referencePrice <= 60000) {
+              vehicleCategory = 'compacto';
+            } else if (sedanMediumModels.some(m => modelLower.includes(m)) || referencePrice > 60000) {
+              vehicleCategory = 'medio';
+            }
+          } else if (bodyTypeKeyword === 'hatch') {
+            if (referencePrice <= 40000) {
+              vehicleCategory = 'popular';
+            } else {
+              vehicleCategory = 'compacto';
+            }
+          }
+
+          // Build search query focused on same TYPE and CATEGORY of vehicle
+          let searchQuery = '';
+          if (bodyTypeKeyword && vehicleCategory) {
+            searchQuery = `${bodyTypeKeyword} ${vehicleCategory} usado`;
+          } else if (bodyTypeKeyword) {
+            searchQuery = `${bodyTypeKeyword} usado`;
+          } else {
+            searchQuery = `carro usado`;
+          }
 
           logger.info({
             searchQuery,
@@ -277,12 +305,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             return true;
           });
 
-          // Sort by price similarity (closest to reference price first)
-          newResults.sort((a, b) => {
-            const diffA = Math.abs(a.vehicle.price - referencePrice);
-            const diffB = Math.abs(b.vehicle.price - referencePrice);
-            return diffA - diffB;
-          });
+          // Sort by price (cheapest first)
+          newResults.sort((a, b) => a.vehicle.price - b.vehicle.price);
 
           if (newResults.length > 0) {
             // Found similar vehicles - show them directly
@@ -290,7 +314,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               newResults.slice(0, 5),
               updatedProfile,
               context,
-              'recommendation' // Treat as recommendation since we're suggesting alternatives
+              'similar' // Tipo 'similar' não mostra % match
             );
 
             const intro = wasSpecificSearch
@@ -308,8 +332,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                   brand: r.vehicle.brand,
                   model: r.vehicle.model,
                   year: r.vehicle.year,
-                  price: r.vehicle.price,
-                  bodyType: r.vehicle.bodyType
+                  price: r.vehicle.price
                 }))
               },
               needsMoreInfo: [],
@@ -447,8 +470,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                     brand: r.vehicle.brand,
                     model: r.vehicle.model,
                     year: r.vehicle.year,
-                    price: r.vehicle.price,
-                    bodyType: r.vehicle.bodyType
+                    price: r.vehicle.price
                   }))
                 },
                 needsMoreInfo: [],
@@ -536,8 +558,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                       brand: r.vehicle.brand,
                       model: r.vehicle.model,
                       year: r.vehicle.year,
-                      price: r.vehicle.price,
-                      bodyType: r.vehicle.bodyType
+                      price: r.vehicle.price
                     }))
                   },
                   needsMoreInfo: [],
@@ -694,8 +715,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                 brand: r.vehicle.brand,
                 model: r.vehicle.model,
                 year: r.vehicle.year,
-                price: r.vehicle.price,
-                bodyType: r.vehicle.bodyType
+                price: r.vehicle.price
               }))
             },
             needsMoreInfo: [],
@@ -864,8 +884,7 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
                 brand: r.vehicle.brand,
                 model: r.vehicle.model,
                 year: r.vehicle.year,
-                price: r.vehicle.price,
-                bodyType: r.vehicle.bodyType
+                price: r.vehicle.price
               }))
             },
             needsMoreInfo: [],
@@ -1002,8 +1021,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               brand: r.vehicle.brand,
               model: r.vehicle.model,
               year: r.vehicle.year,
-              price: r.vehicle.price,
-              bodyType: r.vehicle.bodyType
+              price: r.vehicle.price
             })),
             _excludeVehicleIds: undefined // Limpar após usar
           },
@@ -1650,13 +1668,13 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
   /**
    * Format recommendations into natural language message
-   * @param searchType - 'specific' for model/year searches, 'recommendation' for personalized suggestions
+   * @param searchType - 'specific' for model/year searches, 'similar' for similar vehicles, 'recommendation' for personalized suggestions
    */
   private async formatRecommendations(
     recommendations: VehicleRecommendation[],
     profile: Partial<CustomerProfile>,
     context: ConversationContext,
-    searchType: 'specific' | 'recommendation' = 'recommendation'
+    searchType: 'specific' | 'similar' | 'recommendation' = 'recommendation'
   ): Promise<string> {
     if (recommendations.length === 0) {
       return `Hmm, não encontrei veículos que atendam exatamente suas preferências. 🤔
@@ -1670,6 +1688,8 @@ Me diz o que prefere!`;
     }
 
     const isSpecificSearch = searchType === 'specific';
+    const isSimilarSearch = searchType === 'similar';
+    const showMatchScore = searchType === 'recommendation'; // Só mostra % em recomendações personalizadas
 
     try {
       // Show all recommendations (up to 5)
@@ -1679,8 +1699,8 @@ Me diz o que prefere!`;
         const v = rec.vehicle;
         const link = v.detailsUrl || v.url;
 
-        // Só mostrar % match em recomendações, não em buscas específicas
-        const matchScore = (!isSpecificSearch && rec.matchScore) ? `${Math.round(rec.matchScore)}%` : '';
+        // Só mostrar % match em recomendações personalizadas (não em buscas específicas ou similares)
+        const matchScore = (showMatchScore && rec.matchScore) ? `${Math.round(rec.matchScore)}%` : '';
 
         // Em busca específica com 1 resultado, não numerar
         const prefix = (isSpecificSearch && vehiclesToShow.length === 1)
@@ -1738,7 +1758,7 @@ _Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`
   private generateRecommendationIntro(
     profile: Partial<CustomerProfile>,
     count: number,
-    searchType: 'specific' | 'recommendation' = 'recommendation',
+    searchType: 'specific' | 'similar' | 'recommendation' = 'recommendation',
     firstVehicle?: { brand: string; model: string; year: number }
   ): string {
     // Para busca específica, usar mensagem direta
@@ -1749,6 +1769,11 @@ _Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`
         return `Encontramos ${count} opções de ${firstVehicle.brand} ${firstVehicle.model} disponíveis:`;
       }
       return `Encontramos ${count} opção${count > 1 ? 'ões' : ''} para você:`;
+    }
+
+    // Para busca de similares, usar mensagem apropriada (não chega aqui pois usamos intro customizada)
+    if (searchType === 'similar') {
+      return `Encontrei ${count} opção${count > 1 ? 'ões similares' : ' similar'}:`;
     }
 
     // Para recomendações personalizadas, usar mensagem com critérios
