@@ -323,22 +323,66 @@ Para começar, qual é o seu nome?`;
       const answers = state.quiz.answers;
       const profile = state.profile;
 
-      await prisma.lead.create({
+      const lead = await prisma.lead.create({
         data: {
           conversationId: conversation.id,
-          name: conversation.customerName || 'Cliente WhatsApp',
+          name: conversation.customerName || profile?.customerName || 'Cliente WhatsApp',
           phone: conversation.phoneNumber,
           budget: answers.budget || profile?.budget || null,
-          usage: answers.usage || null,
-          people: answers.people || null,
-          hasTradeIn: answers.hasTradeIn || false,
-          urgency: answers.urgency || null,
+          usage: answers.usage || profile?.usage || null,
+          people: answers.people || profile?.people || null,
+          hasTradeIn: answers.hasTradeIn || profile?.hasTradeIn || false,
+          urgency: answers.urgency || profile?.urgency || null,
           status: 'new',
           source: 'whatsapp_bot',
         },
       });
 
-      logger.info({ conversationId: conversation.id }, 'Lead created');
+      logger.info({ conversationId: conversation.id, leadId: lead.id }, 'Lead created in database');
+
+      // Notify Sales Team
+      const salesPhone = process.env.SALES_PHONE_NUMBER;
+      if (salesPhone) {
+        try {
+          // Include rich details from profile
+          const details = [];
+          if (profile?.customerName) details.push(`👤 *Nome:* ${profile.customerName}`);
+          if (conversation.phoneNumber) details.push(`📱 *Fone:* ${conversation.phoneNumber}`);
+
+          const budget = profile?.budget || profile?.budgetMax;
+          if (budget) details.push(`💰 *Orçamento:* R$ ${budget.toLocaleString('pt-BR')}`);
+
+          if (profile?.hasTradeIn) {
+            const tradeIn = profile.tradeInModel ? `${profile.tradeInModel} (${profile.tradeInYear || 'Ano?'})` : 'Sim (Modelo não def.)';
+            details.push(`🔄 *Troca:* ${tradeIn}`);
+          }
+
+          if (profile?.wantsFinancing || profile?.financingDownPayment) {
+            const entry = profile.financingDownPayment ? `Entrada R$ ${profile.financingDownPayment}` : 'Entrada a definir';
+            details.push(`🏦 *Financiamento:* Sim (${entry})`);
+          }
+
+          // Last shown vehicle (Interest)
+          const interest = profile?._lastShownVehicles?.[0];
+          if (interest) {
+            details.push(`🚗 *Interesse:* ${interest.brand} ${interest.model} ${interest.year} (R$ ${interest.price})`);
+          } else if (profile?._searchedItem) {
+            details.push(`🔍 *Busca:* ${profile._searchedItem}`);
+          }
+
+          const message = `🚨 *NOVO LEAD QUENTE!* 🔥\n\n${details.join('\n')}\n\n👉 *Ação:* Entrar em contato IMEDIATAMENTE!`;
+
+          // Dynamic import to avoid circular dependency
+          const { WhatsAppMetaService } = await import('./whatsapp-meta.service');
+          const whatsappService = new WhatsAppMetaService();
+          await whatsappService.sendMessage(salesPhone, message);
+
+          logger.info({ salesPhone }, 'Sales team notified via WhatsApp');
+        } catch (notifyError) {
+          logger.error({ error: notifyError }, 'Failed to notify sales team');
+        }
+      }
+
     } catch (error) {
       logger.error({ error, conversationId: conversation.id }, 'Error creating lead');
     }
