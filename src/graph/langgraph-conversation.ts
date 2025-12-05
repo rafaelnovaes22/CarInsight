@@ -332,11 +332,36 @@ export class LangGraphConversation {
 
     // Se é uma saudação, perguntar o nome
     if (isGreeting || state.messages.length <= 2) {
+      // PRIMEIRO: Tentar extrair intenção de carro (busca exata) na saudação
+      // Ex: "Oi, tudo bem? Quero um Civic 2017"
+      const exactMatch = exactSearchParser.parse(message);
+      const earlyProfileUpdate: Partial<CustomerProfile> = {};
+
+      if (exactMatch.model) {
+        earlyProfileUpdate.model = exactMatch.model;
+        if (exactMatch.year) earlyProfileUpdate.minYear = exactMatch.year;
+      }
+
       // Tentar extrair nome se a mensagem parecer um nome
       const possibleName = this.extractName(message);
 
       if (possibleName && !isGreeting) {
-        // Parece ser um nome
+        // Parece ser um nome - verificar se também tem carro
+        if (earlyProfileUpdate.model) {
+          const carText = earlyProfileUpdate.minYear
+            ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
+            : earlyProfileUpdate.model;
+
+          return {
+            nextState: 'DISCOVERY',
+            response: `Prazer, ${possibleName}! 😊\n\nVi que você tem interesse em um *${carText}*.\n\nVou verificar nosso estoque agora mesmo! 🚗`,
+            profile: {
+              customerName: possibleName,
+              ...earlyProfileUpdate
+            },
+          };
+        }
+
         return {
           nextState: 'DISCOVERY',
           response: `Prazer, ${possibleName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico`,
@@ -344,7 +369,20 @@ export class LangGraphConversation {
         };
       }
 
-      // Ainda não tem nome
+      // Se detectou carro na saudação, salvar e perguntar nome contextualizado
+      if (earlyProfileUpdate.model) {
+        const carText = earlyProfileUpdate.minYear
+          ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
+          : earlyProfileUpdate.model;
+
+        return {
+          nextState: 'GREETING',
+          response: `Olá! Vi que você busca um *${carText}*. Ótima escolha! 🚗\n\nAntes de eu buscar as melhores opções para você, qual é o seu nome?`,
+          profile: earlyProfileUpdate,
+        };
+      }
+
+      // Ainda não tem nome nem carro detectado
       return {
         nextState: 'GREETING',
         response: `👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`,

@@ -1546,33 +1546,45 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
    * Detect if user response is affirmative (accepting a suggestion)
    */
   private detectAffirmativeResponse(message: string): boolean {
-    const normalized = message.toLowerCase().trim();
+    // Normalize: lowercase, remove punctuation at end, trim
+    const normalized = message.toLowerCase().trim().replace(/[.,!?]+$/, '').trim();
 
-    // Affirmative patterns
+    // Short affirmative words (exact match after normalization)
+    const shortAffirmatives = ['sim', 's', 'ss', 'sss', 'siiim', 'siim', 'ok', 'okay', 'blz', 'bora', 'show', 'ta', 'tá', 'claro', 'pode', 'quero', 'manda', 'mostra', 'beleza', 'tranquilo', 'vamos', 'certeza', 'pf', 'pfv'];
+
+    if (shortAffirmatives.includes(normalized)) {
+      return true;
+    }
+
+    // Affirmative patterns (more flexible - don't require exact match)
     const affirmativePatterns = [
-      /^(sim|s|ss|sss|siiim|siim)$/i,
-      /^(pode|podes|pode ser|pode sim)$/i,
-      /^(quero|quero sim|quero ver)$/i,
-      /^(ok|okay|beleza|blz|bora|vamos|show)$/i,
-      /^(claro|com certeza|certeza)$/i,
-      /^(tá|ta|tudo bem|tranquilo)$/i,
-      /^(manda|manda aí|manda ver|mostra)$/i,
-      /^(por favor|pfv|pf)$/i,
-      /sim,?\s*(pode|quero|manda)/i,
-      /pode\s*(me )?mostrar/i,
-      /quero\s*(ver|saber)/i,
-      /mostra\s*(aí|ai|pra mim)?/i,
-      /(me )?mostra/i,
-      /interessado/i,
-      /tenho interesse/i,
+      /\bsim\b/i,            // Contains "sim" as word
+      /\bpode\b/i,           // Contains "pode"
+      /\bquero\b/i,          // Contains "quero"
+      /\bbeleza\b/i,         // Contains "beleza"
+      /\bclaro\b/i,          // Contains "claro"
+      /\bmanda\b/i,          // Contains "manda"
+      /\bmostra\b/i,         // Contains "mostra"
+      /\bvamos\b/i,          // Contains "vamos"
+      /\bbora\b/i,           // Contains "bora"
+      /\bok\b/i,             // Contains "ok"
+      /\bshow\b/i,           // Contains "show"
+      /\btranquilo\b/i,      // Contains "tranquilo"
+      /com certeza/i,        // "com certeza"
+      /tudo bem/i,           // "tudo bem"
+      /pode ser/i,           // "pode ser"
+      /por favor/i,          // "por favor"
+      /tenho interesse/i,    // "tenho interesse"
+      /interessado/i,        // "interessado"
     ];
 
-    // Negative patterns (to avoid false positives)
+    // Negative patterns (to avoid false positives) - must check first
     const negativePatterns = [
-      /^(não|nao|n|nn|nope|nunca)$/i,
-      /não\s*(quero|preciso|obrigado)/i,
-      /deixa\s*(pra lá|quieto)/i,
+      /\bn[aã]o\b/i,         // Contains "não" or "nao"
+      /\bnunca\b/i,          // Contains "nunca"
+      /deixa\s*(pra)?\s*l[aá]/i, // "deixa pra lá"
       /sem\s*(interesse|necessidade)/i,
+      /agora\s*n[aã]o/i,     // "agora não"
     ];
 
     // Check for negative first
