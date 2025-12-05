@@ -204,13 +204,28 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           const referenceModel = firstVehicle.model;
           const referenceYear = firstVehicle.year;
 
-          // Search for similar vehicles (same body type or brand, similar price range)
+          // Determine vehicle category based on price range for semantic search
+          // Low-price hatch like Celta, Palio, Gol, Uno = "hatch econômico popular"
+          // Mid-price = "hatch compacto"
+          // Higher = "sedan" or based on actual type
+          const isEconomicHatch = referencePrice <= 40000;
+          const searchQuery = isEconomicHatch
+            ? `hatch popular econômico usado até ${Math.round(referencePrice * 1.3)}`
+            : `carro similar ${referenceBrand} ${referenceModel}`;
+
+          logger.info({
+            referencePrice,
+            isEconomicHatch,
+            searchQuery
+          }, 'Searching for similar vehicles with improved query');
+
+          // Search for similar vehicles by price range and type, not just brand
           const similarResults = await vehicleSearchAdapter.search(
-            `${referenceBrand} similar`,
+            searchQuery,
             {
-              maxPrice: Math.round(referencePrice * 1.3), // Up to 30% more expensive
-              minYear: referenceYear - 3, // Up to 3 years older
-              limit: 10
+              maxPrice: Math.round(referencePrice * 1.5), // Up to 50% more expensive
+              minYear: referenceYear - 5, // Up to 5 years older
+              limit: 15
             }
           );
 
