@@ -762,8 +762,42 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             }
 
             // Se estava procurando 7 lugares, oferecer alternativas espaçosas
+            // Se estava procurando 7 lugares, oferecer alternativas espaçosas
             if (wasLookingForSevenSeater) {
-              // Limpar o requisito de minSeats para mostrar alternativas
+              const existingBudget = extracted.extracted.budget || context.profile?.budget;
+
+              // Se já temos orçamento, realizar a busca imediatamente
+              if (existingBudget) {
+                const altProfile = {
+                  ...extracted.extracted,
+                  budget: existingBudget,
+                  _waitingForSuggestionResponse: false,
+                  _searchedItem: undefined,
+                  minSeats: undefined,
+                  bodyType: 'suv' as const
+                };
+
+                const results = await vehicleSearchAdapter.search('suv espaçoso', {
+                  bodyType: 'suv',
+                  limit: 5,
+                  maxPrice: existingBudget
+                });
+
+                if (results.length > 0) {
+                  const formattedResponse = await this.formatRecommendations(results, altProfile, context, 'recommendation');
+                  return {
+                    response: `Entendido! Considerando seu orçamento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opções de SUVs espaçosos:\n\n` + formattedResponse,
+                    extractedPreferences: altProfile,
+                    needsMoreInfo: [],
+                    canRecommend: true,
+                    recommendations: results,
+                    nextMode: 'recommendation',
+                    metadata: { processingTime: Date.now() - startTime, confidence: 0.9, llmUsed: 'rule-based' }
+                  };
+                }
+              }
+
+              // Caso contrário, pede orçamento
               const altProfile = {
                 ...extracted.extracted,
                 _waitingForSuggestionResponse: false,

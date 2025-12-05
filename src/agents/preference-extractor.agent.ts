@@ -449,7 +449,15 @@ Saída: {
     // Seats validation (2-9)
     if (extracted.minSeats !== undefined && extracted.minSeats !== null) {
       sanitized.minSeats = Math.max(2, Math.min(9, Math.floor(extracted.minSeats)));
+
+      // AUTO-FILL PEOPLE BASED ON MIN_SEATS
+      // If user asks for X seats (e.g. "7 lugares"), imply they need capacity for X people
+      // This prevents asking "how many people?" redundantly
+      if ((!sanitized.people && !extracted.people) && sanitized.minSeats > 4) {
+        sanitized.people = sanitized.minSeats;
+      }
     }
+
 
     // Transmission validation
     const validTransmission = ['manual', 'automatico'];
