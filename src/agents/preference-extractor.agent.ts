@@ -78,6 +78,10 @@ CONTEXTO DE CONVERSA (IMPORTANTE):
   - NÃO preencha 'model' ou 'year' (carro desejado) neste caso, use 'tradeIn...'
   - hasTradeIn: true
 
+- Se a ÚLTIMA MENSAGEM do assistente mencionou "financiamento", "entrada", "parcela" ou perguntou "quanto quer investir" nesse contexto:
+  - Se a resposta for um valor numérico baixo (<= 25000) -> interpretar como 'financingDownPayment' (entrada) e 'wantsFinancing': true
+  - Se a resposta for um valor numérico alto (> 25000) -> interpretar como 'budget' (orçamento total)
+
 EXEMPLOS:
 
 Entrada: "Quero um carro até 50 mil para 5 pessoas"
@@ -190,15 +194,17 @@ Saída: {
   "reasoning": "Resposta sobre carro de troca identificada pelo contexto",
   "fieldsExtracted": ["hasTradeIn", "tradeInBrand", "tradeInModel", "tradeInYear"]
 }
+
+
+Entrada: "10000" ou "uns 15 mil" (Com contexto anterior: "Quanto você tem de entrada?" ou "Quanto quer investir para financiar?")
 Saída: {
   "extracted": {
-    "brand": "chevrolet",
-    "model": "onix",
-    "minYear": 2019
+    "financingDownPayment": 10000,
+    "wantsFinancing": true
   },
-  "confidence": 0.95,
-  "reasoning": "Modelo específico (Onix é da Chevrolet) com ano EXATO solicitado",
-  "fieldsExtracted": ["brand", "model", "minYear"]
+  "confidence": 0.9,
+  "reasoning": "Valor baixo em contexto de financiamento interpretado como entrada",
+  "fieldsExtracted": ["financingDownPayment", "wantsFinancing"]
 }
 
 Entrada: "Corolla 2020" ou "Civic 2018" ou "HB20 2021"
