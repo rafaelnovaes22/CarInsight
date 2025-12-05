@@ -305,8 +305,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             return true;
           });
 
-          // Sort by price (cheapest first)
-          newResults.sort((a, b) => a.vehicle.price - b.vehicle.price);
+          // Sort by price (most expensive first - benefits dealership)
+          newResults.sort((a, b) => b.vehicle.price - a.vehicle.price);
 
           if (newResults.length > 0) {
             // Found similar vehicles - show them directly
