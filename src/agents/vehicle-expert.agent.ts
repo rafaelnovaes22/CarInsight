@@ -198,42 +198,91 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           const firstVehicle = lastShownVehicles[0];
           const wasSpecificSearch = lastSearchType === 'specific';
 
-          // Use extracted budget if user provided one, otherwise use reference price
+          // Get vehicle characteristics
           const referencePrice = firstVehicle.price;
           const userBudget = extracted.extracted.budget || extracted.extracted.budgetMax;
-          const searchMaxPrice = userBudget || Math.round(referencePrice * 1.5);
+          // Use user budget if provided, otherwise stay within 30% of original price
+          const searchMaxPrice = userBudget || Math.round(referencePrice * 1.3);
+          const searchMinPrice = Math.round(referencePrice * 0.7); // At least 30% cheaper
 
           const referenceBrand = firstVehicle.brand;
           const referenceModel = firstVehicle.model;
           const referenceYear = firstVehicle.year;
+          const referenceBodyType = (firstVehicle as any).bodyType?.toLowerCase() || '';
 
-          // For economic hatchbacks, search by category rather than brand
-          const isEconomicHatch = referencePrice <= 40000;
-          const searchQuery = isEconomicHatch
-            ? `hatch popular econômico compacto usado`
-            : `carro similar ${referenceBrand} ${referenceModel}`;
+          // Determine body type for search based on vehicle type or infer from model
+          let bodyTypeKeyword = '';
+          if (referenceBodyType.includes('sedan')) {
+            bodyTypeKeyword = 'sedan';
+          } else if (referenceBodyType.includes('hatch')) {
+            bodyTypeKeyword = 'hatch';
+          } else if (referenceBodyType.includes('suv')) {
+            bodyTypeKeyword = 'suv';
+          } else if (referenceBodyType.includes('pickup')) {
+            bodyTypeKeyword = 'pickup';
+          } else {
+            // Infer from known models
+            const sedanModels = ['voyage', 'prisma', 'onix plus', 'cronos', 'virtus', 'hb20s', 'city', 'civic', 'corolla', 'yaris sedan', 'logan', 'versa', 'sentra'];
+            const hatchModels = ['gol', 'fox', 'up', 'polo', 'onix', 'argo', 'mobi', 'uno', 'hb20', 'kwid', 'sandero', 'march', 'fit', 'ka', 'celta', 'palio'];
+            const suvModels = ['tcross', 't-cross', 'nivus', 'tracker', 'creta', 'hrv', 'hr-v', 'kicks', 'duster', 'captur', 'renegade', 'compass', 'tucson', 'tiggo'];
+
+            const modelLower = referenceModel.toLowerCase();
+            if (sedanModels.some(m => modelLower.includes(m))) {
+              bodyTypeKeyword = 'sedan';
+            } else if (hatchModels.some(m => modelLower.includes(m))) {
+              bodyTypeKeyword = 'hatch';
+            } else if (suvModels.some(m => modelLower.includes(m))) {
+              bodyTypeKeyword = 'suv';
+            }
+          }
+
+          // Build search query focused on same TYPE of vehicle
+          const searchQuery = bodyTypeKeyword
+            ? `${bodyTypeKeyword} popular usado econômico`
+            : `carro usado econômico popular`;
 
           logger.info({
             searchQuery,
             searchMaxPrice,
+            searchMinPrice,
             userBudget,
             referencePrice,
-            isEconomicHatch
-          }, 'Searching for similar vehicles');
+            bodyTypeKeyword,
+            referenceBodyType
+          }, 'Searching for similar vehicles by type');
 
-          // Search for similar vehicles with broader criteria
+          // Search for similar vehicles with same body type
           const similarResults = await vehicleSearchAdapter.search(
             searchQuery,
             {
               maxPrice: searchMaxPrice,
-              minYear: referenceYear - 5, // Up to 5 years older
-              limit: 15
+              minYear: referenceYear - 5,
+              bodyType: bodyTypeKeyword || undefined,
+              limit: 20
             }
           );
 
-          // Filter out vehicles already shown
+          // Filter results to match same body type and exclude already shown
           const shownVehicleIds = lastShownVehicles.map(v => v.vehicleId);
-          const newResults = similarResults.filter(r => !shownVehicleIds.includes(r.vehicleId));
+          let newResults = similarResults.filter(r => {
+            // Exclude already shown
+            if (shownVehicleIds.includes(r.vehicleId)) return false;
+
+            // If we know the body type, filter by it
+            if (bodyTypeKeyword && r.vehicle.bodyType) {
+              const resultBodyType = r.vehicle.bodyType.toLowerCase();
+              if (!resultBodyType.includes(bodyTypeKeyword)) return false;
+            }
+
+            return true;
+          });
+
+          // Sort by price similarity (closest to reference price first)
+          newResults.sort((a, b) => {
+            const diffA = Math.abs(a.vehicle.price - referencePrice);
+            const diffB = Math.abs(b.vehicle.price - referencePrice);
+            return diffA - diffB;
+          });
 
           if (newResults.length > 0) {
             // Found similar vehicles - show them directly
@@ -259,7 +308,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                   brand: r.vehicle.brand,
                   model: r.vehicle.model,
                   year: r.vehicle.year,
-                  price: r.vehicle.price
+                  price: r.vehicle.price,
+                  bodyType: r.vehicle.bodyType
                 }))
               },
               needsMoreInfo: [],
@@ -397,7 +447,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                     brand: r.vehicle.brand,
                     model: r.vehicle.model,
                     year: r.vehicle.year,
-                    price: r.vehicle.price
+                    price: r.vehicle.price,
+                    bodyType: r.vehicle.bodyType
                   }))
                 },
                 needsMoreInfo: [],
@@ -485,7 +536,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                       brand: r.vehicle.brand,
                       model: r.vehicle.model,
                       year: r.vehicle.year,
-                      price: r.vehicle.price
+                      price: r.vehicle.price,
+                      bodyType: r.vehicle.bodyType
                     }))
                   },
                   needsMoreInfo: [],
@@ -642,7 +694,8 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                 brand: r.vehicle.brand,
                 model: r.vehicle.model,
                 year: r.vehicle.year,
-                price: r.vehicle.price
+                price: r.vehicle.price,
+                bodyType: r.vehicle.bodyType
               }))
             },
             needsMoreInfo: [],
@@ -811,7 +864,8 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
                 brand: r.vehicle.brand,
                 model: r.vehicle.model,
                 year: r.vehicle.year,
-                price: r.vehicle.price
+                price: r.vehicle.price,
+                bodyType: r.vehicle.bodyType
               }))
             },
             needsMoreInfo: [],
@@ -948,7 +1002,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               brand: r.vehicle.brand,
               model: r.vehicle.model,
               year: r.vehicle.year,
-              price: r.vehicle.price
+              price: r.vehicle.price,
+              bodyType: r.vehicle.bodyType
             })),
             _excludeVehicleIds: undefined // Limpar após usar
           },
