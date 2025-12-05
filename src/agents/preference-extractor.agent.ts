@@ -52,6 +52,12 @@ CAMPOS POSSÍVEIS:
 - model: string (modelo específico)
 - priorities: string[] (ex: ["economico", "conforto", "espaco", "apto_uber", "familia", "cadeirinha", "crianca", "espaco_traseiro"])
 - dealBreakers: string[] (ex: ["leilao", "alta_quilometragem", "hatch_pequeno"])
+- wantsFinancing: boolean (true se mencionar "financiar", "parcelar", "financiamento", "parcela")
+- financingDownPayment: number (valor da entrada se mencionado)
+- hasTradeIn: boolean (true se mencionar "troca", "tenho um carro", "meu carro", "carro na troca")
+- tradeInBrand: string (marca do carro de troca)
+- tradeInModel: string (modelo do carro de troca)
+- tradeInYear: number (ano do carro de troca)
 
 REGRAS ESPECIAIS:
 - Se mencionar "cadeirinha", "bebê conforto", "criança", "filho", "filhos" → usoPrincipal: "familia", priorities: ["cadeirinha", "espaco_traseiro"]
@@ -460,6 +466,28 @@ Saída: {
     }
     if (extracted.tipoUber) {
       sanitized.tipoUber = extracted.tipoUber;
+    }
+
+    // Financing fields
+    if (extracted.wantsFinancing !== undefined) {
+      sanitized.wantsFinancing = Boolean(extracted.wantsFinancing);
+    }
+    if (extracted.financingDownPayment !== undefined && extracted.financingDownPayment !== null) {
+      sanitized.financingDownPayment = Math.max(0, Math.floor(extracted.financingDownPayment));
+    }
+
+    // Trade-in fields
+    if (extracted.hasTradeIn !== undefined) {
+      sanitized.hasTradeIn = Boolean(extracted.hasTradeIn);
+    }
+    if (extracted.tradeInBrand) {
+      sanitized.tradeInBrand = this.normalizeBrand(extracted.tradeInBrand);
+    }
+    if (extracted.tradeInModel) {
+      sanitized.tradeInModel = extracted.tradeInModel.trim().toLowerCase();
+    }
+    if (extracted.tradeInYear !== undefined && extracted.tradeInYear !== null) {
+      sanitized.tradeInYear = Math.max(1990, Math.min(2025, Math.floor(extracted.tradeInYear)));
     }
 
     return sanitized;

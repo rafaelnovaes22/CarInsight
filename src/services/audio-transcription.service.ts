@@ -120,10 +120,13 @@ export class AudioTranscriptionService {
             response_format: 'verbose_json',
         });
 
+        // Cast to any to access verbose_json properties (duration, language)
+        const verboseResult = transcription as any;
+
         return {
             text: transcription.text,
-            duration: transcription.duration,
-            language: transcription.language,
+            duration: verboseResult.duration,
+            language: verboseResult.language,
         };
     }
 

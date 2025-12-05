@@ -54,8 +54,19 @@ export interface CustomerProfile {
   priorities?: string[]; // ['economico', 'conforto', 'espaco']
   dealBreakers?: string[]; // ['leilao', 'alta_quilometragem', 'muito_antigo']
 
-  // Trade-in
+  // Trade-in (basic)
   hasTradeIn?: boolean;
+
+  // Trade-in (detailed)
+  tradeInBrand?: string;           // Marca do veículo na troca
+  tradeInModel?: string;           // Modelo do veículo na troca
+  tradeInYear?: number;            // Ano do veículo na troca
+  tradeInEstimatedValue?: number;  // Valor estimado
+
+  // Financing
+  wantsFinancing?: boolean;        // Se quer financiar
+  financingDownPayment?: number;   // Entrada disponível
+  financingMonths?: number;        // Prazo desejado (em meses)
 
   // Urgency
   urgency?: 'imediato' | '1mes' | '3meses' | 'flexivel';
@@ -64,6 +75,7 @@ export interface CustomerProfile {
   _waitingForSuggestionResponse?: boolean; // Indicates we offered suggestions and waiting for user response
   _searchedItem?: string; // The item (model/brand/category) that was not found
   _skipOnboarding?: boolean; // Skip remaining onboarding steps (user asked for specific brand/model)
+  _availableYears?: number[]; // Anos disponíveis quando modelo não encontrado no ano pedido
 }
 
 /**

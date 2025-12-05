@@ -175,6 +175,63 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
 
       // 2.5. Check if we offered to ask questions for suggestions and user is responding
       const wasWaitingForSuggestionResponse = context.profile?._waitingForSuggestionResponse;
+      const availableYears = context.profile?._availableYears;
+
+      // 2.6. Check if user selected an alternative year (direct return without questions)
+      if (availableYears && availableYears.length > 0) {
+        const yearMatch = userMessage.match(/\b(20\d{2})\b/);
+        if (yearMatch) {
+          const selectedYear = parseInt(yearMatch[1]);
+          if (availableYears.includes(selectedYear)) {
+            const searchedModel = context.profile?._searchedItem;
+
+            logger.info({
+              selectedYear,
+              searchedModel,
+              availableYears
+            }, 'User selected alternative year - returning vehicle directly');
+
+            // Search for the model with selected year
+            const results = await vehicleSearchAdapter.search(searchedModel || '', {
+              model: searchedModel,
+              minYear: selectedYear,
+              limit: 5
+            });
+
+            // Filter for exact year match
+            const matchingResults = results.filter(r => r.vehicle.year === selectedYear);
+
+            if (matchingResults.length > 0) {
+              const formattedResponse = await this.formatRecommendations(
+                matchingResults,
+                { ...updatedProfile, _availableYears: undefined, _waitingForSuggestionResponse: false, _searchedItem: undefined },
+                context
+              );
+
+              return {
+                response: formattedResponse,
+                extractedPreferences: {
+                  ...extracted.extracted,
+                  minYear: selectedYear,
+                  _availableYears: undefined,
+                  _waitingForSuggestionResponse: false,
+                  _searchedItem: undefined
+                },
+                needsMoreInfo: [],
+                canRecommend: true,
+                recommendations: matchingResults,
+                nextMode: 'recommendation',
+                metadata: {
+                  processingTime: Date.now() - startTime,
+                  confidence: 0.95,
+                  llmUsed: 'gpt-4o-mini'
+                }
+              };
+            }
+          }
+        }
+      }
+
       if (wasWaitingForSuggestionResponse) {
         // First, check if user is asking a NEW question or making a new request
         const isNewQuestion = this.detectUserQuestion(userMessage);
@@ -193,6 +250,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           // Clear the waiting flag and continue to normal processing
           updatedProfile._waitingForSuggestionResponse = false;
           updatedProfile._searchedItem = undefined;
+          updatedProfile._availableYears = undefined;
           // Don't return here - let the flow continue to handle the new question/request
         } else {
           const userAccepts = this.detectAffirmativeResponse(userMessage);
@@ -626,6 +684,54 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         }
       };
     }
+  }
+
+  /**
+   * Detect user's search intent to determine flow:
+   * - 'specific': User wants a specific model (e.g., "Onix 2019", "Civic") -> Return directly
+   * - 'recommendation': User wants help finding a car (e.g., "SUV para família") -> Recommendation flow
+   * - 'category': User asks about category availability (e.g., "que pickups vocês têm?") -> List category
+   */
+  private detectSearchIntent(
+    message: string,
+    extracted: Partial<CustomerProfile>
+  ): 'specific' | 'recommendation' | 'category' {
+    const msgLower = message.toLowerCase();
+
+    // Has specific model = direct search
+    if (extracted.model) {
+      logger.info({ model: extracted.model }, 'detectSearchIntent: specific model detected');
+      return 'specific';
+    }
+
+    // Asking about category availability
+    const categoryAskPatterns = [
+      /que\s+(pickup|picape|suv|sedan|hatch|caminhonete)s?\s+(tem|vocês|voces|você)/i,
+      /quais?\s+(pickup|picape|suv|sedan|hatch)s?\s+(tem|temos|disponíve)/i,
+      /(tem|temos|vocês tem)\s+(pickup|picape|suv|sedan|hatch)/i,
+    ];
+    if (categoryAskPatterns.some(p => p.test(message))) {
+      logger.info({ message }, 'detectSearchIntent: category question detected');
+      return 'category';
+    }
+
+    // Has body type + usage/characteristics = wants recommendation
+    const hasBodyType = !!extracted.bodyType;
+    const hasUsage = !!(extracted.usage || extracted.usoPrincipal);
+    const hasCharacteristic = msgLower.includes('econômico') ||
+      msgLower.includes('economico') ||
+      msgLower.includes('espaçoso') ||
+      msgLower.includes('confortável') ||
+      msgLower.includes('familia') ||
+      msgLower.includes('família');
+
+    if ((hasBodyType && !extracted.model) || hasUsage || hasCharacteristic) {
+      logger.info({ hasBodyType, hasUsage, hasCharacteristic }, 'detectSearchIntent: recommendation flow');
+      return 'recommendation';
+    }
+
+    // Default to recommendation if unsure
+    return 'recommendation';
   }
 
   /**
