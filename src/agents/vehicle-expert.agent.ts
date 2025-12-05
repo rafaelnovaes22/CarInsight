@@ -305,6 +305,28 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           };
         }
 
+        // AUTO-DETECTION: Financing Discussion (Post-Recommendation)
+        if (extracted.extracted.wantsFinancing || (extracted.extracted.financingDownPayment !== undefined)) {
+          const lastConfig = lastShownVehicles[0];
+          const modelName = lastConfig.model;
+          const entry = extracted.extracted.financingDownPayment
+            ? `R$ ${extracted.extracted.financingDownPayment.toLocaleString('pt-BR')}`
+            : 'o valor de entrada que preferir';
+
+          return {
+            response: `Excelente! Vamos avançar com o financiamento do ${modelName}. 🏦\n\nCom entrada de ${entry}, já consigo encaminhar para aprovação.\n\nPara finalizar essa simulação e garantir as melhores taxas, vou conectar você com nosso consultor agora. Pode ser?`,
+            extractedPreferences: extracted.extracted,
+            needsMoreInfo: ['schedule'],
+            canRecommend: false,
+            nextMode: 'negotiation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'rule-based'
+            }
+          };
+        }
+
         const postRecommendationIntent = this.detectPostRecommendationIntent(userMessage, lastShownVehicles);
 
         logger.info({
@@ -559,6 +581,26 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               processingTime: Date.now() - startTime,
               confidence: 0.95,
               llmUsed: 'gpt-4o-mini'
+            }
+          };
+        }
+
+        if (postRecommendationIntent === 'acknowledgment') {
+          const nextStepResponse = `Gostou de alguma dessas opções? 😊\n\nPodemos:\n1️⃣ Simular um financiamento\n2️⃣ Agendar para você ver o carro\n\nO que prefere fazer agora?`;
+
+          return {
+            response: nextStepResponse,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _showedRecommendation: true, // Keep state so next message context is maintained
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'recommendation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'rule-based'
             }
           };
         }
@@ -1424,7 +1466,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
   private detectPostRecommendationIntent(
     message: string,
     lastShownVehicles?: Array<{ brand: string; model: string; year: number; price: number }>
-  ): 'want_others' | 'want_details' | 'want_schedule' | 'new_search' | 'none' {
+  ): 'want_others' | 'want_details' | 'want_schedule' | 'new_search' | 'acknowledgment' | 'none' {
     const normalized = message.toLowerCase().trim();
 
     // Patterns for wanting OTHER options - comprehensive list
@@ -1545,6 +1587,14 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
     if (wantOthersPatterns.some(p => p.test(normalized))) {
       return 'want_others';
+    }
+
+    const acknowledgmentPatterns = [
+      /^ok$/i, /^entendi$/i, /^beleza$/i, /^legal$/i, /^certo$/i, /^tá bom$/i, /^ta bom$/i, /^show$/i, /^joia$/i, /^bacana$/i, /^obrigado$/i, /^valeu$/i
+    ];
+
+    if (acknowledgmentPatterns.some(p => p.test(normalized))) {
+      return 'acknowledgment';
     }
 
     return 'none';
