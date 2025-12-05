@@ -610,12 +610,13 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             if (sameModelResults.length > 0) {
               const availableYears = [...new Set(sameModelResults.map(r => r.vehicle.year))].sort((a, b) => b - a);
               const yearsText = availableYears.slice(0, 5).join(', ');
+              const isPlural = availableYears.length > 1;
 
               const yearAlternativeResponse = `Não encontramos ${capitalize(searchedItem)}${yearText} disponível. 😕
 
-Temos ${capitalize(searchedItem)} dos anos: ${yearsText}
+Temos ${capitalize(searchedItem)} ${isPlural ? 'dos anos' : 'do ano'}: ${yearsText}
 
-Gostaria de ver algum desses?`;
+Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
 
               return {
                 response: yearAlternativeResponse,
