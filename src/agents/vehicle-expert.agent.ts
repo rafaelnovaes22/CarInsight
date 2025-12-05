@@ -1144,30 +1144,73 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
   ): 'want_others' | 'want_details' | 'want_schedule' | 'new_search' | 'none' {
     const normalized = message.toLowerCase().trim();
 
-    // Patterns for wanting OTHER options
+    // Patterns for wanting OTHER options - comprehensive list
     const wantOthersPatterns = [
+      // Explicit requests for others
       /tem\s*(outr[oa]s?|mais)/i,
       /quer[oi]?\s*(ver\s*)?(outr[oa]s?|mais)/i,
       /mostra\s*(outr[oa]s?|mais)/i,
-      /mais\s*(opç|carros?|veículos?)/i,
-      /outras?\s*(opç|alternativ)/i,
+      /mais\s*(opç|carros?|veículos?|alternativ)/i,
+      /outras?\s*(opç|alternativ|sugest)/i,
       /^(outro|outra|outros|outras)$/i,
+      /alguma?\s*(outr[oa]|alternativ|opç)/i,
+
+      // Price/budget related
       /muito\s*(caro|cara)/i,
       /acima\s*do\s*(meu\s*)?(orçamento|budget)/i,
       /fora\s*do\s*(meu\s*)?(orçamento|budget)/i,
+      /algo\s*(mais\s*)?(barato|em conta|acessível|econômico)/i,
+      /tem\s*algo\s*(mais\s*)?(barato|em conta|caro)/i,
+      /mais\s*(barato|caro|em conta)/i,
+      /menos\s*(caro|cara)/i,
+
+      // Negative about current option
       /não\s*(gost|curt)[eiao]/i,
       /não\s*(é|era)\s*(bem\s*)?(isso|esse|o\s*que)/i,
       /prefer[io]\s*outro/i,
-      /algo\s*(mais\s*)?(barato|em conta|acessível)/i,
-      /tem\s*algo\s*(mais\s*)?(barato|em conta)/i,
       /não\s*me\s*interess/i,
+      /não\s*(era|é)\s*(o\s*que)/i,
+      /achei\s*(caro|ruim|feio)/i,
+
+      // Asking for alternatives/options
       /ver\s*mais\s*opç/i,
-      // Patterns with budget/price imply wanting other options
-      /tem\s*(opç|algo|carro).*(até|ate)\s*\d/i, // "tem opções até 30000"
-      /(até|ate)\s*\d+\s*(mil|k|reais|r\$)/i, // "até 30 mil", "até 30k"
-      /opç.*(até|ate)\s*\d/i, // "opções até 30000"
-      /na\s*faixa\s*de\s*\d/i, // "na faixa de 30000"
-      /entre\s*\d+\s*e\s*\d+/i, // "entre 25000 e 35000"
+      /ver\s*alternativ/i,
+      /alternativ/i,
+      /o\s*que\s*mais\s*tem/i,
+      /que\s*mais\s*vocês?\s*tem/i,
+
+      // Same type/profile/style requests
+      /mesmo\s*(perfil|tipo|estilo|porte|tamanho|padrão|padrao|valor|preço|preco)/i,
+      /opç.*(mesmo|parecid|similar|semelhant)/i,
+      /parecid[oa]s?/i,
+      /similar(es)?/i,
+      /semelhant(es)?/i,
+      /nesse\s*(estilo|perfil|valor|preço|padrão|porte)/i,
+      /desse\s*(tipo|jeito|estilo|porte)/i,
+      /nessa\s*(linha|faixa|categoria)/i,
+      /dessa\s*(categoria|faixa)/i,
+      /mesma\s*(linha|faixa|categoria)/i,
+      /mesmo\s*(segmento|porte)/i,
+      /na\s*mesma\s*(faixa|linha)/i,
+      /do\s*mesmo\s*(tipo|jeito|estilo|porte|valor)/i,
+      /assim/i, // "algo assim", "coisa assim"
+      /esse\s*(estilo|tipo)\s*de\s*(carro|veículo)/i,
+      /coisa\s*parecida/i,
+      /algo\s*(parecido|similar|semelhante|assim|nessa linha)/i,
+
+      // Competitor/equivalent requests
+      /concorrent/i,
+      /equivalent/i,
+      /compara/i,
+
+      // Budget with numbers
+      /tem\s*(opç|algo|carro).*(até|ate)\s*\d/i,
+      /(até|ate)\s*\d+\s*(mil|k|reais|r\$)?/i,
+      /opç.*(até|ate)\s*\d/i,
+      /na\s*faixa\s*de\s*\d/i,
+      /entre\s*\d+\s*e\s*\d+/i,
+      /por\s*(volta|cerca)\s*de\s*\d/i,
+      /\d+\s*(mil|k)?\s*(reais|r\$)?/i, // just a number like "30000" or "30 mil"
     ];
 
     // Patterns for wanting MORE DETAILS about shown vehicle
