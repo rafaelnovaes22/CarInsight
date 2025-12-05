@@ -87,6 +87,7 @@ export interface CustomerProfile {
   }>; // Veículos mostrados na última recomendação
   _lastSearchType?: 'specific' | 'recommendation'; // Tipo da última busca realizada
   _showedRecommendation?: boolean; // Indica que acabou de mostrar uma recomendação
+  _excludeVehicleIds?: string[]; // IDs de veículos a excluir das próximas buscas
 }
 
 /**

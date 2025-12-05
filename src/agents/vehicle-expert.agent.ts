@@ -256,7 +256,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               }
             };
           } else {
-            // No similar vehicles found - ask for preferences
+            // No similar vehicles found - ask for preferences but KEEP lastShownVehicles to exclude later
             const noSimilarResponse = `Não encontrei mais opções similares ao ${referenceBrand} ${referenceModel}. 🤔\n\n📋 Me conta o que você busca:\n- Qual seu orçamento máximo?\n- Prefere algum tipo específico (SUV, sedan, hatch)?`;
 
             return {
@@ -264,9 +264,10 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               extractedPreferences: {
                 ...extracted.extracted,
                 _showedRecommendation: false,
-                _lastShownVehicles: undefined,
+                _lastShownVehicles: lastShownVehicles, // MANTER para excluir depois
                 _lastSearchType: undefined,
-                _waitingForSuggestionResponse: true
+                _waitingForSuggestionResponse: true,
+                _excludeVehicleIds: lastShownVehicles.map(v => v.vehicleId) // IDs a excluir
               },
               needsMoreInfo: ['budget', 'bodyType'],
               canRecommend: false,
@@ -834,8 +835,24 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           };
         }
 
+        // Filter out previously shown vehicles if we have exclusion list
+        let filteredRecommendations = result.recommendations;
+        const excludeIds = context.profile?._excludeVehicleIds || [];
+        if (excludeIds.length > 0) {
+          logger.info({ excludeIds }, 'Excluding previously shown vehicles from recommendations');
+          filteredRecommendations = result.recommendations.filter(
+            r => !excludeIds.includes(r.vehicleId)
+          );
+        }
+
+        // If all recommendations were filtered out, try to get more without the exclusion
+        if (filteredRecommendations.length === 0 && result.recommendations.length > 0) {
+          filteredRecommendations = result.recommendations; // Use original if nothing left
+          logger.warn({}, 'All recommendations were excluded, showing original results');
+        }
+
         const formattedResponse = await this.formatRecommendations(
-          result.recommendations,
+          filteredRecommendations,
           updatedProfile,
           context,
           'recommendation' // Fluxo de recomendação personalizada
@@ -847,17 +864,18 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             ...extracted.extracted,
             _showedRecommendation: true,
             _lastSearchType: 'recommendation' as const,
-            _lastShownVehicles: result.recommendations.map(r => ({
+            _lastShownVehicles: filteredRecommendations.map(r => ({
               vehicleId: r.vehicleId,
               brand: r.vehicle.brand,
               model: r.vehicle.model,
               year: r.vehicle.year,
               price: r.vehicle.price
-            }))
+            })),
+            _excludeVehicleIds: undefined // Limpar após usar
           },
           needsMoreInfo: [],
           canRecommend: true,
-          recommendations: result.recommendations,
+          recommendations: filteredRecommendations,
           nextMode: 'recommendation',
           metadata: {
             processingTime: Date.now() - startTime,
