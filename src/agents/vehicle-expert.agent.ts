@@ -425,8 +425,64 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           if (userAccepts) {
             const searchedItem = context.profile?._searchedItem;
             const wasLookingForSevenSeater = searchedItem?.includes('lugares') || context.profile?.minSeats;
+            const hasAvailableYears = availableYears && availableYears.length > 0;
 
-            logger.info({ userMessage, searchedItem, wasLookingForSevenSeater }, 'User accepted to answer questions for suggestions');
+            logger.info({ userMessage, searchedItem, wasLookingForSevenSeater, hasAvailableYears, availableYears }, 'User accepted suggestion');
+
+            // Se temos anos alternativos disponíveis, mostrar o carro do primeiro ano diretamente
+            if (hasAvailableYears && searchedItem) {
+              const firstAvailableYear = availableYears[0]; // Ano mais recente
+
+              logger.info({ searchedItem, firstAvailableYear }, 'User accepted to see alternative year - showing vehicle directly');
+
+              // Buscar o veículo do ano alternativo
+              const results = await vehicleSearchAdapter.search(searchedItem, {
+                model: searchedItem,
+                minYear: firstAvailableYear,
+                limit: 5
+              });
+
+              // Filtrar para o ano específico
+              const matchingResults = results.filter(r => r.vehicle.year === firstAvailableYear);
+
+              if (matchingResults.length > 0) {
+                const formattedResponse = await this.formatRecommendations(
+                  matchingResults,
+                  { ...updatedProfile, _availableYears: undefined, _waitingForSuggestionResponse: false, _searchedItem: undefined },
+                  context,
+                  'specific' // Busca específica do ano alternativo
+                );
+
+                return {
+                  response: formattedResponse,
+                  extractedPreferences: {
+                    ...extracted.extracted,
+                    minYear: firstAvailableYear,
+                    _availableYears: undefined,
+                    _waitingForSuggestionResponse: false,
+                    _searchedItem: undefined,
+                    _showedRecommendation: true,
+                    _lastSearchType: 'specific' as const,
+                    _lastShownVehicles: matchingResults.map(r => ({
+                      vehicleId: r.vehicleId,
+                      brand: r.vehicle.brand,
+                      model: r.vehicle.model,
+                      year: r.vehicle.year,
+                      price: r.vehicle.price
+                    }))
+                  },
+                  needsMoreInfo: [],
+                  canRecommend: true,
+                  recommendations: matchingResults,
+                  nextMode: 'recommendation',
+                  metadata: {
+                    processingTime: Date.now() - startTime,
+                    confidence: 0.95,
+                    llmUsed: 'gpt-4o-mini'
+                  }
+                };
+              }
+            }
 
             // Se estava procurando 7 lugares, oferecer alternativas espaçosas
             if (wasLookingForSevenSeater) {
