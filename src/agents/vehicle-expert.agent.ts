@@ -25,18 +25,30 @@ import {
 const capitalize = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
 
 // Mapeamento de modelos conhecidos de 7 lugares
+// Mapeamento de modelos conhecidos de 7 lugares
 const SEVEN_SEAT_MODELS: string[] = [
-  'spin', 'livina', 'zafira', 'meriva', // Minivans/MPVs
-  'sw4', 'pajero', 'pajero sport', 'outlander', // SUVs grandes
-  'commander', 'taos', 'tiggo 8', 'captiva', // SUVs médios 7 lugares
-  'journey', 'freemont', 'grand vitara', 'vera cruz', // SUVs antigos
+  'spin', 'grand livina', 'zafira', // Minivans/MPVs (Livina simples é 5, Grand é 7)
+  'sw4', 'pajero', 'outlander', // SUVs grandes
+  'commander', 'tiggo 8', 'captiva', // SUVs médios 7 lugares (Taos é 5)
+  'journey', 'freemont', 'vera cruz', // SUVs antigos
   'tiguan allspace', 'discovery', 'discovery sport', // Premium
-  'sorento', 'santa fe', 'prado', // SUVs médios
+  'sorento', 'santa fe', 'prado', 'trailblazer' // SUVs médios
 ];
 
 // Função para verificar se um modelo tem 7 lugares
 const isSevenSeater = (model: string): boolean => {
   const modelLower = model.toLowerCase();
+
+  // Check if explicitly marked as 5 seats in the model name (e.g. "Spin 1.8 LT 5L", "Captiva 5 Lugares")
+  if (modelLower.match(/\b5\s*(l|lug|lugares)\b/) || modelLower.includes('5 lug')) {
+    return false;
+  }
+
+  // Livina logic: "grand livina" is 7, "livina" (alone) is 5
+  if (modelLower.includes('livina') && !modelLower.includes('grand')) {
+    return false;
+  }
+
   return SEVEN_SEAT_MODELS.some(m => modelLower.includes(m));
 };
 
@@ -209,6 +221,42 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             llmUsed: 'rule-based'
           }
         };
+      }
+
+      // 2.2.1. Intercept Hard Constraints (FAIL FAST)
+      // If user asks for something we definitely don't have (e.g., 7 seats), 
+      // inform immediately instead of asking qualification questions.
+      if (updatedProfile.minSeats && updatedProfile.minSeats >= 7 && !context.profile?._waitingForSuggestionResponse) {
+        // Search specifically for 7 seaters to check availability
+        const results = await vehicleSearchAdapter.search('7 lugares', {
+          limit: 20
+        });
+
+        // Filter strictly for 7 seaters
+        const sevenSeaters = results.filter(r => isSevenSeater(r.vehicle.model || ''));
+
+        if (sevenSeaters.length === 0) {
+          const seatsText = updatedProfile.minSeats === 7 ? '7 lugares' : `${updatedProfile.minSeats} lugares`;
+          logger.info({ minSeats: updatedProfile.minSeats }, 'Intercepting flow: 7-seater request with no inventory');
+
+          return {
+            response: `No momento não temos veículos de ${seatsText} disponíveis no estoque. 🚗\n\nQuer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alternativa?`,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: true,
+              _searchedItem: `veículo de ${seatsText}`
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'clarification',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 1.0,
+              llmUsed: 'rule-based',
+              noSevenSeaters: true
+            }
+          };
+        }
       }
 
       // 2.3. Intercept Pending Similar Vehicles Approval
