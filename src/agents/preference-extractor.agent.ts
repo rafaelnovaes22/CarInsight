@@ -398,9 +398,9 @@ Saída: {
       sanitized.bodyType = extracted.bodyType;
     }
 
-    // Year validation (1990-2025) - permite carros mais antigos
+    // Year validation (1950-2025) - permite carros clássicos e antigos
     if (extracted.minYear !== undefined && extracted.minYear !== null) {
-      sanitized.minYear = Math.max(1990, Math.min(2025, Math.floor(extracted.minYear)));
+      sanitized.minYear = Math.max(1950, Math.min(2025, Math.floor(extracted.minYear)));
     }
 
     // Km validation (0-500000)
