@@ -894,18 +894,23 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
         // Filter out previously shown vehicles if we have exclusion list
         let filteredRecommendations = result.recommendations;
-        const excludeIds = context.profile?._excludeVehicleIds || [];
-        if (excludeIds.length > 0) {
-          logger.info({ excludeIds }, 'Excluding previously shown vehicles from recommendations');
+
+        // Combine exclusion sources: explicit excludeIds + lastShownVehicles
+        const excludeFromList = context.profile?._excludeVehicleIds || [];
+        const excludeFromShown = (context.profile?._lastShownVehicles || []).map(v => v.vehicleId);
+        const allExcludeIds = [...new Set([...excludeFromList, ...excludeFromShown])];
+
+        if (allExcludeIds.length > 0) {
+          logger.info({ allExcludeIds, excludeFromList, excludeFromShown }, 'Excluding previously shown vehicles from recommendations');
           filteredRecommendations = result.recommendations.filter(
-            r => !excludeIds.includes(r.vehicleId)
+            r => !allExcludeIds.includes(r.vehicleId)
           );
         }
 
         // If all recommendations were filtered out, try to get more without the exclusion
         if (filteredRecommendations.length === 0 && result.recommendations.length > 0) {
           filteredRecommendations = result.recommendations; // Use original if nothing left
-          logger.warn({}, 'All recommendations were excluded, showing original results');
+          logger.warn({ allExcludeIds }, 'All recommendations were excluded, showing original results');
         }
 
         const formattedResponse = await this.formatRecommendations(
