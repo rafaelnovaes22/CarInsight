@@ -173,7 +173,26 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         extracted.extracted
       );
 
-      // 2.1. Intercept Trade-In context
+      // 2.1. Intercept Negotiation Mode
+      if (context.mode === 'negotiation' && updatedProfile.hasTradeIn && updatedProfile.tradeInModel && updatedProfile.financingDownPayment !== undefined) {
+        const lastConfig = context.profile._lastShownVehicles?.[0];
+        const vehicleText = lastConfig ? capitalize(lastConfig.model) : 'seu veículo de interesse';
+
+        return {
+          response: `Recebido! 📝\n\nResumo da proposta:\n• Veículo: ${vehicleText}\n• Troca: ${capitalize(updatedProfile.tradeInModel || '')} ${updatedProfile.tradeInYear || ''}\n• Entrada: R$ ${updatedProfile.financingDownPayment}\n\nJá registrei esses dados. Gostaria de agendar uma visita para avaliarmos seu carro e finalizarmos a proposta?`,
+          extractedPreferences: extracted.extracted,
+          needsMoreInfo: ['schedule'],
+          canRecommend: false,
+          nextMode: 'negotiation',
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 1.0,
+            llmUsed: 'rule-based'
+          }
+        };
+      }
+
+      // 2.2. Intercept Trade-In context
       // If user indicated they have a trade-in, but we lack details, ASK IMMEDIATELY.
       // This priority overrides normal flow to capture the lead's vehicle details.
       if (updatedProfile.hasTradeIn && (!updatedProfile.tradeInModel || !updatedProfile.tradeInYear)) {
@@ -183,7 +202,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           extractedPreferences: extracted.extracted,
           needsMoreInfo: ['tradeInModel', 'tradeInYear'],
           canRecommend: false,
-          nextMode: 'clarification',
+          nextMode: 'negotiation',
           metadata: {
             processingTime: Date.now() - startTime,
             confidence: 0.95,
@@ -201,6 +220,30 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
 
       // 2.55. Check if user is responding after seeing a recommendation
       if (showedRecommendation && lastShownVehicles && lastShownVehicles.length > 0) {
+
+        // AUTO-DETECTION: Trade-In Discussion (Post-Recommendation)
+        // If user mentions trade-in details here, prioritize responding to that over "similar search"
+        if (extracted.extracted.tradeInModel || (extracted.extracted.hasTradeIn && /troca|meu carro|tenho um|minha/i.test(userMessage))) {
+          const tradeInCar = updatedProfile.tradeInModel
+            ? `${updatedProfile.tradeInBrand || ''} ${updatedProfile.tradeInModel} ${updatedProfile.tradeInYear || ''}`.trim()
+            : 'seu veículo';
+
+          logger.info('User discussing trade-in post-recommendation - Intercepting intent');
+
+          return {
+            response: `Perfeito! O ${tradeInCar} pode entrar na negociação e facilitar bastante a compra do ${lastShownVehicles[0].model}. 🚗\n\nVamos fazer uma conta rápida? Além do carro na troca, você pretende dar mais algum valor de entrada em dinheiro?`,
+            extractedPreferences: extracted.extracted,
+            needsMoreInfo: ['financingDownPayment'],
+            canRecommend: false,
+            nextMode: 'negotiation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'rule-based'
+            }
+          };
+        }
+
         const postRecommendationIntent = this.detectPostRecommendationIntent(userMessage, lastShownVehicles);
 
         logger.info({

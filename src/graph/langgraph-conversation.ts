@@ -18,13 +18,14 @@ import { ConversationContext, ConversationMode, ConversationResponse } from '../
 /**
  * Estados do grafo de conversação
  */
-export type GraphState = 
+export type GraphState =
   | 'START'
   | 'GREETING'        // Boas-vindas e coleta de nome
   | 'DISCOVERY'       // Descoberta inicial: o que o cliente busca
   | 'CLARIFICATION'   // Perguntas para refinar perfil
   | 'SEARCH'          // Busca de veículos (transição interna)
   | 'RECOMMENDATION'  // Apresentação de recomendações
+  | 'NEGOTIATION'     // Negociação (trade-in, financiamento)
   | 'FOLLOW_UP'       // Acompanhamento pós-recomendação
   | 'HANDOFF'         // Transferência para vendedor
   | 'END';
@@ -58,7 +59,7 @@ interface TransitionConditions {
  * Gerencia o fluxo de estados da conversa
  */
 export class LangGraphConversation {
-  
+
   /**
    * Processa uma mensagem e retorna o novo estado
    */
@@ -67,11 +68,11 @@ export class LangGraphConversation {
     state: ConversationState
   ): Promise<{ response: string; newState: ConversationState }> {
     const startTime = Date.now();
-    
+
     try {
       // 1. Identificar estado atual
       const currentState = this.identifyCurrentState(state);
-      
+
       logger.info({
         conversationId: state.conversationId,
         currentState,
@@ -85,7 +86,7 @@ export class LangGraphConversation {
         content: message,
         timestamp: new Date(),
       };
-      
+
       const stateWithMessage: ConversationState = {
         ...state,
         messages: [...state.messages, userMessage],
@@ -147,7 +148,7 @@ export class LangGraphConversation {
 
     } catch (error) {
       logger.error({ error, conversationId: state.conversationId }, 'LangGraph: Error processing message');
-      
+
       return {
         response: 'Desculpe, tive um problema ao processar sua mensagem. Pode reformular? 🤔',
         newState: {
@@ -203,8 +204,8 @@ export class LangGraphConversation {
    */
   private isValidState(state: string): boolean {
     const validStates: GraphState[] = [
-      'START', 'GREETING', 'DISCOVERY', 'CLARIFICATION', 
-      'SEARCH', 'RECOMMENDATION', 'FOLLOW_UP', 'HANDOFF', 'END'
+      'START', 'GREETING', 'DISCOVERY', 'CLARIFICATION',
+      'SEARCH', 'RECOMMENDATION', 'NEGOTIATION', 'FOLLOW_UP', 'HANDOFF', 'END'
     ];
     return validStates.includes(state as GraphState);
   }
@@ -214,7 +215,7 @@ export class LangGraphConversation {
    */
   private evaluateConditions(state: ConversationState): TransitionConditions {
     const profile = state.profile || {};
-    
+
     return {
       hasName: !!profile.customerName,
       hasContext: !!(profile.usoPrincipal || profile.usage || profile.bodyType || profile.brand || profile.model),
@@ -287,20 +288,23 @@ export class LangGraphConversation {
       case 'START':
       case 'GREETING':
         return this.processGreeting(message, state);
-      
+
       case 'DISCOVERY':
         return this.processDiscovery(message, state);
-      
+
       case 'CLARIFICATION':
         return this.processClarification(message, state);
-      
+
       case 'SEARCH':
       case 'RECOMMENDATION':
         return this.processRecommendation(message, state);
-      
+
       case 'FOLLOW_UP':
         return this.processFollowUp(message, state);
-      
+
+      case 'NEGOTIATION':
+        return this.processNegotiation(message, state);
+
       default:
         return this.processWithVehicleExpert(message, state);
     }
@@ -315,7 +319,7 @@ export class LangGraphConversation {
   ): Promise<StateTransition> {
     // Primeira mensagem do usuário - provavelmente é o nome ou uma saudação
     const isGreeting = /^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|hello|hi|e aí|eai)/i.test(message.trim());
-    
+
     // Verificar se já tem nome no perfil
     if (state.profile?.customerName) {
       // Já tem nome, perguntar o que procura
@@ -330,7 +334,7 @@ export class LangGraphConversation {
     if (isGreeting || state.messages.length <= 2) {
       // Tentar extrair nome se a mensagem parecer um nome
       const possibleName = this.extractName(message);
-      
+
       if (possibleName && !isGreeting) {
         // Parece ser um nome
         return {
@@ -350,7 +354,7 @@ export class LangGraphConversation {
 
     // Tentar extrair nome da resposta
     const name = this.extractName(message);
-    
+
     if (name) {
       return {
         nextState: 'DISCOVERY',
@@ -372,11 +376,11 @@ export class LangGraphConversation {
    */
   private extractName(message: string): string | null {
     const cleaned = message.trim();
-    
+
     // Remover prefixos comuns
     const prefixes = ['meu nome é', 'me chamo', 'sou o', 'sou a', 'pode me chamar de', 'é', 'sou'];
     let name = cleaned;
-    
+
     for (const prefix of prefixes) {
       if (cleaned.toLowerCase().startsWith(prefix)) {
         name = cleaned.substring(prefix.length).trim();
@@ -388,7 +392,7 @@ export class LangGraphConversation {
     if (name.length < 2 || name.length > 50) return null;
     if (/^\d+$/.test(name)) return null; // Apenas números
     if (name.includes('?')) return null; // Pergunta
-    
+
     // Capitalizar primeira letra
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   }
@@ -403,7 +407,7 @@ export class LangGraphConversation {
     // Usar VehicleExpert para processar
     const context = this.buildContext(state, 'discovery');
     const response = await vehicleExpert.chat(message, context);
-    
+
     // Verificar se extraiu informações suficientes para avançar
     const updatedProfile = {
       ...state.profile,
@@ -412,7 +416,7 @@ export class LangGraphConversation {
 
     // Determinar próximo estado
     let nextState: GraphState = 'DISCOVERY';
-    
+
     if (response.canRecommend && response.recommendations && response.recommendations.length > 0) {
       nextState = 'RECOMMENDATION';
     } else if (updatedProfile.budget || updatedProfile.usage || updatedProfile.bodyType) {
@@ -439,7 +443,7 @@ export class LangGraphConversation {
 
     // Verificar se pode recomendar
     let nextState: GraphState = 'CLARIFICATION';
-    
+
     if (response.canRecommend && response.recommendations && response.recommendations.length > 0) {
       nextState = 'RECOMMENDATION';
     } else if (response.needsMoreInfo.length === 0) {
@@ -467,7 +471,7 @@ export class LangGraphConversation {
 
     // Se tem novas recomendações, atualizar
     let nextState: GraphState = state.recommendations.length > 0 ? 'FOLLOW_UP' : 'RECOMMENDATION';
-    
+
     if (response.recommendations && response.recommendations.length > 0) {
       nextState = 'FOLLOW_UP';
     }
@@ -492,14 +496,39 @@ export class LangGraphConversation {
 
     // Verificar se o usuário quer refinar a busca
     const wantsNewSearch = /nova busca|outro|diferente|mudar|alterar/i.test(message);
-    
+
     let nextState: GraphState = 'FOLLOW_UP';
-    
+
     if (wantsNewSearch) {
       nextState = 'DISCOVERY';
     } else if (response.recommendations && response.recommendations.length > 0) {
       // Novas recomendações geradas
       nextState = 'FOLLOW_UP';
+    }
+
+    return {
+      nextState,
+      response: response.response,
+      profile: response.extractedPreferences,
+      recommendations: response.recommendations || state.recommendations,
+    };
+  }
+
+  /**
+   * Estado NEGOTIATION: Negociação de troca e financiamento
+   */
+  private async processNegotiation(
+    message: string,
+    state: ConversationState
+  ): Promise<StateTransition> {
+    const context = this.buildContext(state, 'negotiation');
+    const response = await vehicleExpert.chat(message, context);
+
+    let nextState: GraphState = 'NEGOTIATION';
+
+    // Seguir instrução do agente se mudar de modo
+    if (response.nextMode && response.nextMode !== 'negotiation') {
+      nextState = this.modeToState(response.nextMode);
     }
 
     return {
@@ -523,7 +552,7 @@ export class LangGraphConversation {
 
     // Inferir próximo estado
     let nextState: GraphState = state.graph.currentNode as GraphState || 'DISCOVERY';
-    
+
     if (response.nextMode) {
       nextState = this.modeToState(response.nextMode);
     }
@@ -568,7 +597,8 @@ export class LangGraphConversation {
       'CLARIFICATION': 'clarification',
       'SEARCH': 'ready_to_recommend',
       'RECOMMENDATION': 'recommendation',
-      'FOLLOW_UP': 'refinement',
+      'NEGOTIATION': 'negotiation',
+      'FOLLOW_UP': 'refinement', // Mapeado para refinement para o agente saber que é feedback
       'HANDOFF': 'recommendation',
       'END': 'recommendation',
     };
@@ -584,6 +614,7 @@ export class LangGraphConversation {
       'clarification': 'CLARIFICATION',
       'ready_to_recommend': 'RECOMMENDATION',
       'recommendation': 'RECOMMENDATION',
+      'negotiation': 'NEGOTIATION',
       'refinement': 'FOLLOW_UP',
     };
     return modeToStateMap[mode] || 'DISCOVERY';

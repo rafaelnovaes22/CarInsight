@@ -20,7 +20,7 @@ export class ConversationalHandler {
     state: ConversationState
   ): Promise<{ response: string; updatedState: ConversationState }> {
     const startTime = Date.now();
-    
+
     try {
       // Add user message to state BEFORE checking onboarding
       const stateWithUserMessage: ConversationState = {
@@ -34,26 +34,26 @@ export class ConversationalHandler {
           }
         ]
       };
-      
+
       // Check if needs onboarding (greeting + name + context)
       // But skip if user already asked for specific brand/model
       const shouldSkipOnboarding = stateWithUserMessage.profile?._skipOnboarding;
-      
+
       if (onboardingHandler.needsOnboarding(stateWithUserMessage) && !shouldSkipOnboarding) {
         logger.debug({
           conversationId: stateWithUserMessage.conversationId,
           messageCount: stateWithUserMessage.messages.length
         }, 'Conversational: handling onboarding');
-        
+
         const onboardingResult = await onboardingHandler.handleOnboarding(message, stateWithUserMessage);
-        
+
         // If onboarding detected brand/model, skip onboarding and let vehicle expert handle it
         if (onboardingResult.updatedProfile._skipOnboarding || onboardingResult.response === '') {
           logger.info({
             brand: onboardingResult.updatedProfile.brand,
             model: onboardingResult.updatedProfile.model
           }, 'Conversational: User mentioned brand/model, skipping onboarding to vehicle expert');
-          
+
           // Update state with brand/model and continue to vehicle expert
           stateWithUserMessage.profile = {
             ...stateWithUserMessage.profile,
@@ -81,37 +81,37 @@ export class ConversationalHandler {
               lastMessageAt: new Date(),
             }
           };
-          
+
           logger.info({
             conversationId: state.conversationId,
             hasName: !!updatedState.profile.customerName,
             hasContext: !!updatedState.profile.usoPrincipal,
             processingTime: Date.now() - startTime
           }, 'Conversational: onboarding processed');
-          
+
           return {
             response: onboardingResult.response,
             updatedState
           };
         }
       }
-      
+
       // Build conversation context from state (with user message already added)
       const context = this.buildConversationContext(stateWithUserMessage);
-      
+
       logger.debug({
         conversationId: stateWithUserMessage.conversationId,
         mode: context.mode,
         messageCount: context.metadata.messageCount,
         profileFields: Object.keys(context.profile).length
       }, 'Conversational: processing message');
-      
+
       // Call VehicleExpert
       const response = await vehicleExpert.chat(message, context);
-      
+
       // Update state with extracted preferences
       const updatedProfile = this.mergeProfiles(stateWithUserMessage.profile, response.extractedPreferences);
-      
+
       // Update state
       const updatedState: ConversationState = {
         ...stateWithUserMessage,
@@ -135,7 +135,7 @@ export class ConversationalHandler {
           lastMessageAt: new Date(),
         }
       };
-      
+
       // Log success
       logger.info({
         conversationId: state.conversationId,
@@ -144,19 +144,19 @@ export class ConversationalHandler {
         processingTime: Date.now() - startTime,
         nextMode: response.nextMode
       }, 'Conversational: message processed');
-      
+
       return {
         response: response.response,
         updatedState
       };
-      
+
     } catch (error) {
       logger.error({
         error,
         conversationId: state.conversationId,
         message: message.substring(0, 100)
       }, 'Conversational: error processing message');
-      
+
       // Fallback response
       return {
         response: 'Desculpe, tive um problema ao processar sua mensagem. Pode reformular? 🤔',
@@ -164,14 +164,14 @@ export class ConversationalHandler {
       };
     }
   }
-  
+
   /**
    * Build ConversationContext from ConversationState
    */
   private buildConversationContext(state: ConversationState): ConversationContext {
     // Infer mode from current state
     const mode = this.inferConversationalMode(state);
-    
+
     return {
       conversationId: state.conversationId,
       phoneNumber: state.phoneNumber,
@@ -184,13 +184,13 @@ export class ConversationalHandler {
         messageCount: state.messages.filter(m => m.role === 'user').length,
         extractionCount: 0, // Could track this separately
         questionsAsked: 0, // Could track this separately
-        userQuestions: state.messages.filter(m => 
+        userQuestions: state.messages.filter(m =>
           m.role === 'user' && m.content.includes('?')
         ).length
       }
     };
   }
-  
+
   /**
    * Infer conversational mode from current state
    */
@@ -199,23 +199,23 @@ export class ConversationalHandler {
     if (state.recommendations.length > 0) {
       return 'recommendation';
     }
-    
+
     // If profile is mostly complete, ready to recommend
     const profile = state.profile;
     if (profile?.budget && profile?.usage && profile?.people) {
       return 'ready_to_recommend';
     }
-    
+
     // If we have some info but not all, clarifying
     const profileKeys = Object.keys(profile || {});
     if (profileKeys.length > 0 && profileKeys.length < 3) {
       return 'clarification';
     }
-    
+
     // Otherwise, still in discovery
     return 'discovery';
   }
-  
+
   /**
    * Map conversational mode to graph node for compatibility
    */
@@ -225,12 +225,13 @@ export class ConversationalHandler {
       'clarification': 'quiz',
       'ready_to_recommend': 'search',
       'recommendation': 'recommendation',
+      'negotiation': 'recommendation',
       'refinement': 'recommendation'
     };
-    
+
     return modeToNode[mode] || 'greeting';
   }
-  
+
   /**
    * Merge profiles intelligently
    */
@@ -242,18 +243,18 @@ export class ConversationalHandler {
     if (!current) {
       return extracted as CustomerProfile;
     }
-    
+
     // Merge, preferring newer extracted values
     return {
       ...current,
       ...extracted,
-      
+
       // Merge arrays intelligently
       priorities: this.mergeArrays(current.priorities, extracted.priorities),
       dealBreakers: this.mergeArrays(current.dealBreakers, extracted.dealBreakers),
     };
   }
-  
+
   /**
    * Merge arrays removing duplicates
    */
@@ -261,11 +262,11 @@ export class ConversationalHandler {
     if (!arr1 && !arr2) return undefined;
     if (!arr1) return arr2;
     if (!arr2) return arr1;
-    
+
     const merged = [...arr1, ...arr2];
     return Array.from(new Set(merged)); // Remove duplicates
   }
-  
+
   /**
    * Check if conversation should switch to conversational mode
    * (for mid-conversation switches if we enable that later)
@@ -275,12 +276,12 @@ export class ConversationalHandler {
     if (state.quiz.isComplete) {
       return false;
     }
-    
+
     // Don't switch if we already have recommendations
     if (state.recommendations.length > 0) {
       return false;
     }
-    
+
     // Could add more complex logic here
     return true;
   }
