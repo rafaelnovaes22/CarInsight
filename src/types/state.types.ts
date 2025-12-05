@@ -86,7 +86,7 @@ export interface CustomerProfile {
     price: number;
     bodyType?: string; // hatch, sedan, suv, pickup
   }>; // Veículos mostrados na última recomendação
-  _lastSearchType?: 'specific' | 'recommendation'; // Tipo da última busca realizada
+  _lastSearchType?: 'specific' | 'similar' | 'recommendation'; // Tipo da última busca realizada
   _showedRecommendation?: boolean; // Indica que acabou de mostrar uma recomendação
   _excludeVehicleIds?: string[]; // IDs de veículos a excluir das próximas buscas
 }

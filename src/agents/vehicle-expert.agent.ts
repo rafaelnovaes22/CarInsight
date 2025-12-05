@@ -202,8 +202,23 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           const referencePrice = firstVehicle.price;
           const userBudget = extracted.extracted.budget || extracted.extracted.budgetMax;
           // Use user budget if provided, otherwise stay within 30% of original price
-          const searchMaxPrice = userBudget || Math.round(referencePrice * 1.3);
-          const searchMinPrice = Math.round(referencePrice * 0.7); // At least 30% cheaper
+          let searchMaxPrice = userBudget || Math.round(referencePrice * 1.3);
+          let searchMinPrice = Math.round(referencePrice * 0.7); // At least 30% cheaper
+
+          // Check for price adjustment intent
+          const msgLower = userMessage.toLowerCase();
+          const isCheaper = /barato|em conta|menos|menor|acess[íi]vel|abaixo/i.test(msgLower) && !msgLower.includes('menos caro de manter'); // avoid false positives
+          const isExpensive = /caro|alto|melhor|maior|acima|top|premium/i.test(msgLower) && !msgLower.includes('muito caro'); // avoid "achei muito caro" interpreted as wanting expensive
+
+          if (isCheaper) {
+            logger.info('User specifically asked for CHEAPER options');
+            searchMaxPrice = Math.min(referencePrice, userBudget || referencePrice); // Cap at current price
+            searchMinPrice = Math.round(referencePrice * 0.5); // Allow much lower
+          } else if (isExpensive) {
+            logger.info('User specifically asked for BETTER/MORE EXPENSIVE options');
+            searchMinPrice = referencePrice; // Start at current price
+            searchMaxPrice = userBudget || Math.round(referencePrice * 1.8); // Allow higher
+          }
 
           const referenceBrand = firstVehicle.brand;
           const referenceModel = firstVehicle.model;
@@ -347,7 +362,14 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
             };
           } else {
             // No similar vehicles found - ask for preferences but KEEP lastShownVehicles to exclude later
-            const noSimilarResponse = `Não encontrei mais opções similares ao ${referenceBrand} ${referenceModel}. 🤔\n\n📋 Me conta o que você busca:\n- Qual seu orçamento máximo?\n- Prefere algum tipo específico (SUV, sedan, hatch)?`;
+            const hasBudget = !!(updatedProfile.budget || updatedProfile.budgetMax);
+            const nextQuestion = hasBudget
+              ? `Prefere algum tipo específico (SUV, sedan, hatch) ou tem outra marca em mente?`
+              : `Qual seu orçamento máximo?`;
+
+            const missingInfo = hasBudget ? ['bodyType', 'brand'] : ['budget', 'bodyType'];
+
+            const noSimilarResponse = `Não encontrei mais opções similares ao ${referenceBrand} ${referenceModel} com esses critérios. 🤔\n\n📋 Me conta: ${nextQuestion}`;
 
             return {
               response: noSimilarResponse,
@@ -359,7 +381,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                 _waitingForSuggestionResponse: true,
                 _excludeVehicleIds: lastShownVehicles.map(v => v.vehicleId) // IDs a excluir
               },
-              needsMoreInfo: ['budget', 'bodyType'],
+              needsMoreInfo: missingInfo,
               canRecommend: false,
               nextMode: 'discovery',
               metadata: {
@@ -642,7 +664,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
       const exactFilters = exactSearchParser.parse(userMessage);
       const hasExactModelYear = !!(exactFilters.model && (exactFilters.year || exactFilters.yearRange));
 
-      if (hasSpecificModel || hasExactModelYear) {
+      if ((hasSpecificModel || hasExactModelYear) && !userMessage.match(/parecid|similar|tipo\s|estilo|como\s|igual/i)) {
         const requestedBrand = extracted.extracted.brand?.toLowerCase();
         const requestedModel = (exactFilters.model || extracted.extracted.model)?.toLowerCase();
         const requestedYear = exactFilters.year;
@@ -783,6 +805,86 @@ Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
             ? `${capitalize(searchedItem)}${yearText}`
             : `esse modelo${yearText}`;
 
+          // Before saying "not found", try to find similar vehicles of the same type
+          // Infer body type from model name for pickup models like Saveiro, Strada, S10
+          const pickupModels = ['saveiro', 'strada', 's10', 'montana', 'hilux', 'ranger', 'toro', 'amarok', 'l200', 'frontier', 'triton', 'oroch'];
+          const sedanModels = ['voyage', 'prisma', 'cronos', 'virtus', 'hb20s', 'city', 'civic', 'corolla', 'logan', 'versa', 'sentra', 'cruze', 'focus'];
+          const suvModels = ['tcross', 't-cross', 'nivus', 'tracker', 'creta', 'hrv', 'hr-v', 'kicks', 'duster', 'captur', 'renegade', 'compass', 'ecosport'];
+          const hatchModels = ['gol', 'polo', 'onix', 'argo', 'mobi', 'uno', 'hb20', 'kwid', 'sandero', 'ka', 'celta', 'palio', 'fox', 'up'];
+
+          const modelLower = (searchedItem || '').toLowerCase();
+          let inferredBodyType = '';
+          let bodyTypeName = '';
+
+          if (pickupModels.some(m => modelLower.includes(m))) {
+            inferredBodyType = 'pickup';
+            bodyTypeName = 'pickups';
+          } else if (sedanModels.some(m => modelLower.includes(m))) {
+            inferredBodyType = 'sedan';
+            bodyTypeName = 'sedans';
+          } else if (suvModels.some(m => modelLower.includes(m))) {
+            inferredBodyType = 'suv';
+            bodyTypeName = 'SUVs';
+          } else if (hatchModels.some(m => modelLower.includes(m))) {
+            inferredBodyType = 'hatch';
+            bodyTypeName = 'hatches';
+          }
+
+          // If we inferred a body type, search for similar vehicles
+          if (inferredBodyType) {
+            logger.info({ searchedItem, inferredBodyType }, 'Searching for similar vehicles of same type');
+
+            const similarResults = await vehicleSearchAdapter.search(
+              `${inferredBodyType} usado`,
+              {
+                bodyType: inferredBodyType,
+                limit: 10
+              }
+            );
+
+            if (similarResults.length > 0) {
+              // Sort by price (most expensive first)
+              similarResults.sort((a, b) => b.vehicle.price - a.vehicle.price);
+
+              const formattedResponse = await this.formatRecommendations(
+                similarResults.slice(0, 5),
+                updatedProfile,
+                context,
+                'similar'
+              );
+
+              const intro = `Não temos ${vehicleDescription} disponível, mas temos outras ${bodyTypeName} que podem te interessar:\n\n`;
+
+              return {
+                response: intro + formattedResponse.replace(/^.*?\n\n/, ''), // Remove intro duplicada
+                extractedPreferences: {
+                  ...extracted.extracted,
+                  bodyType: inferredBodyType as any,
+                  _showedRecommendation: true,
+                  _lastSearchType: 'similar' as const,
+                  _lastShownVehicles: similarResults.slice(0, 5).map(r => ({
+                    vehicleId: r.vehicleId,
+                    brand: r.vehicle.brand,
+                    model: r.vehicle.model,
+                    year: r.vehicle.year,
+                    price: r.vehicle.price,
+                    bodyType: r.vehicle.bodyType
+                  }))
+                },
+                needsMoreInfo: [],
+                canRecommend: true,
+                recommendations: similarResults.slice(0, 5),
+                nextMode: 'recommendation',
+                metadata: {
+                  processingTime: Date.now() - startTime,
+                  confidence: 0.85,
+                  llmUsed: 'gpt-4o-mini'
+                }
+              };
+            }
+          }
+
+          // If no similar vehicles found, fall back to asking for preferences
           const notFoundResponse = `Não temos ${vehicleDescription} disponível no estoque no momento. 😕
 
 Quer responder algumas perguntas rápidas para eu te dar sugestões personalizadas?`;
