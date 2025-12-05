@@ -35,19 +35,19 @@ export interface LLMProviderConfig {
 // Configuração dos modelos disponíveis
 const LLM_PROVIDERS: LLMProviderConfig[] = [
   {
-    name: 'groq',
-    // Modelo Llama 4 Maverick (17B) - Alta capacidade de raciocínio verbal
-    model: 'llama-4-maverick-17b-128e-instruct',
-    enabled: !!env.GROQ_API_KEY && env.GROQ_API_KEY !== 'mock-key',
-    priority: 1, // Primário - Pedido do usuário
-    costPer1MTokens: { input: 0.05, output: 0.08 }, // Estimado
-  },
-  {
     name: 'openai',
     model: 'gpt-4o-mini',
     enabled: !!env.OPENAI_API_KEY && env.OPENAI_API_KEY !== 'mock-key',
-    priority: 2, // Fallback
+    priority: 1, // Primário
     costPer1MTokens: { input: 0.15, output: 0.6 },
+  },
+  {
+    name: 'groq',
+    // Modelo Llama 3.3 70B (Fallback)
+    model: 'llama-3.3-70b-versatile',
+    enabled: !!env.GROQ_API_KEY && env.GROQ_API_KEY !== 'mock-key',
+    priority: 2, // Fallback
+    costPer1MTokens: { input: 0.05, output: 0.08 },
   },
 ];
 
