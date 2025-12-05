@@ -583,7 +583,20 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
           };
         } else {
           // Model/brand/year not found in inventory
-          const searchedItem = requestedModel || extracted.extracted.brand;
+          // Try to get model from various sources, with fallback to extracting from user message
+          let searchedItem = requestedModel || extracted.extracted.model || extracted.extracted.brand;
+
+          // If still no model found, try to extract from user message (words that aren't years)
+          if (!searchedItem) {
+            const wordsFromMessage = userMessage.toLowerCase()
+              .replace(/\d{4}/g, '') // Remove 4-digit years
+              .replace(/\b(um|uma|o|a|de|do|da|para|pra|quero|tem|tenho|busco|procuro)\b/gi, '') // Remove common words
+              .trim()
+              .split(/\s+/)
+              .filter(w => w.length > 2)[0]; // Get first meaningful word
+            searchedItem = wordsFromMessage ? capitalize(wordsFromMessage) : null;
+          }
+
           const yearText = requestedYear ? ` ${requestedYear}` : (requestedYearRange ? ` ${requestedYearRange.min}-${requestedYearRange.max}` : '');
 
           // Check if we have the model but not the year - offer year alternatives
@@ -617,8 +630,12 @@ Gostaria de ver algum desses?`;
               };
             }
           }
+          // Build response message with proper fallback
+          const vehicleDescription = searchedItem
+            ? `${capitalize(searchedItem)}${yearText}`
+            : `esse modelo${yearText}`;
 
-          const notFoundResponse = `Não temos ${capitalize(searchedItem)}${yearText} disponível no estoque no momento. 😕
+          const notFoundResponse = `Não temos ${vehicleDescription} disponível no estoque no momento. 😕
 
 Quer responder algumas perguntas rápidas para eu te dar sugestões personalizadas?`;
 

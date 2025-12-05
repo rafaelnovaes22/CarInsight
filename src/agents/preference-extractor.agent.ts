@@ -24,13 +24,14 @@ REGRAS:
 5. Retorne APENAS JSON válido, sem texto adicional
 6. IMPORTANTE: Se usuário mencionar NOME DE MODELO (ex: Spin, Civic, Corolla), 
    SEMPRE extraia brand e model. Conheça marcas dos modelos populares:
-   - Spin = Chevrolet
-   - Civic = Honda
-   - Corolla = Toyota
-   - Onix = Chevrolet
-   - Gol = Volkswagen
-   - HB20 = Hyundai
-   - Argo = Fiat
+   - Spin, Onix, Prisma, Celta, Corsa, Classic, Cobalt, Tracker, S10 = Chevrolet
+   - Civic, City, Fit, HR-V, CR-V = Honda
+   - Corolla, Yaris, Etios, Hilux = Toyota
+   - Gol, Polo, Fox, Voyage, Saveiro, T-Cross = Volkswagen
+   - HB20, Creta, Tucson, i30 = Hyundai
+   - Argo, Cronos, Mobi, Uno, Palio, Siena, Strada, Toro = Fiat
+   - Ka, Fiesta, Focus, EcoSport, Ranger = Ford
+   - Kwid, Sandero, Logan, Duster = Renault
    etc.
 
 CAMPOS POSSÍVEIS:
@@ -397,9 +398,9 @@ Saída: {
       sanitized.bodyType = extracted.bodyType;
     }
 
-    // Year validation (2000-2025)
+    // Year validation (1990-2025) - permite carros mais antigos
     if (extracted.minYear !== undefined && extracted.minYear !== null) {
-      sanitized.minYear = Math.max(2000, Math.min(2025, Math.floor(extracted.minYear)));
+      sanitized.minYear = Math.max(1990, Math.min(2025, Math.floor(extracted.minYear)));
     }
 
     // Km validation (0-500000)

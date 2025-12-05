@@ -38,8 +38,9 @@ export interface ExtractedFilters {
  * Common Brazilian car models for pattern matching
  */
 const BRAZILIAN_CAR_MODELS = [
-    // Chevrolet
+    // Chevrolet (incluindo clássicos)
     'onix', 'prisma', 'cruze', 'tracker', 'spin', 'cobalt', 'montana', 's10', 'trailblazer', 'equinox',
+    'celta', 'corsa', 'classic', 'agile', 'astra', 'vectra', 'meriva', 'zafira', 'captiva', 'blazer',
     // Volkswagen
     'gol', 'polo', 'virtus', 'voyage', 'saveiro', 'fox', 'up', 't-cross', 'tcross', 'tiguan', 'taos', 'nivus', 'jetta', 'amarok',
     // Fiat
