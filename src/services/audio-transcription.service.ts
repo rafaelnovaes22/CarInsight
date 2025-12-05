@@ -116,7 +116,7 @@ export class AudioTranscriptionService {
 
         const transcription = await groq.audio.transcriptions.create({
             file,
-            model: 'whisper-large-v3',
+            model: 'whisper-large-v3-turbo',
             response_format: 'verbose_json',
         });
 
