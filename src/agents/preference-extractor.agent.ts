@@ -150,6 +150,30 @@ Saída: {
   "fieldsExtracted": ["brand", "model", "color"]
 }
 
+Entrada: "Onix 2019" ou "Quero um Onix 2019" ou "Tem Onix 2019?"
+Saída: {
+  "extracted": {
+    "brand": "chevrolet",
+    "model": "onix",
+    "minYear": 2019
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo específico (Onix é da Chevrolet) com ano EXATO solicitado",
+  "fieldsExtracted": ["brand", "model", "minYear"]
+}
+
+Entrada: "Corolla 2020" ou "Civic 2018" ou "HB20 2021"
+Saída: {
+  "extracted": {
+    "brand": "toyota",
+    "model": "corolla",
+    "minYear": 2020
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo específico com ano EXATO solicitado - minYear representa o ano desejado",
+  "fieldsExtracted": ["brand", "model", "minYear"]
+}
+
 Entrada: "Preciso de uma picape para trabalho" ou "Quero uma pickup" ou "Tem caminhonete?"
 Saída: {
   "extracted": {
@@ -403,7 +427,7 @@ Saída: {
     }
     if (extracted.model) {
       sanitized.model = extracted.model.trim().toLowerCase();
-      
+
       // Check if model is a known pickup - infer brand and bodyType
       const pickupBrand = this.getPickupBrand(sanitized.model);
       if (pickupBrand) {
@@ -429,7 +453,7 @@ Saída: {
     if (Array.isArray(extracted.dealBreakers)) {
       sanitized.dealBreakers = extracted.dealBreakers.filter(d => typeof d === 'string' && d.length > 0);
     }
-    
+
     // Also copy usoPrincipal and tipoUber if present
     if (extracted.usoPrincipal) {
       sanitized.usoPrincipal = extracted.usoPrincipal;
@@ -473,7 +497,7 @@ Saída: {
    */
   private getPickupBrand(model: string): string | null {
     const modelLower = model.toLowerCase().trim();
-    
+
     const pickupBrandMap: Record<string, string> = {
       'strada': 'fiat',
       'toro': 'fiat',
