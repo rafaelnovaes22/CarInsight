@@ -485,19 +485,55 @@ export class LangGraphConversation {
     }
 
     if (name) {
-      // Se detectou carro na saudação OU no profile, muda a resposta para confirmar
+      // Se detectou carro na saudação OU no profile, fazer busca IMEDIATA
       if (earlyProfileUpdate.model) {
         const carText = earlyProfileUpdate.minYear
           ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
           : earlyProfileUpdate.model;
 
-        return {
-          nextState: 'DISCOVERY', // Vai para discovery, mas com perfil já populado
-          response: `Prazer, ${name}! 😊\n\nVi que você tem interesse em um *${carText}*.\n\nVou verificar nosso estoque agora mesmo! 🚗`,
-          profile: {
-            customerName: name,
-            ...earlyProfileUpdate
+        logger.info({
+          name,
+          model: earlyProfileUpdate.model,
+          year: earlyProfileUpdate.minYear,
+        }, 'processGreeting: user provided name, vehicle already in profile - doing immediate search!');
+
+        // Construir perfil para busca
+        const searchProfile: Partial<CustomerProfile> = {
+          customerName: name,
+          ...earlyProfileUpdate
+        };
+
+        // Construir contexto para o VehicleExpert fazer a busca
+        const searchContext: ConversationContext = {
+          conversationId: state.conversationId,
+          phoneNumber: state.phoneNumber,
+          mode: 'discovery',
+          profile: searchProfile,
+          messages: state.messages,
+          metadata: {
+            startedAt: state.metadata.startedAt,
+            lastMessageAt: new Date(),
+            messageCount: state.messages.filter(m => m.role === 'user').length,
+            extractionCount: 0,
+            questionsAsked: 0,
+            userQuestions: 0,
           },
+        };
+
+        // Fazer a busca imediatamente (passando uma mensagem que indica busca do veículo)
+        const searchMessage = `Quero ver o ${carText}`;
+        const searchResult = await vehicleExpert.chat(searchMessage, searchContext);
+
+        // Formatar resposta com saudação + resultados
+        const greetingPart = `Prazer, ${name}! 😊\n\n`;
+        return {
+          nextState: searchResult.canRecommend ? 'RECOMMENDATION' : 'DISCOVERY',
+          response: greetingPart + searchResult.response,
+          profile: {
+            ...searchProfile,
+            ...searchResult.extractedPreferences,
+          },
+          recommendations: searchResult.recommendations,
         };
       }
 
@@ -606,6 +642,23 @@ export class LangGraphConversation {
   ]);
 
   /**
+   * Palavras reservadas do sistema que NÃO são nomes
+   * Evita interpretar comandos como nomes de usuário
+   */
+  private static readonly RESERVED_WORDS_NOT_NAMES = new Set([
+    // Comandos do bot
+    "iniciar", "sair", "reiniciar", "recomeçar", "voltar", "cancelar", "reset",
+    "encerrar", "tchau", "bye", "adeus", "parar", "stop",
+    // Saudações simples
+    "oi", "olá", "ola", "bom", "dia", "boa", "tarde", "noite", "hey", "hello", "hi",
+    // Respostas comuns
+    "sim", "não", "nao", "ok", "okay", "beleza", "certo", "entendi",
+    // Palavras genéricas
+    "carro", "veículo", "veiculo", "auto", "automóvel", "automovel",
+    "quero", "procuro", "busco", "preciso", "gostaria",
+  ]);
+
+  /**
    * Extrai nome de uma mensagem
    */
   private extractName(message: string): string | null {
@@ -620,6 +673,12 @@ export class LangGraphConversation {
       const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[lowerCleaned];
       logger.info({ original: cleaned, fixed: fixedName }, 'extractName: fixed transcription error');
       return fixedName;
+    }
+
+    // SEGUNDO: Verificar se é uma palavra reservada do sistema (comandos, saudações, etc.)
+    if (LangGraphConversation.RESERVED_WORDS_NOT_NAMES.has(lowerCleaned)) {
+      logger.debug({ word: cleaned, reason: 'reserved word - not a name' }, 'extractName: rejected');
+      return null;
     }
 
     // USAR REGEX para encontrar padrões de nome em QUALQUER lugar da mensagem
