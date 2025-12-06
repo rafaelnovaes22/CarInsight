@@ -599,7 +599,7 @@ export class LangGraphConversation {
    * Chave: erro de transcrição (lowercase), Valor: nome correto
    */
   private static readonly TRANSCRIPTION_FIXES: Record<string, string> = {
-    // Erros comuns para "Rafael"
+    // Erros comuns para "Rafael" - STT frequentemente erra este nome
     "i'll fail": 'Rafael',
     "ill fail": 'Rafael',
     "i fail": 'Rafael',
@@ -618,6 +618,17 @@ export class LangGraphConversation {
     "rafa": 'Rafael',
     "raphael": 'Rafael',
     "rafaelo": 'Rafael',
+    // Novas variações baseadas em erros reais
+    "hafa": 'Rafael',
+    "hafa já": 'Rafael',
+    "hafa, já": 'Rafael',
+    "hafa, já.": 'Rafael',
+    "hafaja": 'Rafael',
+    "hafa ja": 'Rafael',
+    "hafa,ja": 'Rafael',
+    "hafael": 'Rafael',
+    "rafafel": 'Rafael',
+    "rafaell": 'Rafael',
     // Erros comuns para "João"
     "john": 'João',
     "joao": 'João',
@@ -687,6 +698,17 @@ export class LangGraphConversation {
     if (LangGraphConversation.RESERVED_WORDS_NOT_NAMES.has(lowerCleaned)) {
       logger.debug({ word: cleaned, reason: 'reserved word - not a name' }, 'extractName: rejected');
       return null;
+    }
+
+    // TERCEIRO: Se a mensagem contém vírgula ou espaços, tentar verificar a primeira palavra
+    // Isso ajuda com transcrições como "Hafa, já" onde "hafa" mapeia para "Rafael"
+    if (cleaned.includes(',') || cleaned.includes(' ')) {
+      const firstPart = cleaned.split(/[,\s]+/)[0].toLowerCase();
+      if (LangGraphConversation.TRANSCRIPTION_FIXES[firstPart]) {
+        const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[firstPart];
+        logger.info({ original: cleaned, firstPart, fixed: fixedName }, 'extractName: fixed via first word match');
+        return fixedName;
+      }
     }
 
     // USAR REGEX para encontrar padrões de nome em QUALQUER lugar da mensagem
