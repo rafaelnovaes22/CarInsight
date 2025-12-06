@@ -614,7 +614,7 @@ export class LangGraphConversation {
 
     logger.debug({ originalMessage: message, cleaned }, 'extractName: processing');
 
-    // PRIMEIRO: Verificar se é um erro de transcrição conhecido
+    // PRIMEIRO: Verificar se é um erro de transcrição conhecido (mensagem completa)
     const lowerCleaned = cleaned.toLowerCase();
     if (LangGraphConversation.TRANSCRIPTION_FIXES[lowerCleaned]) {
       const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[lowerCleaned];
@@ -622,7 +622,40 @@ export class LangGraphConversation {
       return fixedName;
     }
 
-    // Remover prefixos comuns
+    // USAR REGEX para encontrar padrões de nome em QUALQUER lugar da mensagem
+    // Patterns: "me chamo [Nome]", "meu nome é [Nome]", "sou o/a [Nome]", etc.
+    const namePatterns = [
+      /(?:me chamo|meu nome é|meu nome e)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+      /(?:sou o|sou a|sou)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+      /(?:pode me chamar de)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+      /(?:é o|é a)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+    ];
+
+    for (const pattern of namePatterns) {
+      const match = cleaned.match(pattern);
+      if (match && match[1]) {
+        const extractedName = match[1].trim();
+        const lowerName = extractedName.toLowerCase();
+
+        // Verificar se é um erro de transcrição conhecido
+        if (LangGraphConversation.TRANSCRIPTION_FIXES[lowerName]) {
+          const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[lowerName];
+          logger.info({ original: extractedName, fixed: fixedName, pattern: pattern.source }, 'extractName: fixed via pattern match');
+          return fixedName;
+        }
+
+        // Verificar se parece um nome válido
+        if (LangGraphConversation.COMMON_BRAZILIAN_NAMES.has(lowerName) ||
+          /^[A-ZÀ-Ú][a-zà-ú]+$/.test(extractedName)) {
+          const result = extractedName.charAt(0).toUpperCase() + extractedName.slice(1).toLowerCase();
+          logger.info({ result, pattern: pattern.source }, 'extractName: found via pattern match');
+          return result;
+        }
+      }
+    }
+
+    // FALLBACK: Se não encontrou via regex, tentar método antigo (mensagem que é só o nome)
+    // Remover prefixos comuns se a mensagem COMEÇA com eles
     const prefixes = ['meu nome é', 'me chamo', 'sou o', 'sou a', 'pode me chamar de', 'é', 'sou'];
     let name = cleaned;
 
@@ -633,7 +666,7 @@ export class LangGraphConversation {
       }
     }
 
-    // Verificar novamente se a parte extraída é um erro de transcrição conhecido
+    // Verificar se a parte extraída é um erro de transcrição conhecido
     const lowerName = name.toLowerCase();
     if (LangGraphConversation.TRANSCRIPTION_FIXES[lowerName]) {
       const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[lowerName];
