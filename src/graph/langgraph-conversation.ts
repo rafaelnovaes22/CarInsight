@@ -399,16 +399,20 @@ export class LangGraphConversation {
     const exactMatch = exactSearchParser.parse(message);
     const earlyProfileUpdate: Partial<CustomerProfile> = {};
 
-    if (exactMatch.model) {
-      earlyProfileUpdate.model = exactMatch.model;
-      if (exactMatch.year) earlyProfileUpdate.minYear = exactMatch.year;
+    // Usar modelo da mensagem atual OU do profile já existente (capturado anteriormente)
+    const model = exactMatch.model || state.profile?.model;
+    const year = exactMatch.year || state.profile?.minYear;
+
+    if (model) {
+      earlyProfileUpdate.model = model;
+      if (year) earlyProfileUpdate.minYear = year;
 
       // Se encontramos modelo na saudação, já marcamos para pular perguntas genéricas
       // O VehicleExpertAgent vai usar isso para buscar direto
     }
 
     if (name) {
-      // Se detectou carro na saudação, muda a resposta para confirmar
+      // Se detectou carro na saudação OU no profile, muda a resposta para confirmar
       if (earlyProfileUpdate.model) {
         const carText = earlyProfileUpdate.minYear
           ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
