@@ -367,7 +367,7 @@ export class LangGraphConversation {
         hasModel: !!earlyProfileUpdate.model,
       }, 'processGreeting: name extraction attempt');
 
-      // Se encontrou NOME E CARRO na mesma mensagem, responder com ambos
+      // Se encontrou NOME E CARRO na mesma mensagem, fazer busca IMEDIATAMENTE
       // Isso funciona mesmo para saudações como "oi, me chamo Rafael, quero Civic 2017"
       if (possibleName && earlyProfileUpdate.model) {
         const carText = earlyProfileUpdate.minYear
@@ -378,15 +378,58 @@ export class LangGraphConversation {
           name: possibleName,
           model: earlyProfileUpdate.model,
           year: earlyProfileUpdate.minYear,
-        }, 'processGreeting: captured both name AND vehicle in same message!');
+        }, 'processGreeting: captured both name AND vehicle - initiating immediate search!');
 
-        return {
-          nextState: 'DISCOVERY',
-          response: `Prazer, ${possibleName}! 😊\n\nVi que você tem interesse em um *${carText}*.\n\nVou verificar nosso estoque agora mesmo! 🚗`,
-          profile: {
-            customerName: possibleName,
-            ...earlyProfileUpdate
+        // Construir perfil para busca
+        const searchProfile: Partial<CustomerProfile> = {
+          customerName: possibleName,
+          ...earlyProfileUpdate
+        };
+
+        // Construir contexto para o VehicleExpert fazer a busca
+        const searchContext: ConversationContext = {
+          conversationId: state.conversationId,
+          phoneNumber: state.phoneNumber,
+          mode: 'discovery',
+          profile: searchProfile,
+          messages: state.messages,
+          metadata: {
+            startedAt: state.metadata.startedAt,
+            lastMessageAt: new Date(),
+            messageCount: state.messages.filter(m => m.role === 'user').length,
+            extractionCount: 0,
+            questionsAsked: 0,
+            userQuestions: 0,
           },
+        };
+
+        // Fazer a busca imediatamente
+        const searchResult = await vehicleExpert.chat(message, searchContext);
+
+        // Se encontrou resultados, formatar resposta com saudação + resultados
+        if (searchResult.recommendations && searchResult.recommendations.length > 0) {
+          const greetingPart = `Prazer, ${possibleName}! 😊\n\n`;
+          return {
+            nextState: 'RECOMMENDATION',
+            response: greetingPart + searchResult.response,
+            profile: {
+              ...searchProfile,
+              ...searchResult.extractedPreferences,
+            },
+            recommendations: searchResult.recommendations,
+          };
+        }
+
+        // Se não encontrou, ainda assim retornar a resposta do VehicleExpert (pode ter alternativas)
+        const greetingPart = `Prazer, ${possibleName}! 😊\n\n`;
+        return {
+          nextState: searchResult.canRecommend ? 'RECOMMENDATION' : 'DISCOVERY',
+          response: greetingPart + searchResult.response,
+          profile: {
+            ...searchProfile,
+            ...searchResult.extractedPreferences,
+          },
+          recommendations: searchResult.recommendations,
         };
       }
 
