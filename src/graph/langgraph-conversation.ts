@@ -485,7 +485,10 @@ export class LangGraphConversation {
    * Extrai nome de uma mensagem
    */
   private extractName(message: string): string | null {
-    const cleaned = message.trim();
+    // Limpar a mensagem: remover pontuação final comum em transcrições de áudio
+    const cleaned = message.trim().replace(/[.,!?…]+$/, '').trim();
+
+    logger.debug({ originalMessage: message, cleaned }, 'extractName: processing');
 
     // Remover prefixos comuns
     const prefixes = ['meu nome é', 'me chamo', 'sou o', 'sou a', 'pode me chamar de', 'é', 'sou'];
@@ -499,9 +502,18 @@ export class LangGraphConversation {
     }
 
     // Validar: não muito curto, não muito longo, não parece comando
-    if (name.length < 2 || name.length > 50) return null;
-    if (/^\d+$/.test(name)) return null; // Apenas números
-    if (name.includes('?')) return null; // Pergunta
+    if (name.length < 2 || name.length > 50) {
+      logger.debug({ name, reason: 'length out of range' }, 'extractName: rejected');
+      return null;
+    }
+    if (/^\d+$/.test(name)) {
+      logger.debug({ name, reason: 'only numbers' }, 'extractName: rejected');
+      return null;
+    }
+    if (name.includes('?')) {
+      logger.debug({ name, reason: 'contains question mark' }, 'extractName: rejected');
+      return null;
+    }
 
     // Pegar apenas primeira palavra (ignorar sobrenome ou texto adicional)
     const firstWord = name.split(/\s+/)[0].toLowerCase();
@@ -513,14 +525,18 @@ export class LangGraphConversation {
 
     // Se não parece nome E tem menos de 4 letras, provavelmente é erro de transcrição
     if (!looksLikeName && firstWord.length < 4) {
+      logger.debug({ name, firstWord, looksLikeName, reason: 'does not look like name' }, 'extractName: rejected');
       return null;
     }
 
     // Capitalizar primeira letra de cada palavra
-    return name.split(/\s+/)
+    const result = name.split(/\s+/)
       .slice(0, 2) // Máximo 2 palavras (nome e sobrenome)
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
+
+    logger.debug({ result }, 'extractName: accepted');
+    return result;
   }
 
   /**

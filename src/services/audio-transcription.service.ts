@@ -229,6 +229,26 @@ export class AudioTranscriptionService {
                 };
             }
 
+            // Step 4: Validate transcription quality (detect corrupted/garbage output)
+            const transcribedText = result.text.trim();
+            if (this.isCorruptedTranscription(transcribedText)) {
+                this.logTranscription({
+                    mediaId,
+                    audioDurationSeconds,
+                    audioSizeBytes,
+                    processingTimeMs: Date.now() - startTime,
+                    success: false,
+                    errorCode: 'LOW_QUALITY',
+                    errorMessage: `Corrupted transcription detected: ${transcribedText.substring(0, 100)}`,
+                });
+
+                return {
+                    success: false,
+                    error: 'O áudio ficou difícil de entender. Pode falar mais perto do microfone ou digitar sua mensagem?',
+                    errorCode: 'LOW_QUALITY',
+                };
+            }
+
             // Success
             this.logTranscription({
                 mediaId,
@@ -240,7 +260,7 @@ export class AudioTranscriptionService {
 
             return {
                 success: true,
-                text: result.text,
+                text: transcribedText,
                 duration: result.duration,
                 language: result.language,
             };
@@ -293,6 +313,43 @@ export class AudioTranscriptionService {
         } else {
             logger.error(logData, '❌ Audio transcription failed');
         }
+    }
+
+    /**
+     * Detect corrupted/garbage transcriptions
+     * Returns true if the transcription appears to be nonsense
+     */
+    private isCorruptedTranscription(text: string): boolean {
+        if (!text || text.length === 0) return true;
+
+        // Detect non-Latin characters (Chinese, Arabic, Korean, Japanese, etc)
+        // These indicate Whisper got confused and hallucinated in other languages
+        const nonLatinPattern = /[\u4e00-\u9fff\u0600-\u06ff\uac00-\ud7af\u3040-\u309f\u30a0-\u30ff\u0400-\u04ff]/;
+        if (nonLatinPattern.test(text)) {
+            logger.warn({ text: text.substring(0, 100) }, 'Corrupted transcription: non-Latin characters detected');
+            return true;
+        }
+
+        // Detect high proportion of English words when expecting Portuguese
+        // Count English-only common words that don't exist in Portuguese
+        const englishOnlyWords = ['the', 'for', 'and', 'that', 'with', 'this', 'from', 'have', 'are', 'was', 'were', 'been', 'being', 'which', 'their', 'would', 'could', 'should', 'example', 'playing', 'type'];
+        const words = text.toLowerCase().split(/\s+/);
+        const englishWordCount = words.filter(w => englishOnlyWords.includes(w)).length;
+
+        // If more than 30% are English-only words, likely garbage
+        if (words.length > 3 && englishWordCount / words.length > 0.3) {
+            logger.warn({ text: text.substring(0, 100), englishWordCount, totalWords: words.length }, 'Corrupted transcription: too many English words');
+            return true;
+        }
+
+        // Detect too many special unicode characters (garbage output)
+        const specialChars = text.match(/[^\w\s\u00C0-\u017F.,!?;:'"()-áàâãéèêíìóòôõúùûç]/g) || [];
+        if (specialChars.length > text.length * 0.1) {
+            logger.warn({ text: text.substring(0, 100), specialCharCount: specialChars.length }, 'Corrupted transcription: too many special characters');
+            return true;
+        }
+
+        return false;
     }
 
     private sleep(ms: number): Promise<void> {
