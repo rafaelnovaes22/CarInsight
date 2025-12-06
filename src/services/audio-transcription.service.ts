@@ -114,32 +114,45 @@ export class AudioTranscriptionService {
     async transcribeAudio(audioBuffer: Buffer): Promise<{ text: string; duration?: number; language?: string }> {
         const file = new File([audioBuffer], 'audio.ogg', { type: 'audio/ogg' });
 
-        // Prompt para dar contexto ao Whisper e melhorar precisão com nomes de carros e nomes próprios
-        // Inclui modelos clássicos brasileiros (1960+) e modernos (até 2026)
-        // Inclui nomes próprios brasileiros comuns para evitar erros de transcrição
-        const automotivePrompt = `Contexto: Conversa em português brasileiro sobre compra de veículos usados. O cliente pode se apresentar com seu nome.
-Nomes próprios comuns: Rafael, João, José, Pedro, Paulo, Lucas, Mateus, Gabriel, Miguel, Felipe, Bruno, Marcos, Carlos, Daniel, Fernando, Rodrigo, André, Eduardo, Diego, Ricardo, Gustavo, Leonardo, Thiago, Vinícius, Henrique, Caio, Leandro, Marcelo, Fábio, Renato, Maria, Ana, Juliana, Fernanda, Camila, Amanda, Bruna, Carolina, Patricia, Isabela, Letícia, Mariana, Beatriz, Larissa, Aline, Priscila, Gabriela, Vanessa, Renata, Natalia, Adriana, Cláudia, Sandra, Lúcia, Débora, Simone, Cristina, Jéssica, Michele, Carla.
-Marcas: Honda, Toyota, Chevrolet, Volkswagen, Hyundai, Nissan, Fiat, Jeep, Mitsubishi, Ford, Renault, Peugeot, Citroën, Kia, BMW, Mercedes-Benz, Audi, Volvo, Land Rover, Porsche, Chery, JAC, Caoa Chery, BYD, GWM, Suzuki, Subaru, Mazda, Alfa Romeo, Chrysler, Dodge.
-Modelos populares: Civic, Corolla, Onix, HB20, Creta, Kicks, T-Cross, Tracker, Compass, HR-V, Fit, City, Sentra, Versa, Yaris, Polo, Virtus, Voyage, Gol, Fox, Kwid, Mobi, Argo, Cronos, Toro, Strada, Hilux, S10, Ranger, SW4, Pajero, Outlander, Tiggo, Tiguan, Jetta, Passat, Golf, Cruze, Spin, Cobalt, Prisma, Uno, Palio, Siena, Grand Siena, Punto, Linea, Bravo, Renegade, Wrangler, Cherokee, Commander, Tucson, Santa Fe, i30, Veloster, Elantra, Azera, March, Livina, Tiida, Frontier, Leaf, Duster, Captur, Sandero, Logan, Fluence, Megane, Scenic, Clio, 208, 2008, 3008, 308, 408, C3, C4, Aircross, DS3, DS4, Cerato, Sportage, Sorento, Soul, Picanto, Carnival, Stinger, X1, X3, X5, Série 3, Série 5, Classe A, Classe C, GLA, GLC, A3, A4, Q3, Q5, TT, XC40, XC60, XC90, Evoque, Discovery, Defender, Cayenne, Macan, Tiggo 3, Tiggo 5, Tiggo 7, Tiggo 8, Arrizo 5, Arrizo 6, T40, T50, T60, T80, Dolphin, Song, Han, Haval H6.
-Modelos clássicos: Fusca, Brasília, Variant, TL, Kombi, Karmann Ghia, SP2, Opala, Chevette, Monza, Kadett, Ipanema, Omega, Vectra, Astra, Corsa, Celta, Meriva, Zafira, Maverick, Corcel, Del Rey, Belina, Pampa, Escort, Verona, Versailles, Royale, Santana, Quantum, Parati, Saveiro, Passat antigo, Gol quadrado, Gol bola, Fiat 147, Oggi, Prêmio, Elba, Tempra, Marea, Stilo, Tipo, Puma, Gordini, Dauphine, Willys, Rural, Jeep Willys, Ford F-100, Chevrolet C10, Dodge Dart, Dodge Charger, Dodge Polara.
-Anos: 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026.`;
+        // Prompt reduzido - limite do Groq Whisper é 896 caracteres
+        // Mantém apenas contexto essencial e modelos mais populares
+        const automotivePrompt = `Conversa sobre compra de carros usados em português brasileiro. Nomes: Rafael, João, Maria, Ana, Pedro, Paulo, Lucas, Fernanda, Camila, Gabriel. Marcas: Honda, Toyota, Chevrolet, Volkswagen, Hyundai, Fiat, Jeep, Ford, Renault. Modelos: Civic, Corolla, Onix, HB20, Creta, Kicks, T-Cross, Tracker, Compass, HR-V, Fit, City, Polo, Virtus, Gol, Kwid, Argo, Cronos, Toro, Strada, Hilux, Duster. Anos: 2015-2025.`;
 
-        const transcription = await groq.audio.transcriptions.create({
-            file,
-            model: 'whisper-large-v3-turbo',
-            response_format: 'verbose_json',
-            language: 'pt', // Forçar português
-            prompt: automotivePrompt,
-        });
+        try {
+            logger.info({ bufferSize: audioBuffer.length }, '🎤 Calling Groq Whisper API...');
 
-        // Cast to any to access verbose_json properties (duration, language)
-        const verboseResult = transcription as any;
+            const transcription = await groq.audio.transcriptions.create({
+                file,
+                model: 'whisper-large-v3-turbo',
+                response_format: 'verbose_json',
+                language: 'pt', // Forçar português
+                prompt: automotivePrompt,
+            });
 
-        return {
-            text: transcription.text,
-            duration: verboseResult.duration,
-            language: verboseResult.language,
-        };
+            logger.info({ textLength: transcription.text?.length }, '✅ Groq Whisper transcription successful');
+
+            // Cast to any to access verbose_json properties (duration, language)
+            const verboseResult = transcription as any;
+
+            return {
+                text: transcription.text,
+                duration: verboseResult.duration,
+                language: verboseResult.language,
+            };
+        } catch (error: any) {
+            // Log detailed error for debugging
+            logger.error({
+                error: error.message,
+                status: error.status,
+                statusCode: error.statusCode,
+                code: error.code,
+                type: error.type,
+                errorDetails: error.error,
+                stack: error.stack?.substring(0, 500),
+            }, '❌ Groq Whisper API call failed');
+
+            throw error;
+        }
     }
 
 
