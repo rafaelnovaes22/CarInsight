@@ -454,6 +454,34 @@ export class LangGraphConversation {
   }
 
   /**
+   * Lista de nomes brasileiros comuns para validação de transcrição
+   * Usada para melhorar a acurácia do STT e detectar erros óbvios
+   */
+  private static readonly COMMON_BRAZILIAN_NAMES = new Set([
+    // Nomes masculinos
+    'rafael', 'joao', 'jose', 'pedro', 'paulo', 'lucas', 'mateus', 'gabriel', 'miguel', 'felipe',
+    'bruno', 'marcos', 'carlos', 'daniel', 'fernando', 'rodrigo', 'andre', 'eduardo', 'diego', 'ricardo',
+    'gustavo', 'leonardo', 'thiago', 'tiago', 'vinicius', 'henrique', 'caio', 'leandro', 'marcelo', 'fabio',
+    'renato', 'alex', 'alexandre', 'anderson', 'antonio', 'arthur', 'bernardo', 'cesar', 'claudio', 'cristiano',
+    'david', 'denis', 'douglas', 'enzo', 'fabiano', 'fabricio', 'francisco', 'george', 'gilberto', 'guilherme',
+    'heitor', 'hugo', 'igor', 'ivan', 'jean', 'jefferson', 'jorge', 'julio', 'junior', 'luan',
+    'luciano', 'luis', 'luiz', 'marcio', 'mario', 'matheus', 'mauricio', 'max', 'michael', 'nathan',
+    'nelson', 'nicolas', 'otavio', 'patrick', 'rafael', 'renan', 'roberto', 'rogerio', 'ronaldo', 'samuel',
+    'sergio', 'silvio', 'victor', 'vitor', 'wagner', 'walter', 'washington', 'wellington', 'wesley', 'william',
+    // Nomes femininos
+    'maria', 'ana', 'juliana', 'fernanda', 'camila', 'amanda', 'bruna', 'carolina', 'patricia', 'isabela',
+    'leticia', 'mariana', 'beatriz', 'larissa', 'aline', 'priscila', 'gabriela', 'vanessa', 'renata', 'natalia',
+    'adriana', 'claudia', 'sandra', 'lucia', 'debora', 'simone', 'cristina', 'jessica', 'michele', 'carla',
+    'alice', 'andreia', 'angelica', 'barbara', 'bianca', 'carina', 'catarina', 'cecilia', 'celia', 'clara',
+    'daniela', 'denise', 'diana', 'elaine', 'elisa', 'erica', 'fabiana', 'fatima', 'flavia', 'francesca',
+    'giovanna', 'helena', 'heloisa', 'ingrid', 'iris', 'isadora', 'ivone', 'joana', 'julia', 'karen',
+    'karina', 'kelly', 'laura', 'lilian', 'livia', 'lorena', 'luana', 'luciana', 'luiza', 'madalena',
+    'manuela', 'marcia', 'marta', 'melissa', 'monica', 'nadia', 'nicole', 'paloma', 'pamela', 'rafaela',
+    'raquel', 'rebeca', 'regina', 'roberta', 'rosa', 'samantha', 'sara', 'silvana', 'sofia', 'sonia',
+    'stella', 'suzana', 'taina', 'tatiana', 'tereza', 'valentina', 'valeria', 'vera', 'vitoria', 'viviane'
+  ]);
+
+  /**
    * Extrai nome de uma mensagem
    */
   private extractName(message: string): string | null {
@@ -475,8 +503,24 @@ export class LangGraphConversation {
     if (/^\d+$/.test(name)) return null; // Apenas números
     if (name.includes('?')) return null; // Pergunta
 
-    // Capitalizar primeira letra
-    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+    // Pegar apenas primeira palavra (ignorar sobrenome ou texto adicional)
+    const firstWord = name.split(/\s+/)[0].toLowerCase();
+
+    // Validar se parece um nome real usando a lista de nomes comuns
+    // ou se começa com letra maiúscula sem caracteres estranhos
+    const looksLikeName = LangGraphConversation.COMMON_BRAZILIAN_NAMES.has(firstWord) ||
+      /^[A-ZÀ-Ú][a-zà-ú]+$/.test(name.split(/\s+/)[0]);
+
+    // Se não parece nome E tem menos de 4 letras, provavelmente é erro de transcrição
+    if (!looksLikeName && firstWord.length < 4) {
+      return null;
+    }
+
+    // Capitalizar primeira letra de cada palavra
+    return name.split(/\s+/)
+      .slice(0, 2) // Máximo 2 palavras (nome e sobrenome)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   }
 
   /**
