@@ -47,8 +47,8 @@ const BRAZILIAN_CAR_MODELS = [
     'uno', 'mobi', 'argo', 'cronos', 'strada', 'toro', 'pulse', 'fastback', 'fiorino', 'ducato', 'doblo', 'siena', 'palio', 'punto',
     // Ford
     'ka', 'fiesta', 'focus', 'ecosport', 'ranger', 'territory', 'bronco', 'maverick', 'fusion',
-    // Honda
-    'civic', 'city', 'fit', 'hr-v', 'hrv', 'cr-v', 'crv', 'wr-v', 'wrv', 'accord',
+    // Honda (incluindo variações de transcrição de áudio)
+    'civic', 'circ', 'civico', 'sivic', 'city', 'fit', 'hr-v', 'hrv', 'cr-v', 'crv', 'wr-v', 'wrv', 'accord',
     // Toyota
     'corolla', 'yaris', 'etios', 'hilux', 'sw4', 'rav4', 'camry', 'prius',
     // Hyundai
@@ -143,11 +143,35 @@ export class ExactSearchParser {
     }
 
     /**
+     * Mapping of common transcription errors to correct model names
+     */
+    private static readonly MODEL_CORRECTIONS: Record<string, string> = {
+        'circ': 'Civic',
+        'civico': 'Civic',
+        'sivic': 'Civic',
+        'corola': 'Corolla',
+        'carola': 'Corolla',
+        'crv': 'Cr-V',
+        'hrv': 'Hr-V',
+        'wrv': 'Wr-V',
+        'tcross': 'T-Cross',
+        'scross': 'S-Cross',
+        'santafe': 'Santa Fe',
+    };
+
+    /**
      * Extract model name from query
      */
     private extractModel(query: string): string | null {
         const match = query.match(MODEL_PATTERN);
         if (match) {
+            const rawModel = match[1].toLowerCase();
+
+            // Check if we have a correction for this transcription error
+            if (ExactSearchParser.MODEL_CORRECTIONS[rawModel]) {
+                return ExactSearchParser.MODEL_CORRECTIONS[rawModel];
+            }
+
             // Capitalize first letter of each word
             return match[1]
                 .split(/[-\s]/)
