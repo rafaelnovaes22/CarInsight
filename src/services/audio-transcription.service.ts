@@ -114,9 +114,9 @@ export class AudioTranscriptionService {
     async transcribeAudio(audioBuffer: Buffer): Promise<{ text: string; duration?: number; language?: string }> {
         const file = new File([audioBuffer], 'audio.ogg', { type: 'audio/ogg' });
 
-        // Prompt reduzido - limite do Groq Whisper é 896 caracteres
-        // Mantém apenas contexto essencial e modelos mais populares
-        const automotivePrompt = `Conversa sobre compra de carros usados em português brasileiro. Nomes: Rafael, João, Maria, Ana, Pedro, Paulo, Lucas, Fernanda, Camila, Gabriel. Marcas: Honda, Toyota, Chevrolet, Volkswagen, Hyundai, Fiat, Jeep, Ford, Renault. Modelos: Civic, Corolla, Onix, HB20, Creta, Kicks, T-Cross, Tracker, Compass, HR-V, Fit, City, Polo, Virtus, Gol, Kwid, Argo, Cronos, Toro, Strada, Hilux, Duster. Anos: 2015-2025.`;
+        // Prompt reduzido - limite do Groq Whisper é 896 caracteres (~850 usado)
+        // Mantém contexto essencial, modelos populares e clássicos brasileiros
+        const automotivePrompt = `Conversa sobre compra de carros usados em português brasileiro. Nomes: Rafael, João, Maria, Ana, Pedro, Paulo, Lucas, Fernanda, Camila, Gabriel, Carlos, Bruno, Marcos, Eduardo. Marcas: Honda, Toyota, Chevrolet, Volkswagen, Hyundai, Fiat, Jeep, Ford, Renault, Nissan, Mitsubishi. Modelos modernos: Civic, Corolla, Onix, HB20, Creta, Kicks, T-Cross, Tracker, Compass, HR-V, Fit, City, Polo, Virtus, Gol, Kwid, Argo, Cronos, Toro, Strada, Hilux, Duster, SW4, Pajero, Tucson, Sentra, Yaris, Jetta, Golf, Tiguan. Clássicos: Fusca, Variant, Brasília, Opala, Chevette, Kombi, Monza, Corcel, Escort, Santana, Parati, Saveiro, Uno, Palio, Tempra. Anos: 1970-2025.`;
 
         try {
             logger.info({ bufferSize: audioBuffer.length }, '🎤 Calling Groq Whisper API...');
