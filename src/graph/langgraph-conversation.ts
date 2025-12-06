@@ -781,6 +781,13 @@ export class LangGraphConversation {
     // Pegar apenas primeira palavra (ignorar sobrenome ou texto adicional)
     const firstWord = name.split(/\s+/)[0].toLowerCase();
 
+    // CRÍTICO: Verificar se a primeira palavra é uma palavra reservada
+    // Isso evita que "Bom dia. Quero Civic" seja interpretado como nome = "Bom"
+    if (LangGraphConversation.RESERVED_WORDS_NOT_NAMES.has(firstWord)) {
+      logger.debug({ firstWord, reason: 'first word is reserved - not a name' }, 'extractName: rejected');
+      return null;
+    }
+
     // Validar se parece um nome real usando a lista de nomes comuns
     // ou se começa com letra maiúscula sem caracteres estranhos e não tem apóstrofos
     const looksLikeName = LangGraphConversation.COMMON_BRAZILIAN_NAMES.has(firstWord) ||
