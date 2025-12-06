@@ -856,7 +856,7 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                 return {
                   response: formattedResponse,
                   extractedPreferences: {
-                    ...extracted.extracted,
+                    ...updatedProfile,
                     minYear: firstAvailableYear,
                     _availableYears: undefined,
                     _waitingForSuggestionResponse: false,
