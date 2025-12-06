@@ -197,7 +197,11 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         // Ignorar se estivermos no meio de um fluxo de negociação ou se for menção de troca
         const isTradeInMention = /tenho|minha|meu|troca/i.test(userMessage) && !updatedProfile.model;
 
-        if (!isTradeInMention) {
+        // IMPORTANTE: Pular se já estamos esperando resposta de sugestão de anos alternativos
+        // Porque senão o bloco vai re-executar a busca quando o usuário responde "sim"
+        const isWaitingForSuggestion = context.profile?._waitingForSuggestionResponse;
+
+        if (!isTradeInMention && !isWaitingForSuggestion) {
           logger.info({ model: targetModel, year: targetYear }, 'Intercepting Exact Search intent');
 
           // 1. Tentar busca exata
