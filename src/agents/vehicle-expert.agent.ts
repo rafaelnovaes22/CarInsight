@@ -273,8 +273,12 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
                 ? `no ano: ${availableYears[0]}`
                 : `nos anos: ${availableYears.join(', ')}`;
 
+              const questionText = availableYears.length === 1
+                ? 'Quer ver essa opção?'
+                : 'Quer ver alguma dessas opções?';
+
               return {
-                response: `Não encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. 😕\n\nMas tenho esse modelo ${yearsText}.\n\nQuer ver alguma dessas opções?`,
+                response: `Não encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. 😕\n\nMas tenho esse modelo ${yearsText}.\n\n${questionText}`,
                 extractedPreferences: {
                   ...updatedProfile,
                   _searchedItem: targetModel,
