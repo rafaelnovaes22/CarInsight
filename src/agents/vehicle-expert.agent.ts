@@ -265,8 +265,12 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               const availableYears = [...new Set(modelResults.map(r => r.vehicle.year))].sort((a, b) => b - a);
               logger.info({ availableYears }, 'Exact year not found, but model exists in other years');
 
+              const yearsText = availableYears.length === 1
+                ? `no ano: ${availableYears[0]}`
+                : `nos anos: ${availableYears.join(', ')}`;
+
               return {
-                response: `Não encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. 😕\n\nMas tenho esse modelo nos anos: **${availableYears.join(', ')}**.\n\nQuer ver alguma dessas opções?`,
+                response: `Não encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. 😕\n\nMas tenho esse modelo ${yearsText}.\n\nQuer ver alguma dessas opções?`,
                 extractedPreferences: {
                   ...updatedProfile,
                   _searchedItem: targetModel,
