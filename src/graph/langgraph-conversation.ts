@@ -682,7 +682,15 @@ export class LangGraphConversation {
    */
   private extractName(message: string): string | null {
     // Limpar a mensagem: remover pontuação final comum em transcrições de áudio
-    const cleaned = message.trim().replace(/[.,!?…]+$/, '').trim();
+    let cleaned = message.trim().replace(/[.,!?…]+$/, '').trim();
+
+    // Detectar e remover duplicatas de nome (ex: "Rafael. Rafael" → "Rafael")
+    // Comum quando usuário repete o nome para o STT entender melhor
+    const duplicateMatch = cleaned.match(/^([A-ZÀ-Úa-zà-ú]+)[.,!?\s]+\1$/i);
+    if (duplicateMatch) {
+      cleaned = duplicateMatch[1];
+      logger.debug({ original: message, cleaned }, 'extractName: removed duplicate name');
+    }
 
     logger.debug({ originalMessage: message, cleaned }, 'extractName: processing');
 
