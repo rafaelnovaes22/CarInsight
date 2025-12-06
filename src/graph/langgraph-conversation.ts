@@ -623,12 +623,22 @@ export class LangGraphConversation {
     }
 
     // USAR REGEX para encontrar padrões de nome em QUALQUER lugar da mensagem
-    // Patterns: "me chamo [Nome]", "meu nome é [Nome]", "sou o/a [Nome]", etc.
+    // Patterns incluem múltiplas formas de se apresentar em português
     const namePatterns = [
+      // Padrões diretos: "me chamo [Nome]", "meu nome é [Nome]"
       /(?:me chamo|meu nome é|meu nome e)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+      // "sou o/a [Nome]"
       /(?:sou o|sou a|sou)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+      // "pode me chamar de [Nome]"
       /(?:pode me chamar de)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+      // "é o/a [Nome]"
       /(?:é o|é a)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+      // "[Nome] aqui" - ex: "Rafael aqui", "oi, João aqui"
+      /\b([A-ZÀ-Ú][a-zà-ú]+)\s+aqui\b/i,
+      // "aqui é [Nome]" - ex: "aqui é o Rafael"
+      /aqui\s+(?:é|é o|é a)?\s*([A-ZÀ-Úa-zà-ú]+)/i,
+      // Após saudação + vírgula: "oi, [Nome]" (nome deve estar na lista conhecida)
+      /^(?:oi|olá|ola|bom dia|boa tarde|boa noite)[,!]?\s+([A-ZÀ-Ú][a-zà-ú]+)(?:\s|,|!|$)/i,
     ];
 
     for (const pattern of namePatterns) {
