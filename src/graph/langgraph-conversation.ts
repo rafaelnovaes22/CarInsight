@@ -683,6 +683,8 @@ export class LangGraphConversation {
 
     // USAR REGEX para encontrar padrões de nome em QUALQUER lugar da mensagem
     // Patterns incluem múltiplas formas de se apresentar em português
+    // IMPORTANTE: O último pattern (saudação + nome) foi REMOVIDO por causar falsos positivos
+    // como "Bom dia, procuro..." sendo interpretado como "nome = procuro"
     const namePatterns = [
       // Padrões diretos: "me chamo [Nome]", "meu nome é [Nome]"
       /(?:me chamo|meu nome é|meu nome e)\s+([A-ZÀ-Úa-zà-ú]+)/i,
@@ -696,8 +698,7 @@ export class LangGraphConversation {
       /\b([A-ZÀ-Ú][a-zà-ú]+)\s+aqui\b/i,
       // "aqui é [Nome]" - ex: "aqui é o Rafael"
       /aqui\s+(?:é|é o|é a)?\s*([A-ZÀ-Úa-zà-ú]+)/i,
-      // Após saudação + vírgula: "oi, [Nome]" (nome deve estar na lista conhecida)
-      /^(?:oi|olá|ola|bom dia|boa tarde|boa noite)[,!]?\s+([A-ZÀ-Ú][a-zà-ú]+)(?:\s|,|!|$)/i,
+      // NÃO INCLUIR: pattern "oi, [Nome]" pois causa falsos positivos como "Bom dia, procuro..."
     ];
 
     for (const pattern of namePatterns) {
@@ -706,6 +707,12 @@ export class LangGraphConversation {
         const extractedName = match[1].trim();
         const lowerName = extractedName.toLowerCase();
 
+        // PRIMEIRO: Verificar se é uma palavra reservada (não é nome)
+        if (LangGraphConversation.RESERVED_WORDS_NOT_NAMES.has(lowerName)) {
+          logger.debug({ extractedName, reason: 'reserved word from pattern match' }, 'extractName: skipping pattern');
+          continue; // Tentar próximo pattern
+        }
+
         // Verificar se é um erro de transcrição conhecido
         if (LangGraphConversation.TRANSCRIPTION_FIXES[lowerName]) {
           const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[lowerName];
@@ -713,7 +720,7 @@ export class LangGraphConversation {
           return fixedName;
         }
 
-        // Verificar se parece um nome válido
+        // Verificar se parece um nome válido (deve estar na lista OU ter formato de nome)
         if (LangGraphConversation.COMMON_BRAZILIAN_NAMES.has(lowerName) ||
           /^[A-ZÀ-Ú][a-zà-ú]+$/.test(extractedName)) {
           const result = extractedName.charAt(0).toUpperCase() + extractedName.slice(1).toLowerCase();
