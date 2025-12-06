@@ -357,26 +357,41 @@ export class LangGraphConversation {
         }, 'processGreeting: early vehicle intent detected!');
       }
 
-      // Tentar extrair nome se a mensagem parecer um nome
+      // Tentar extrair nome da mensagem (pode estar junto com saudação)
+      // Ex: "oi, me chamo Rafael, você tem Civic 2017?"
       const possibleName = this.extractName(message);
 
+      logger.debug({
+        possibleName,
+        isGreeting,
+        hasModel: !!earlyProfileUpdate.model,
+      }, 'processGreeting: name extraction attempt');
+
+      // Se encontrou NOME E CARRO na mesma mensagem, responder com ambos
+      // Isso funciona mesmo para saudações como "oi, me chamo Rafael, quero Civic 2017"
+      if (possibleName && earlyProfileUpdate.model) {
+        const carText = earlyProfileUpdate.minYear
+          ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
+          : earlyProfileUpdate.model;
+
+        logger.info({
+          name: possibleName,
+          model: earlyProfileUpdate.model,
+          year: earlyProfileUpdate.minYear,
+        }, 'processGreeting: captured both name AND vehicle in same message!');
+
+        return {
+          nextState: 'DISCOVERY',
+          response: `Prazer, ${possibleName}! 😊\n\nVi que você tem interesse em um *${carText}*.\n\nVou verificar nosso estoque agora mesmo! 🚗`,
+          profile: {
+            customerName: possibleName,
+            ...earlyProfileUpdate
+          },
+        };
+      }
+
+      // Se só encontrou nome (sem carro) e NÃO é saudação simples
       if (possibleName && !isGreeting) {
-        // Parece ser um nome - verificar se também tem carro
-        if (earlyProfileUpdate.model) {
-          const carText = earlyProfileUpdate.minYear
-            ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
-            : earlyProfileUpdate.model;
-
-          return {
-            nextState: 'DISCOVERY',
-            response: `Prazer, ${possibleName}! 😊\n\nVi que você tem interesse em um *${carText}*.\n\nVou verificar nosso estoque agora mesmo! 🚗`,
-            profile: {
-              customerName: possibleName,
-              ...earlyProfileUpdate
-            },
-          };
-        }
-
         return {
           nextState: 'DISCOVERY',
           response: `Prazer, ${possibleName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico`,
@@ -384,7 +399,7 @@ export class LangGraphConversation {
         };
       }
 
-      // Se detectou carro na saudação, salvar e perguntar nome contextualizado
+      // Se detectou APENAS carro (sem nome) na saudação, salvar e perguntar nome
       if (earlyProfileUpdate.model) {
         const carText = earlyProfileUpdate.minYear
           ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
