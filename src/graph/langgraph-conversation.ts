@@ -337,9 +337,24 @@ export class LangGraphConversation {
       const exactMatch = exactSearchParser.parse(message);
       const earlyProfileUpdate: Partial<CustomerProfile> = {};
 
+      // DEBUG: Log para entender por que não está detectando o modelo
+      logger.info({
+        message,
+        isGreeting,
+        messageCount: state.messages.length,
+        exactMatch,
+        hasModel: !!exactMatch?.model,
+        hasYear: !!exactMatch?.year,
+      }, 'processGreeting: parsing for early vehicle intent');
+
       if (exactMatch.model) {
         earlyProfileUpdate.model = exactMatch.model;
         if (exactMatch.year) earlyProfileUpdate.minYear = exactMatch.year;
+
+        logger.info({
+          model: earlyProfileUpdate.model,
+          year: earlyProfileUpdate.minYear,
+        }, 'processGreeting: early vehicle intent detected!');
       }
 
       // Tentar extrair nome se a mensagem parecer um nome
@@ -486,6 +501,53 @@ export class LangGraphConversation {
   ]);
 
   /**
+   * Mapeamento de erros comuns de transcrição STT para nomes corretos
+   * Chave: erro de transcrição (lowercase), Valor: nome correto
+   */
+  private static readonly TRANSCRIPTION_FIXES: Record<string, string> = {
+    // Erros comuns para "Rafael"
+    "i'll fail": 'Rafael',
+    "ill fail": 'Rafael',
+    "i fail": 'Rafael',
+    "i fell": 'Rafael',
+    "i feel": 'Rafael',
+    "rafael": 'Rafael',
+    "alfao": 'Rafael',
+    "alfa": 'Rafael',
+    "raffa": 'Rafael',
+    "rafa": 'Rafael',
+    // Erros comuns para "João"
+    "john": 'João',
+    "joao": 'João',
+    "jow": 'João',
+    // Erros comuns para "Maria"
+    "mary": 'Maria',
+    "marie": 'Maria',
+    // Erros comuns para "Paulo/Pedro"
+    "paul": 'Paulo',
+    "peter": 'Pedro',
+    // Outros mapeamentos
+    "mike": 'Miguel',
+    "michael": 'Miguel',
+    "gabriel": 'Gabriel',
+    "ana": 'Ana',
+    "anna": 'Ana',
+  };
+
+  /**
+   * Palavras em inglês que indicam erro de transcrição (não são nomes)
+   */
+  private static readonly ENGLISH_WORDS_NOT_NAMES = new Set([
+    "i'll", "ill", "i'm", "im", "i've", "ive", "i'd", "id",
+    "the", "and", "for", "you", "are", "was", "were", "been",
+    "have", "has", "had", "will", "would", "could", "should",
+    "fail", "fell", "feel", "fall", "full", "fill",
+    "my", "name", "is", "hello", "hi", "hey", "yes", "no",
+    "what", "where", "when", "why", "how", "who", "this", "that",
+    "it's", "its", "it", "they", "them", "their",
+  ]);
+
+  /**
    * Extrai nome de uma mensagem
    */
   private extractName(message: string): string | null {
@@ -493,6 +555,14 @@ export class LangGraphConversation {
     const cleaned = message.trim().replace(/[.,!?…]+$/, '').trim();
 
     logger.debug({ originalMessage: message, cleaned }, 'extractName: processing');
+
+    // PRIMEIRO: Verificar se é um erro de transcrição conhecido
+    const lowerCleaned = cleaned.toLowerCase();
+    if (LangGraphConversation.TRANSCRIPTION_FIXES[lowerCleaned]) {
+      const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[lowerCleaned];
+      logger.info({ original: cleaned, fixed: fixedName }, 'extractName: fixed transcription error');
+      return fixedName;
+    }
 
     // Remover prefixos comuns
     const prefixes = ['meu nome é', 'me chamo', 'sou o', 'sou a', 'pode me chamar de', 'é', 'sou'];
@@ -503,6 +573,28 @@ export class LangGraphConversation {
         name = cleaned.substring(prefix.length).trim();
         break;
       }
+    }
+
+    // Verificar novamente se a parte extraída é um erro de transcrição conhecido
+    const lowerName = name.toLowerCase();
+    if (LangGraphConversation.TRANSCRIPTION_FIXES[lowerName]) {
+      const fixedName = LangGraphConversation.TRANSCRIPTION_FIXES[lowerName];
+      logger.info({ original: name, fixed: fixedName }, 'extractName: fixed transcription error after prefix removal');
+      return fixedName;
+    }
+
+    // DETECTAR INGLÊS: Rejeitar se contém palavras em inglês óbvias
+    const words = name.toLowerCase().split(/\s+/);
+    const hasEnglishWords = words.some(w => LangGraphConversation.ENGLISH_WORDS_NOT_NAMES.has(w));
+    if (hasEnglishWords) {
+      logger.debug({ name, words, reason: 'contains English words - likely transcription error' }, 'extractName: rejected');
+      return null;
+    }
+
+    // DETECTAR CONTRAÇÕES EM INGLÊS (I'll, I'm, etc.)
+    if (/\b(i'|i"|you'|we'|they'|he'|she'|it')/i.test(name)) {
+      logger.debug({ name, reason: 'contains English contractions' }, 'extractName: rejected');
+      return null;
     }
 
     // Validar: não muito curto, não muito longo, não parece comando
@@ -523,13 +615,19 @@ export class LangGraphConversation {
     const firstWord = name.split(/\s+/)[0].toLowerCase();
 
     // Validar se parece um nome real usando a lista de nomes comuns
-    // ou se começa com letra maiúscula sem caracteres estranhos
+    // ou se começa com letra maiúscula sem caracteres estranhos e não tem apóstrofos
     const looksLikeName = LangGraphConversation.COMMON_BRAZILIAN_NAMES.has(firstWord) ||
-      /^[A-ZÀ-Ú][a-zà-ú]+$/.test(name.split(/\s+/)[0]);
+      (/^[A-ZÀ-Ú][a-zà-ú]+$/.test(name.split(/\s+/)[0]) && !name.includes("'"));
 
     // Se não parece nome E tem menos de 4 letras, provavelmente é erro de transcrição
     if (!looksLikeName && firstWord.length < 4) {
       logger.debug({ name, firstWord, looksLikeName, reason: 'does not look like name' }, 'extractName: rejected');
+      return null;
+    }
+
+    // Se não parece nome E contém caracteres estranhos, rejeitar
+    if (!looksLikeName && /['"]/.test(name)) {
+      logger.debug({ name, reason: 'contains apostrophe or quote - likely English' }, 'extractName: rejected');
       return null;
     }
 

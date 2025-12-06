@@ -66,9 +66,16 @@ Até logo! 🚗`;
 Para começar, qual é o seu nome?`;
       }
 
-      // 👋 Check for greetings (restart conversation if in the middle)
+      // 👋 Check for greetings - but DON'T return immediately if the message has more content
+      // This allows capturing vehicle intent in messages like "Oi, você tem Civic 2017?"
       const isGreeting = greetingCommands.some(cmd => lowerMessage === cmd || lowerMessage.startsWith(cmd + ' ') || lowerMessage.startsWith(cmd + ','));
-      if (isGreeting) {
+
+      // Only return greeting immediately if the message is JUST a greeting (no additional content)
+      // Messages like "oi" or "olá" alone should get the standard welcome
+      // But "oi, quero um civic" should be processed by LangGraph to capture vehicle intent
+      const isJustGreeting = greetingCommands.some(cmd => lowerMessage === cmd);
+
+      if (isJustGreeting) {
         // Check if there's an existing conversation
         const existingConversation = await prisma.conversation.findFirst({
           where: { phoneNumber, status: 'active' },
@@ -76,7 +83,7 @@ Para começar, qual é o seu nome?`;
 
         if (existingConversation) {
           await this.resetConversation(phoneNumber);
-          logger.info({ phoneNumber }, 'User sent greeting, restarting conversation');
+          logger.info({ phoneNumber }, 'User sent simple greeting, restarting conversation');
         }
 
         return `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
@@ -86,6 +93,20 @@ Para começar, qual é o seu nome?`;
 💡 _A qualquer momento, digite *sair* para encerrar a conversa._
 
 Para começar, qual é o seu nome?`;
+      }
+
+      // For greetings with additional content (e.g., "Oi, você tem Civic 2017?")
+      // Reset conversation but DON'T return - let LangGraph process the full message
+      if (isGreeting) {
+        const existingConversation = await prisma.conversation.findFirst({
+          where: { phoneNumber, status: 'active' },
+        });
+
+        if (existingConversation) {
+          await this.resetConversation(phoneNumber);
+          logger.info({ phoneNumber, message: sanitizedMessage.substring(0, 50) }, 'User sent greeting with content, resetting and processing');
+        }
+        // Continue to LangGraph processing - don't return here!
       }
 
       // 🔒 LGPD: Check for data rights commands

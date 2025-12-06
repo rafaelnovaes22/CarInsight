@@ -48,7 +48,8 @@ const BRAZILIAN_CAR_MODELS = [
     // Ford
     'ka', 'fiesta', 'focus', 'ecosport', 'ranger', 'territory', 'bronco', 'maverick', 'fusion',
     // Honda (incluindo variações de transcrição de áudio)
-    'civic', 'circ', 'civico', 'sivic', 'city', 'fit', 'hr-v', 'hrv', 'cr-v', 'crv', 'wr-v', 'wrv', 'accord',
+    'civic', 'circ', 'civico', 'sivic', 'civick', 'cívic', 'cívico', 'sívic',
+    'city', 'fit', 'hr-v', 'hrv', 'cr-v', 'crv', 'wr-v', 'wrv', 'accord',
     // Toyota
     'corolla', 'yaris', 'etios', 'hilux', 'sw4', 'rav4', 'camry', 'prius',
     // Hyundai
@@ -146,17 +147,29 @@ export class ExactSearchParser {
      * Mapping of common transcription errors to correct model names
      */
     private static readonly MODEL_CORRECTIONS: Record<string, string> = {
+        // Civic variations
         'circ': 'Civic',
         'civico': 'Civic',
         'sivic': 'Civic',
+        'civick': 'Civic',
+        'cívic': 'Civic',
+        'cívico': 'Civic',
+        'sívic': 'Civic',
+        // Corolla variations
         'corola': 'Corolla',
         'carola': 'Corolla',
+        'corolla': 'Corolla',
+        // SUV models
         'crv': 'Cr-V',
         'hrv': 'Hr-V',
         'wrv': 'Wr-V',
         'tcross': 'T-Cross',
         'scross': 'S-Cross',
         'santafe': 'Santa Fe',
+        // Other common corrections
+        'onyx': 'Onix',
+        'polo': 'Polo',
+        'goal': 'Gol',
     };
 
     /**
