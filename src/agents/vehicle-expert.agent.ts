@@ -33,6 +33,19 @@ import {
   detectVehicleCategory,
 } from './vehicle-expert/constants';
 
+// Import intent detection functions
+import {
+  detectUserQuestion,
+  detectAffirmativeResponse,
+  detectNegativeResponse,
+  detectSearchIntent,
+  detectPostRecommendationIntent,
+  isPostRecommendationResponse,
+  type SearchIntent,
+  type PostRecommendationIntent,
+} from './vehicle-expert/intent-detector';
+
+
 export class VehicleExpertAgent {
 
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
@@ -275,7 +288,7 @@ export class VehicleExpertAgent {
               }
             };
           }
-        } else if (isNo || this.detectUserQuestion(userMessage)) {
+        } else if (isNo || detectUserQuestion(userMessage)) {
           // If user says no or asks something else, clear flag and continue
           updatedProfile._waitingForSimilarApproval = false;
 
@@ -347,7 +360,7 @@ export class VehicleExpertAgent {
           };
         }
 
-        const postRecommendationIntent = this.detectPostRecommendationIntent(userMessage, lastShownVehicles);
+        const postRecommendationIntent = detectPostRecommendationIntent(userMessage, lastShownVehicles);
 
         logger.info({
           userMessage,
@@ -750,7 +763,7 @@ export class VehicleExpertAgent {
 
       if (wasWaitingForSuggestionResponse) {
         // First, check if user is asking a NEW question or making a new request
-        const isNewQuestion = this.detectUserQuestion(userMessage);
+        const isNewQuestion = detectUserQuestion(userMessage);
         const hasNewPreferences = Object.keys(extracted.extracted).length > 0 &&
           (extracted.extracted.bodyType || extracted.extracted.brand || extracted.extracted.model || extracted.extracted.budget);
 
@@ -769,8 +782,8 @@ export class VehicleExpertAgent {
           updatedProfile._availableYears = undefined;
           // Don't return here - let the flow continue to handle the new question/request
         } else {
-          const userAccepts = this.detectAffirmativeResponse(userMessage);
-          const userDeclines = this.detectNegativeResponse(userMessage);
+          const userAccepts = detectAffirmativeResponse(userMessage);
+          const userDeclines = detectNegativeResponse(userMessage);
 
           if (userAccepts) {
             const searchedItem = context.profile?._searchedItem;
@@ -1162,7 +1175,7 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
       }
 
       // 4. Detect if user asked a question (vs just answering)
-      const isUserQuestion = this.detectUserQuestion(userMessage);
+      const isUserQuestion = detectUserQuestion(userMessage);
 
       // 5. Route based on question detection
       if (isUserQuestion) {
@@ -1433,328 +1446,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
     }
   }
 
-  /**
-   * Detect user's search intent to determine flow:
-   * - 'specific': User wants a specific model (e.g., "Onix 2019", "Civic") -> Return directly
-   * - 'recommendation': User wants help finding a car (e.g., "SUV para família") -> Recommendation flow
-   * - 'category': User asks about category availability (e.g., "que pickups vocês têm?") -> List category
-   */
-  private detectSearchIntent(
-    message: string,
-    extracted: Partial<CustomerProfile>
-  ): 'specific' | 'recommendation' | 'category' {
-    const msgLower = message.toLowerCase();
-
-    // Has specific model = direct search
-    if (extracted.model) {
-      logger.info({ model: extracted.model }, 'detectSearchIntent: specific model detected');
-      return 'specific';
-    }
-
-    // Asking about category availability
-    const categoryAskPatterns = [
-      /que\s+(pickup|picape|suv|sedan|hatch|caminhonete)s?\s+(tem|vocês|voces|você)/i,
-      /quais?\s+(pickup|picape|suv|sedan|hatch)s?\s+(tem|temos|disponíve)/i,
-      /(tem|temos|vocês tem)\s+(pickup|picape|suv|sedan|hatch)/i,
-    ];
-    if (categoryAskPatterns.some(p => p.test(message))) {
-      logger.info({ message }, 'detectSearchIntent: category question detected');
-      return 'category';
-    }
-
-    // Has body type + usage/characteristics = wants recommendation
-    const hasBodyType = !!extracted.bodyType;
-    const hasUsage = !!(extracted.usage || extracted.usoPrincipal);
-    const hasCharacteristic = msgLower.includes('econômico') ||
-      msgLower.includes('economico') ||
-      msgLower.includes('espaçoso') ||
-      msgLower.includes('confortável') ||
-      msgLower.includes('familia') ||
-      msgLower.includes('família');
-
-    if ((hasBodyType && !extracted.model) || hasUsage || hasCharacteristic) {
-      logger.info({ hasBodyType, hasUsage, hasCharacteristic }, 'detectSearchIntent: recommendation flow');
-      return 'recommendation';
-    }
-
-    // Default to recommendation if unsure
-    return 'recommendation';
-  }
-
-  /**
-   * Detect if user is asking a question (vs just answering our questions)
-   */
-  private detectUserQuestion(message: string): boolean {
-    // Question indicators
-    const questionPatterns = [
-      /\?$/,                                    // Ends with ?
-      /^(qual|quais|como|quando|onde|por que|quanto)/i,  // Question words
-      /diferença entre/i,
-      /o que [ée]/i,
-      /tem (algum|alguma)/i,
-      /pode (me )?(explicar|dizer|falar)/i,
-      /gostaria de saber/i,
-      /queria saber/i,
-      /voc[êe]s?\s*tem/i,                       // "você tem", "vocês tem"
-      /tem\s*(disponível|disponivel)/i,          // "tem disponível"
-      /o que\s*(voc[êe]s?)?\s*tem/i,             // "o que você tem"
-      /quais?\s*(carro|veículo|modelo|opç)/i,   // "qual carro", "quais opções"
-    ];
-
-    return questionPatterns.some(pattern => pattern.test(message.trim()));
-  }
-
-  /**
-   * Detect if user response is affirmative (accepting a suggestion)
-   */
-  private detectAffirmativeResponse(message: string): boolean {
-    // Normalize: lowercase, remove punctuation at end, trim
-    const normalized = message.toLowerCase().trim().replace(/[.,!?]+$/, '').trim();
-
-    // Short affirmative words (exact match after normalization)
-    const shortAffirmatives = ['sim', 's', 'ss', 'sss', 'siiim', 'siim', 'ok', 'okay', 'blz', 'bora', 'show', 'ta', 'tá', 'claro', 'pode', 'quero', 'manda', 'mostra', 'beleza', 'tranquilo', 'vamos', 'certeza', 'pf', 'pfv'];
-
-    if (shortAffirmatives.includes(normalized)) {
-      return true;
-    }
-
-    // Affirmative patterns (more flexible - don't require exact match)
-    const affirmativePatterns = [
-      /\bsim\b/i,            // Contains "sim" as word
-      /\bpode\b/i,           // Contains "pode"
-      /\bquero\b/i,          // Contains "quero"
-      /\bbeleza\b/i,         // Contains "beleza"
-      /\bclaro\b/i,          // Contains "claro"
-      /\bmanda\b/i,          // Contains "manda"
-      /\bmostra\b/i,         // Contains "mostra"
-      /\bvamos\b/i,          // Contains "vamos"
-      /\bbora\b/i,           // Contains "bora"
-      /\bok\b/i,             // Contains "ok"
-      /\bshow\b/i,           // Contains "show"
-      /\btranquilo\b/i,      // Contains "tranquilo"
-      /com certeza/i,        // "com certeza"
-      /tudo bem/i,           // "tudo bem"
-      /pode ser/i,           // "pode ser"
-      /por favor/i,          // "por favor"
-      /tenho interesse/i,    // "tenho interesse"
-      /interessado/i,        // "interessado"
-    ];
-
-    // Negative patterns (to avoid false positives) - must check first
-    const negativePatterns = [
-      /\bn[aã]o\b/i,         // Contains "não" or "nao"
-      /\bnunca\b/i,          // Contains "nunca"
-      /deixa\s*(pra)?\s*l[aá]/i, // "deixa pra lá"
-      /sem\s*(interesse|necessidade)/i,
-      /agora\s*n[aã]o/i,     // "agora não"
-    ];
-
-    // Check for negative first
-    if (negativePatterns.some(pattern => pattern.test(normalized))) {
-      return false;
-    }
-
-    return affirmativePatterns.some(pattern => pattern.test(normalized));
-  }
-
-  /**
-   * Detect if user response is negative (declining a suggestion)
-   */
-  private detectNegativeResponse(message: string): boolean {
-    const normalized = message.toLowerCase().trim();
-
-    const negativePatterns = [
-      /^(não|nao|n|nn|nope|nunca)$/i,
-      /não\s*(quero|preciso|obrigado)/i,
-      /deixa\s*(pra lá|quieto)/i,
-      /sem\s*(interesse|necessidade)/i,
-      /^(nada|deixa|esquece)$/i,
-      /não,?\s*obrigado/i,
-      /agora\s*não/i,
-      /depois/i,
-      /talvez\s*depois/i,
-    ];
-
-    return negativePatterns.some(pattern => pattern.test(normalized));
-  }
-
-  /**
-   * Detect user intent after showing a recommendation
-   * Returns: 'want_others' | 'want_details' | 'want_schedule' | 'want_financing' | 'want_tradein' | 'new_search' | 'acknowledgment' | 'none'
-   */
-  private detectPostRecommendationIntent(
-    message: string,
-    lastShownVehicles?: Array<{ brand: string; model: string; year: number; price: number }>
-  ): 'want_others' | 'want_details' | 'want_schedule' | 'want_financing' | 'want_tradein' | 'new_search' | 'acknowledgment' | 'none' {
-    const normalized = message.toLowerCase().trim();
-
-    // Patterns for wanting OTHER options - comprehensive list
-    const wantOthersPatterns = [
-      // Explicit requests for others
-      /tem\s*(outr[oa]s?|mais)/i,
-      /quer[oi]?\s*(ver\s*)?(outr[oa]s?|mais)/i,
-      /mostra\s*(outr[oa]s?|mais)/i,
-      /mais\s*(opç|carros?|veículos?|alternativ)/i,
-      /outras?\s*(opç|alternativ|sugest)/i,
-      /^(outro|outra|outros|outras)$/i,
-      /alguma?\s*(outr[oa]|alternativ|opç)/i,
-
-      // Price/budget related
-      /muito\s*(caro|cara)/i,
-      /acima\s*do\s*(meu\s*)?(orçamento|budget)/i,
-      /fora\s*do\s*(meu\s*)?(orçamento|budget)/i,
-      /algo\s*(mais\s*)?(barato|em conta|acessível|econômico)/i,
-      /tem\s*algo\s*(mais\s*)?(barato|em conta|caro)/i,
-      /mais\s*(barato|caro|em conta)/i,
-      /menos\s*(caro|cara)/i,
-
-      // Negative about current option
-      /não\s*(gost|curt)[eiao]/i,
-      /não\s*(é|era)\s*(bem\s*)?(isso|esse|o\s*que)/i,
-      /prefer[io]\s*outro/i,
-      /não\s*me\s*interess/i,
-      /não\s*(era|é)\s*(o\s*que)/i,
-      /achei\s*(caro|ruim|feio)/i,
-
-      // Asking for alternatives/options
-      /ver\s*mais\s*opç/i,
-      /ver\s*alternativ/i,
-      /alternativ/i,
-      /o\s*que\s*mais\s*tem/i,
-      /que\s*mais\s*vocês?\s*tem/i,
-
-      // Same type/profile/style requests
-      /mesmo\s*(perfil|tipo|estilo|porte|tamanho|padrão|padrao|valor|preço|preco)/i,
-      /opç.*(mesmo|parecid|similar|semelhant)/i,
-      /parecid[oa]s?/i,
-      /similar(es)?/i,
-      /semelhant(es)?/i,
-      /nesse\s*(estilo|perfil|valor|preço|padrão|porte)/i,
-      /desse\s*(tipo|jeito|estilo|porte)/i,
-      /nessa\s*(linha|faixa|categoria)/i,
-      /dessa\s*(categoria|faixa)/i,
-      /mesma\s*(linha|faixa|categoria)/i,
-      /mesmo\s*(segmento|porte)/i,
-      /na\s*mesma\s*(faixa|linha)/i,
-      /do\s*mesmo\s*(tipo|jeito|estilo|porte|valor)/i,
-      /assim/i, // "algo assim", "coisa assim"
-      /esse\s*(estilo|tipo)\s*de\s*(carro|veículo)/i,
-      /coisa\s*parecida/i,
-      /algo\s*(parecido|similar|semelhante|assim|nessa linha)/i,
-
-      // Competitor/equivalent requests
-      /concorrent/i,
-      /equivalent/i,
-      /compara/i,
-
-      // Budget with numbers
-      /tem\s*(opç|algo|carro).*(até|ate)\s*\d/i,
-      /(até|ate)\s*\d+\s*(mil|k|reais|r\$)?/i,
-      /opç.*(até|ate)\s*\d/i,
-      /na\s*faixa\s*de\s*\d/i,
-      /entre\s*\d+\s*e\s*\d+/i,
-      /por\s*(volta|cerca)\s*de\s*\d/i,
-      /\d+\s*(mil|k)?\s*(reais|r\$)?/i, // just a number like "30000" or "30 mil"
-    ];
-
-    // Patterns for wanting MORE DETAILS about shown vehicle
-    const wantDetailsPatterns = [
-      /mais\s*detalhes?/i,
-      /conta\s*mais/i,
-      /fal[ae]\s*mais/i,
-      /quero\s*saber\s*mais/i,
-      /como\s*(é|está)\s*(esse|o)\s*(carro|veículo)/i,
-      /quilometragem/i,
-      /km\??$/i,
-      /procedência/i,
-      /histórico/i,
-      /dono|proprietário/i,
-      /ipva|documentação|documento/i,
-      /opcional|opcionais/i,
-      /cor\??$/i,
-      /foto|imagem|vídeo/i,
-      /interessei?\s*(nesse|nele|no\s*primeiro)/i,
-      /gost[eiao]\s*(desse|dele|do\s*primeiro)/i,
-    ];
-
-    // Patterns for wanting to SCHEDULE/TALK
-    const wantSchedulePatterns = [
-      /vendedor/i,
-      /atendente/i,
-      /humano/i,
-      /pessoa\s*real/i,
-      /agendar/i,
-      /visita/i,
-      /ver\s*pessoalmente/i,
-      /ir\s*até\s*(a\s*)?(loja|vocês)/i,
-      /quero\s*(comprar|fechar|levar)/i,
-      /vou\s*(levar|ficar\s*com)/i,
-      /como\s*(faço|faz)\s*(pra|para)\s*(comprar|visitar)/i,
-      /endereço/i,
-      /onde\s*(fica|vocês\s*ficam)/i,
-      /whatsapp|telefone|ligar/i,
-    ];
-
-    // Patterns for wanting to FINANCE
-    const wantFinancingPatterns = [
-      /financ/i,           // financiar, financiamento
-      /parcel/i,           // parcelar, parcela
-      /entrada/i,          // dar entrada
-      /presta[çc]/i,       // prestação
-      /vou financ/i,
-      /quero financ/i,
-      /como financ/i,
-      /posso financ/i,
-      /dá pra financ/i,
-      /gostei.*financ/i,   // gostei, vou financiar
-      /interessei.*financ/i,
-      /simul/i,            // simular, simulação
-    ];
-
-    // Patterns for wanting to TRADE-IN
-    const wantTradeinPatterns = [
-      /tenho\s*(um|uma)?\s*(carro|veículo|moto)/i,
-      /meu\s*(carro|veículo)/i,
-      /carro\s*(na|pra|para)\s*troca/i,
-      /dar\s*(na|de)?\s*troca/i,
-      /trocar?\s*o\s*meu/i,
-      /colocar.*troca/i,
-      /usar.*troca/i,
-      /aceita.*troca/i,
-      /vou\s*dar\s*(na|de)\s*troca/i,
-    ];
-
-    // Check patterns in order of priority - financing and tradein BEFORE schedule
-    if (wantFinancingPatterns.some(p => p.test(normalized))) {
-      return 'want_financing';
-    }
-
-    if (wantTradeinPatterns.some(p => p.test(normalized))) {
-      return 'want_tradein';
-    }
-
-    if (wantSchedulePatterns.some(p => p.test(normalized))) {
-      return 'want_schedule';
-    }
-
-    if (wantDetailsPatterns.some(p => p.test(normalized))) {
-      return 'want_details';
-    }
-
-    if (wantOthersPatterns.some(p => p.test(normalized))) {
-      return 'want_others';
-    }
-
-    const acknowledgmentPatterns = [
-      /^ok$/i, /^entendi$/i, /^beleza$/i, /^legal$/i, /^certo$/i, /^tá bom$/i, /^ta bom$/i, /^show$/i, /^joia$/i, /^bacana$/i, /^obrigado$/i, /^valeu$/i
-    ];
-
-    if (acknowledgmentPatterns.some(p => p.test(normalized))) {
-      return 'acknowledgment';
-    }
-
-    return 'none';
-  }
+  // NOTE: Intent detection methods (detectSearchIntent, detectUserQuestion,
+  // detectAffirmativeResponse, detectNegativeResponse, detectPostRecommendationIntent)
+  // have been moved to ./vehicle-expert/intent-detector.ts
 
   /**
    * Answer user's question using RAG (Retrieval Augmented Generation)
