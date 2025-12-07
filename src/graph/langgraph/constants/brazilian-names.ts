@@ -1,0 +1,113 @@
+/**
+ * Brazilian Names Constants
+ * 
+ * Common Brazilian names for STT validation and transcription error correction.
+ */
+
+/**
+ * Common Brazilian first names for validation
+ */
+export const COMMON_BRAZILIAN_NAMES = new Set([
+    // Nomes masculinos
+    'rafael', 'joao', 'jose', 'pedro', 'paulo', 'lucas', 'mateus', 'gabriel', 'miguel', 'felipe',
+    'bruno', 'marcos', 'carlos', 'daniel', 'fernando', 'rodrigo', 'andre', 'eduardo', 'diego', 'ricardo',
+    'gustavo', 'leonardo', 'thiago', 'tiago', 'vinicius', 'henrique', 'caio', 'leandro', 'marcelo', 'fabio',
+    'renato', 'alex', 'alexandre', 'anderson', 'antonio', 'arthur', 'bernardo', 'cesar', 'claudio', 'cristiano',
+    'david', 'denis', 'douglas', 'enzo', 'fabiano', 'fabricio', 'francisco', 'george', 'gilberto', 'guilherme',
+    'heitor', 'hugo', 'igor', 'ivan', 'jean', 'jefferson', 'jorge', 'julio', 'junior', 'luan',
+    'luciano', 'luis', 'luiz', 'marcio', 'mario', 'matheus', 'mauricio', 'max', 'michael', 'nathan',
+    'nelson', 'nicolas', 'otavio', 'patrick', 'rafael', 'renan', 'roberto', 'rogerio', 'ronaldo', 'samuel',
+    'sergio', 'silvio', 'victor', 'vitor', 'wagner', 'walter', 'washington', 'wellington', 'wesley', 'william',
+    // Nomes femininos
+    'maria', 'ana', 'juliana', 'fernanda', 'camila', 'amanda', 'bruna', 'carolina', 'patricia', 'isabela',
+    'leticia', 'mariana', 'beatriz', 'larissa', 'aline', 'priscila', 'gabriela', 'vanessa', 'renata', 'natalia',
+    'adriana', 'claudia', 'sandra', 'lucia', 'debora', 'simone', 'cristina', 'jessica', 'michele', 'carla',
+    'alice', 'andreia', 'angelica', 'barbara', 'bianca', 'carina', 'catarina', 'cecilia', 'celia', 'clara',
+    'daniela', 'denise', 'diana', 'elaine', 'elisa', 'erica', 'fabiana', 'fatima', 'flavia', 'francesca',
+    'giovanna', 'helena', 'heloisa', 'ingrid', 'iris', 'isadora', 'ivone', 'joana', 'julia', 'karen',
+    'karina', 'kelly', 'laura', 'lilian', 'livia', 'lorena', 'luana', 'luciana', 'luiza', 'madalena',
+    'manuela', 'marcia', 'marta', 'melissa', 'monica', 'nadia', 'nicole', 'paloma', 'pamela', 'rafaela',
+    'raquel', 'rebeca', 'regina', 'roberta', 'rosa', 'samantha', 'sara', 'silvana', 'sofia', 'sonia',
+    'stella', 'suzana', 'taina', 'tatiana', 'tereza', 'valentina', 'valeria', 'vera', 'vitoria', 'viviane'
+]);
+
+/**
+ * STT transcription error fixes
+ * Key: transcription error (lowercase), Value: correct name
+ */
+export const TRANSCRIPTION_FIXES: Record<string, string> = {
+    // Common errors for "Rafael"
+    "i'll fail": 'Rafael',
+    "ill fail": 'Rafael',
+    "i fail": 'Rafael',
+    "i fell": 'Rafael',
+    "i feel": 'Rafael',
+    "rafael": 'Rafael',
+    "alfao": 'Rafael',
+    "alfa": 'Rafael',
+    "alfa jo": 'Rafael',
+    "alfa, jo": 'Rafael',
+    "alfajo": 'Rafael',
+    "alfa jo.": 'Rafael',
+    "alfa, jo.": 'Rafael',
+    "alfael": 'Rafael',
+    "raffa": 'Rafael',
+    "rafa": 'Rafael',
+    "raphael": 'Rafael',
+    "rafaelo": 'Rafael',
+    "hafa": 'Rafael',
+    "hafa já": 'Rafael',
+    "hafa, já": 'Rafael',
+    "hafa, já.": 'Rafael',
+    "hafaja": 'Rafael',
+    "hafa ja": 'Rafael',
+    "hafa,ja": 'Rafael',
+    "hafael": 'Rafael',
+    "rafafel": 'Rafael',
+    "rafaell": 'Rafael',
+    // Common errors for "João"
+    "john": 'João',
+    "joao": 'João',
+    "jow": 'João',
+    // Common errors for "Maria"
+    "mary": 'Maria',
+    "marie": 'Maria',
+    // Common errors for "Paulo/Pedro"
+    "paul": 'Paulo',
+    "peter": 'Pedro',
+    // Other mappings
+    "mike": 'Miguel',
+    "michael": 'Miguel',
+    "gabriel": 'Gabriel',
+    "ana": 'Ana',
+    "anna": 'Ana',
+};
+
+/**
+ * English words that indicate STT transcription error (not names)
+ */
+export const ENGLISH_WORDS_NOT_NAMES = new Set([
+    "i'll", "ill", "i'm", "im", "i've", "ive", "i'd", "id",
+    "the", "and", "for", "you", "are", "was", "were", "been",
+    "have", "has", "had", "will", "would", "could", "should",
+    "fail", "fell", "feel", "fall", "full", "fill",
+    "my", "name", "is", "hello", "hi", "hey", "yes", "no",
+    "what", "where", "when", "why", "how", "who", "this", "that",
+    "it's", "its", "it", "they", "them", "their",
+]);
+
+/**
+ * Reserved system words that are NOT names
+ */
+export const RESERVED_WORDS_NOT_NAMES = new Set([
+    // Bot commands
+    "iniciar", "sair", "reiniciar", "recomeçar", "voltar", "cancelar", "reset",
+    "encerrar", "tchau", "bye", "adeus", "parar", "stop",
+    // Simple greetings
+    "oi", "olá", "ola", "bom", "dia", "boa", "tarde", "noite", "hey", "hello", "hi",
+    // Common responses
+    "sim", "não", "nao", "ok", "okay", "beleza", "certo", "entendi",
+    // Generic words
+    "carro", "veículo", "veiculo", "auto", "automóvel", "automovel",
+    "quero", "procuro", "busco", "preciso", "gostaria",
+]);

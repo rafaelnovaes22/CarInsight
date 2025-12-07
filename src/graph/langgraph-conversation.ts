@@ -15,45 +15,17 @@ import { exactSearchParser } from '../services/exact-search-parser.service';
 import { CustomerProfile, ConversationState, BotMessage, VehicleRecommendation } from '../types/state.types';
 import { ConversationContext, ConversationMode, ConversationResponse } from '../types/conversation.types';
 
-/**
- * Estados do grafo de conversação
- */
-export type GraphState =
-  | 'START'
-  | 'GREETING'        // Boas-vindas e coleta de nome
-  | 'DISCOVERY'       // Descoberta inicial: o que o cliente busca
-  | 'CLARIFICATION'   // Perguntas para refinar perfil
-  | 'SEARCH'          // Busca de veículos (transição interna)
-  | 'RECOMMENDATION'  // Apresentação de recomendações
-  | 'NEGOTIATION'     // Negociação (trade-in, financiamento)
-  | 'FOLLOW_UP'       // Acompanhamento pós-recomendação
-  | 'HANDOFF'         // Transferência para vendedor
-  | 'END';
+// Import from refactored modules
+import {
+  GraphState,
+  StateTransition,
+  TransitionConditions,
+  isValidGraphState
+} from './langgraph/types';
+import { extractName } from './langgraph/extractors';
 
-/**
- * Resultado de transição de estado
- */
-interface StateTransition {
-  nextState: GraphState;
-  response: string;
-  profile: Partial<CustomerProfile>;
-  recommendations?: VehicleRecommendation[];
-  metadata?: Record<string, any>;
-}
-
-/**
- * Condições de transição entre estados
- */
-interface TransitionConditions {
-  hasName: boolean;
-  hasContext: boolean;        // Sabe o que o cliente busca
-  hasMinimalProfile: boolean; // budget + usage + people
-  hasCompleteProfile: boolean;
-  hasRecommendations: boolean;
-  wantsHandoff: boolean;
-  wantsRestart: boolean;
-}
-
+// Re-export types for backwards compatibility
+export { GraphState, StateTransition, TransitionConditions } from './langgraph/types';
 /**
  * LangGraph Conversation Manager
  * Gerencia o fluxo de estados da conversa
@@ -359,7 +331,7 @@ export class LangGraphConversation {
 
       // Tentar extrair nome da mensagem (pode estar junto com saudação)
       // Ex: "oi, me chamo Rafael, você tem Civic 2017?"
-      const possibleName = this.extractName(message);
+      const possibleName = extractName(message);
 
       logger.debug({
         possibleName,
@@ -464,7 +436,7 @@ export class LangGraphConversation {
     }
 
     // Tentar extrair nome da resposta
-    const name = this.extractName(message);
+    const name = extractName(message);
 
     // Também tentar extrair intenção de carro (busca exata) na saudação
     // Ex: "Oi, meu nome é Rafael e quero um Civic 2017"
