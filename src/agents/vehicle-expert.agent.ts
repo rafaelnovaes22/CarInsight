@@ -45,6 +45,12 @@ import {
   type PostRecommendationIntent,
 } from './vehicle-expert/intent-detector';
 
+// Import post-recommendation handlers
+import {
+  routePostRecommendationIntent,
+  type PostRecommendationContext,
+  type ShownVehicle,
+} from './vehicle-expert/handlers';
 
 export class VehicleExpertAgent {
 
@@ -571,125 +577,24 @@ export class VehicleExpertAgent {
           }
         }
 
-        if (postRecommendationIntent === 'want_details') {
-          // User wants more details about shown vehicle
-          const firstVehicle = lastShownVehicles[0];
-
-          const detailsResponse = lastShownVehicles.length === 1
-            ? `Claro! Sobre o ${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year}:\n\n📋 Para informações detalhadas como quilometragem exata, opcionais, histórico e fotos, sugiro falar com nosso vendedor que pode te passar tudo em tempo real!\n\n_Digite "vendedor" para ser atendido por nossa equipe._`
-            : `Qual dos veículos você gostaria de saber mais detalhes?\n\n${lastShownVehicles.map((v, i) => `${i + 1}. ${v.brand} ${v.model} ${v.year}`).join('\n')}\n\n_Ou digite "vendedor" para falar com nossa equipe._`;
-
-          return {
-            response: detailsResponse,
-            extractedPreferences: {
-              ...extracted.extracted,
-              _showedRecommendation: true, // Mantém o estado
-            },
-            needsMoreInfo: [],
-            canRecommend: false,
-            nextMode: 'recommendation',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.9,
-              llmUsed: 'gpt-4o-mini'
-            }
+        // Route to handlers for: want_details, want_schedule, want_financing, want_tradein, acknowledgment
+        if (['want_details', 'want_schedule', 'want_financing', 'want_tradein', 'acknowledgment'].includes(postRecommendationIntent)) {
+          const handlerContext: PostRecommendationContext = {
+            userMessage,
+            lastShownVehicles: lastShownVehicles as ShownVehicle[],
+            lastSearchType,
+            extracted,
+            updatedProfile,
+            context,
+            startTime,
           };
+
+          const result = routePostRecommendationIntent(postRecommendationIntent, handlerContext);
+          if (result.handled && result.response) {
+            return result.response;
+          }
         }
 
-        if (postRecommendationIntent === 'want_schedule') {
-          // User wants to schedule/talk to seller
-          const scheduleResponse = `Perfeito! 🙌\n\nPara agendar uma visita ou falar diretamente com nosso vendedor, me envia seu nome completo que já passo para a equipe te atender!\n\n📍 Estamos na Robust Car\n📞 Ou se preferir, digite "vendedor" para iniciar o atendimento.`;
-
-          return {
-            response: scheduleResponse,
-            extractedPreferences: {
-              ...extracted.extracted,
-              _showedRecommendation: false,
-              _lastShownVehicles: lastShownVehicles, // Mantém para referência
-            },
-            needsMoreInfo: [],
-            canRecommend: false,
-            nextMode: 'recommendation',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.95,
-              llmUsed: 'gpt-4o-mini'
-            }
-          };
-        }
-
-        if (postRecommendationIntent === 'want_financing') {
-          // User wants to finance the shown vehicle
-          const firstVehicle = lastShownVehicles[0];
-          const modelName = `${firstVehicle.brand} ${firstVehicle.model}`;
-          const vehiclePrice = firstVehicle.price;
-
-          logger.info({ modelName, vehiclePrice }, 'User wants financing for shown vehicle');
-
-          return {
-            response: `Ótimo! Vamos ver o financiamento do ${modelName}! 🏦\n\n💰 O veículo está por R$ ${vehiclePrice.toLocaleString('pt-BR')}.\n\nPara simular as parcelas, me conta:\n1️⃣ Você tem algum valor de entrada?\n2️⃣ Tem algum carro para dar na troca?\n\n_Pode me contar que calculo rápido!_`,
-            extractedPreferences: {
-              ...extracted.extracted,
-              wantsFinancing: true,
-              _showedRecommendation: true, // Mantém para continuar a conversa
-              _lastShownVehicles: lastShownVehicles,
-            },
-            needsMoreInfo: ['financingDownPayment', 'tradeIn'],
-            canRecommend: false,
-            nextMode: 'negotiation',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.95,
-              llmUsed: 'rule-based'
-            }
-          };
-        }
-
-        if (postRecommendationIntent === 'want_tradein') {
-          // User wants to use trade-in
-          const firstVehicle = lastShownVehicles[0];
-          const modelName = `${firstVehicle.brand} ${firstVehicle.model}`;
-
-          logger.info({ modelName }, 'User wants to use trade-in for shown vehicle');
-
-          return {
-            response: `Show! Ter um carro na troca facilita muito! 🚗🔄\n\nMe conta sobre o seu veículo:\n• Qual é a marca e modelo?\n• Qual o ano?\n• Mais ou menos quantos km rodou?\n\n_Com essas informações consigo dar uma estimativa do valor!_`,
-            extractedPreferences: {
-              ...extracted.extracted,
-              hasTradeIn: true,
-              _showedRecommendation: true, // Mantém para continuar a conversa
-              _lastShownVehicles: lastShownVehicles,
-            },
-            needsMoreInfo: ['tradeInBrand', 'tradeInModel', 'tradeInYear', 'tradeInKm'],
-            canRecommend: false,
-            nextMode: 'negotiation',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.95,
-              llmUsed: 'rule-based'
-            }
-          };
-        }
-
-        if (postRecommendationIntent === 'acknowledgment') {
-          const nextStepResponse = `Gostou de alguma dessas opções? 😊\n\nPodemos:\n1️⃣ Simular um financiamento\n2️⃣ Agendar para você ver o carro\n\nO que prefere fazer agora?`;
-
-          return {
-            response: nextStepResponse,
-            extractedPreferences: {
-              ...extracted.extracted,
-              _showedRecommendation: true, // Keep state so next message context is maintained
-            },
-            needsMoreInfo: [],
-            canRecommend: false,
-            nextMode: 'recommendation',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.95,
-              llmUsed: 'rule-based'
-            }
-          };
-        }
 
         // If 'none', clear the recommendation state and continue normal processing
         // The user might be asking something else or making a new search
