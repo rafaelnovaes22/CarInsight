@@ -1737,21 +1737,19 @@ Me diz o que prefere!`;
       const intro = this.generateRecommendationIntro(profile, vehiclesToShow.length, searchType, vehiclesToShow[0]?.vehicle);
 
       // Outro diferente para busca específica vs recomendação
+      // IMPORTANTE: Ser menos agressivo quando há vários carros - primeiro perguntar qual gostou
       let outro: string;
       if (isSpecificSearch) {
         if (vehiclesToShow.length === 1) {
-          outro = `\n\nQuer saber mais detalhes ou agendar uma visita? 😊
-
-_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+          // Apenas 1 carro encontrado - pode ser mais direto
+          outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?\n\n_Posso simular as parcelas pra você!_`;
         } else {
-          outro = `\n\nQuer mais detalhes de algum desses? 😊
-
-_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+          // Vários carros - primeiro perguntar qual gostou
+          outro = `\n\nAlgum te interessou? Me conta qual você curtiu mais que posso dar mais detalhes! 😊\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
         }
       } else {
-        outro = `\n\nQual te interessou mais? Posso dar mais detalhes! 😊
-
-_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+        // Recomendações personalizadas - perguntar qual gostou primeiro
+        outro = `\n\nQual desses te interessou mais? 😊\n\nMe conta qual você curtiu que posso dar mais detalhes sobre ele!\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
       }
 
       return `${intro}\n\n${vehiclesList}${outro}`;

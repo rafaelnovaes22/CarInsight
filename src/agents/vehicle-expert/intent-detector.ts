@@ -245,7 +245,7 @@ export const WANT_SCHEDULE_PATTERNS: RegExp[] = [
 ];
 
 /**
- * Patterns for wanting to FINANCE
+ * Patterns for wanting to FINANCE or discussing payment method
  */
 export const WANT_FINANCING_PATTERNS: RegExp[] = [
     /financ/i,
@@ -260,6 +260,18 @@ export const WANT_FINANCING_PATTERNS: RegExp[] = [
     /gostei.*financ/i,
     /interessei.*financ/i,
     /simul/i,
+    // Formas de pagamento
+    /[àa]\s*vista/i,
+    /a\s*vista/i,
+    /sem\s*entrada/i,
+    /com\s*entrada/i,
+    /pagar\s*[àa]\s*vista/i,
+    /pagamento/i,
+    // Valores monetários (entrada)
+    /\d+\s*(mil|k)\s*(de\s*)?entrada/i,
+    /entrada\s*(de\s*)?\d+/i,
+    /tenho\s*\d+/i,
+    /dar\s*\d+\s*(mil|k|reais)?/i,
 ];
 
 /**
@@ -275,6 +287,15 @@ export const WANT_TRADEIN_PATTERNS: RegExp[] = [
     /usar.*troca/i,
     /aceita.*troca/i,
     /vou\s*dar\s*(na|de)\s*troca/i,
+    // Menciona veículo específico como troca
+    /tenho\s*(um|uma)?\s*(fiat|vw|volkswagen|gm|chevrolet|ford|honda|toyota|hyundai|renault|nissan|jeep|peugeot|citroen)/i,
+    /meu\s*(fiat|vw|volkswagen|gm|chevrolet|ford|honda|toyota|hyundai|renault|nissan|jeep|peugeot|citroen)/i,
+    // Responde "sim, tenho"
+    /sim,?\s*(tenho|tem)/i,
+    /tenho\s*sim/i,
+    // Descrição do carro de troca (modelo + ano ou ano + modelo)
+    /\b(onix|hb20|gol|polo|argo|mobi|ka|kwid|corolla|civic|cruze|kicks|creta|compass|tracker|hr-?v|tcross|renegade)\b.*\d{4}/i,
+    /\d{4}.*\b(onix|hb20|gol|polo|argo|mobi|ka|kwid|corolla|civic|cruze|kicks|creta|compass|tracker|hr-?v|tcross|renegade)\b/i,
 ];
 
 /**

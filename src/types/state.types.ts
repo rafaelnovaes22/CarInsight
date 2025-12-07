@@ -77,7 +77,6 @@ export interface CustomerProfile {
   _skipOnboarding?: boolean; // Skip remaining onboarding steps (user asked for specific brand/model)
   _availableYears?: number[]; // Anos disponíveis quando modelo não encontrado no ano pedido
 
-  // Post-recommendation tracking
   _lastShownVehicles?: Array<{
     vehicleId: string;
     brand: string;
@@ -91,6 +90,11 @@ export interface CustomerProfile {
   _excludeVehicleIds?: string[]; // IDs de veículos a excluir das próximas buscas
   _waitingForSimilarApproval?: boolean; // Se estamos aguardando o usuário aceitar ver similares
   _pendingSimilarResults?: VehicleRecommendation[]; // Resultados similares aguardando aprovação
+
+  // Financing/Trade-in flow control
+  _awaitingFinancingDetails?: boolean; // Aguardando detalhes de financiamento (entrada, troca)
+  _awaitingTradeInDetails?: boolean;   // Aguardando detalhes do veículo de troca
+  tradeInKm?: number;                  // Km do veículo na troca
 }
 
 /**

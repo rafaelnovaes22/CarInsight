@@ -16,7 +16,7 @@ export const handleFinancing = (ctx: PostRecommendationContext): HandlerResult =
     const { lastShownVehicles, extracted, startTime } = ctx;
 
     const firstVehicle = lastShownVehicles[0];
-    const modelName = `${firstVehicle.brand} ${firstVehicle.model}`;
+    const modelName = `${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year}`;
     const vehiclePrice = firstVehicle.price;
 
     logger.info({ modelName, vehiclePrice }, 'User wants financing for shown vehicle');
@@ -24,12 +24,21 @@ export const handleFinancing = (ctx: PostRecommendationContext): HandlerResult =
     return {
         handled: true,
         response: {
-            response: `Ótimo! Vamos ver o financiamento do ${modelName}! 🏦\n\n💰 O veículo está por R$ ${vehiclePrice.toLocaleString('pt-BR')}.\n\nPara simular as parcelas, me conta:\n1️⃣ Você tem algum valor de entrada?\n2️⃣ Tem algum carro para dar na troca?\n\n_Pode me contar que calculo rápido!_`,
+            response: `Ótimo! Vamos simular o financiamento do ${modelName}! 🏦
+
+💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}
+
+Pra eu calcular as parcelas, me conta:
+• Tem algum valor de **entrada**? (pode ser zero)
+• Tem algum **carro pra dar na troca**?
+
+_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
             extractedPreferences: {
                 ...extracted.extracted,
                 wantsFinancing: true,
                 _showedRecommendation: true,
                 _lastShownVehicles: lastShownVehicles,
+                _awaitingFinancingDetails: true,
             },
             needsMoreInfo: ['financingDownPayment', 'tradeIn'],
             canRecommend: false,

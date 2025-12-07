@@ -10,6 +10,7 @@ export * from './types';
 
 // Individual handlers
 export { handleFinancing } from './financing.handler';
+export { handleFinancingResponse, isFinancingResponse } from './financing-response.handler';
 export { handleTradeIn } from './tradein.handler';
 export { handleSchedule } from './schedule.handler';
 export { handleDetails } from './details.handler';
@@ -19,6 +20,7 @@ export { handleAcknowledgment } from './acknowledgment.handler';
 import { detectPostRecommendationIntent, PostRecommendationIntent } from '../intent-detector';
 import { PostRecommendationContext, HandlerResult } from './types';
 import { handleFinancing } from './financing.handler';
+import { handleFinancingResponse, isFinancingResponse } from './financing-response.handler';
 import { handleTradeIn } from './tradein.handler';
 import { handleSchedule } from './schedule.handler';
 import { handleDetails } from './details.handler';
@@ -70,6 +72,16 @@ export const routePostRecommendationIntent = (
 export const processPostRecommendationIntent = (
     ctx: PostRecommendationContext
 ): HandlerResult => {
+    // First, check if we're awaiting financing details (user just said they want to finance)
+    // and the message contains entry information (value, "sem entrada", etc.)
+    const awaitingFinancing = ctx.updatedProfile?._awaitingFinancingDetails ||
+        ctx.extracted?.extracted?._awaitingFinancingDetails;
+
+    if (awaitingFinancing && isFinancingResponse(ctx.userMessage, true)) {
+        return handleFinancingResponse(ctx);
+    }
+
+    // Otherwise, detect intent normally
     const intent = detectPostRecommendationIntent(
         ctx.userMessage,
         ctx.lastShownVehicles
