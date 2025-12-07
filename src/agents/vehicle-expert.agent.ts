@@ -201,7 +201,25 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
         // Porque senão o bloco vai re-executar a busca quando o usuário responde "sim"
         const isWaitingForSuggestion = context.profile?._waitingForSuggestionResponse;
 
-        if (!isTradeInMention && !isWaitingForSuggestion) {
+        // IMPORTANTE: Pular se já mostramos uma recomendação e o usuário está respondendo sobre ela
+        // (financiamento, troca, agendamento, etc.) - NÃO RE-FAZER A BUSCA
+        const alreadyShowedRecommendation = context.profile?._showedRecommendation;
+        const isPostRecommendationIntent = alreadyShowedRecommendation && (
+          // Financiamento
+          extracted.extracted.wantsFinancing ||
+          /financ|parcel|entrada|presta[çc]/i.test(userMessage) ||
+          // Troca de veículo
+          extracted.extracted.hasTradeIn ||
+          /troca|meu carro|tenho um|minha/i.test(userMessage) ||
+          // Agendamento / Vendedor
+          /agendar|visita|vendedor|ver pessoal|ir a[íi]/i.test(userMessage) ||
+          // Interesse / Gostei
+          /gostei|interessei|curti|quero esse|esse (mesmo|a[íi])/i.test(userMessage) ||
+          // Perguntas sobre o veículo mostrado
+          /mais (info|detalhe)|quilometr|km|opcional|documento/i.test(userMessage)
+        );
+
+        if (!isTradeInMention && !isWaitingForSuggestion && !isPostRecommendationIntent) {
           logger.info({ model: targetModel, year: targetYear }, 'Intercepting Exact Search intent');
 
           // 1. Tentar busca exata
@@ -704,6 +722,59 @@ Temos 20 SUVs e 16 sedans no estoque. Para que você pretende usar o carro?"`;
               processingTime: Date.now() - startTime,
               confidence: 0.95,
               llmUsed: 'gpt-4o-mini'
+            }
+          };
+        }
+
+        if (postRecommendationIntent === 'want_financing') {
+          // User wants to finance the shown vehicle
+          const firstVehicle = lastShownVehicles[0];
+          const modelName = `${firstVehicle.brand} ${firstVehicle.model}`;
+          const vehiclePrice = firstVehicle.price;
+
+          logger.info({ modelName, vehiclePrice }, 'User wants financing for shown vehicle');
+
+          return {
+            response: `Ótimo! Vamos ver o financiamento do ${modelName}! 🏦\n\n💰 O veículo está por R$ ${vehiclePrice.toLocaleString('pt-BR')}.\n\nPara simular as parcelas, me conta:\n1️⃣ Você tem algum valor de entrada?\n2️⃣ Tem algum carro para dar na troca?\n\n_Pode me contar que calculo rápido!_`,
+            extractedPreferences: {
+              ...extracted.extracted,
+              wantsFinancing: true,
+              _showedRecommendation: true, // Mantém para continuar a conversa
+              _lastShownVehicles: lastShownVehicles,
+            },
+            needsMoreInfo: ['financingDownPayment', 'tradeIn'],
+            canRecommend: false,
+            nextMode: 'negotiation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'rule-based'
+            }
+          };
+        }
+
+        if (postRecommendationIntent === 'want_tradein') {
+          // User wants to use trade-in
+          const firstVehicle = lastShownVehicles[0];
+          const modelName = `${firstVehicle.brand} ${firstVehicle.model}`;
+
+          logger.info({ modelName }, 'User wants to use trade-in for shown vehicle');
+
+          return {
+            response: `Show! Ter um carro na troca facilita muito! 🚗🔄\n\nMe conta sobre o seu veículo:\n• Qual é a marca e modelo?\n• Qual o ano?\n• Mais ou menos quantos km rodou?\n\n_Com essas informações consigo dar uma estimativa do valor!_`,
+            extractedPreferences: {
+              ...extracted.extracted,
+              hasTradeIn: true,
+              _showedRecommendation: true, // Mantém para continuar a conversa
+              _lastShownVehicles: lastShownVehicles,
+            },
+            needsMoreInfo: ['tradeInBrand', 'tradeInModel', 'tradeInYear', 'tradeInKm'],
+            canRecommend: false,
+            nextMode: 'negotiation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'rule-based'
             }
           };
         }
@@ -1630,12 +1701,12 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
   /**
    * Detect user intent after showing a recommendation
-   * Returns: 'want_others' | 'want_details' | 'want_schedule' | 'new_search' | 'none'
+   * Returns: 'want_others' | 'want_details' | 'want_schedule' | 'want_financing' | 'want_tradein' | 'new_search' | 'acknowledgment' | 'none'
    */
   private detectPostRecommendationIntent(
     message: string,
     lastShownVehicles?: Array<{ brand: string; model: string; year: number; price: number }>
-  ): 'want_others' | 'want_details' | 'want_schedule' | 'new_search' | 'acknowledgment' | 'none' {
+  ): 'want_others' | 'want_details' | 'want_schedule' | 'want_financing' | 'want_tradein' | 'new_search' | 'acknowledgment' | 'none' {
     const normalized = message.toLowerCase().trim();
 
     // Patterns for wanting OTHER options - comprehensive list
@@ -1745,7 +1816,44 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       /whatsapp|telefone|ligar/i,
     ];
 
-    // Check patterns in order of priority
+    // Patterns for wanting to FINANCE
+    const wantFinancingPatterns = [
+      /financ/i,           // financiar, financiamento
+      /parcel/i,           // parcelar, parcela
+      /entrada/i,          // dar entrada
+      /presta[çc]/i,       // prestação
+      /vou financ/i,
+      /quero financ/i,
+      /como financ/i,
+      /posso financ/i,
+      /dá pra financ/i,
+      /gostei.*financ/i,   // gostei, vou financiar
+      /interessei.*financ/i,
+      /simul/i,            // simular, simulação
+    ];
+
+    // Patterns for wanting to TRADE-IN
+    const wantTradeinPatterns = [
+      /tenho\s*(um|uma)?\s*(carro|veículo|moto)/i,
+      /meu\s*(carro|veículo)/i,
+      /carro\s*(na|pra|para)\s*troca/i,
+      /dar\s*(na|de)?\s*troca/i,
+      /trocar?\s*o\s*meu/i,
+      /colocar.*troca/i,
+      /usar.*troca/i,
+      /aceita.*troca/i,
+      /vou\s*dar\s*(na|de)\s*troca/i,
+    ];
+
+    // Check patterns in order of priority - financing and tradein BEFORE schedule
+    if (wantFinancingPatterns.some(p => p.test(normalized))) {
+      return 'want_financing';
+    }
+
+    if (wantTradeinPatterns.some(p => p.test(normalized))) {
+      return 'want_tradein';
+    }
+
     if (wantSchedulePatterns.some(p => p.test(normalized))) {
       return 'want_schedule';
     }
