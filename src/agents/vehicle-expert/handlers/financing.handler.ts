@@ -13,7 +13,7 @@ import { PostRecommendationContext, HandlerResult } from './types';
  * When user says something like "quero financiar", "gostei, vou financiar"
  */
 export const handleFinancing = (ctx: PostRecommendationContext): HandlerResult => {
-    const { lastShownVehicles, extracted, startTime } = ctx;
+    const { lastShownVehicles, extracted, updatedProfile, startTime } = ctx;
 
     const firstVehicle = lastShownVehicles[0];
     const modelName = `${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year}`;
@@ -21,10 +21,26 @@ export const handleFinancing = (ctx: PostRecommendationContext): HandlerResult =
 
     logger.info({ modelName, vehiclePrice }, 'User wants financing for shown vehicle');
 
-    return {
-        handled: true,
-        response: {
-            response: `Ótimo! Vamos simular o financiamento do ${modelName}! 🏦
+    // Verificar se usuário já informou carro de troca
+    const hasTradeIn = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
+    const tradeInInfo = hasTradeIn
+        ? (updatedProfile.tradeInYear 
+            ? `${updatedProfile.tradeInModel} ${updatedProfile.tradeInYear}` 
+            : updatedProfile.tradeInModel)
+        : null;
+
+    // Mensagem diferente se já tem troca informada
+    const responseMessage = hasTradeIn
+        ? `Ótimo! Vamos simular o financiamento do ${modelName}! 🏦
+
+💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}
+🚗 *Troca:* ${tradeInInfo} (valor a definir na avaliação)
+
+Pra eu calcular as parcelas, me conta:
+• Tem algum valor de **entrada** além da troca? (pode ser zero)
+
+_Exemplo: "5 mil de entrada" ou "só a troca"_`
+        : `Ótimo! Vamos simular o financiamento do ${modelName}! 🏦
 
 💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}
 
@@ -32,7 +48,12 @@ Pra eu calcular as parcelas, me conta:
 • Tem algum valor de **entrada**? (pode ser zero)
 • Tem algum **carro pra dar na troca**?
 
-_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
+_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`;
+
+    return {
+        handled: true,
+        response: {
+            response: responseMessage,
             extractedPreferences: {
                 ...extracted.extracted,
                 wantsFinancing: true,
@@ -40,7 +61,7 @@ _Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
                 _lastShownVehicles: lastShownVehicles,
                 _awaitingFinancingDetails: true,
             },
-            needsMoreInfo: ['financingDownPayment', 'tradeIn'],
+            needsMoreInfo: hasTradeIn ? ['financingDownPayment'] : ['financingDownPayment', 'tradeIn'],
             canRecommend: false,
             nextMode: 'negotiation',
             metadata: {

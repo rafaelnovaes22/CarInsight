@@ -666,8 +666,21 @@ export class VehicleExpertAgent {
           }
 
           // Se NÃO informou entrada ainda, PERGUNTAR
+          // Verificar se usuário já informou carro de troca
+          const hasTradeInInfo = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
+          const tradeInText = hasTradeInInfo
+            ? (updatedProfile.tradeInYear 
+                ? `${updatedProfile.tradeInModel} ${updatedProfile.tradeInYear}` 
+                : updatedProfile.tradeInModel)
+            : null;
+
+          // Mensagem diferente se já tem troca informada
+          const financingMessage = hasTradeInInfo
+            ? `Ótimo! Vamos simular o financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n🚗 *Troca:* ${tradeInText} (valor a definir na avaliação)\n\nPra eu calcular as parcelas, me conta:\n• Tem algum valor de *entrada* além da troca? (pode ser zero)\n\n_Exemplo: "5 mil de entrada" ou "só a troca"_`
+            : `Ótimo! Vamos simular o financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n\nPra eu calcular as parcelas, me conta:\n• Tem algum valor de *entrada*? (pode ser zero)\n• Tem algum *carro pra dar na troca*?\n\n_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`;
+
           return {
-            response: `Ótimo! Vamos simular o financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n\nPra eu calcular as parcelas, me conta:\n• Tem algum valor de *entrada*? (pode ser zero)\n• Tem algum *carro pra dar na troca*?\n\n_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
+            response: financingMessage,
             extractedPreferences: {
               ...extracted.extracted,
               wantsFinancing: true,
@@ -675,7 +688,7 @@ export class VehicleExpertAgent {
               _showedRecommendation: true,
               _lastShownVehicles: lastShownVehicles,
             },
-            needsMoreInfo: ['financingDownPayment', 'tradeIn'],
+            needsMoreInfo: hasTradeInInfo ? ['financingDownPayment'] : ['financingDownPayment', 'tradeIn'],
             canRecommend: false,
             nextMode: 'negotiation',
             metadata: {
