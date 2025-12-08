@@ -112,10 +112,17 @@ export class ExactSearchParser {
      * vs a vehicle they want to BUY
      */
     private static readonly TRADE_IN_PATTERNS: RegExp[] = [
+        // PRIORITY: Simple patterns first (most common cases)
+        // "tenho um X, quero trocar" - MOST COMMON PATTERN
+        /\btenho\s+um[a]?\s+\w+.*quero\s+trocar/i,
+        // "tenho um X" followed by comma (indicates listing owned car)
+        /\btenho\s+um[a]?\s+\w+\s*,/i,
         // "possuo um/uma ..."
         /\b(possuo|tenho)\s+(um|uma|o|a|meu|minha)\b/i,
         // "quero trocar meu/minha ..."
-        /\bquero\s+trocar\s+(meu|minha|o\s+meu|a\s+minha)\b/i,
+        /\bquero\s+trocar\s+(meu|minha|o\s+meu|a\s+minha|de\s+carro)\b/i,
+        // "quero trocar" at beginning or after comma (implies has car to trade)
+        /(?:^|,\s*)quero\s+trocar\b/i,
         // "meu carro é ..." or "minha ... é" (with optional "um/uma" after)
         /\b(meu\s+carro|minha\s+carro|meu\s+ve[ií]culo)\s+[eé](\s+um|\s+uma|\s+o|\s+a)?\b/i,
         // "dar na troca o meu/minha ..."
@@ -124,6 +131,8 @@ export class ExactSearchParser {
         /\btrocar\s+(meu|minha)\s+\w+.*\s+(em|por)\s+(um|uma)\b/i,
         // "possuo um X e quero" or "tenho um X e quero"
         /\b(possuo|tenho)\s+(um|uma)\s+\w+.*\s+e\s+(quero|gostaria|preciso)\b/i,
+        // "X YEAR, quero trocar" - model and year followed by "quero trocar"
+        /\b\w+\s+\d{4}\s*,\s*quero\s+trocar/i,
     ];
 
     /**
