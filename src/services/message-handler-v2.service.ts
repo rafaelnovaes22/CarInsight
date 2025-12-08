@@ -260,11 +260,22 @@ Para começar, qual é o seu nome?`;
         }
       }
 
-      // Create lead if conversation reached recommendation stage
-      if (newState.graph.currentNode === 'recommendation' &&
-        newState.metadata.flags.includes('visit_requested') &&
-        !currentState?.metadata.flags.includes('visit_requested')) {
+      // Create lead if user requested handoff, has trade-in, or requested visit
+      // This ensures sales team is notified in all hot lead scenarios
+      const shouldCreateLead = !currentState?.metadata.flags.includes('lead_sent') && (
+        // User explicitly requested to talk to a seller
+        (newState.metadata.flags.includes('handoff_requested') && !currentState?.metadata.flags.includes('handoff_requested')) ||
+        // User has trade-in that needs evaluation
+        (newState.profile?.hasTradeIn && newState.profile?.tradeInModel && !currentState?.profile?.tradeInModel) ||
+        // User requested visit/test drive
+        (newState.metadata.flags.includes('visit_requested') && !currentState?.metadata.flags.includes('visit_requested'))
+      );
+
+      if (shouldCreateLead) {
         await this.createLead(conversation, newState);
+        // Mark lead as sent to prevent duplicates
+        newState.metadata.flags = [...newState.metadata.flags, 'lead_sent'];
+        await cache.set(stateKey, JSON.stringify(newState), 86400);
       }
 
       return finalResponse;
@@ -373,20 +384,34 @@ Para começar, qual é o seu nome?`;
           const budget = profile?.budget || profile?.budgetMax;
           if (budget) details.push(`💰 *Orçamento:* R$ ${budget.toLocaleString('pt-BR')}`);
 
+          // Trade-in details with brand and km
           if (profile?.hasTradeIn) {
-            const tradeIn = profile.tradeInModel ? `${profile.tradeInModel} (${profile.tradeInYear || 'Ano?'})` : 'Sim (Modelo não def.)';
-            details.push(`🔄 *Troca:* ${tradeIn}`);
+            let tradeInText = '';
+            if (profile.tradeInModel) {
+              tradeInText = profile.tradeInBrand
+                ? `${profile.tradeInBrand} ${profile.tradeInModel}`
+                : profile.tradeInModel;
+              if (profile.tradeInYear) tradeInText += ` ${profile.tradeInYear}`;
+              if (profile.tradeInKm) tradeInText += ` (${profile.tradeInKm.toLocaleString('pt-BR')} km)`;
+            } else {
+              tradeInText = 'Sim (veículo não especificado)';
+            }
+            details.push(`🔄 *Troca:* ${tradeInText}`);
           }
 
+          // Financing details
           if (profile?.wantsFinancing || profile?.financingDownPayment) {
-            const entry = profile.financingDownPayment ? `Entrada R$ ${profile.financingDownPayment}` : 'Entrada a definir';
+            const entry = profile.financingDownPayment
+              ? `Entrada R$ ${profile.financingDownPayment.toLocaleString('pt-BR')}`
+              : 'Entrada a definir';
             details.push(`🏦 *Financiamento:* Sim (${entry})`);
           }
 
           // Last shown vehicle (Interest)
           const interest = profile?._lastShownVehicles?.[0];
           if (interest) {
-            details.push(`🚗 *Interesse:* ${interest.brand} ${interest.model} ${interest.year} (R$ ${interest.price})`);
+            const priceFormatted = interest.price?.toLocaleString('pt-BR') || 'Preço n/d';
+            details.push(`🚗 *Interesse:* ${interest.brand} ${interest.model} ${interest.year} (R$ ${priceFormatted})`);
           } else if (profile?._searchedItem) {
             details.push(`🔍 *Busca:* ${profile._searchedItem}`);
           }
