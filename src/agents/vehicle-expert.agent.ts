@@ -192,6 +192,17 @@ export class VehicleExpertAgent {
         // IMPORTANTE: Pular se já mostramos uma recomendação e o usuário está respondendo sobre ela
         // (financiamento, troca, agendamento, etc.) - NÃO RE-FAZER A BUSCA
         const alreadyShowedRecommendation = context.profile?._showedRecommendation;
+        const lastShownVehicles = context.profile?._lastShownVehicles || [];
+
+        // Verifica se o modelo mencionado está entre os veículos já mostrados
+        // Se sim, é interesse no veículo, não nova busca
+        const msgLower = userMessage.toLowerCase();
+        const mentionedShownVehicleModel = lastShownVehicles.some((v: { model: string; brand: string }) => {
+          const modelLower = v.model.toLowerCase();
+          const brandLower = v.brand.toLowerCase();
+          return msgLower.includes(modelLower) || msgLower.includes(brandLower);
+        });
+
         const isPostRecommendationIntent = alreadyShowedRecommendation && (
           // Financiamento
           extracted.extracted.wantsFinancing ||
@@ -201,8 +212,9 @@ export class VehicleExpertAgent {
           /troca|meu carro|tenho um|minha/i.test(userMessage) ||
           // Agendamento / Vendedor
           /agendar|visita|vendedor|ver pessoal|ir a[íi]/i.test(userMessage) ||
-          // Interesse / Gostei
+          // Interesse / Gostei (agora inclui quando menciona modelo já mostrado)
           /gostei|interessei|curti|quero esse|esse (mesmo|a[íi])/i.test(userMessage) ||
+          mentionedShownVehicleModel ||
           // Perguntas sobre o veículo mostrado
           /mais (info|detalhe)|quilometr|km|opcional|documento/i.test(userMessage)
         );

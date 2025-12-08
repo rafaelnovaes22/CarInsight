@@ -22,15 +22,30 @@ export const handleInterest = (ctx: PostRecommendationContext): HandlerResult =>
 
     logger.info({ vehicleName, userMessage }, 'User expressed interest in shown vehicle');
 
-    // Try to detect which vehicle they picked (primeiro, segundo, etc)
+    // Try to detect which vehicle they picked (primeiro, segundo, etc OR by model name)
     const normalized = userMessage.toLowerCase();
     let selectedIndex = 0;
 
+    // First check if user mentioned a specific position
     if (/primeiro|1|um\b/.test(normalized)) selectedIndex = 0;
     else if (/segundo|2|dois/.test(normalized)) selectedIndex = 1;
     else if (/terceiro|3|tr[eê]s/.test(normalized)) selectedIndex = 2;
     else if (/quarto|4|quatro/.test(normalized)) selectedIndex = 3;
     else if (/quinto|5|cinco/.test(normalized)) selectedIndex = 4;
+    else {
+        // Check if user mentioned a model name from the shown vehicles
+        for (let i = 0; i < lastShownVehicles.length; i++) {
+            const vehicle = lastShownVehicles[i];
+            const modelLower = vehicle.model.toLowerCase();
+            const brandLower = vehicle.brand.toLowerCase();
+
+            if (normalized.includes(modelLower) || normalized.includes(brandLower)) {
+                selectedIndex = i;
+                logger.info({ model: vehicle.model, index: i }, 'User selected vehicle by model name');
+                break;
+            }
+        }
+    }
 
     // Use the selected vehicle if available
     const selectedVehicle = lastShownVehicles[selectedIndex] || firstVehicle;

@@ -469,6 +469,17 @@ export const detectPostRecommendationIntent = (
         return 'want_interest';
     }
 
+    // Check if user mentioned a model from the shown vehicles (e.g., "gostei do HB20", "quero o civic")
+    if (_lastShownVehicles && _lastShownVehicles.length > 0) {
+        const mentionedShownVehicle = _lastShownVehicles.some(v =>
+            normalized.includes(v.model.toLowerCase()) ||
+            normalized.includes(v.brand.toLowerCase())
+        );
+        if (mentionedShownVehicle) {
+            return 'want_interest';
+        }
+    }
+
     if (WANT_OTHERS_PATTERNS.some(p => p.test(normalized))) {
         return 'want_others';
     }
