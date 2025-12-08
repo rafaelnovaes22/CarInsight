@@ -59,6 +59,89 @@ export class VehicleExpertAgent {
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
 
   /**
+   * Extract trade-in vehicle info from message (model, year, km)
+   * Differentiates "150 mil km" from "150 mil de entrada"
+   */
+  private extractTradeInInfo(message: string): { brand?: string; model?: string; year?: number; km?: number } {
+    const normalized = message.toLowerCase();
+
+    // Common car brands
+    const brands = ['fiat', 'volkswagen', 'vw', 'chevrolet', 'gm', 'ford', 'honda', 'toyota',
+      'hyundai', 'renault', 'nissan', 'jeep', 'peugeot', 'citroen', 'mitsubishi', 'kia'];
+
+    // Common car models  
+    const models = ['uno', 'palio', 'siena', 'strada', 'toro', 'argo', 'mobi', 'cronos', 'pulse',
+      'gol', 'voyage', 'polo', 'virtus', 'saveiro', 'tcross', 'nivus', 'jetta', 'fox', 'up',
+      'onix', 'prisma', 'cruze', 'tracker', 'spin', 's10', 'montana', 'equinox', 'celta', 'corsa',
+      'ka', 'fiesta', 'focus', 'ecosport', 'ranger', 'fusion', 'territory',
+      'civic', 'city', 'fit', 'hrv', 'wrv', 'accord', 'crv',
+      'corolla', 'yaris', 'etios', 'hilux', 'sw4', 'rav4',
+      'hb20', 'creta', 'tucson', 'i30', 'azera',
+      'kwid', 'sandero', 'logan', 'duster', 'captur', 'oroch',
+      'march', 'versa', 'sentra', 'kicks', 'frontier',
+      'renegade', 'compass', 'commander'];
+
+    let brand: string | undefined;
+    let model: string | undefined;
+    let year: number | undefined;
+    let km: number | undefined;
+
+    // Extract brand
+    for (const b of brands) {
+      if (normalized.includes(b)) {
+        brand = b.toUpperCase();
+        if (brand === 'VW') brand = 'VOLKSWAGEN';
+        if (brand === 'GM') brand = 'CHEVROLET';
+        break;
+      }
+    }
+
+    // Extract model
+    for (const m of models) {
+      if (normalized.includes(m)) {
+        model = m.toUpperCase();
+        break;
+      }
+    }
+
+    // Extract year (4 digits between 2000-2025)
+    const yearMatch = message.match(/\b(20[0-2][0-9])\b/);
+    if (yearMatch) {
+      const y = parseInt(yearMatch[1]);
+      if (y >= 2000 && y <= 2025) {
+        year = y;
+      }
+    }
+
+    // Extract km - look for patterns like "150 mil km", "150.000 km", "150000km"
+    // IMPORTANT: Only if "km" is present, to avoid confusing with entry value
+    const kmPatterns = [
+      /(\d+)\s*mil\s*km/i,           // "150 mil km"
+      /(\d{1,3})[.,](\d{3})\s*km/i,  // "150.000 km" or "150,000 km"
+      /(\d{4,6})\s*km/i,             // "150000 km"
+    ];
+
+    for (const pattern of kmPatterns) {
+      const kmMatch = message.match(pattern);
+      if (kmMatch) {
+        if (pattern === kmPatterns[0]) {
+          // "150 mil km" format
+          km = parseInt(kmMatch[1]) * 1000;
+        } else if (pattern === kmPatterns[1]) {
+          // "150.000 km" format
+          km = parseInt(kmMatch[1]) * 1000 + parseInt(kmMatch[2]);
+        } else {
+          // "150000 km" format
+          km = parseInt(kmMatch[1]);
+        }
+        break;
+      }
+    }
+
+    return { brand, model, year, km };
+  }
+
+  /**
    * Main chat interface - processes user message and generates response
    */
   async chat(
@@ -325,17 +408,58 @@ export class VehicleExpertAgent {
       const lastShownVehicles = context.profile?._lastShownVehicles;
       const lastSearchType = context.profile?._lastSearchType;
 
-      // 2.52. PRIORITY: Handle financing response when awaiting details
-      // This catches cases like "10 mil de entrada e um Fiesta 2016" where user provides:
-      // - Down payment value
-      // - Trade-in vehicle info (model + year that should NOT be treated as a new search)
-      const awaitingFinancingDetails = context.profile?._awaitingFinancingDetails;
+      // 2.52. PRIORITY: Handle trade-in response when awaiting trade-in details
+      // When user says "Honda CRV 150 mil km" - the 150 mil is KM, not entry value!
       const awaitingTradeInDetails = context.profile?._awaitingTradeInDetails;
 
-      if ((awaitingFinancingDetails || awaitingTradeInDetails) && lastShownVehicles && lastShownVehicles.length > 0) {
-        // Check if this message is a financing response (contains entry value and/or trade-in vehicle)
+      if (awaitingTradeInDetails && lastShownVehicles && lastShownVehicles.length > 0) {
+        // Extract trade-in vehicle info (model, year, km)
+        const tradeInInfo = this.extractTradeInInfo(userMessage);
+
+        if (tradeInInfo.model || tradeInInfo.km) {
+          logger.info({ userMessage, tradeInInfo }, 'Processing trade-in vehicle details');
+
+          const vehicleName = `${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}`;
+          const tradeInText = [
+            tradeInInfo.brand,
+            tradeInInfo.model,
+            tradeInInfo.year,
+            tradeInInfo.km ? `(${tradeInInfo.km.toLocaleString('pt-BR')} km)` : null
+          ].filter(Boolean).join(' ');
+
+          return {
+            response: `Perfeito! Anotei o ${tradeInText} como carro de troca. 🚗🔄\n\n⚠️ O valor do seu carro depende de uma avaliação presencial.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInText}\n• Apresentar a proposta final para o ${vehicleName}\n• Tirar suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
+            extractedPreferences: {
+              ...extracted.extracted,
+              hasTradeIn: true,
+              tradeInBrand: tradeInInfo.brand,
+              tradeInModel: tradeInInfo.model,
+              tradeInYear: tradeInInfo.year,
+              tradeInKm: tradeInInfo.km,
+              _awaitingTradeInDetails: false,
+              _showedRecommendation: true,
+              _lastShownVehicles: lastShownVehicles,
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'negotiation',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'rule-based'
+            }
+          };
+        }
+      }
+
+      // 2.53. Handle financing response when awaiting financing details (no trade-in)
+      const awaitingFinancingDetails = context.profile?._awaitingFinancingDetails;
+
+      // Only process as financing if NOT waiting for trade-in details
+      if (awaitingFinancingDetails && !awaitingTradeInDetails && lastShownVehicles && lastShownVehicles.length > 0) {
+        // Check if this message is a financing response (contains entry value)
         if (isFinancingResponse(userMessage, true)) {
-          logger.info({ userMessage, awaitingFinancingDetails, awaitingTradeInDetails }, 'Processing financing response with entry and/or trade-in');
+          logger.info({ userMessage, awaitingFinancingDetails }, 'Processing financing response with entry value');
 
           const handlerContext: PostRecommendationContext = {
             userMessage,
