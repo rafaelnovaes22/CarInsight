@@ -95,10 +95,19 @@ Para começar, qual é o seu nome?`;
           },
         });
 
-        // Initialize state with greeting message
+        // Initialize state with greeting messages (user + bot response)
         const initialState = this.initializeState(newConversation.id, phoneNumber);
+        const greetingResponse = `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+
+🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
+
+💡 _A qualquer momento, digite *sair* para encerrar a conversa._
+
+Para começar, qual é o seu nome?`;
+
         initialState.messages = [
           { role: 'user' as const, content: sanitizedMessage, timestamp: new Date() },
+          { role: 'assistant' as const, content: greetingResponse, timestamp: new Date() },
         ];
 
         // Save state to cache
@@ -114,14 +123,6 @@ Para começar, qual é o seu nome?`;
             messageType: 'text',
           },
         });
-
-        const greetingResponse = `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
-
-🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
-
-💡 _A qualquer momento, digite *sair* para encerrar a conversa._
-
-Para começar, qual é o seu nome?`;
 
         // Log outgoing message
         await prisma.message.create({
