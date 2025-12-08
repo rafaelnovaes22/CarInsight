@@ -15,6 +15,7 @@ export { handleTradeIn } from './tradein.handler';
 export { handleSchedule } from './schedule.handler';
 export { handleDetails } from './details.handler';
 export { handleAcknowledgment } from './acknowledgment.handler';
+export { handleInterest } from './interest.handler';
 
 // Import for router
 import { detectPostRecommendationIntent, PostRecommendationIntent } from '../intent-detector';
@@ -25,6 +26,7 @@ import { handleTradeIn } from './tradein.handler';
 import { handleSchedule } from './schedule.handler';
 import { handleDetails } from './details.handler';
 import { handleAcknowledgment } from './acknowledgment.handler';
+import { handleInterest } from './interest.handler';
 
 /**
  * Route post-recommendation intent to appropriate handler
@@ -52,6 +54,9 @@ export const routePostRecommendationIntent = (
 
         case 'acknowledgment':
             return handleAcknowledgment(ctx);
+
+        case 'want_interest':
+            return handleInterest(ctx);
 
         // 'want_others' is handled separately due to async search logic
         // 'new_search' and 'none' fall through to normal processing

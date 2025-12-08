@@ -25,6 +25,7 @@ export type PostRecommendationIntent =
     | 'want_schedule'
     | 'want_financing'
     | 'want_tradein'
+    | 'want_interest'
     | 'new_search'
     | 'acknowledgment'
     | 'none';
@@ -245,6 +246,24 @@ export const WANT_SCHEDULE_PATTERNS: RegExp[] = [
 ];
 
 /**
+ * Patterns for expressing INTEREST in a shown vehicle
+ */
+export const WANT_INTEREST_PATTERNS: RegExp[] = [
+    /gostei/i,
+    /curti/i,
+    /interessei/i,
+    /quero\s*(esse|este|ele)/i,
+    /esse\s*(mesmo|aí|ai)/i,
+    /gostei\s*(do|desse|dele|da)\s*(primeiro|segundo|terceiro|1|2|3)/i,
+    /quero\s*(o|a)\s*(primeiro|segundo|terceiro|1|2|3)/i,
+    /me\s*interesse[io]/i,
+    /t[óo]\s*gostando/i,
+    /bom\s*demais/i,
+    /perfeito/i,
+    /excelente\s*op[çc][ãa]o/i,
+];
+
+/**
  * Patterns for wanting to FINANCE or discussing payment method
  */
 export const WANT_FINANCING_PATTERNS: RegExp[] = [
@@ -444,6 +463,10 @@ export const detectPostRecommendationIntent = (
 
     if (WANT_DETAILS_PATTERNS.some(p => p.test(normalized))) {
         return 'want_details';
+    }
+
+    if (WANT_INTEREST_PATTERNS.some(p => p.test(normalized))) {
+        return 'want_interest';
     }
 
     if (WANT_OTHERS_PATTERNS.some(p => p.test(normalized))) {
