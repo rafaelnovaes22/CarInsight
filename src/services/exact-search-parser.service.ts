@@ -116,8 +116,8 @@ export class ExactSearchParser {
         /\b(possuo|tenho)\s+(um|uma|o|a|meu|minha)\b/i,
         // "quero trocar meu/minha ..."
         /\bquero\s+trocar\s+(meu|minha|o\s+meu|a\s+minha)\b/i,
-        // "meu carro é ..." or "minha ... é"
-        /\b(meu\s+carro|minha\s+carro|meu\s+ve[ií]culo)\s+[eé]\b/i,
+        // "meu carro é ..." or "minha ... é" (with optional "um/uma" after)
+        /\b(meu\s+carro|minha\s+carro|meu\s+ve[ií]culo)\s+[eé](\s+um|\s+uma|\s+o|\s+a)?\b/i,
         // "dar na troca o meu/minha ..."
         /\bdar\s+(na\s+)?troca\s+(o\s+meu|a\s+minha|meu|minha)\b/i,
         // "trocar meu/minha X em/por um Y"
