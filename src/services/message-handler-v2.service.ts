@@ -381,9 +381,6 @@ Para começar, qual é o seu nome?`;
           if (profile?.customerName) details.push(`👤 *Nome:* ${profile.customerName}`);
           if (conversation.phoneNumber) details.push(`📱 *Fone:* ${conversation.phoneNumber}`);
 
-          const budget = profile?.budget || profile?.budgetMax;
-          if (budget) details.push(`💰 *Orçamento:* R$ ${budget.toLocaleString('pt-BR')}`);
-
           // Trade-in details with brand and km
           if (profile?.hasTradeIn) {
             let tradeInText = '';
