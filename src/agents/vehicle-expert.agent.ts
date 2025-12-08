@@ -48,6 +48,8 @@ import {
 // Import post-recommendation handlers
 import {
   routePostRecommendationIntent,
+  isFinancingResponse,
+  handleFinancingResponse,
   type PostRecommendationContext,
   type ShownVehicle,
 } from './vehicle-expert/handlers';
@@ -99,6 +101,11 @@ export class VehicleExpertAgent {
         // Porque senão o bloco vai re-executar a busca quando o usuário responde "sim"
         const isWaitingForSuggestion = context.profile?._waitingForSuggestionResponse;
 
+        // IMPORTANTE: Pular se estamos aguardando detalhes de financiamento (entrada, carro de troca)
+        // Se o usuário disse "10 mil de entrada e um Fiesta 2016", o Fiesta é o carro DE TROCA, não uma nova busca
+        const isAwaitingFinancingDetails = context.profile?._awaitingFinancingDetails ||
+          context.profile?._awaitingTradeInDetails;
+
         // IMPORTANTE: Pular se já mostramos uma recomendação e o usuário está respondendo sobre ela
         // (financiamento, troca, agendamento, etc.) - NÃO RE-FAZER A BUSCA
         const alreadyShowedRecommendation = context.profile?._showedRecommendation;
@@ -117,7 +124,7 @@ export class VehicleExpertAgent {
           /mais (info|detalhe)|quilometr|km|opcional|documento/i.test(userMessage)
         );
 
-        if (!isTradeInMention && !isWaitingForSuggestion && !isPostRecommendationIntent) {
+        if (!isTradeInMention && !isWaitingForSuggestion && !isPostRecommendationIntent && !isAwaitingFinancingDetails) {
           logger.info({ model: targetModel, year: targetYear }, 'Intercepting Exact Search intent');
 
           // 1. Tentar busca exata
@@ -318,6 +325,35 @@ export class VehicleExpertAgent {
       const lastShownVehicles = context.profile?._lastShownVehicles;
       const lastSearchType = context.profile?._lastSearchType;
 
+      // 2.52. PRIORITY: Handle financing response when awaiting details
+      // This catches cases like "10 mil de entrada e um Fiesta 2016" where user provides:
+      // - Down payment value
+      // - Trade-in vehicle info (model + year that should NOT be treated as a new search)
+      const awaitingFinancingDetails = context.profile?._awaitingFinancingDetails;
+      const awaitingTradeInDetails = context.profile?._awaitingTradeInDetails;
+
+      if ((awaitingFinancingDetails || awaitingTradeInDetails) && lastShownVehicles && lastShownVehicles.length > 0) {
+        // Check if this message is a financing response (contains entry value and/or trade-in vehicle)
+        if (isFinancingResponse(userMessage, true)) {
+          logger.info({ userMessage, awaitingFinancingDetails, awaitingTradeInDetails }, 'Processing financing response with entry and/or trade-in');
+
+          const handlerContext: PostRecommendationContext = {
+            userMessage,
+            lastShownVehicles: lastShownVehicles as ShownVehicle[],
+            lastSearchType,
+            extracted,
+            updatedProfile,
+            context,
+            startTime,
+          };
+
+          const result = handleFinancingResponse(handlerContext);
+          if (result.handled && result.response) {
+            return result.response;
+          }
+        }
+      }
+
       // 2.55. Check if user is responding after seeing a recommendation
       if (showedRecommendation && lastShownVehicles && lastShownVehicles.length > 0) {
 
@@ -332,7 +368,13 @@ export class VehicleExpertAgent {
 
           return {
             response: `Perfeito! O ${tradeInCar} pode entrar na negociação e facilitar bastante a compra do ${lastShownVehicles[0].model}. 🚗\n\nVamos fazer uma conta rápida? Além do carro na troca, você pretende dar mais algum valor de entrada em dinheiro?`,
-            extractedPreferences: extracted.extracted,
+            extractedPreferences: {
+              ...extracted.extracted,
+              hasTradeIn: true,
+              _awaitingFinancingDetails: true,  // Flag to catch next message with entry value
+              _showedRecommendation: true,
+              _lastShownVehicles: lastShownVehicles, // Keep the vehicle being negotiated
+            },
             needsMoreInfo: ['financingDownPayment'],
             canRecommend: false,
             nextMode: 'negotiation',
@@ -354,7 +396,13 @@ export class VehicleExpertAgent {
 
           return {
             response: `Excelente! Vamos avançar com o financiamento do ${modelName}. 🏦\n\nCom entrada de ${entry}, já consigo encaminhar para aprovação.\n\nPara finalizar essa simulação e garantir as melhores taxas, vou conectar você com nosso consultor agora. Pode ser?`,
-            extractedPreferences: extracted.extracted,
+            extractedPreferences: {
+              ...extracted.extracted,
+              wantsFinancing: true,
+              _awaitingFinancingDetails: true,  // Flag to catch next message with trade-in details
+              _showedRecommendation: true,
+              _lastShownVehicles: lastShownVehicles, // Keep the vehicle being negotiated
+            },
             needsMoreInfo: ['schedule'],
             canRecommend: false,
             nextMode: 'negotiation',

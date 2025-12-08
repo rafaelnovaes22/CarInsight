@@ -43,8 +43,8 @@ const LLM_PROVIDERS: LLMProviderConfig[] = [
   },
   {
     name: 'groq',
-    // Modelo Llama 3.3 70B (Fallback)
-    model: 'llama-3.3-70b-versatile',
+    // Modelo Llama 3.1 8B Instant (Fallback rápido e econômico)
+    model: 'llama-3.1-8b-instant',
     enabled: !!env.GROQ_API_KEY && env.GROQ_API_KEY !== 'mock-key',
     priority: 2, // Fallback
     costPer1MTokens: { input: 0.05, output: 0.08 },

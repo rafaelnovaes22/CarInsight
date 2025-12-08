@@ -73,9 +73,10 @@ const exceedingDurationGenerator = fc.integer({ min: 121, max: 600 });
 
 /**
  * Generator for transcription text results
+ * Must generate valid Portuguese-like text that won't be detected as corrupted
  */
-const transcriptionTextGenerator = fc.string({ minLength: 1, maxLength: 500 })
-    .filter(s => s.trim().length > 0);
+const transcriptionTextGenerator = fc.stringMatching(/^[a-zA-ZáéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ\s]{5,100}$/)
+    .filter(s => s.trim().length >= 5);
 
 describe('AudioTranscriptionService Property Tests', () => {
     let service: AudioTranscriptionService;
