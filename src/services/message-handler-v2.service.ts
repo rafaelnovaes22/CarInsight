@@ -302,15 +302,11 @@ Para começar, qual é o seu nome?`;
         }
       }
 
-      // Create lead if user requested handoff, has trade-in, or requested visit
-      // This ensures sales team is notified in all hot lead scenarios
+      // Create lead ONLY when user explicitly requests to talk to a seller
+      // Trade-in mention alone should NOT generate a lead - user must request handoff
       const shouldCreateLead = !currentState?.metadata.flags.includes('lead_sent') && (
-        // User explicitly requested to talk to a seller
-        (newState.metadata.flags.includes('handoff_requested') && !currentState?.metadata.flags.includes('handoff_requested')) ||
-        // User has trade-in that needs evaluation
-        (newState.profile?.hasTradeIn && newState.profile?.tradeInModel && !currentState?.profile?.tradeInModel) ||
-        // User requested visit/test drive
-        (newState.metadata.flags.includes('visit_requested') && !currentState?.metadata.flags.includes('visit_requested'))
+        // User explicitly requested to talk to a seller (typing "vendedor" or similar)
+        (newState.metadata.flags.includes('handoff_requested') && !currentState?.metadata.flags.includes('handoff_requested'))
       );
 
       if (shouldCreateLead) {
