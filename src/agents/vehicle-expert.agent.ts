@@ -387,23 +387,46 @@ export class VehicleExpertAgent {
         }
 
         // AUTO-DETECTION: Financing Discussion (Post-Recommendation)
-        if (extracted.extracted.wantsFinancing || (extracted.extracted.financingDownPayment !== undefined)) {
+        if (extracted.extracted.wantsFinancing) {
           const lastConfig = lastShownVehicles[0];
           const modelName = lastConfig.model;
-          const entry = extracted.extracted.financingDownPayment
-            ? `R$ ${extracted.extracted.financingDownPayment.toLocaleString('pt-BR')}`
-            : 'o valor de entrada que preferir';
+          const vehiclePrice = lastConfig.price;
 
+          // Se o usuário JÁ informou o valor de entrada, podemos prosseguir
+          if (extracted.extracted.financingDownPayment !== undefined) {
+            const entry = `R$ ${extracted.extracted.financingDownPayment.toLocaleString('pt-BR')}`;
+
+            return {
+              response: `Excelente! Vamos avançar com o financiamento do ${modelName}. 🏦\n\nCom entrada de ${entry}, já consigo encaminhar para aprovação.\n\nPara finalizar essa simulação e garantir as melhores taxas, vou conectar você com nosso consultor agora. Pode ser?`,
+              extractedPreferences: {
+                ...extracted.extracted,
+                wantsFinancing: true,
+                _awaitingFinancingDetails: false,
+                _showedRecommendation: true,
+                _lastShownVehicles: lastShownVehicles,
+              },
+              needsMoreInfo: ['schedule'],
+              canRecommend: false,
+              nextMode: 'negotiation',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.95,
+                llmUsed: 'rule-based'
+              }
+            };
+          }
+
+          // Se NÃO informou entrada ainda, PERGUNTAR
           return {
-            response: `Excelente! Vamos avançar com o financiamento do ${modelName}. 🏦\n\nCom entrada de ${entry}, já consigo encaminhar para aprovação.\n\nPara finalizar essa simulação e garantir as melhores taxas, vou conectar você com nosso consultor agora. Pode ser?`,
+            response: `Ótimo! Vamos simular o financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n\nPra eu calcular as parcelas, me conta:\n• Tem algum valor de *entrada*? (pode ser zero)\n• Tem algum *carro pra dar na troca*?\n\n_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
             extractedPreferences: {
               ...extracted.extracted,
               wantsFinancing: true,
-              _awaitingFinancingDetails: true,  // Flag to catch next message with trade-in details
+              _awaitingFinancingDetails: true,  // Flag to catch next message with entry/trade-in
               _showedRecommendation: true,
-              _lastShownVehicles: lastShownVehicles, // Keep the vehicle being negotiated
+              _lastShownVehicles: lastShownVehicles,
             },
-            needsMoreInfo: ['schedule'],
+            needsMoreInfo: ['financingDownPayment', 'tradeIn'],
             canRecommend: false,
             nextMode: 'negotiation',
             metadata: {
