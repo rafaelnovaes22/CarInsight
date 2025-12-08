@@ -108,6 +108,46 @@ const MODEL_PATTERN = buildModelPattern();
  */
 export class ExactSearchParser {
     /**
+     * Patterns that indicate the user is talking about a vehicle they OWN (trade-in)
+     * vs a vehicle they want to BUY
+     */
+    private static readonly TRADE_IN_PATTERNS: RegExp[] = [
+        // "possuo um/uma ..."
+        /\b(possuo|tenho)\s+(um|uma|o|a|meu|minha)\b/i,
+        // "quero trocar meu/minha ..."
+        /\bquero\s+trocar\s+(meu|minha|o\s+meu|a\s+minha)\b/i,
+        // "meu carro é ..." or "minha ... é"
+        /\b(meu\s+carro|minha\s+carro|meu\s+ve[ií]culo)\s+[eé]\b/i,
+        // "dar na troca o meu/minha ..."
+        /\bdar\s+(na\s+)?troca\s+(o\s+meu|a\s+minha|meu|minha)\b/i,
+        // "trocar meu/minha X em/por um Y"
+        /\btrocar\s+(meu|minha)\s+\w+.*\s+(em|por)\s+(um|uma)\b/i,
+        // "possuo um X e quero" or "tenho um X e quero"
+        /\b(possuo|tenho)\s+(um|uma)\s+\w+.*\s+e\s+(quero|gostaria|preciso)\b/i,
+    ];
+
+    /**
+     * Check if the query indicates the user is mentioning their own vehicle (trade-in context)
+     * 
+     * @param query - User query
+     * @returns true if the query mentions a vehicle the user owns (for trade-in)
+     */
+    isTradeInContext(query: string): boolean {
+        const normalizedQuery = query.toLowerCase().trim();
+
+        for (const pattern of ExactSearchParser.TRADE_IN_PATTERNS) {
+            if (pattern.test(normalizedQuery)) {
+                if (logger) {
+                    logger.debug({ query, pattern: pattern.source }, 'ExactSearchParser: detected trade-in context');
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Parse a user query and extract model and year filters
      */
     parse(query: string): ExtractedFilters {

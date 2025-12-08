@@ -136,7 +136,14 @@ export function extractName(message: string): string | null {
             }
 
             // Check if it looks like a valid name
-            if (isCommonName(lowerName) || /^[A-ZÀ-Ú][a-zà-ú]+$/.test(extractedName)) {
+            // Normalize for comparison (remove accents for matching)
+            const normalizedForCheck = lowerName
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+
+            if (isCommonName(lowerName) ||
+                isCommonName(normalizedForCheck) ||
+                /^[A-ZÀ-ÿa-zà-ÿ][a-zà-ÿ]+$/u.test(extractedName)) {
                 const result = capitalizeName(extractedName);
                 logger.info({ result, pattern: pattern.source }, 'extractName: found via pattern match');
                 return result;
@@ -178,7 +185,15 @@ export function extractName(message: string): string | null {
     // Final validation: is it a valid name format?
     if (name.length >= 2 && name.length <= 30) {
         // Check if it's a common name or has valid format
-        if (isCommonName(name.toLowerCase()) || /^[A-ZÀ-Ú][a-zà-ú]+$/.test(name)) {
+        // Normalize for comparison (remove accents for matching)
+        const normalizedName = name.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics for comparison
+
+        // Check both with and without accents
+        if (isCommonName(name.toLowerCase()) ||
+            isCommonName(normalizedName) ||
+            /^[A-ZÀ-ÿa-zà-ÿ][a-zà-ÿ]+$/u.test(name)) {
             const result = capitalizeName(name);
             logger.info({ result }, 'extractName: found via fallback');
             return result;

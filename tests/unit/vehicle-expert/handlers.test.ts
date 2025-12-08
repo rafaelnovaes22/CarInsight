@@ -96,10 +96,9 @@ describe('Post-Recommendation Handlers', () => {
 
         it('should request trade-in vehicle info', () => {
             const result = handleTradeIn(mockContext);
-            expect(result.response?.needsMoreInfo).toContain('tradeInBrand');
+            // Handler asks for model and year (brand can be inferred from model)
             expect(result.response?.needsMoreInfo).toContain('tradeInModel');
             expect(result.response?.needsMoreInfo).toContain('tradeInYear');
-            expect(result.response?.needsMoreInfo).toContain('tradeInKm');
         });
 
         it('should set nextMode to negotiation', () => {

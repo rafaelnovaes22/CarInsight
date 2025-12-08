@@ -142,6 +142,55 @@ export class VehicleExpertAgent {
   }
 
   /**
+   * Infer brand from model name
+   * Maps common models to their brands
+   */
+  private inferBrandFromModel(model: string): string | undefined {
+    const modelLower = model.toLowerCase();
+
+    const brandMap: Record<string, string> = {
+      // Volkswagen
+      'gol': 'volkswagen', 'voyage': 'volkswagen', 'polo': 'volkswagen', 'virtus': 'volkswagen',
+      'saveiro': 'volkswagen', 'fox': 'volkswagen', 'up': 'volkswagen', 't-cross': 'volkswagen',
+      'tcross': 'volkswagen', 'nivus': 'volkswagen', 'jetta': 'volkswagen', 'amarok': 'volkswagen',
+      'tiguan': 'volkswagen', 'taos': 'volkswagen',
+      // Chevrolet
+      'onix': 'chevrolet', 'prisma': 'chevrolet', 'cruze': 'chevrolet', 'tracker': 'chevrolet',
+      'spin': 'chevrolet', 's10': 'chevrolet', 'montana': 'chevrolet', 'equinox': 'chevrolet',
+      'celta': 'chevrolet', 'corsa': 'chevrolet', 'trailblazer': 'chevrolet', 'cobalt': 'chevrolet',
+      // Fiat
+      'uno': 'fiat', 'palio': 'fiat', 'siena': 'fiat', 'strada': 'fiat', 'toro': 'fiat',
+      'argo': 'fiat', 'mobi': 'fiat', 'cronos': 'fiat', 'pulse': 'fiat', 'fastback': 'fiat',
+      'fiorino': 'fiat', 'ducato': 'fiat', 'doblo': 'fiat', 'punto': 'fiat',
+      // Ford
+      'ka': 'ford', 'fiesta': 'ford', 'focus': 'ford', 'ecosport': 'ford', 'ranger': 'ford',
+      'territory': 'ford', 'bronco': 'ford', 'maverick': 'ford', 'fusion': 'ford',
+      // Honda
+      'civic': 'honda', 'city': 'honda', 'fit': 'honda', 'hr-v': 'honda', 'hrv': 'honda',
+      'cr-v': 'honda', 'crv': 'honda', 'wr-v': 'honda', 'wrv': 'honda', 'accord': 'honda',
+      // Toyota
+      'corolla': 'toyota', 'yaris': 'toyota', 'etios': 'toyota', 'hilux': 'toyota',
+      'sw4': 'toyota', 'rav4': 'toyota', 'camry': 'toyota', 'prius': 'toyota',
+      // Hyundai
+      'hb20': 'hyundai', 'hb20s': 'hyundai', 'creta': 'hyundai', 'tucson': 'hyundai',
+      'santa fe': 'hyundai', 'santafe': 'hyundai', 'i30': 'hyundai', 'azera': 'hyundai',
+      'elantra': 'hyundai', 'ix35': 'hyundai',
+      // Renault
+      'kwid': 'renault', 'sandero': 'renault', 'logan': 'renault', 'duster': 'renault',
+      'captur': 'renault', 'oroch': 'renault', 'stepway': 'renault', 'master': 'renault',
+      // Nissan
+      'march': 'nissan', 'versa': 'nissan', 'sentra': 'nissan', 'kicks': 'nissan', 'frontier': 'nissan',
+      // Jeep
+      'renegade': 'jeep', 'compass': 'jeep', 'commander': 'jeep', 'wrangler': 'jeep', 'gladiator': 'jeep',
+      // Mitsubishi
+      'lancer': 'mitsubishi', 'asx': 'mitsubishi', 'outlander': 'mitsubishi',
+      'pajero': 'mitsubishi', 'l200': 'mitsubishi', 'eclipse': 'mitsubishi',
+    };
+
+    return brandMap[modelLower] || undefined;
+  }
+
+  /**
    * Main chat interface - processes user message and generates response
    */
   async chat(
@@ -176,9 +225,45 @@ export class VehicleExpertAgent {
       const targetModel = exactMatch.model || updatedProfile.model;
       const targetYear = exactMatch.year || updatedProfile.minYear;
 
+      // IMPORTANT: Check if user is mentioning a vehicle they OWN (for trade-in) vs. want to BUY
+      // "Quero trocar meu polo 2020 em um carro mais novo" → Polo is TRADE-IN, not what they want
+      const isTradeInContext = exactSearchParser.isTradeInContext(userMessage);
+
+      if (isTradeInContext && exactMatch.model && exactMatch.year) {
+        // User mentioned a vehicle they OWN - extract as trade-in and ask what they want
+        logger.info({
+          tradeInModel: exactMatch.model,
+          tradeInYear: exactMatch.year
+        }, 'VehicleExpert: Detected trade-in vehicle from initial message');
+
+        return {
+          response: `Entendi! Você tem um ${exactMatch.model} ${exactMatch.year} para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`,
+          extractedPreferences: {
+            ...extracted.extracted,
+            hasTradeIn: true,
+            tradeInBrand: this.inferBrandFromModel(exactMatch.model),
+            tradeInModel: exactMatch.model.toLowerCase(),
+            tradeInYear: exactMatch.year,
+            // Clear any model/year that might have been extracted as desired vehicle
+            model: undefined,
+            minYear: undefined,
+          },
+          needsMoreInfo: ['bodyType', 'budget'],
+          canRecommend: false,
+          nextMode: 'discovery',
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 0.95,
+            llmUsed: 'rule-based',
+            tradeInDetected: true
+          } as any
+        };
+      }
+
       if (targetModel && targetYear) {
         // Ignorar se estivermos no meio de um fluxo de negociação ou se for menção de troca
-        const isTradeInMention = /tenho|minha|meu|troca/i.test(userMessage) && !updatedProfile.model;
+        const isTradeInMention = isTradeInContext ||
+          (/tenho|minha|meu|troca|possuo/i.test(userMessage) && !updatedProfile.model);
 
         // IMPORTANTE: Pular se já estamos esperando resposta de sugestão de anos alternativos
         // Porque senão o bloco vai re-executar a busca quando o usuário responde "sim"

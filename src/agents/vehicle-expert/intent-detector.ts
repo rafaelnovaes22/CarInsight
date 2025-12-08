@@ -465,6 +465,12 @@ export const detectPostRecommendationIntent = (
         return 'want_details';
     }
 
+    // IMPORTANT: Check WANT_OTHERS before WANT_INTEREST
+    // Patterns like "não gostei" should be OTHERS, not INTEREST even though "gostei" is present
+    if (WANT_OTHERS_PATTERNS.some(p => p.test(normalized))) {
+        return 'want_others';
+    }
+
     if (WANT_INTEREST_PATTERNS.some(p => p.test(normalized))) {
         return 'want_interest';
     }
@@ -478,10 +484,6 @@ export const detectPostRecommendationIntent = (
         if (mentionedShownVehicle) {
             return 'want_interest';
         }
-    }
-
-    if (WANT_OTHERS_PATTERNS.some(p => p.test(normalized))) {
-        return 'want_others';
     }
 
     if (ACKNOWLEDGMENT_PATTERNS.some(p => p.test(normalized))) {

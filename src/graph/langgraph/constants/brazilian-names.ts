@@ -18,6 +18,11 @@ export const COMMON_BRAZILIAN_NAMES = new Set([
     'luciano', 'luis', 'luiz', 'marcio', 'mario', 'matheus', 'mauricio', 'max', 'michael', 'nathan',
     'nelson', 'nicolas', 'otavio', 'patrick', 'rafael', 'renan', 'roberto', 'rogerio', 'ronaldo', 'samuel',
     'sergio', 'silvio', 'victor', 'vitor', 'wagner', 'walter', 'washington', 'wellington', 'wesley', 'william',
+    // Nomes masculinos com acentos
+    'écio', 'ecio', 'érico', 'erico', 'édson', 'edson', 'élton', 'elton', 'éverton', 'everton',
+    'ítalo', 'italo', 'ígor', 'úrsula', 'ângelo', 'angelo', 'álvaro', 'alvaro', 'álex', 'ênio', 'enio',
+    'índio', 'ozéias', 'ozeias', 'márcio', 'mário', 'mário', 'sérgio', 'júlio', 'júnior', 'cláudio',
+    'antônio', 'fábio', 'vinícius', 'rogério', 'cristóvão', 'cristovao',
     // Nomes femininos
     'maria', 'ana', 'juliana', 'fernanda', 'camila', 'amanda', 'bruna', 'carolina', 'patricia', 'isabela',
     'leticia', 'mariana', 'beatriz', 'larissa', 'aline', 'priscila', 'gabriela', 'vanessa', 'renata', 'natalia',
@@ -28,7 +33,10 @@ export const COMMON_BRAZILIAN_NAMES = new Set([
     'karina', 'kelly', 'laura', 'lilian', 'livia', 'lorena', 'luana', 'luciana', 'luiza', 'madalena',
     'manuela', 'marcia', 'marta', 'melissa', 'monica', 'nadia', 'nicole', 'paloma', 'pamela', 'rafaela',
     'raquel', 'rebeca', 'regina', 'roberta', 'rosa', 'samantha', 'sara', 'silvana', 'sofia', 'sonia',
-    'stella', 'suzana', 'taina', 'tatiana', 'tereza', 'valentina', 'valeria', 'vera', 'vitoria', 'viviane'
+    'stella', 'suzana', 'taina', 'tatiana', 'tereza', 'valentina', 'valeria', 'vera', 'vitoria', 'viviane',
+    // Nomes femininos com acentos
+    'lúcia', 'mônica', 'fátima', 'letícia', 'patrícia', 'débora', 'nádia', 'sônia', 'márcia', 'cláudia',
+    'natália', 'valéria', 'vitória', 'angélica', 'jéssica', 'érica', 'flávia', 'cecília', 'helóisa', 'heloísa'
 ]);
 
 /**
