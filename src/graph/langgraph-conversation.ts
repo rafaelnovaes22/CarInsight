@@ -309,6 +309,10 @@ export class LangGraphConversation {
       const exactMatch = exactSearchParser.parse(message);
       const earlyProfileUpdate: Partial<CustomerProfile> = {};
 
+      // IMPORTANTE: Verificar se é contexto de trade-in ANTES de salvar como veículo desejado
+      // Ex: "Quero trocar meu Polo 2020 por um carro mais novo" -> Polo é TROCA, não desejo!
+      const isTradeInContext = exactSearchParser.isTradeInContext(message);
+
       // DEBUG: Log para entender por que não está detectando o modelo
       logger.info({
         message,
@@ -317,16 +321,30 @@ export class LangGraphConversation {
         exactMatch,
         hasModel: !!exactMatch?.model,
         hasYear: !!exactMatch?.year,
+        isTradeInContext,
       }, 'processGreeting: parsing for early vehicle intent');
 
       if (exactMatch.model) {
-        earlyProfileUpdate.model = exactMatch.model;
-        if (exactMatch.year) earlyProfileUpdate.minYear = exactMatch.year;
+        if (isTradeInContext) {
+          // TRADE-IN: O veículo mencionado é o que o usuário TEM, não o que ele QUER
+          earlyProfileUpdate.hasTradeIn = true;
+          earlyProfileUpdate.tradeInModel = exactMatch.model.toLowerCase();
+          if (exactMatch.year) earlyProfileUpdate.tradeInYear = exactMatch.year;
 
-        logger.info({
-          model: earlyProfileUpdate.model,
-          year: earlyProfileUpdate.minYear,
-        }, 'processGreeting: early vehicle intent detected!');
+          logger.info({
+            tradeInModel: earlyProfileUpdate.tradeInModel,
+            tradeInYear: earlyProfileUpdate.tradeInYear,
+          }, 'processGreeting: detected TRADE-IN vehicle, NOT desired vehicle!');
+        } else {
+          // DESEJO: O veículo mencionado é o que o usuário QUER comprar
+          earlyProfileUpdate.model = exactMatch.model;
+          if (exactMatch.year) earlyProfileUpdate.minYear = exactMatch.year;
+
+          logger.info({
+            model: earlyProfileUpdate.model,
+            year: earlyProfileUpdate.minYear,
+          }, 'processGreeting: early vehicle intent detected!');
+        }
       }
 
       // Tentar extrair nome da mensagem (pode estar junto com saudação)
@@ -341,7 +359,8 @@ export class LangGraphConversation {
 
       // Se encontrou NOME E CARRO na mesma mensagem, fazer busca IMEDIATAMENTE
       // Isso funciona mesmo para saudações como "oi, me chamo Rafael, quero Civic 2017"
-      if (possibleName && earlyProfileUpdate.model) {
+      // EXCEÇÃO: Se é trade-in, NÃO fazemos busca - perguntamos o que o usuário quer
+      if (possibleName && earlyProfileUpdate.model && !isTradeInContext) {
         const carText = earlyProfileUpdate.minYear
           ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
           : earlyProfileUpdate.model;
@@ -405,6 +424,28 @@ export class LangGraphConversation {
         };
       }
 
+      // Se encontrou NOME E TRADE-IN na mesma mensagem, informar que anotamos o trade-in e perguntar o que quer
+      if (possibleName && isTradeInContext && earlyProfileUpdate.tradeInModel) {
+        const tradeInText = earlyProfileUpdate.tradeInYear
+          ? `${earlyProfileUpdate.tradeInModel.toUpperCase()} ${earlyProfileUpdate.tradeInYear}`
+          : earlyProfileUpdate.tradeInModel.toUpperCase();
+
+        logger.info({
+          name: possibleName,
+          tradeInModel: earlyProfileUpdate.tradeInModel,
+          tradeInYear: earlyProfileUpdate.tradeInYear,
+        }, 'processGreeting: captured name AND trade-in vehicle - asking what user wants!');
+
+        return {
+          nextState: 'DISCOVERY',
+          response: `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nEntendi! Você tem um *${tradeInText}* para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`,
+          profile: {
+            customerName: possibleName,
+            ...earlyProfileUpdate,
+          },
+        };
+      }
+
       // Se só encontrou nome (sem carro) e NÃO é saudação simples
       if (possibleName && !isGreeting) {
         // Se já fizemos a apresentação (tem mensagens anteriores), usar resposta curta
@@ -457,11 +498,25 @@ export class LangGraphConversation {
     const exactMatch = exactSearchParser.parse(message);
     const earlyProfileUpdate: Partial<CustomerProfile> = {};
 
-    // Usar modelo da mensagem atual OU do profile já existente (capturado anteriormente)
-    const model = exactMatch.model || state.profile?.model;
-    const year = exactMatch.year || state.profile?.minYear;
+    // IMPORTANTE: Verificar se é contexto de trade-in ANTES de salvar como veículo desejado
+    const isTradeInContext = exactSearchParser.isTradeInContext(message);
 
-    if (model) {
+    // Usar modelo da mensagem atual OU do profile já existente (capturado anteriormente)
+    // MAS: Se é trade-in, NÃO usar como modelo desejado!
+    const model = isTradeInContext ? null : (exactMatch.model || state.profile?.model);
+    const year = isTradeInContext ? null : (exactMatch.year || state.profile?.minYear);
+
+    // Se é trade-in, salvar como tradeIn ao invés de modelo desejado
+    if (isTradeInContext && exactMatch.model) {
+      earlyProfileUpdate.hasTradeIn = true;
+      earlyProfileUpdate.tradeInModel = exactMatch.model.toLowerCase();
+      if (exactMatch.year) earlyProfileUpdate.tradeInYear = exactMatch.year;
+
+      logger.info({
+        tradeInModel: earlyProfileUpdate.tradeInModel,
+        tradeInYear: earlyProfileUpdate.tradeInYear,
+      }, 'processGreeting: detected TRADE-IN vehicle in name response');
+    } else if (model) {
       earlyProfileUpdate.model = model;
       if (year) earlyProfileUpdate.minYear = year;
 
@@ -470,7 +525,29 @@ export class LangGraphConversation {
     }
 
     if (name) {
-      // Se detectou carro na saudação OU no profile, fazer busca IMEDIATA
+      // Se detectou TRADE-IN (carro de troca), informar que anotamos e perguntar o que quer
+      if (earlyProfileUpdate.hasTradeIn && earlyProfileUpdate.tradeInModel) {
+        const tradeInText = earlyProfileUpdate.tradeInYear
+          ? `${earlyProfileUpdate.tradeInModel.toUpperCase()} ${earlyProfileUpdate.tradeInYear}`
+          : earlyProfileUpdate.tradeInModel.toUpperCase();
+
+        logger.info({
+          name,
+          tradeInModel: earlyProfileUpdate.tradeInModel,
+          tradeInYear: earlyProfileUpdate.tradeInYear,
+        }, 'processGreeting: user provided name with trade-in vehicle - asking what they want!');
+
+        return {
+          nextState: 'DISCOVERY',
+          response: `Prazer, ${name}! 😊\n\nEntendi! Você tem um *${tradeInText}* para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`,
+          profile: {
+            customerName: name,
+            ...earlyProfileUpdate,
+          },
+        };
+      }
+
+      // Se detectou carro DESEJADO na saudação OU no profile, fazer busca IMEDIATA
       if (earlyProfileUpdate.model) {
         const carText = earlyProfileUpdate.minYear
           ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
