@@ -8,11 +8,11 @@
 
 ## 🎯 Resumo Executivo
 
-Assistente de Vendas com IA via WhatsApp para sua concessionária de carros usados (37 veículos).
+Assistente de Vendas com IA via WhatsApp para sua concessionária de carros usados.
 
-**Modelo de Pagamento**: Comissão por Performance
-**Valor**: R$ 500 por venda incremental concretizada
-**Custo Fixo**: R$ 0/mês
+**Modelo de Pagamento**: Investimento Inicial + Comissão por Performance
+- **Setup**: R$ 3.000 (implementação completa)
+- **Comissão**: R$ 500 por venda incremental concretizada
 
 ---
 
@@ -23,16 +23,21 @@ Assistente de Vendas com IA via WhatsApp para sua concessionária de carros usad
 - Responde perguntas instantaneamente
 - Nunca perde um lead
 
-### 📋 Quiz Inteligente
-- 8 perguntas para entender o cliente
-- Captura: orçamento, necessidades, urgência
+### 📋 Qualificação Inteligente
+- Entende orçamento, necessidades e urgência
 - Filtra curiosos de compradores reais
+- Captura dados para sua equipe
 
 ### 🎯 Recomendações Personalizadas
-- IA analisa os 37 carros do seu estoque
+- IA analisa todo seu estoque
 - Match Score (0-100) para cada cliente
-- Top 3 veículos mais adequados
+- Top veículos mais adequados
 - Justificativa personalizada
+
+### 💰 Simulador de Financiamento
+- Calcula parcelas em tempo real
+- Detecta entrada e troca
+- Encaminha leads quentes
 
 ### 📊 Dashboard de Métricas
 - Quantos clientes atendidos
@@ -44,33 +49,28 @@ Assistente de Vendas com IA via WhatsApp para sua concessionária de carros usad
 
 ## 💰 Modelo de Pagamento
 
-### Opção 1: Performance Pura (RECOMENDADA) ✅
+### Investimento Único + Performance ✅
 
 ```
-R$ 0 custo fixo mensal
+R$ 3.000 de setup (implementação completa)
 +
 R$ 500 por venda incremental
 ```
 
-**Você só paga quando vender!**
+**Você investe uma vez e só paga comissão quando vender!**
 
 **Definição de "venda incremental"**:
 - Cliente que veio pelo WhatsApp
-- Passou pelo quiz do bot
+- Qualificado pelo bot
 - Rastreado com ID único
 - Confirmado na conferência mensal
 
-**Zero risco para você.**
-
-### Opção 2: Híbrida
-
-```
-R$ 300/mês (taxa mínima)
-+
-R$ 300 por venda incremental
-```
-
-Custo fixo baixo + comissão reduzida.
+**O setup inclui:**
+- Integração WhatsApp completa
+- Cadastro de todos veículos
+- Configuração da IA personalizada
+- Treinamento da equipe (1h)
+- 30 dias de suporte prioritário
 
 ---
 
@@ -80,6 +80,7 @@ Custo fixo baixo + comissão reduzida.
 ```
 Estimativa: 5-10 carros/mês
 Taxa de conversão: ~1-2%
+Leads perdidos à noite/fim de semana: muitos
 ```
 
 ### Com o Bot (conservador)
@@ -93,14 +94,25 @@ Vendas INCREMENTAIS: +3 a 5 carros/mês
 
 **Cenário Conservador (3 vendas incrementais/mês)**:
 ```
-Investimento: 3 × R$ 500 = R$ 1.500
-Receita adicional: 3 × R$ 3.750 = R$ 11.250
+Investimento inicial: R$ 3.000 (único)
+Comissão mensal: 3 × R$ 500 = R$ 1.500
+Receita adicional: 3 × R$ 3.750 = R$ 11.250/mês
 Lucro líquido: R$ 9.750/mês
 
-ROI: 650%
+ROI no 1º mês: 650%
+Payback do setup: 1 semana
 ```
 
-**Você ganha R$ 6,50 para cada R$ 1 investido!**
+**Cenário Moderado (5 vendas incrementais/mês)**:
+```
+Comissão mensal: 5 × R$ 500 = R$ 2.500
+Receita adicional: 5 × R$ 3.750 = R$ 18.750/mês
+Lucro líquido: R$ 16.250/mês
+
+ROI mensal: 750%
+```
+
+**Você ganha R$ 7,50 para cada R$ 1 de comissão!**
 
 ---
 
@@ -136,8 +148,8 @@ ROI: 650%
 ```
 □ Você fornece:
   - Link WhatsApp Business
-  - Planilha: 37 carros (marca, modelo, ano, km, preço, fotos)
-  - Acesso CRM (opcional)
+  - Planilha dos carros (marca, modelo, ano, km, preço, fotos)
+  - Contato do vendedor para handoff
 
 □ Nós fazemos:
   - Integração WhatsApp
@@ -152,40 +164,32 @@ ROI: 650%
 □ Treinamento (1h)
 ```
 
-### Semana 3: Soft Launch (Dias 15-21)
+### Semana 3: Go Live! (Dia 15)
 ```
 □ Ativação para clientes reais
-□ Monitoramento 24/7
+□ Monitoramento inicial
 □ Ajustes em tempo real
 ```
 
-### Semana 4: Otimização (Dias 22-28)
-```
-□ Análise de dados
-□ Refinamento do bot
-□ Primeira medição de ROI
-```
-
-**GO LIVE: Dia 21** 🚀
+**GO LIVE: Dia 15** 🚀
 
 ---
 
-## 🎁 Bônus Exclusivos (Pilot Client)
+## 🎁 Bônus Exclusivos
 
-Como você é nosso primeiro cliente, ganha:
+### 1. Preço Bloqueado ✅
+- R$ 3.000 setup + R$ 500/venda mantidos
+- Sem reajustes por 12 meses
 
-### 1. Preço Bloqueado Forever ✅
-- R$ 500/venda (mesmo se aumentarmos)
-- Grandfather pricing vitalício
-
-### 2. Features Futuras Grátis ✅
-- Avaliação trade-in por IA
-- Histórico veicular integrado
+### 2. Features Incluídas ✅
 - Simulador de financiamento
-- Comparador de veículos
+- Detecção de troca
+- Qualificação inteligente
+- Dashboard de métricas
 
-### 3. Influência no Produto ✅
-- Suas sugestões viram prioridade
+### 3. Suporte Premium ✅
+- 30 dias de suporte prioritário
+- Ajustes ilimitados no primeiro mês
 - Co-criação do roadmap
 - Badge "Founding Partner"
 
@@ -268,12 +272,11 @@ Como você é nosso primeiro cliente, ganha:
 ### Para Começar Hoje:
 
 **1. Confirmar interesse**
-- [ ] Escolho Opção 1 (R$ 500/venda)
-- [ ] Escolho Opção 2 (R$ 300 + R$ 300/venda)
+- [ ] Aceito: R$ 3.000 setup + R$ 500/venda incremental
 
-**2. Assinar termo simples** (1 página)
+**2. Efetuar pagamento do setup** (PIX ou transferência)
 
-**3. Enviar dados** (planilha dos 37 carros)
+**3. Enviar dados** (planilha dos carros + contato vendedor)
 
 **4. Agendar kickoff** (1h via meet/zoom)
 
