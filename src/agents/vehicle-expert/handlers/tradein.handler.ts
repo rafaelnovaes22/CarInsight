@@ -16,22 +16,21 @@ export const handleTradeIn = (ctx: PostRecommendationContext): HandlerResult => 
     const { lastShownVehicles, extracted, startTime } = ctx;
 
     const firstVehicle = lastShownVehicles[0];
-    const modelName = `${firstVehicle.brand} ${firstVehicle.model}`;
+    const modelName = `${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year}`;
 
     logger.info({ modelName }, 'User wants to use trade-in for shown vehicle');
 
     return {
         handled: true,
         response: {
-            response: `Show! Ter um carro na troca ajuda muito na negociação! 🚗🔄
+            response: `Show! Ter um carro na troca ajuda muito na negociação do ${modelName}! 🚗🔄
 
 Me conta sobre o seu veículo:
 
-1️⃣ *Marca e modelo* (ex: Fiat Argo, VW Polo)
-2️⃣ *Ano*
-3️⃣ *Km aproximado*
+• *Qual carro é?* (ex: Fiat Argo 2019, VW Polo 2020)
+• *Km aproximado*
 
-_Com essas infos consigo estimar o valor de troca! 💪_`,
+_Exemplo: "Gol 2018 com 80 mil km"_`,
             extractedPreferences: {
                 ...extracted.extracted,
                 hasTradeIn: true,
@@ -39,7 +38,7 @@ _Com essas infos consigo estimar o valor de troca! 💪_`,
                 _lastShownVehicles: lastShownVehicles,
                 _awaitingTradeInDetails: true,
             },
-            needsMoreInfo: ['tradeInBrand', 'tradeInModel', 'tradeInYear', 'tradeInKm'],
+            needsMoreInfo: ['tradeInModel', 'tradeInYear'],
             canRecommend: false,
             nextMode: 'negotiation',
             metadata: {

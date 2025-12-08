@@ -358,24 +358,52 @@ export class VehicleExpertAgent {
       if (showedRecommendation && lastShownVehicles && lastShownVehicles.length > 0) {
 
         // AUTO-DETECTION: Trade-In Discussion (Post-Recommendation)
-        // If user mentions trade-in details here, prioritize responding to that over "similar search"
-        if (extracted.extracted.tradeInModel || (extracted.extracted.hasTradeIn && /troca|meu carro|tenho um|minha/i.test(userMessage))) {
+        // If user mentions trade-in, we need to know WHICH car they have
+        if (extracted.extracted.hasTradeIn || /troca|meu carro|tenho um|minha/i.test(userMessage)) {
+          const hasTradeInDetails = extracted.extracted.tradeInModel || updatedProfile.tradeInModel;
+
+          // Se AINDA NÃO temos os dados do carro de troca, PERGUNTAR
+          if (!hasTradeInDetails) {
+            logger.info('User mentioned trade-in but no car details - asking which car');
+
+            return {
+              response: `Show! Ter um carro na troca ajuda muito na negociação do ${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}! 🚗🔄\n\nMe conta sobre o seu veículo:\n\n• *Qual carro é?* (ex: Fiat Argo 2019, VW Polo 2020)\n• *Km aproximado*\n\n_Exemplo: "Gol 2018 com 80 mil km"_`,
+              extractedPreferences: {
+                ...extracted.extracted,
+                hasTradeIn: true,
+                _awaitingTradeInDetails: true,  // Flag to capture trade-in car details
+                _showedRecommendation: true,
+                _lastShownVehicles: lastShownVehicles,
+              },
+              needsMoreInfo: ['tradeInModel', 'tradeInYear'],
+              canRecommend: false,
+              nextMode: 'negotiation',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.95,
+                llmUsed: 'rule-based'
+              }
+            };
+          }
+
+          // Se JÁ TEMOS os dados do carro de troca, encaminhar para vendedor avaliar
+          // NÃO fazemos simulação porque o valor do carro de troca depende da avaliação presencial
           const tradeInCar = updatedProfile.tradeInModel
             ? `${updatedProfile.tradeInBrand || ''} ${updatedProfile.tradeInModel} ${updatedProfile.tradeInYear || ''}`.trim()
-            : 'seu veículo';
+            : `${extracted.extracted.tradeInModel} ${extracted.extracted.tradeInYear || ''}`.trim();
 
-          logger.info('User discussing trade-in post-recommendation - Intercepting intent');
+          logger.info({ tradeInCar }, 'User provided trade-in car details - routing to seller');
 
           return {
-            response: `Perfeito! O ${tradeInCar} pode entrar na negociação e facilitar bastante a compra do ${lastShownVehicles[0].model}. 🚗\n\nVamos fazer uma conta rápida? Além do carro na troca, você pretende dar mais algum valor de entrada em dinheiro?`,
+            response: `Perfeito! O ${tradeInCar} pode entrar na negociação do ${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}! 🚗🔄\n\n⚠️ O valor do seu carro na troca depende de uma avaliação presencial pela nossa equipe.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInCar}\n• Apresentar a proposta final\n• Tirar todas as suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
             extractedPreferences: {
               ...extracted.extracted,
               hasTradeIn: true,
-              _awaitingFinancingDetails: true,  // Flag to catch next message with entry value
+              _awaitingTradeInDetails: false,
               _showedRecommendation: true,
-              _lastShownVehicles: lastShownVehicles, // Keep the vehicle being negotiated
+              _lastShownVehicles: lastShownVehicles,
             },
-            needsMoreInfo: ['financingDownPayment'],
+            needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'negotiation',
             metadata: {

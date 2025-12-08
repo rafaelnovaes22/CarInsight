@@ -288,16 +288,20 @@ _Digite "vendedor" para falar com nossa equipe!_`,
 
     if (hasTradeIn && downPayment > 0) {
         // User provided both entry AND trade-in
-        response = `Perfeito! Vou considerar os dois na simulação: 💰🚗
+        // NÃO fazemos simulação porque o valor do carro de troca depende da avaliação
+        response = `Perfeito! Anotei as informações: 💰🚗
 
 • *Entrada em dinheiro:* R$ ${downPayment.toLocaleString('pt-BR')}
 • *Carro na troca:* ${tradeInName}
 
-Para estimar o valor do ${tradeInName} na troca, nosso consultor vai precisar avaliar pessoalmente. Ele pode te dar uma proposta mais precisa!
+⚠️ O valor final do ${tradeInName} na troca depende de uma avaliação presencial.
 
-Quer que eu te conecte com um vendedor para continuar a negociação? 🤝
+Vou conectar você com um consultor para:
+• Avaliar o ${tradeInName}
+• Calcular a proposta final com entrada + troca
+• Finalizar a negociação
 
-_Digite "vendedor" para falar com nossa equipe._`;
+_Digite "vendedor" para falar com nossa equipe!_`;
 
         return {
             handled: true,
@@ -316,28 +320,29 @@ _Digite "vendedor" para falar com nossa equipe._`;
         };
     } else if (hasTradeIn && downPayment === 0) {
         // User provided only trade-in (no cash entry)
-        response = `Ótimo! Vou considerar o ${tradeInName} na negociação do ${firstVehicle.model}! 🚗🔄
+        // NÃO fazemos simulação - encaminhar para vendedor
+        response = `Entendido! O ${tradeInName} entra na negociação do ${firstVehicle.model}! 🚗🔄
 
-Para dar um valor justo pelo seu carro, nosso consultor precisa avaliar pessoalmente.
+⚠️ O valor do seu carro na troca depende de uma avaliação presencial.
 
-Além do carro na troca, você pretende dar mais algum valor de entrada em dinheiro?
+Vou conectar você com um consultor para:
+• Avaliar o ${tradeInName}
+• Apresentar a proposta final
+• Tirar suas dúvidas sobre financiamento
 
-_Se não, pode dizer "sem entrada" ou "só a troca"_`;
+_Digite "vendedor" para falar com nossa equipe!_`;
 
         return {
             handled: true,
             response: {
                 response,
-                extractedPreferences: {
-                    ...updatedPreferences,
-                    _awaitingFinancingDetails: true, // Still waiting for entry info
-                },
-                needsMoreInfo: ['financingDownPayment'],
+                extractedPreferences: updatedPreferences,
+                needsMoreInfo: [],
                 canRecommend: false,
                 nextMode: 'negotiation',
                 metadata: {
                     processingTime: Date.now() - startTime,
-                    confidence: 0.9,
+                    confidence: 0.95,
                     llmUsed: 'rule-based'
                 }
             }
