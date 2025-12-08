@@ -2058,11 +2058,20 @@ Me diz o que prefere!`;
 
       // Outro diferente para busca específica vs recomendação
       // IMPORTANTE: Ser menos agressivo quando há vários carros - primeiro perguntar qual gostou
+      // IMPORTANTE: Não perguntar sobre troca se usuário já informou que tem carro de troca
       let outro: string;
       if (isSpecificSearch) {
         if (vehiclesToShow.length === 1) {
           // Apenas 1 carro encontrado - pode ser mais direto
-          outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?\n\n_Posso simular as parcelas pra você!_`;
+          // Se já tem troca informada, não perguntar novamente
+          if (profile.hasTradeIn && profile.tradeInModel) {
+            const tradeInInfo = profile.tradeInYear 
+              ? `${profile.tradeInModel} ${profile.tradeInYear}` 
+              : profile.tradeInModel;
+            outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento\n\n_Posso simular as parcelas pra você!_`;
+          } else {
+            outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?\n\n_Posso simular as parcelas pra você!_`;
+          }
         } else {
           // Vários carros - primeiro perguntar qual gostou
           outro = `\n\nAlgum te interessou? Me conta qual você curtiu mais que posso dar mais detalhes! 😊\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
