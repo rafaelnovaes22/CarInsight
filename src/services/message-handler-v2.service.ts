@@ -374,6 +374,7 @@ Para começar, qual é o seu nome?`;
 
       // Notify Sales Team
       const salesPhone = process.env.SALES_PHONE_NUMBER;
+      logger.info({ salesPhone, envValue: process.env.SALES_PHONE_NUMBER }, 'SALES_PHONE_NUMBER debug');
       if (salesPhone) {
         try {
           // Include rich details from profile
