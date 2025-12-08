@@ -378,9 +378,9 @@ export class LangGraphConversation {
         // Fazer a busca imediatamente
         const searchResult = await vehicleExpert.chat(message, searchContext);
 
-        // Se encontrou resultados, formatar resposta com saudação + resultados
+        // Se encontrou resultados, formatar resposta com saudação + apresentação IA + resultados
         if (searchResult.recommendations && searchResult.recommendations.length > 0) {
-          const greetingPart = `Prazer, ${possibleName}! 😊\n\n`;
+          const greetingPart = `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n`;
           return {
             nextState: 'RECOMMENDATION',
             response: greetingPart + searchResult.response,
@@ -393,7 +393,7 @@ export class LangGraphConversation {
         }
 
         // Se não encontrou, ainda assim retornar a resposta do VehicleExpert (pode ter alternativas)
-        const greetingPart = `Prazer, ${possibleName}! 😊\n\n`;
+        const greetingPart = `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n`;
         return {
           nextState: searchResult.canRecommend ? 'RECOMMENDATION' : 'DISCOVERY',
           response: greetingPart + searchResult.response,
@@ -409,7 +409,7 @@ export class LangGraphConversation {
       if (possibleName && !isGreeting) {
         return {
           nextState: 'DISCOVERY',
-          response: `Prazer, ${possibleName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico`,
+          response: `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico`,
           profile: { customerName: possibleName },
         };
       }
@@ -422,7 +422,7 @@ export class LangGraphConversation {
 
         return {
           nextState: 'GREETING',
-          response: `Olá! Vi que você busca um *${carText}*. Ótima escolha! 🚗\n\nAntes de eu buscar as melhores opções para você, qual é o seu nome?`,
+          response: `👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nVi que você busca um *${carText}*. Ótima escolha! 🚗\n\nQual é o seu nome?`,
           profile: earlyProfileUpdate,
         };
       }
@@ -525,7 +525,7 @@ export class LangGraphConversation {
 
       return {
         nextState: 'GREETING',
-        response: `Olá! Vi que você busca um *${carText}*. Ótima escolha! 🚗\n\nAntes de eu buscar as melhores opções para você, qual é o seu nome?`,
+        response: `👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nVi que você busca um *${carText}*. Ótima escolha! 🚗\n\nQual é o seu nome?`,
         profile: earlyProfileUpdate,
       };
     }
