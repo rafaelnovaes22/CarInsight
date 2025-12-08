@@ -86,13 +86,54 @@ Para começar, qual é o seu nome?`;
           logger.info({ phoneNumber }, 'User sent simple greeting, restarting conversation');
         }
 
-        return `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+        // Create new conversation to track the greeting exchange
+        const newConversation = await prisma.conversation.create({
+          data: {
+            phoneNumber,
+            status: 'active',
+            currentStep: 'greeting',
+          },
+        });
+
+        // Initialize state with greeting message
+        const initialState = this.initializeState(newConversation.id, phoneNumber);
+        initialState.messages = [
+          { role: 'user' as const, content: sanitizedMessage, timestamp: new Date() },
+        ];
+
+        // Save state to cache
+        const stateKey = `conversation:${newConversation.id}:state`;
+        await cache.set(stateKey, JSON.stringify(initialState), 86400);
+
+        // Log the greeting message
+        await prisma.message.create({
+          data: {
+            conversationId: newConversation.id,
+            direction: 'incoming',
+            content: sanitizedMessage,
+            messageType: 'text',
+          },
+        });
+
+        const greetingResponse = `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
 
 💡 _A qualquer momento, digite *sair* para encerrar a conversa._
 
 Para começar, qual é o seu nome?`;
+
+        // Log outgoing message
+        await prisma.message.create({
+          data: {
+            conversationId: newConversation.id,
+            direction: 'outgoing',
+            content: greetingResponse,
+            messageType: 'text',
+          },
+        });
+
+        return greetingResponse;
       }
 
       // For greetings with additional content (e.g., "Oi, você tem Civic 2017?")
