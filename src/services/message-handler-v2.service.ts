@@ -415,18 +415,25 @@ Para começar, qual é o seu nome?`;
       logger.info({ salesPhone, envValue: process.env.SALES_PHONE_NUMBER }, 'SALES_PHONE_NUMBER debug');
       if (salesPhone) {
         try {
+          // Helper function to capitalize brand/model names
+          const capitalize = (text: string) => {
+            return text.split(' ')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(' ');
+          };
+
           // Include rich details from profile
           const details = [];
           if (profile?.customerName) details.push(`👤 *Nome:* ${profile.customerName}`);
           if (conversation.phoneNumber) details.push(`📱 *Fone:* ${conversation.phoneNumber}`);
 
-          // Trade-in details with brand and km
+          // Trade-in details with brand and km (capitalize brand/model)
+          let tradeInText = '';
           if (profile?.hasTradeIn) {
-            let tradeInText = '';
             if (profile.tradeInModel) {
-              tradeInText = profile.tradeInBrand
-                ? `${profile.tradeInBrand} ${profile.tradeInModel}`
-                : profile.tradeInModel;
+              const brand = profile.tradeInBrand ? capitalize(profile.tradeInBrand) : '';
+              const model = capitalize(profile.tradeInModel);
+              tradeInText = brand ? `${brand} ${model}` : model;
               if (profile.tradeInYear) tradeInText += ` ${profile.tradeInYear}`;
               if (profile.tradeInKm) tradeInText += ` (${profile.tradeInKm.toLocaleString('pt-BR')} km)`;
             } else {
@@ -435,11 +442,16 @@ Para começar, qual é o seu nome?`;
             details.push(`🔄 *Troca:* ${tradeInText}`);
           }
 
-          // Financing details
+          // Financing details - se tem troca, troca é a entrada
           if (profile?.wantsFinancing || profile?.financingDownPayment) {
-            const entry = profile.financingDownPayment
-              ? `Entrada R$ ${profile.financingDownPayment.toLocaleString('pt-BR')}`
-              : 'Entrada a definir';
+            let entry: string;
+            if (profile.financingDownPayment) {
+              entry = `Entrada R$ ${profile.financingDownPayment.toLocaleString('pt-BR')}`;
+            } else if (profile.hasTradeIn && tradeInText) {
+              entry = `Entrada: ${tradeInText}`;
+            } else {
+              entry = 'Entrada a definir';
+            }
             details.push(`🏦 *Financiamento:* Sim (${entry})`);
           }
 
