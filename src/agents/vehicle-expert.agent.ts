@@ -2100,9 +2100,9 @@ Me diz o que prefere!`;
             const tradeInInfo = profile.tradeInYear 
               ? `${capitalizeWords(profile.tradeInModel)} ${profile.tradeInYear}` 
               : capitalizeWords(profile.tradeInModel);
-            outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento\n\n_Posso simular as parcelas pra você!_`;
+            outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento`;
           } else {
-            outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?\n\n_Posso simular as parcelas pra você!_`;
+            outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?`;
           }
         } else {
           // Vários carros - primeiro perguntar qual gostou

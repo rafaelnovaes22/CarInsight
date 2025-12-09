@@ -59,7 +59,7 @@ export const handleInterest = (ctx: PostRecommendationContext): HandlerResult =>
 Como você pretende pagar?
 
 1️⃣ *À vista* - Conseguimos um desconto especial!
-2️⃣ *Financiamento* - Simulamos as parcelas pra você
+2️⃣ *Financiamento*
 3️⃣ *Tenho carro na troca* - Pode ajudar na entrada`;
 
     return {
