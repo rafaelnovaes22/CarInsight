@@ -11,6 +11,7 @@ import { logger } from '../lib/logger';
 import { vehicleSearchAdapter } from '../services/vehicle-search-adapter.service';
 import { preferenceExtractor } from './preference-extractor.agent';
 import { exactSearchParser } from '../services/exact-search-parser.service';
+import { eligibleModelsResolver, SpecialCriteria } from '../services/eligible-models-resolver.service';
 import { CustomerProfile, VehicleRecommendation } from '../types/state.types';
 import {
   ConversationContext,
@@ -1550,6 +1551,32 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           };
         }
 
+        // Se não encontrou veículos elegíveis para Uber Black após filtro LLM
+        if ((result as any).noUberBlackEligible) {
+          const noUberBlackResponse = `No momento não temos veículos elegíveis para *Uber Black* disponíveis no estoque. 🚗
+
+📋 *Requisitos Uber Black:*
+• Sedan executivo/premium (Corolla, Civic, Cruze, Sentra, Jetta, etc.)
+• Ano 2018 ou mais recente
+• 4 portas com ar-condicionado
+
+Quer que eu mostre opções de sedans executivos disponíveis, mesmo que não atendam 100% aos requisitos?`;
+
+          return {
+            response: noUberBlackResponse,
+            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: 'veículo para Uber Black' },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'clarification',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.9,
+              llmUsed: 'gpt-4o-mini',
+              noUberBlackEligible: true
+            }
+          };
+        }
+
         // Filter out previously shown vehicles if we have exclusion list
         let filteredRecommendations = result.recommendations;
 
@@ -1670,11 +1697,11 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
   /**
    * Get vehicle recommendations based on profile
-   * Returns { recommendations, noPickupsFound, noSevenSeaters } to indicate if category was not found
+   * Returns { recommendations, noPickupsFound, noSevenSeaters, noUberBlackEligible } to indicate if category was not found
    */
   private async getRecommendations(
     profile: Partial<CustomerProfile>
-  ): Promise<{ recommendations: VehicleRecommendation[], noPickupsFound?: boolean, wantsPickup?: boolean, noSevenSeaters?: boolean, requiredSeats?: number }> {
+  ): Promise<{ recommendations: VehicleRecommendation[], noPickupsFound?: boolean, wantsPickup?: boolean, noSevenSeaters?: boolean, requiredSeats?: number, noUberBlackEligible?: boolean, originalResults?: number }> {
     try {
       // Build search query
       const query = this.buildSearchQuery(profile);
@@ -1747,13 +1774,79 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         return { recommendations: [], noPickupsFound: true, wantsPickup: true };
       }
 
+      // POST-FILTER: Filtrar veículos usando LLM para critérios especiais (Uber Black, etc.)
+      // Isso garante que apenas modelos realmente elegíveis sejam recomendados
+      let filteredByEligibility = results;
+      
+      if (isUberBlack) {
+        logger.info({ resultsBeforeFilter: results.length }, 'Filtering vehicles for Uber Black eligibility using LLM');
+        
+        // Consultar LLM para obter modelos permitidos
+        const eligibleVehicles = await eligibleModelsResolver.filterEligibleVehicles(
+          results.map(r => ({
+            brand: r.vehicle.brand,
+            model: r.vehicle.model,
+            year: r.vehicle.year,
+            bodyType: r.vehicle.bodyType
+          })),
+          'uber_black' as SpecialCriteria
+        );
+        
+        // Filtrar resultados mantendo apenas os elegíveis
+        const eligibleModels = new Set(eligibleVehicles.map(v => `${v.brand}-${v.model}-${v.year}`.toLowerCase()));
+        filteredByEligibility = results.filter(r => 
+          eligibleModels.has(`${r.vehicle.brand}-${r.vehicle.model}-${r.vehicle.year}`.toLowerCase())
+        );
+        
+        logger.info({
+          resultsAfterFilter: filteredByEligibility.length,
+          filteredOut: results.length - filteredByEligibility.length,
+          eligibleModels: filteredByEligibility.map(r => `${r.vehicle.brand} ${r.vehicle.model}`)
+        }, 'Uber Black eligibility filter applied');
+        
+        // Se não encontrou veículos elegíveis após filtro, retornar vazio
+        if (filteredByEligibility.length === 0 && results.length > 0) {
+          logger.info({ profile }, 'No vehicles eligible for Uber Black after LLM filter');
+          return { 
+            recommendations: [], 
+            noUberBlackEligible: true,
+            originalResults: results.length 
+          };
+        }
+      } else if (isUberX) {
+        logger.info({ resultsBeforeFilter: results.length }, 'Filtering vehicles for Uber X eligibility using LLM');
+        
+        const eligibleVehicles = await eligibleModelsResolver.filterEligibleVehicles(
+          results.map(r => ({
+            brand: r.vehicle.brand,
+            model: r.vehicle.model,
+            year: r.vehicle.year,
+            bodyType: r.vehicle.bodyType
+          })),
+          'uber_x' as SpecialCriteria
+        );
+        
+        const eligibleModels = new Set(eligibleVehicles.map(v => `${v.brand}-${v.model}-${v.year}`.toLowerCase()));
+        filteredByEligibility = results.filter(r => 
+          eligibleModels.has(`${r.vehicle.brand}-${r.vehicle.model}-${r.vehicle.year}`.toLowerCase())
+        );
+        
+        logger.info({
+          resultsAfterFilter: filteredByEligibility.length,
+          eligibleModels: filteredByEligibility.map(r => `${r.vehicle.brand} ${r.vehicle.model}`)
+        }, 'Uber X eligibility filter applied');
+      }
+
+      // Usar resultados filtrados por elegibilidade
+      const resultsToProcess = filteredByEligibility;
+
       // Post-filter: apply minimum seats requirement (RIGOROSO)
       const requiredSeats = profile.minSeats;
       if (requiredSeats && requiredSeats >= 7) {
-        logger.info({ requiredSeats, resultsBeforeFilter: results.length }, 'Filtering for 7+ seat vehicles');
+        logger.info({ requiredSeats, resultsBeforeFilter: resultsToProcess.length }, 'Filtering for 7+ seat vehicles');
 
         // Filtrar APENAS veículos de 7 lugares
-        const sevenSeaterResults = results.filter(rec => {
+        const sevenSeaterResults = resultsToProcess.filter(rec => {
           const modelLower = (rec.vehicle.model || '').toLowerCase();
           return isSevenSeater(modelLower);
         });
@@ -1774,7 +1867,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       }
 
       // Post-filter: apply family-specific rules
-      let filteredResults = results;
+      let filteredResults = resultsToProcess;
       if (isFamily) {
         const hasCadeirinha = profile.priorities?.includes('cadeirinha') ||
           profile.priorities?.includes('crianca');
@@ -1837,15 +1930,15 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         });
 
         // Se filtrou demais, relaxa os critérios
-        if (filteredResults.length < 3 && results.length >= 3) {
+        if (filteredResults.length < 3 && resultsToProcess.length >= 3) {
           // Tenta pegar pelo menos sedans e SUVs
-          filteredResults = results.filter(rec => {
+          filteredResults = resultsToProcess.filter(rec => {
             const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
             return bodyType.includes('suv') || bodyType.includes('sedan') || bodyType.includes('minivan');
           });
 
           if (filteredResults.length < 3) {
-            filteredResults = results.slice(0, 5);
+            filteredResults = resultsToProcess.slice(0, 5);
           }
         }
       }
