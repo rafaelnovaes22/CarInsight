@@ -81,23 +81,31 @@ Para começar, qual é o seu nome?`;
           where: { phoneNumber, status: 'active' },
         });
 
-        if (existingConversation) {
-          await this.resetConversation(phoneNumber);
-          logger.info({ phoneNumber }, 'User sent simple greeting, restarting conversation');
-        }
+        // If there's an active conversation and it's in the quiz state, don't reset
+        if (existingConversation && existingConversation.currentStep === 'quiz') {
+          // Let the quiz node handle the greeting as an invalid answer
+          // We'll just continue without resetting
+          logger.info({ phoneNumber, conversationId: existingConversation.id }, 'User sent greeting during quiz, not resetting');
+          // Break out of greeting handling and continue to normal processing
+        } else {
+          // Otherwise, reset and start new conversation
+          if (existingConversation) {
+            await this.resetConversation(phoneNumber);
+            logger.info({ phoneNumber }, 'User sent simple greeting, restarting conversation');
+          }
 
-        // Create new conversation to track the greeting exchange
-        const newConversation = await prisma.conversation.create({
-          data: {
-            phoneNumber,
-            status: 'active',
-            currentStep: 'greeting',
-          },
-        });
+          // Create new conversation to track the greeting exchange
+          const newConversation = await prisma.conversation.create({
+            data: {
+              phoneNumber,
+              status: 'active',
+              currentStep: 'greeting',
+            },
+          });
 
-        // Initialize state with greeting messages (user + bot response)
-        const initialState = this.initializeState(newConversation.id, phoneNumber);
-        const greetingResponse = `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+          // Initialize state with greeting messages (user + bot response)
+          const initialState = this.initializeState(newConversation.id, phoneNumber);
+          const greetingResponse = `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
 
@@ -105,36 +113,37 @@ Para começar, qual é o seu nome?`;
 
 Para começar, qual é o seu nome?`;
 
-        initialState.messages = [
-          { role: 'user' as const, content: sanitizedMessage, timestamp: new Date() },
-          { role: 'assistant' as const, content: greetingResponse, timestamp: new Date() },
-        ];
+          initialState.messages = [
+            { role: 'user' as const, content: sanitizedMessage, timestamp: new Date() },
+            { role: 'assistant' as const, content: greetingResponse, timestamp: new Date() },
+          ];
 
-        // Save state to cache
-        const stateKey = `conversation:${newConversation.id}:state`;
-        await cache.set(stateKey, JSON.stringify(initialState), 86400);
+          // Save state to cache
+          const stateKey = `conversation:${newConversation.id}:state`;
+          await cache.set(stateKey, JSON.stringify(initialState), 86400);
 
-        // Log the greeting message
-        await prisma.message.create({
-          data: {
-            conversationId: newConversation.id,
-            direction: 'incoming',
-            content: sanitizedMessage,
-            messageType: 'text',
-          },
-        });
+          // Log the greeting message
+          await prisma.message.create({
+            data: {
+              conversationId: newConversation.id,
+              direction: 'incoming',
+              content: sanitizedMessage,
+              messageType: 'text',
+            },
+          });
 
-        // Log outgoing message
-        await prisma.message.create({
-          data: {
-            conversationId: newConversation.id,
-            direction: 'outgoing',
-            content: greetingResponse,
-            messageType: 'text',
-          },
-        });
+          // Log outgoing message
+          await prisma.message.create({
+            data: {
+              conversationId: newConversation.id,
+              direction: 'outgoing',
+              content: greetingResponse,
+              messageType: 'text',
+            },
+          });
 
-        return greetingResponse;
+          return greetingResponse;
+        }
       }
 
       // For greetings with additional content (e.g., "Oi, você tem Civic 2017?")
