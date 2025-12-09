@@ -34,6 +34,35 @@ import {
   detectVehicleCategory,
 } from './vehicle-expert/constants';
 
+// Import extractors
+import {
+  extractTradeInInfo,
+  inferBrandFromModel,
+} from './vehicle-expert/extractors';
+
+// Import formatters
+import {
+  formatRecommendations as formatRecommendationsUtil,
+  generateRecommendationIntro as generateRecommendationIntroUtil,
+  type SearchType,
+} from './vehicle-expert/formatters';
+
+// Import builders
+import { buildSearchQuery as buildSearchQueryUtil } from './vehicle-expert/builders';
+
+// Import assessors
+import {
+  assessReadiness as assessReadinessUtil,
+  identifyMissingInfo as identifyMissingInfoUtil,
+  summarizeContext as summarizeContextUtil,
+} from './vehicle-expert/assessors';
+
+// Import processors
+import {
+  answerQuestion as answerQuestionUtil,
+  generateNextQuestion as generateNextQuestionUtil,
+} from './vehicle-expert/processors';
+
 // Import intent detection functions
 import {
   detectUserQuestion,
@@ -60,135 +89,19 @@ export class VehicleExpertAgent {
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
 
   /**
-   * Extract trade-in vehicle info from message (model, year, km)
-   * Differentiates "150 mil km" from "150 mil de entrada"
+   * Extract trade-in vehicle info from message
+   * @deprecated Use extractTradeInInfo from './vehicle-expert/extractors' instead
    */
-  private extractTradeInInfo(message: string): { brand?: string; model?: string; year?: number; km?: number } {
-    const normalized = message.toLowerCase();
-
-    // Common car brands
-    const brands = ['fiat', 'volkswagen', 'vw', 'chevrolet', 'gm', 'ford', 'honda', 'toyota',
-      'hyundai', 'renault', 'nissan', 'jeep', 'peugeot', 'citroen', 'mitsubishi', 'kia'];
-
-    // Common car models  
-    const models = ['uno', 'palio', 'siena', 'strada', 'toro', 'argo', 'mobi', 'cronos', 'pulse',
-      'gol', 'voyage', 'polo', 'virtus', 'saveiro', 'tcross', 'nivus', 'jetta', 'fox', 'up',
-      'onix', 'prisma', 'cruze', 'tracker', 'spin', 's10', 'montana', 'equinox', 'celta', 'corsa',
-      'ka', 'fiesta', 'focus', 'ecosport', 'ranger', 'fusion', 'territory',
-      'civic', 'city', 'fit', 'hrv', 'wrv', 'accord', 'crv',
-      'corolla', 'yaris', 'etios', 'hilux', 'sw4', 'rav4',
-      'hb20', 'creta', 'tucson', 'i30', 'azera',
-      'kwid', 'sandero', 'logan', 'duster', 'captur', 'oroch',
-      'march', 'versa', 'sentra', 'kicks', 'frontier',
-      'renegade', 'compass', 'commander'];
-
-    let brand: string | undefined;
-    let model: string | undefined;
-    let year: number | undefined;
-    let km: number | undefined;
-
-    // Extract brand
-    for (const b of brands) {
-      if (normalized.includes(b)) {
-        brand = b.toUpperCase();
-        if (brand === 'VW') brand = 'VOLKSWAGEN';
-        if (brand === 'GM') brand = 'CHEVROLET';
-        break;
-      }
-    }
-
-    // Extract model
-    for (const m of models) {
-      if (normalized.includes(m)) {
-        model = m.toUpperCase();
-        break;
-      }
-    }
-
-    // Extract year (4 digits between 2000-2025)
-    const yearMatch = message.match(/\b(20[0-2][0-9])\b/);
-    if (yearMatch) {
-      const y = parseInt(yearMatch[1]);
-      if (y >= 2000 && y <= 2025) {
-        year = y;
-      }
-    }
-
-    // Extract km - look for patterns like "150 mil km", "150.000 km", "150000km"
-    // IMPORTANT: Only if "km" is present, to avoid confusing with entry value
-    const kmPatterns = [
-      /(\d+)\s*mil\s*km/i,           // "150 mil km"
-      /(\d{1,3})[.,](\d{3})\s*km/i,  // "150.000 km" or "150,000 km"
-      /(\d{4,6})\s*km/i,             // "150000 km"
-    ];
-
-    for (const pattern of kmPatterns) {
-      const kmMatch = message.match(pattern);
-      if (kmMatch) {
-        if (pattern === kmPatterns[0]) {
-          // "150 mil km" format
-          km = parseInt(kmMatch[1]) * 1000;
-        } else if (pattern === kmPatterns[1]) {
-          // "150.000 km" format
-          km = parseInt(kmMatch[1]) * 1000 + parseInt(kmMatch[2]);
-        } else {
-          // "150000 km" format
-          km = parseInt(kmMatch[1]);
-        }
-        break;
-      }
-    }
-
-    return { brand, model, year, km };
+  private extractTradeInInfo(message: string) {
+    return extractTradeInInfo(message);
   }
 
   /**
    * Infer brand from model name
-   * Maps common models to their brands
+   * @deprecated Use inferBrandFromModel from './vehicle-expert/extractors' instead
    */
   private inferBrandFromModel(model: string): string | undefined {
-    const modelLower = model.toLowerCase();
-
-    const brandMap: Record<string, string> = {
-      // Volkswagen
-      'gol': 'volkswagen', 'voyage': 'volkswagen', 'polo': 'volkswagen', 'virtus': 'volkswagen',
-      'saveiro': 'volkswagen', 'fox': 'volkswagen', 'up': 'volkswagen', 't-cross': 'volkswagen',
-      'tcross': 'volkswagen', 'nivus': 'volkswagen', 'jetta': 'volkswagen', 'amarok': 'volkswagen',
-      'tiguan': 'volkswagen', 'taos': 'volkswagen',
-      // Chevrolet
-      'onix': 'chevrolet', 'prisma': 'chevrolet', 'cruze': 'chevrolet', 'tracker': 'chevrolet',
-      'spin': 'chevrolet', 's10': 'chevrolet', 'montana': 'chevrolet', 'equinox': 'chevrolet',
-      'celta': 'chevrolet', 'corsa': 'chevrolet', 'trailblazer': 'chevrolet', 'cobalt': 'chevrolet',
-      // Fiat
-      'uno': 'fiat', 'palio': 'fiat', 'siena': 'fiat', 'strada': 'fiat', 'toro': 'fiat',
-      'argo': 'fiat', 'mobi': 'fiat', 'cronos': 'fiat', 'pulse': 'fiat', 'fastback': 'fiat',
-      'fiorino': 'fiat', 'ducato': 'fiat', 'doblo': 'fiat', 'punto': 'fiat',
-      // Ford
-      'ka': 'ford', 'fiesta': 'ford', 'focus': 'ford', 'ecosport': 'ford', 'ranger': 'ford',
-      'territory': 'ford', 'bronco': 'ford', 'maverick': 'ford', 'fusion': 'ford',
-      // Honda
-      'civic': 'honda', 'city': 'honda', 'fit': 'honda', 'hr-v': 'honda', 'hrv': 'honda',
-      'cr-v': 'honda', 'crv': 'honda', 'wr-v': 'honda', 'wrv': 'honda', 'accord': 'honda',
-      // Toyota
-      'corolla': 'toyota', 'yaris': 'toyota', 'etios': 'toyota', 'hilux': 'toyota',
-      'sw4': 'toyota', 'rav4': 'toyota', 'camry': 'toyota', 'prius': 'toyota',
-      // Hyundai
-      'hb20': 'hyundai', 'hb20s': 'hyundai', 'creta': 'hyundai', 'tucson': 'hyundai',
-      'santa fe': 'hyundai', 'santafe': 'hyundai', 'i30': 'hyundai', 'azera': 'hyundai',
-      'elantra': 'hyundai', 'ix35': 'hyundai',
-      // Renault
-      'kwid': 'renault', 'sandero': 'renault', 'logan': 'renault', 'duster': 'renault',
-      'captur': 'renault', 'oroch': 'renault', 'stepway': 'renault', 'master': 'renault',
-      // Nissan
-      'march': 'nissan', 'versa': 'nissan', 'sentra': 'nissan', 'kicks': 'nissan', 'frontier': 'nissan',
-      // Jeep
-      'renegade': 'jeep', 'compass': 'jeep', 'commander': 'jeep', 'wrangler': 'jeep', 'gladiator': 'jeep',
-      // Mitsubishi
-      'lancer': 'mitsubishi', 'asx': 'mitsubishi', 'outlander': 'mitsubishi',
-      'pajero': 'mitsubishi', 'l200': 'mitsubishi', 'eclipse': 'mitsubishi',
-    };
-
-    return brandMap[modelLower] || undefined;
+    return inferBrandFromModel(model);
   }
 
   /**
@@ -1734,130 +1647,25 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
   // have been moved to ./vehicle-expert/intent-detector.ts
 
   /**
-   * Answer user's question using RAG (Retrieval Augmented Generation)
+   * Answer user's question using RAG
+   * @deprecated Use answerQuestion from './vehicle-expert/processors' instead
    */
   private async answerQuestion(
     question: string,
     context: ConversationContext,
     profile: Partial<CustomerProfile>
   ): Promise<string> {
-    try {
-      // Search relevant vehicles semantically
-      const relevantVehicles = await vehicleSearchAdapter.search(question, {
-        maxPrice: profile.budget,
-        bodyType: profile.bodyType,
-        minYear: profile.minYear,
-        limit: 3
-      });
-
-      // Build context for LLM
-      const vehicleContext = relevantVehicles.length > 0
-        ? `VEÍCULOS RELEVANTES NO ESTOQUE:\n${relevantVehicles.map((v, i) =>
-          `${i + 1}. ${v.vehicle.brand} ${v.vehicle.model} ${v.vehicle.year} - R$ ${v.vehicle.price.toLocaleString('pt-BR')}`
-        ).join('\n')}`
-        : 'Nenhum veículo específico encontrado para essa pergunta.';
-
-      const conversationSummary = this.summarizeContext(context);
-
-      const prompt = `${this.SYSTEM_PROMPT}
-
-PERGUNTA DO CLIENTE: "${question}"
-
-${vehicleContext}
-
-CONTEXTO DA CONVERSA:
-${conversationSummary}
-
-PERFIL DO CLIENTE (até agora):
-${JSON.stringify(profile, null, 2)}
-
-Responda a pergunta de forma natural e útil, usando exemplos dos veículos quando apropriado.
-Se a pergunta for sobre diferenças entre categorias, explique claramente.
-Sempre mantenha o foco em ajudar o cliente a encontrar o carro ideal.`;
-
-      const response = await chatCompletion([
-        { role: 'system', content: prompt },
-        { role: 'user', content: question }
-      ], {
-        temperature: 0.7,
-        maxTokens: 350
-      });
-
-      return response.trim();
-
-    } catch (error) {
-      logger.error({ error, question }, 'Failed to answer question');
-      return 'Desculpe, não consegui processar sua pergunta. Pode reformular de outra forma?';
-    }
+    return answerQuestionUtil(question, context, profile);
   }
 
   /**
    * Generate next contextual question to ask the user
+   * @deprecated Use generateNextQuestion from './vehicle-expert/processors' instead
    */
   private async generateNextQuestion(
     options: QuestionGenerationOptions
   ): Promise<string> {
-    try {
-      const { profile, missingFields, context } = options;
-
-      const prompt = `${this.SYSTEM_PROMPT}
-
-PERFIL ATUAL DO CLIENTE:
-${JSON.stringify(profile, null, 2)}
-
-INFORMAÇÕES QUE AINDA PRECISAMOS:
-${missingFields.join(', ')}
-
-CONTEXTO DA CONVERSA:
-${context || 'Início da conversa'}
-
-TAREFA:
-Gere a PRÓXIMA MELHOR PERGUNTA para fazer ao cliente.
-
-DIRETRIZES:
-1. A pergunta deve ser contextual (baseada no que já sabemos)
-2. Priorize informações essenciais: orçamento, uso, quantidade de pessoas
-3. Seja natural, não robótico
-4. Faça UMA pergunta por vez
-5. Se apropriado, ofereça contexto antes de perguntar
-6. Use emojis com moderação (apenas se natural)
-
-EXEMPLO BOM:
-"Legal! Para viagens em família, temos SUVs e sedans muito confortáveis. Quantas pessoas costumam viajar juntas?"
-
-EXEMPLO RUIM:
-"Quantas pessoas?"
-
-Gere APENAS a pergunta, sem prefácio ou explicação:`;
-
-      const response = await chatCompletion([
-        { role: 'system', content: prompt },
-        { role: 'user', content: 'Qual a próxima melhor pergunta?' }
-      ], {
-        temperature: 0.8,
-        maxTokens: 150
-      });
-
-      return response.trim();
-
-    } catch (error) {
-      logger.error({ error }, 'Failed to generate question');
-
-      // Fallback to basic question based on missing fields
-      const { profile, missingFields } = options;
-
-      if (missingFields.includes('budget') || !profile.budget) {
-        return '💰 Até quanto você pretende investir no carro?';
-      }
-      if (missingFields.includes('usage') || !profile.usage) {
-        return '🚗 Qual vai ser o uso principal? Cidade, viagens, trabalho?';
-      }
-      if (missingFields.includes('people') || !profile.people) {
-        return '👥 Quantas pessoas geralmente vão usar o carro?';
-      }
-
-      return 'Me conta mais sobre o que você busca no carro ideal?';
-    }
+    return generateNextQuestionUtil(options);
   }
 
   /**
@@ -2061,7 +1869,7 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
   /**
    * Format recommendations into natural language message
-   * @param searchType - 'specific' for model/year searches, 'similar' for similar vehicles, 'recommendation' for personalized suggestions
+   * @deprecated Use formatRecommendations from './vehicle-expert/formatters' instead
    */
   private async formatRecommendations(
     recommendations: VehicleRecommendation[],
@@ -2069,91 +1877,12 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
     context: ConversationContext,
     searchType: 'specific' | 'similar' | 'recommendation' = 'recommendation'
   ): Promise<string> {
-    if (recommendations.length === 0) {
-      return `Hmm, não encontrei veículos que atendam exatamente suas preferências. 🤔
-
-Posso ajustar os critérios? Por exemplo:
-- Aumentar o orçamento em 10-20%?
-- Considerar anos um pouco mais antigos?
-- Ver outras categorias de veículos?
-
-Me diz o que prefere!`;
-    }
-
-    const isSpecificSearch = searchType === 'specific';
-    const isSimilarSearch = searchType === 'similar';
-    const showMatchScore = searchType === 'recommendation'; // Só mostra % em recomendações personalizadas
-
-    try {
-      // Show all recommendations (up to 5)
-      const vehiclesToShow = recommendations.slice(0, 5);
-
-      const vehiclesList = vehiclesToShow.map((rec, i) => {
-        const v = rec.vehicle;
-        const link = v.detailsUrl || v.url;
-
-        // Só mostrar % match em recomendações personalizadas (não em buscas específicas ou similares)
-        const matchScore = (showMatchScore && rec.matchScore) ? `${Math.round(rec.matchScore)}%` : '';
-
-        // Em busca específica com 1 resultado, não numerar
-        const prefix = (isSpecificSearch && vehiclesToShow.length === 1)
-          ? '🚗 '
-          : `${i + 1}. ${i === 0 ? '🏆 ' : ''}`;
-
-        let item = `${prefix}*${v.brand} ${v.model} ${v.year}*${matchScore ? ` (${matchScore} match)` : ''}
-   💰 R$ ${v.price.toLocaleString('pt-BR')}
-   🛣️ ${v.mileage?.toLocaleString('pt-BR') || '?'} km
-   🚗 ${v.bodyType || 'N/A'}${v.transmission ? ` | ${v.transmission}` : ''}`;
-
-        if (link) {
-          item += `\n   🔗 ${link}`;
-        }
-
-        return item;
-      }).join('\n\n');
-
-      const intro = this.generateRecommendationIntro(profile, vehiclesToShow.length, searchType, vehiclesToShow[0]?.vehicle);
-
-      // Outro diferente para busca específica vs recomendação
-      // IMPORTANTE: Ser menos agressivo quando há vários carros - primeiro perguntar qual gostou
-      // IMPORTANTE: Não perguntar sobre troca se usuário já informou que tem carro de troca
-      let outro: string;
-      if (isSpecificSearch) {
-        if (vehiclesToShow.length === 1) {
-          // Apenas 1 carro encontrado - pode ser mais direto
-          // Se já tem troca informada, não perguntar novamente
-          if (profile.hasTradeIn && profile.tradeInModel) {
-            const tradeInInfo = profile.tradeInYear 
-              ? `${capitalizeWords(profile.tradeInModel)} ${profile.tradeInYear}` 
-              : capitalizeWords(profile.tradeInModel);
-            outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento`;
-          } else {
-            outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?`;
-          }
-        } else {
-          // Vários carros - primeiro perguntar qual gostou
-          outro = `\n\nAlgum te interessou? Me conta qual você curtiu mais que posso dar mais detalhes! 😊\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
-        }
-      } else {
-        // Recomendações personalizadas - perguntar qual gostou primeiro
-        outro = `\n\nQual desses te interessou mais? 😊\n\nMe conta qual você curtiu que posso dar mais detalhes sobre ele!\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
-      }
-
-      return `${intro}\n\n${vehiclesList}${outro}`;
-
-    } catch (error) {
-      logger.error({ error }, 'Failed to format recommendations');
-
-      // Fallback simple format
-      return `Encontrei ${recommendations.length} veículos para você!\n\n` +
-        recommendations.slice(0, 3).map((r, i) =>
-          `${i + 1}. ${r.vehicle.brand} ${r.vehicle.model} - R$ ${r.vehicle.price.toLocaleString('pt-BR')}`
-        ).join('\n');
-    }
+    return formatRecommendationsUtil(recommendations, profile, searchType);
   }
 
   /**
    * Generate intro for recommendations based on profile and search type
+   * @deprecated Use generateRecommendationIntro from './vehicle-expert/formatters' instead
    */
   private generateRecommendationIntro(
     profile: Partial<CustomerProfile>,
@@ -2161,168 +1890,42 @@ Me diz o que prefere!`;
     searchType: 'specific' | 'similar' | 'recommendation' = 'recommendation',
     firstVehicle?: { brand: string; model: string; year: number }
   ): string {
-    // Para busca específica, usar mensagem direta
-    if (searchType === 'specific') {
-      if (count === 1 && firstVehicle) {
-        return `Encontramos o ${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year} que você procurava! ✅`;
-      } else if (firstVehicle) {
-        return `Encontramos ${count} opções de ${firstVehicle.brand} ${firstVehicle.model} disponíveis:`;
-      }
-      return `Encontramos ${count} opção${count > 1 ? 'ões' : ''} para você:`;
-    }
-
-    // Para busca de similares, usar mensagem apropriada (não chega aqui pois usamos intro customizada)
-    if (searchType === 'similar') {
-      return `Encontrei ${count} opção${count > 1 ? 'ões similares' : ' similar'}:`;
-    }
-
-    // Para recomendações personalizadas, usar mensagem com critérios
-    const parts: string[] = [];
-
-    if (profile.usage) {
-      const usageMap: Record<string, string> = {
-        cidade: 'uso urbano',
-        viagem: 'viagens',
-        trabalho: 'trabalho',
-        misto: 'uso variado'
-      };
-      parts.push(usageMap[profile.usage] || profile.usage);
-    }
-
-    if (profile.people) {
-      parts.push(`${profile.people} pessoas`);
-    }
-
-    if (profile.budget) {
-      parts.push(`até R$ ${profile.budget.toLocaleString('pt-BR')}`);
-    }
-
-    const criteria = parts.length > 0 ? ` para ${parts.join(', ')}` : '';
-
-    return `Perfeito! Encontrei ${count} veículo${count > 1 ? 's IDEAIS' : ' IDEAL'}${criteria}:`;
+    return generateRecommendationIntroUtil(profile, count, searchType, firstVehicle);
   }
 
   /**
    * Build search query from profile
+   * @deprecated Use buildSearchQuery from './vehicle-expert/builders' instead
    */
   private buildSearchQuery(profile: Partial<CustomerProfile>): VehicleSearchQuery {
-    const searchParts: string[] = [];
-
-    // Include model and year first for exact search detection
-    if (profile.model) {
-      searchParts.push(profile.model);
-    }
-    if (profile.minYear) {
-      searchParts.push(profile.minYear.toString());
-    }
-    if (profile.bodyType) {
-      searchParts.push(profile.bodyType);
-    }
-    if (profile.usage) {
-      searchParts.push(profile.usage);
-    }
-    if (profile.priorities) {
-      searchParts.push(...profile.priorities);
-    }
-
-    return {
-      searchText: searchParts.join(' ') || 'carro usado',
-      filters: {
-        maxPrice: profile.budget || profile.budgetMax,
-        minPrice: profile.budgetMin,
-        minYear: profile.minYear,
-        maxKm: profile.maxKm,
-        minSeats: profile.minSeats, // Número mínimo de lugares
-        bodyType: profile.bodyType ? [profile.bodyType] : undefined,
-        transmission: profile.transmission ? [profile.transmission] : undefined,
-        brand: profile.brand ? [profile.brand] : undefined,
-        model: profile.model ? [profile.model] : undefined  // Modelo específico
-      },
-      preferences: {
-        usage: profile.usage,
-        people: profile.people,
-        priorities: profile.priorities,
-        dealBreakers: profile.dealBreakers
-      },
-      limit: 5,
-      minMatchScore: 60
-    };
+    return buildSearchQueryUtil(profile);
   }
 
   /**
    * Assess if we have enough information to recommend vehicles
+   * @deprecated Use assessReadiness from './vehicle-expert/assessors' instead
    */
   private assessReadiness(
     profile: Partial<CustomerProfile>,
     context: ConversationContext
   ): ReadinessAssessment {
-    // Required fields
-    const required = ['budget', 'usage', 'people'];
-    const missingRequired = required.filter(field => !profile[field]);
-
-    // Optional but helpful fields
-    const optional = ['bodyType', 'minYear', 'transmission'];
-    const missingOptional = optional.filter(field => !profile[field]);
-
-    // Calculate confidence
-    const requiredScore = ((required.length - missingRequired.length) / required.length) * 100;
-    const optionalScore = ((optional.length - missingOptional.length) / optional.length) * 30;
-    const confidence = Math.min(100, requiredScore + optionalScore);
-
-    // Decision logic
-    let canRecommend = false;
-    let action: 'continue_asking' | 'recommend_now' | 'ask_confirmation' = 'continue_asking';
-    let reasoning = '';
-
-    if (missingRequired.length === 0) {
-      // Has all required fields
-      canRecommend = true;
-      action = 'recommend_now';
-      reasoning = 'Informações essenciais coletadas';
-    } else if (missingRequired.length === 1 && context.metadata.messageCount >= 5) {
-      // Has most info and conversation is getting long
-      canRecommend = true;
-      action = 'recommend_now';
-      reasoning = 'Informação suficiente após várias mensagens';
-    } else if (context.metadata.messageCount >= 8) {
-      // Conversation too long, recommend anyway
-      canRecommend = true;
-      action = 'recommend_now';
-      reasoning = 'Conversa muito longa, recomendar com informações parciais';
-    } else {
-      canRecommend = false;
-      action = 'continue_asking';
-      reasoning = `Faltam campos essenciais: ${missingRequired.join(', ')}`;
-    }
-
-    return {
-      canRecommend,
-      confidence,
-      missingRequired,
-      missingOptional,
-      action,
-      reasoning
-    };
+    return assessReadinessUtil(profile, context);
   }
 
   /**
    * Identify what information is still missing
+   * @deprecated Use identifyMissingInfo from './vehicle-expert/assessors' instead
    */
   private identifyMissingInfo(profile: Partial<CustomerProfile>): string[] {
-    const important = ['budget', 'usage', 'people', 'bodyType'];
-    return important.filter(field => !profile[field]);
+    return identifyMissingInfoUtil(profile);
   }
 
   /**
    * Summarize conversation context for LLM
+   * @deprecated Use summarizeContext from './vehicle-expert/assessors' instead
    */
   private summarizeContext(context: ConversationContext): string {
-    const recentMessages = context.messages.slice(-4);
-    const summary = recentMessages
-      .map(m => `${m.role === 'user' ? 'Cliente' : 'Você'}: ${m.content}`)
-      .join('\n');
-
-    return `Modo: ${context.mode}\nMensagens trocadas: ${context.metadata.messageCount}\n\nÚltimas mensagens:\n${summary}`;
+    return summarizeContextUtil(context);
   }
 }
 
