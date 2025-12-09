@@ -72,25 +72,23 @@ Me diz o que prefere!`;
 
         // Outro diferente para busca específica vs recomendação
         let outro: string;
-        if (isSpecificSearch) {
-            if (vehiclesToShow.length === 1) {
-                // Apenas 1 carro encontrado - pode ser mais direto
-                // Se já tem troca informada, não perguntar novamente
-                if (profile.hasTradeIn && profile.tradeInModel) {
-                    const tradeInInfo = profile.tradeInYear
-                        ? `${capitalizeWords(profile.tradeInModel)} ${profile.tradeInYear}`
-                        : capitalizeWords(profile.tradeInModel);
-                    outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento`;
-                } else {
-                    outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?`;
-                }
+        if (vehiclesToShow.length === 1) {
+            // Apenas 1 carro encontrado - mensagem direta
+            if (profile.hasTradeIn && profile.tradeInModel) {
+                const tradeInInfo = profile.tradeInYear
+                    ? `${capitalizeWords(profile.tradeInModel)} ${profile.tradeInYear}`
+                    : capitalizeWords(profile.tradeInModel);
+                outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento`;
             } else {
-                // Vários carros - primeiro perguntar qual gostou
-                outro = `\n\nAlgum te interessou? Me conta qual você curtiu mais que posso dar mais detalhes! 😊\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+                outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?`;
             }
         } else {
-            // Recomendações personalizadas - perguntar qual gostou primeiro
-            outro = `\n\nQual desses te interessou mais? 😊\n\nMe conta qual você curtiu que posso dar mais detalhes sobre ele!\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+            // Vários carros - perguntar qual gostou
+            if (isSpecificSearch) {
+                outro = `\n\nAlgum te interessou? Me conta qual você curtiu mais que posso dar mais detalhes! 😊\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+            } else {
+                outro = `\n\nQual desses te interessou mais? 😊\n\nMe conta qual você curtiu que posso dar mais detalhes sobre ele!\n\n_Digite "reiniciar" para nova busca ou "vendedor" para falar com nossa equipe._`;
+            }
         }
 
         return `${intro}\n\n${vehiclesList}${outro}`;

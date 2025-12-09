@@ -76,6 +76,7 @@ export interface CustomerProfile {
   _searchedItem?: string; // The item (model/brand/category) that was not found
   _skipOnboarding?: boolean; // Skip remaining onboarding steps (user asked for specific brand/model)
   _availableYears?: number[]; // Anos disponíveis quando modelo não encontrado no ano pedido
+  _waitingForUberXAlternatives?: boolean; // Aguardando resposta sobre alternativas Uber X/99Pop
 
   _lastShownVehicles?: Array<{
     vehicleId: string;
