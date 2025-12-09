@@ -6,6 +6,7 @@
 
 import { logger } from '../../../lib/logger';
 import { PostRecommendationContext, HandlerResult } from './types';
+import { capitalizeWords } from '../constants';
 
 /**
  * Handle financing intent
@@ -21,12 +22,12 @@ export const handleFinancing = (ctx: PostRecommendationContext): HandlerResult =
 
     logger.info({ modelName, vehiclePrice }, 'User wants financing for shown vehicle');
 
-    // Verificar se usuário já informou carro de troca
+    // Verificar se usuário já informou carro de troca (capitalizado)
     const hasTradeIn = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
     const tradeInInfo = hasTradeIn
         ? (updatedProfile.tradeInYear 
-            ? `${updatedProfile.tradeInModel} ${updatedProfile.tradeInYear}` 
-            : updatedProfile.tradeInModel)
+            ? `${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear}` 
+            : capitalizeWords(updatedProfile.tradeInModel))
         : null;
 
     // Se tem troca, o carro É a entrada - vai direto pro vendedor

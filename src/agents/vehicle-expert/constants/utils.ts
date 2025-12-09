@@ -19,6 +19,23 @@ export const capitalize = (str: string): string => {
 };
 
 /**
+ * Capitalize each word in a string (for brand/model names)
+ * 
+ * @param str - The string to capitalize
+ * @returns The string with each word capitalized
+ * 
+ * @example
+ * capitalizeWords('honda civic') // 'Honda Civic'
+ * capitalizeWords('volkswagen t-cross') // 'Volkswagen T-Cross'
+ */
+export const capitalizeWords = (str: string): string => {
+    if (!str) return str;
+    return str.split(/[\s-]+/).map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ');
+};
+
+/**
  * Format price in Brazilian currency format
  * 
  * @param price - The price in number

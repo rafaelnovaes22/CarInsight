@@ -33,6 +33,7 @@ export { SYSTEM_PROMPT } from './system-prompt';
 // Utilities
 export {
     capitalize,
+    capitalizeWords,
     formatPrice,
     formatMileage,
 } from './utils';

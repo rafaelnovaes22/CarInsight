@@ -27,6 +27,7 @@ import {
   isSevenSeater,
   isFiveSeater,
   capitalize,
+  capitalizeWords,
   SEDAN_COMPACT_MODELS,
   SEDAN_MEDIUM_MODELS,
   detectBodyTypeFromModel,
@@ -610,8 +611,8 @@ export class VehicleExpertAgent {
           // Se JÁ TEMOS os dados do carro de troca, encaminhar para vendedor avaliar
           // NÃO fazemos simulação porque o valor do carro de troca depende da avaliação presencial
           const tradeInCar = updatedProfile.tradeInModel
-            ? `${updatedProfile.tradeInBrand || ''} ${updatedProfile.tradeInModel} ${updatedProfile.tradeInYear || ''}`.trim()
-            : `${extracted.extracted.tradeInModel} ${extracted.extracted.tradeInYear || ''}`.trim();
+            ? `${capitalizeWords(updatedProfile.tradeInBrand || '')} ${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear || ''}`.trim()
+            : `${capitalizeWords(extracted.extracted.tradeInModel || '')} ${extracted.extracted.tradeInYear || ''}`.trim();
 
           logger.info({ tradeInCar }, 'User provided trade-in car details - routing to seller');
 
@@ -670,8 +671,8 @@ export class VehicleExpertAgent {
           const hasTradeInInfo = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
           const tradeInText = hasTradeInInfo
             ? (updatedProfile.tradeInYear 
-                ? `${updatedProfile.tradeInModel} ${updatedProfile.tradeInYear}` 
-                : updatedProfile.tradeInModel)
+                ? `${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear}` 
+                : capitalizeWords(updatedProfile.tradeInModel))
             : null;
 
           // Se tem troca, o carro É a entrada - vai direto pro vendedor
@@ -2097,8 +2098,8 @@ Me diz o que prefere!`;
           // Se já tem troca informada, não perguntar novamente
           if (profile.hasTradeIn && profile.tradeInModel) {
             const tradeInInfo = profile.tradeInYear 
-              ? `${profile.tradeInModel} ${profile.tradeInYear}` 
-              : profile.tradeInModel;
+              ? `${capitalizeWords(profile.tradeInModel)} ${profile.tradeInYear}` 
+              : capitalizeWords(profile.tradeInModel);
             outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento\n\n_Posso simular as parcelas pra você!_`;
           } else {
             outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?\n\n_Posso simular as parcelas pra você!_`;
