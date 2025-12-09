@@ -29,31 +29,54 @@ export const handleFinancing = (ctx: PostRecommendationContext): HandlerResult =
             : updatedProfile.tradeInModel)
         : null;
 
-    // Mensagem diferente se já tem troca informada
-    const responseMessage = hasTradeIn
-        ? `Ótimo! Vamos simular o financiamento do ${modelName}! 🏦
+    // Se tem troca, o carro É a entrada - vai direto pro vendedor
+    if (hasTradeIn) {
+        return {
+            handled: true,
+            response: {
+                response: `Perfeito! Vou encaminhar você para nosso consultor! 🏦
 
+📋 *Resumo:*
+🚗 *Veículo:* ${modelName}
 💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}
-🚗 *Troca:* ${tradeInInfo} (valor a definir na avaliação)
+🔄 *Entrada:* ${tradeInInfo} (troca)
+💳 *Pagamento:* Financiamento
 
-Pra eu calcular as parcelas, me conta:
-• Tem algum valor de **entrada** além da troca? (pode ser zero)
+Nosso consultor vai avaliar seu ${tradeInInfo} e apresentar a melhor proposta!
 
-_Exemplo: "5 mil de entrada" ou "só a troca"_`
-        : `Ótimo! Vamos simular o financiamento do ${modelName}! 🏦
+_Digite "vendedor" para falar com nossa equipe!_`,
+                extractedPreferences: {
+                    ...extracted.extracted,
+                    wantsFinancing: true,
+                    _showedRecommendation: true,
+                    _lastShownVehicles: lastShownVehicles,
+                    _awaitingFinancingDetails: false,
+                },
+                needsMoreInfo: [],
+                canRecommend: false,
+                nextMode: 'negotiation',
+                metadata: {
+                    processingTime: Date.now() - startTime,
+                    confidence: 0.95,
+                    llmUsed: 'rule-based'
+                }
+            }
+        };
+    }
 
-💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}
-
-Pra eu calcular as parcelas, me conta:
-• Tem algum valor de **entrada**? (pode ser zero)
-• Tem algum **carro pra dar na troca**?
-
-_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`;
-
+    // Se não tem troca, perguntar sobre entrada em dinheiro ou troca
     return {
         handled: true,
         response: {
-            response: responseMessage,
+            response: `Ótimo! Financiamento do ${modelName}! 🏦
+
+💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}
+
+Pra encaminhar pro nosso consultor, me conta:
+• Tem algum valor de **entrada**?
+• Ou tem algum **carro pra dar na troca**?
+
+_Exemplo: "10 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
             extractedPreferences: {
                 ...extracted.extracted,
                 wantsFinancing: true,
@@ -61,7 +84,7 @@ _Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`;
                 _lastShownVehicles: lastShownVehicles,
                 _awaitingFinancingDetails: true,
             },
-            needsMoreInfo: hasTradeIn ? ['financingDownPayment'] : ['financingDownPayment', 'tradeIn'],
+            needsMoreInfo: ['financingDownPayment', 'tradeIn'],
             canRecommend: false,
             nextMode: 'negotiation',
             metadata: {

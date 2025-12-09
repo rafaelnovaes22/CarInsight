@@ -665,7 +665,7 @@ export class VehicleExpertAgent {
             };
           }
 
-          // Se NÃO informou entrada ainda, PERGUNTAR
+          // Se NÃO informou entrada ainda, verificar se tem troca
           // Verificar se usuário já informou carro de troca
           const hasTradeInInfo = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
           const tradeInText = hasTradeInInfo
@@ -674,13 +674,31 @@ export class VehicleExpertAgent {
                 : updatedProfile.tradeInModel)
             : null;
 
-          // Mensagem diferente se já tem troca informada
-          const financingMessage = hasTradeInInfo
-            ? `Ótimo! Vamos simular o financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n🚗 *Troca:* ${tradeInText} (valor a definir na avaliação)\n\nPra eu calcular as parcelas, me conta:\n• Tem algum valor de *entrada* além da troca? (pode ser zero)\n\n_Exemplo: "5 mil de entrada" ou "só a troca"_`
-            : `Ótimo! Vamos simular o financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n\nPra eu calcular as parcelas, me conta:\n• Tem algum valor de *entrada*? (pode ser zero)\n• Tem algum *carro pra dar na troca*?\n\n_Exemplo: "5 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`;
+          // Se tem troca, o carro É a entrada - vai direto pro vendedor
+          if (hasTradeInInfo) {
+            return {
+              response: `Perfeito! Vou encaminhar você para nosso consultor! 🏦\n\n📋 *Resumo:*\n🚗 *Veículo:* ${lastConfig.brand} ${modelName} ${lastConfig.year}\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n🔄 *Entrada:* ${tradeInText} (troca)\n💳 *Pagamento:* Financiamento\n\nNosso consultor vai avaliar seu ${tradeInText} e apresentar a melhor proposta!\n\n_Digite "vendedor" para falar com nossa equipe!_`,
+              extractedPreferences: {
+                ...extracted.extracted,
+                wantsFinancing: true,
+                _awaitingFinancingDetails: false,
+                _showedRecommendation: true,
+                _lastShownVehicles: lastShownVehicles,
+              },
+              needsMoreInfo: [],
+              canRecommend: false,
+              nextMode: 'negotiation',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.95,
+                llmUsed: 'rule-based'
+              }
+            };
+          }
 
+          // Se não tem troca, perguntar sobre entrada em dinheiro ou troca
           return {
-            response: financingMessage,
+            response: `Ótimo! Financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n\nPra encaminhar pro nosso consultor, me conta:\n• Tem algum valor de *entrada*?\n• Ou tem algum *carro pra dar na troca*?\n\n_Exemplo: "10 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
             extractedPreferences: {
               ...extracted.extracted,
               wantsFinancing: true,
@@ -688,7 +706,7 @@ export class VehicleExpertAgent {
               _showedRecommendation: true,
               _lastShownVehicles: lastShownVehicles,
             },
-            needsMoreInfo: hasTradeInInfo ? ['financingDownPayment'] : ['financingDownPayment', 'tradeIn'],
+            needsMoreInfo: ['financingDownPayment', 'tradeIn'],
             canRecommend: false,
             nextMode: 'negotiation',
             metadata: {
