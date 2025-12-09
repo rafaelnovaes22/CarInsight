@@ -101,13 +101,13 @@ ${context || 'Início da conversa'}
 TAREFA:
 Gere a PRÓXIMA MELHOR PERGUNTA para fazer ao cliente.
 
-DIRETRIZES:
-1. A pergunta deve ser contextual (baseada no que já sabemos)
-2. Priorize informações essenciais: orçamento, uso, quantidade de pessoas
-3. Seja natural, não robótico
-4. Faça UMA pergunta por vez
-5. Se apropriado, ofereça contexto antes de perguntar
-6. Use emojis com moderação (apenas se natural)
+        DIRETRIZES:
+        1. A pergunta deve ser contextual (baseada no que já sabemos)
+        2. Priorize informações essenciais: orçamento, uso
+        3. Seja natural, não robótico
+        4. Faça UMA pergunta por vez
+        5. Se apropriado, ofereça contexto antes de perguntar
+        6. Use emojis com moderação (apenas se natural)
 
 EXEMPLO BOM:
 "Legal! Para viagens em família, temos SUVs e sedans muito confortáveis. Quantas pessoas costumam viajar juntas?"
@@ -138,9 +138,6 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
         }
         if (missingFields.includes('usage') || !profile.usage) {
             return '🚗 Qual vai ser o uso principal? Cidade, viagens, trabalho?';
-        }
-        if (missingFields.includes('people') || !profile.people) {
-            return '👥 Quantas pessoas geralmente vão usar o carro?';
         }
 
         return 'Me conta mais sobre o que você busca no carro ideal?';

@@ -19,7 +19,7 @@ export function assessReadiness(
     context: ConversationContext
 ): ReadinessAssessment {
     // Required fields
-    const required = ['budget', 'usage', 'people'];
+    const required = ['budget', 'usage'];
     const missingRequired = required.filter(field => !(profile as any)[field]);
 
     // Optional but helpful fields
@@ -74,7 +74,7 @@ export function assessReadiness(
  * @returns Array of missing field names
  */
 export function identifyMissingInfo(profile: Partial<CustomerProfile>): string[] {
-    const important = ['budget', 'usage', 'people', 'bodyType'];
+    const important = ['budget', 'usage', 'bodyType'];
     return important.filter(field => !(profile as any)[field]);
 }
 

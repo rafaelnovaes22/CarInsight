@@ -22,11 +22,6 @@ const QUIZ_QUESTIONS: QuizQuestion[] = [
     type: 'text',
   },
   {
-    id: 'people',
-    question: `👥 Para quantas pessoas? (passageiros + motorista)\n\n_Exemplo: 5_${EXIT_FOOTER}`,
-    type: 'number',
-  },
-  {
     id: 'hasTradeIn',
     question: `🔄 Você tem um carro para dar como entrada (trade-in)?\n\n_Digite "sim" ou "não"_${EXIT_FOOTER}`,
     type: 'choice',
@@ -199,7 +194,6 @@ export class QuizAgent {
       budgetMin: answers.budget * 0.8,
       budgetMax: answers.budget * 1.2,
       usage: answers.usage,
-      people: answers.people,
       hasTradeIn: answers.hasTradeIn === 'sim',
       minYear: answers.minYear,
       maxKm: answers.maxKm,
