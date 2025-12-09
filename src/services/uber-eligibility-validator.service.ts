@@ -29,9 +29,9 @@ export interface VehicleInfo {
 
 export class UberEligibilityValidator {
 
-  private readonly UBER_CRITERIA_PROMPT = `Você é um especialista em requisitos do Uber/99 no Brasil.
+  private readonly UBER_CRITERIA_PROMPT = `Você é um especialista em requisitos do Uber e 99 no Brasil.
 
-CRITÉRIOS OFICIAIS UBER (2024):
+CRITÉRIOS OFICIAIS UBER/99 (2024):
 
 **UBER X / 99Pop:**
 - Ano: 2012 ou mais recente
@@ -40,7 +40,7 @@ CRITÉRIOS OFICIAIS UBER (2024):
 - Ar-condicionado: Obrigatório
 - NUNCA ACEITO: SUV, Picape, Minivan, Van
 
-**UBER COMFORT / XL / BAG:**
+**UBER COMFORT / 99TOP / 99XL:**
 - Ano: 2015 ou mais recente  
 - Tipo: Sedan médio/grande, Minivan (ex: Spin), SUV médio
 - Portas: 4
@@ -48,7 +48,7 @@ CRITÉRIOS OFICIAIS UBER (2024):
 - Ar-condicionado: Obrigatório
 - ACEITA: Minivans como Spin, Zafira
 
-**UBER BLACK:**
+**UBER BLACK / 99BLACK:**
 - Ano: 2018 ou mais recente
 - Tipo: APENAS Sedan PREMIUM
 - Portas: 4
@@ -57,7 +57,11 @@ CRITÉRIOS OFICIAIS UBER (2024):
 - Cor: Preto (preferencial)
 - NUNCA ACEITO: SUV, Minivan, Hatch
 
-**NUNCA ACEITO EM NENHUMA CATEGORIA:**
+**99TAXI (equivalente a Uber Comfort):**
+- Mesmos critérios do Uber Comfort
+- Foco em sedans médios/grandes e minivans
+
+**NUNCA ACEITO EM NENHUMA CATEGORIA UBER/99:**
 - Picapes (Hilux, Ranger, S10, L200, etc)
 - Vans grandes (Master, Sprinter)
 - SUVs grandes (Pajero, SW4, Grand Cherokee)
@@ -67,19 +71,24 @@ CRITÉRIOS OFICIAIS UBER (2024):
 - Adesivados
 
 IMPORTANTE:
-- Spin (Chevrolet) É MINIVAN → ✅ Comfort/XL/Bag | ❌ X | ❌ Black
-- Compass (Jeep) É SUV → ✅ Comfort | ❌ X | ❌ Black
-- Civic/Corolla (Sedan médio) → ✅ X | ✅ Comfort | ✅ Black (se 2018+)
-- Gol/Onix (Hatch) → ✅ X | ❌ Comfort | ❌ Black
+- Spin (Chevrolet) É MINIVAN → ✅ Comfort/XL/Bag/99TOP | ❌ X/99Pop | ❌ Black/99Black
+- Compass (Jeep) É SUV → ✅ Comfort/99TOP | ❌ X/99Pop | ❌ Black/99Black
+- Civic/Corolla (Sedan médio) → ✅ X/99Pop | ✅ Comfort/99TOP | ✅ Black/99Black (se 2018+)
+- Gol/Onix (Hatch) → ✅ X/99Pop | ❌ Comfort/99TOP | ❌ Black/99Black
+
+EQUIVALÊNCIAS:
+- Uber X = 99Pop
+- Uber Comfort = 99TOP = 99XL = 99Taxi
+- Uber Black = 99Black
 
 TAREFA:
 Analise o veículo e retorne JSON com elegibilidade para cada categoria.
 
 Formato de resposta:
 {
-  "uberX": true/false,
-  "uberComfort": true/false,
-  "uberBlack": true/false,
+  "uberX": true/false,          // Inclui 99Pop
+  "uberComfort": true/false,    // Inclui 99TOP, 99XL, 99Taxi
+  "uberBlack": true/false,      // Inclui 99Black
   "reasoning": "Explicação clara do por quê",
   "confidence": 0.0-1.0
 }

@@ -66,6 +66,27 @@ function normalizeFuel(fuel: string): string {
   return fuelMap[fuel] || 'Flex';
 }
 
+function detectUberEligibility(vehicle: RobustCarVehicle, price: number): boolean {
+  // Uber normal: veículo em bom estado, ano recente, preço acessível
+  const yearValid = vehicle.year >= 2010;
+  const priceValid = price >= 20000 && price <= 100000;
+  const categoryValid = vehicle.category !== 'MOTO' && vehicle.category !== 'OUTROS';
+  const fuelValid = vehicle.fuel === 'FLEX' || vehicle.fuel === 'GASOLINA' || vehicle.fuel === 'DIESEL';
+  
+  return yearValid && priceValid && categoryValid && fuelValid;
+}
+
+function detectUberBlackEligibility(vehicle: RobustCarVehicle, price: number, features: any): boolean {
+  // Uber Black: veículos premium, completos, ano mais recente
+  const yearValid = vehicle.year >= 2018;
+  const priceValid = price >= 40000 && price <= 200000;
+  const categoryValid = vehicle.category === 'SEDAN' || vehicle.category === 'SUV';
+  const fuelValid = vehicle.fuel === 'FLEX' || vehicle.fuel === 'GASOLINA';
+  const featuresValid = features.arCondicionado && features.direcaoHidraulica && features.airbag && features.abs;
+  
+  return yearValid && priceValid && categoryValid && fuelValid && featuresValid;
+}
+
 function generateDescription(vehicle: RobustCarVehicle): string {
   const features = detectFeatures(vehicle.version);
   const transmission = detectTransmission(vehicle.version);
@@ -74,7 +95,7 @@ function generateDescription(vehicle: RobustCarVehicle): string {
   desc += `${vehicle.fuel}, ${transmission}, ${vehicle.color.toLowerCase()}. `;
   desc += `${vehicle.mileage.toLocaleString('pt-BR')} km rodados. `;
   
-  const featuresList = [];
+  const featuresList: string[] = [];
   if (features.arCondicionado) featuresList.push('Ar-condicionado');
   if (features.direcaoHidraulica) featuresList.push('Direção hidráulica');
   if (features.airbag) featuresList.push('Airbag');
@@ -154,6 +175,8 @@ async function main() {
       const features = detectFeatures(vehicle.version);
       const transmission = detectTransmission(vehicle.version);
       
+      // Elegibilidade será definida via LLM posteriormente
+      // Para evitar erros, inicializamos como false
       await prisma.vehicle.create({
         data: {
           marca: vehicle.brand,
@@ -184,7 +207,11 @@ async function main() {
           
           descricao: generateDescription(vehicle),
           
-          disponivel: true
+          disponivel: true,
+          aptoUber: false, // Será atualizado via LLM
+          aptoUberBlack: false, // Será atualizado via LLM
+          aptoFamilia: true,
+          aptoTrabalho: true
         }
       });
       

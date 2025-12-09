@@ -131,6 +131,51 @@ export class VehicleExpertAgent {
         extracted.extracted
       );
 
+      // 2.0. Check for Uber Black question
+      const lowerMessage = userMessage.toLowerCase();
+      if (lowerMessage.includes('uber black') || lowerMessage.includes('uberblack')) {
+        // Search for Uber Black eligible vehicles
+        const uberBlackVehicles = await vehicleSearchAdapter.search('', {
+          aptoUberBlack: true,
+          limit: 10
+        });
+
+        let response = `🚖 *Critérios para Uber Black:*\n\n`;
+        response += `• Ano: 2018 ou mais recente\n`;
+        response += `• Tipo: APENAS Sedan PREMIUM\n`;
+        response += `• Portas: 4\n`;
+        response += `• Ar-condicionado: Obrigatório\n`;
+        response += `• Interior: Couro (preferencial)\n`;
+        response += `• Cor: Preto (preferencial)\n\n`;
+
+        if (uberBlackVehicles.length > 0) {
+          response += `✅ *Temos ${uberBlackVehicles.length} veículos aptos para Uber Black:*\n\n`;
+          uberBlackVehicles.slice(0, 5).forEach((rec, i) => {
+            const v = rec.vehicle;
+            response += `${i + 1}. ${v.brand} ${v.model} ${v.year}\n`;
+            response += `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n`;
+            response += `   📍 ${v.mileage.toLocaleString('pt-BR')}km\n\n`;
+          });
+          response += `_Quer saber mais sobre algum?_`;
+        } else {
+          response += `❌ No momento não temos veículos aptos para Uber Black no estoque.\n\n`;
+          response += `Mas temos veículos aptos para Uber X/99Pop. Quer ver?`;
+        }
+
+        return {
+          response,
+          extractedPreferences: extracted.extracted,
+          needsMoreInfo: [],
+          canRecommend: false,
+          nextMode: context.mode,
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 1.0,
+            llmUsed: 'rule-based'
+          }
+        };
+      }
+
       // 2.1. Intercept Specific Model + Year Search (Exact Intent)
       // Requirements: Return immediately if user provides model and year OR if profile has it (from greeting)
       const exactMatch = exactSearchParser.parse(userMessage);
