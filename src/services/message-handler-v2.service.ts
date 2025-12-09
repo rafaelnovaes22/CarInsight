@@ -319,7 +319,7 @@ Para começar, qual é o seu nome?`;
       );
 
       if (shouldCreateLead) {
-        await this.createLead(conversation, newState);
+        await this.createLead(conversation, newState, phoneNumber);
         // Mark lead as sent to prevent duplicates
         newState.metadata.flags = [...newState.metadata.flags, 'lead_sent'];
         await cache.set(stateKey, JSON.stringify(newState), 86400);
@@ -397,7 +397,7 @@ Para começar, qual é o seu nome?`;
     return conversation;
   }
 
-  private async createLead(conversation: any, state: ConversationState) {
+  private async createLead(conversation: any, state: ConversationState, customerPhoneNumber: string) {
     try {
       const answers = state.quiz.answers;
       const profile = state.profile;
@@ -419,10 +419,10 @@ Para começar, qual é o seu nome?`;
 
       logger.info({ conversationId: conversation.id, leadId: lead.id }, 'Lead created in database');
 
-      // Notify Sales Team
+      // Notify Sales Team - only send to SALES_PHONE_NUMBER if configured
       const salesPhone = process.env.SALES_PHONE_NUMBER;
       logger.info({ salesPhone, envValue: process.env.SALES_PHONE_NUMBER }, 'SALES_PHONE_NUMBER debug');
-      if (salesPhone) {
+      if (salesPhone && salesPhone !== customerPhoneNumber) {
         try {
           // Helper function to capitalize brand/model names
           const capitalize = (text: string) => {
@@ -484,6 +484,10 @@ Para começar, qual é o seu nome?`;
         } catch (notifyError) {
           logger.error({ error: notifyError }, 'Failed to notify sales team');
         }
+      } else if (salesPhone === customerPhoneNumber) {
+        logger.warn('SALES_PHONE_NUMBER is set to same as customer phone - skipping lead notification');
+      } else {
+        logger.warn('SALES_PHONE_NUMBER not configured - skipping lead notification');
       }
 
     } catch (error) {
