@@ -727,7 +727,33 @@ export class VehicleExpertAgent {
           lastShownCount: lastShownVehicles.length
         }, 'Post-recommendation intent detection');
 
-        if (postRecommendationIntent === 'want_others') {
+        // PRIORITY: Check if user is asking for a SPECIFIC MODEL not in the shown list
+        // e.g., "Não tem HB20?", "Tem Onix?", "E o Civic?"
+        const specificModelMatch = exactSearchParser.parse(userMessage);
+        if (specificModelMatch.model) {
+          // Check if this model was NOT in the shown vehicles
+          const modelInShown = lastShownVehicles.some(v => 
+            v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
+            specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
+          );
+          
+          if (!modelInShown) {
+            // User is asking for a different model - do a new search
+            logger.info({ 
+              requestedModel: specificModelMatch.model, 
+              year: specificModelMatch.year,
+              shownModels: lastShownVehicles.map(v => v.model)
+            }, 'User asking for specific model not in shown list - doing new search');
+            
+            // Continue to the main search logic below (don't return here, let it fall through)
+            // The search logic will handle this as a new model search
+          }
+        }
+
+        if (postRecommendationIntent === 'want_others' && !(specificModelMatch.model && !lastShownVehicles.some(v => 
+            v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
+            specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
+          ))) {
           // User wants to see other options - search for similar vehicles directly
           logger.info({ userMessage, lastShownVehicles, extractedBudget: extracted.extracted.budget }, 'User wants other options after seeing recommendation');
 
