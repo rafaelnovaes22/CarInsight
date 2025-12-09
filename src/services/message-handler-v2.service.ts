@@ -421,7 +421,7 @@ Para começar, qual é o seu nome?`;
 
       // Notify Sales Team - only send to SALES_PHONE_NUMBER if configured
       const salesPhone = process.env.SALES_PHONE_NUMBER;
-      logger.info({ salesPhone, envValue: process.env.SALES_PHONE_NUMBER }, 'SALES_PHONE_NUMBER debug');
+      logger.info({ salesPhone, envValue: process.env.SALES_PHONE_NUMBER, customerPhoneNumber }, 'SALES_PHONE_NUMBER debug - comparison');
       if (salesPhone && salesPhone !== customerPhoneNumber) {
         try {
           // Helper function to capitalize brand/model names
@@ -478,6 +478,7 @@ Para começar, qual é o seu nome?`;
           // Dynamic import to avoid circular dependency
           const { WhatsAppMetaService } = await import('./whatsapp-meta.service');
           const whatsappService = new WhatsAppMetaService();
+          logger.info({ salesPhone, customerPhoneNumber, messageLength: message.length }, 'Sending lead notification to sales phone');
           await whatsappService.sendMessage(salesPhone, message);
 
           logger.info({ salesPhone }, 'Sales team notified via WhatsApp');
@@ -485,7 +486,7 @@ Para começar, qual é o seu nome?`;
           logger.error({ error: notifyError }, 'Failed to notify sales team');
         }
       } else if (salesPhone === customerPhoneNumber) {
-        logger.warn('SALES_PHONE_NUMBER is set to same as customer phone - skipping lead notification');
+        logger.warn(`SALES_PHONE_NUMBER (${salesPhone}) is set to same as customer phone (${customerPhoneNumber}) - skipping lead notification`);
       } else {
         logger.warn('SALES_PHONE_NUMBER not configured - skipping lead notification');
       }
