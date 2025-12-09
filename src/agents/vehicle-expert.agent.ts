@@ -1598,19 +1598,14 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
       const readiness = this.assessReadiness(updatedProfile, context);
 
       if (readiness.canRecommend) {
-        // Check recent USER messages for pickup keywords before recommendations
-        // IMPORTANT: Filter only user messages to avoid false positives from assistant examples like "SUV, sedan, pickup..."
+        // Check recent messages for pickup keywords before recommendations
         const pickupKeywords = ['pickup', 'picape', 'caminhonete', 'caçamba', 'cacamba', 'carga', 'obra', 'material', 'construção', 'construcao', 'carregar', 'entulho'];
-        const recentUserMessages = context.messages
-          .filter(m => m.role === 'user')
-          .slice(-5)
-          .map(m => m.content.toLowerCase())
-          .join(' ');
-        const hasPickupInMessages = pickupKeywords.some(kw => recentUserMessages.includes(kw));
+        const recentMessages = context.messages.slice(-5).map(m => m.content.toLowerCase()).join(' ');
+        const hasPickupInMessages = pickupKeywords.some(kw => recentMessages.includes(kw));
 
         // If pickup detected in messages but not in profile, add it
         if (hasPickupInMessages && !updatedProfile.bodyType) {
-          logger.info({ recentMessages: recentUserMessages.substring(0, 100) }, 'Pickup detected in recent messages, adding to profile');
+          logger.info({ recentMessages: recentMessages.substring(0, 100) }, 'Pickup detected in recent messages, adding to profile');
           updatedProfile.bodyType = 'pickup';
           if (!updatedProfile.priorities) {
             updatedProfile.priorities = ['pickup'];
@@ -1903,21 +1898,6 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           const neverForFamily = ['mobi', 'kwid', 'up!', 'uno', 'ka', 'march', 'sandero'];
           if (neverForFamily.some(n => model.includes(n))) {
             return false;
-          }
-
-          // Para família: pickups GRANDES de cabine dupla são OK (espaço similar a SUVs)
-          // Pickups COMPACTAS devem ser excluídas (cabine menor, menos conforto)
-          const isPickup = bodyType.includes('pickup') || bodyType.includes('picape') || bodyType.includes('cabine');
-          if (isPickup) {
-            // Pickups grandes de cabine dupla - PERMITIDAS para família
-            const largePickups = ['ranger', 'amarok', 's10', 'hilux', 'frontier', 'l200', 'triton', 'toro'];
-            const isLargePickup = largePickups.some(p => model.includes(p));
-
-            // Se for pickup compacta (Strada, Saveiro, Montana), excluir para família
-            if (!isLargePickup) {
-              return false;
-            }
-            // Pickups grandes passam no filtro (são adequadas para família)
           }
 
           // Com cadeirinha: precisa de mais espaço

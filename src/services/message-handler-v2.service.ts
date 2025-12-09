@@ -422,13 +422,13 @@ Para começar, qual é o seu nome?`;
       // Notify Sales Team - send to SALES_PHONE_NUMBER if configured
       // Even if it's the same as customer phone (for testing purposes)
       const salesPhone = process.env.SALES_PHONE_NUMBER;
-      
-      logger.info({ 
-        salesPhone, 
+
+      logger.info({
+        salesPhone,
         customerPhoneNumber,
-        envValue: process.env.SALES_PHONE_NUMBER 
+        envValue: process.env.SALES_PHONE_NUMBER
       }, 'SALES_PHONE_NUMBER debug - sending notification');
-      
+
       if (salesPhone) {
         try {
           // Helper function to capitalize brand/model names
@@ -485,9 +485,9 @@ Para começar, qual é o seu nome?`;
           // Dynamic import to avoid circular dependency
           const { WhatsAppMetaService } = await import('./whatsapp-meta.service');
           const whatsappService = new WhatsAppMetaService();
-          logger.info({ 
-            salesPhone, 
-            customerPhone: customerPhoneNumber, 
+          logger.info({
+            salesPhone,
+            customerPhone: customerPhoneNumber,
             messageLength: message.length,
             samePhone: salesPhone === customerPhoneNumber
           }, 'Sending lead notification to sales phone');
