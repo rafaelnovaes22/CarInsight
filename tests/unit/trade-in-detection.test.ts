@@ -157,4 +157,57 @@ describe('Trade-In Detection', () => {
             expect(parser.isTradeInContext('entroca um carro')).toBe(false);
         });
     });
+
+    describe('post-recommendation trade-in scenarios', () => {
+        /**
+         * IMPORTANT: These tests verify the scenario where user mentions trade-in
+         * AFTER seeing a recommendation. In this case, we should:
+         * 1. Extract the trade-in vehicle info directly from the message
+         * 2. NOT restart the discovery flow asking preferences again
+         * 
+         * This is a regression test for the bug where "Tenho um Civic 2010 na troca"
+         * was triggering the initial trade-in flow instead of being handled as
+         * a trade-in response in the post-recommendation context.
+         */
+        
+        it('should detect "Tenho um Civic 2010 na troca" as trade-in context', () => {
+            const message = 'Tenho um Civic 2010 na troca';
+            
+            // This should be detected as trade-in context
+            expect(parser.isTradeInContext(message)).toBe(true);
+            
+            // And should extract the vehicle info
+            const parseResult = parser.parse(message);
+            expect(parseResult.model?.toLowerCase()).toBe('civic');
+            expect(parseResult.year).toBe(2010);
+        });
+
+        it('should detect trade-in with "na troca" pattern', () => {
+            const messages = [
+                'Tenho um Civic 2010 na troca',
+                'tenho um gol 2015 na troca',
+                'Tenho um HB20 2018 na troca',
+                'tenho uma strada 2017 na troca',
+            ];
+
+            messages.forEach(message => {
+                expect(parser.isTradeInContext(message)).toBe(true);
+            });
+        });
+
+        it('should extract model and year from post-recommendation trade-in message', () => {
+            const testCases = [
+                { message: 'Tenho um Civic 2010 na troca', model: 'civic', year: 2010 },
+                { message: 'tenho um Corolla 2015 na troca', model: 'corolla', year: 2015 },
+                { message: 'Tenho um HB20 2019 pra troca', model: 'hb20', year: 2019 },
+                { message: 'meu Gol 2016 pra dar na troca', model: 'gol', year: 2016 },
+            ];
+
+            testCases.forEach(({ message, model, year }) => {
+                const result = parser.parse(message);
+                expect(result.model?.toLowerCase()).toBe(model);
+                expect(result.year).toBe(year);
+            });
+        });
+    });
 });

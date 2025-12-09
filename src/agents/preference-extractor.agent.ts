@@ -43,7 +43,7 @@ CAMPOS POSSÍVEIS:
 - usage: "cidade" | "viagem" | "trabalho" | "misto"
 - usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "outro"
 - tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
-- bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan"
+- bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan" | "furgao"
 - minYear: number (ano mínimo aceito)
 - maxKm: number (quilometragem máxima)
 - transmission: "manual" | "automatico"
@@ -65,6 +65,8 @@ REGRAS ESPECIAIS:
 - Para família com crianças, NUNCA recomendar hatch pequeno (Mobi, Kwid, Up, Uno)
 - Se mencionar "picape", "pickup", "caminhonete", "caçamba", "carga pesada", "obra", "material" → bodyType: "pickup", priorities incluir "pickup"
 - Modelos de pickup conhecidos: Strada, S10, Hilux, Ranger, Saveiro, Toro, L200, Amarok → bodyType: "pickup"
+- Se mencionar "furgão", "furgao", "van de carga", "van de entrega", "utilitário", "utilitario" → bodyType: "furgao", priorities incluir "furgao"
+- Modelos de furgão conhecidos: Fiorino, Ducato, Doblo, Kangoo, Master, Sprinter, Partner, Expert, Boxer → bodyType: "furgao"
 - IMPORTANTE: Se mencionar "X lugares" (ex: "7 lugares", "5 lugares") → minSeats: X (número inteiro)
 - Modelos conhecidos de 7 lugares: Spin, SW4, Pajero, Outlander, Commander, Taos, Tiggo 8, Captiva → minSeats: 7
 - Modelos conhecidos de 5 lugares são a maioria dos carros, não precisa especificar minSeats
@@ -431,7 +433,7 @@ Saída: {
     }
 
     // Body type validation
-    const validBodyTypes = ['sedan', 'suv', 'hatch', 'pickup', 'minivan'];
+    const validBodyTypes = ['sedan', 'suv', 'hatch', 'pickup', 'minivan', 'furgao'];
     if (extracted.bodyType && validBodyTypes.includes(extracted.bodyType)) {
       sanitized.bodyType = extracted.bodyType;
     }

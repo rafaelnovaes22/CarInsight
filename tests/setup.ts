@@ -1,9 +1,11 @@
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import * as dotenv from 'dotenv';
 
-// Carregar variáveis de ambiente - .env principal tem prioridade
-// override: true garante que as variáveis do .env sejam usadas
-dotenv.config({ path: '.env', override: true });
+// Carregar variáveis de ambiente para testes
+// .env.test tem prioridade para garantir configurações de teste
+dotenv.config({ path: '.env.test', override: true });
+// Fallback para .env se .env.test não existir
+dotenv.config({ path: '.env' });
 
 // Flag para indicar se o banco está disponível
 let databaseAvailable = false;

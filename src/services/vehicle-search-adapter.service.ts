@@ -352,7 +352,10 @@ export class VehicleSearchAdapter {
       ['hatch', 'hatchback', 'compacto', 'compact'],
 
       // Minivans / Monovolumes
-      ['minivan', 'mini-van', 'monovolume', 'mpv', 'van', 'perua', 'wagon', 'station'],
+      ['minivan', 'mini-van', 'monovolume', 'mpv', 'perua', 'wagon', 'station'],
+
+      // Furgões / Vans de carga
+      ['furgao', 'furgão', 'van', 'van de carga', 'utilitario', 'utilitário', 'comercial'],
 
       // Cupês / Esportivos
       ['coupe', 'cupe', 'cupê', 'esportivo', 'sport', 'roadster', 'conversivel', 'cabriolet'],
