@@ -35,7 +35,7 @@ export interface CustomerProfile {
   familySize?: number; // legacy support
 
   // Vehicle preferences
-  bodyType?: 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan';
+  bodyType?: 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'furgao';
   vehicleType?: string; // legacy support
   transmission?: 'manual' | 'automatico';
   fuelType?: 'gasolina' | 'flex' | 'diesel' | 'hibrido' | 'eletrico';

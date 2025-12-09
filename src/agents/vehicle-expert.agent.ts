@@ -1550,6 +1550,29 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
         // Generate recommendations
         const result = await this.getRecommendations(updatedProfile);
 
+        // Se não encontrou furgões, informar claramente
+        if (result.noFurgoesFound) {
+          const noFurgaoResponse = `No momento não temos furgões ou vans de carga disponíveis no estoque. 🚐
+
+Modelos como Fiorino, Ducato, Kangoo, Master não estão disponíveis agora.
+
+Quer que eu busque outro tipo de veículo para você?`;
+
+          return {
+            response: noFurgaoResponse,
+            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: 'furgão' },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'clarification',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.9,
+              llmUsed: 'gpt-4o-mini',
+              noFurgoesFound: true
+            }
+          };
+        }
+
         // Se não encontrou pickups, oferecer sugestões alternativas
         if (result.noPickupsFound) {
           const noPickupResponse = `No momento não temos pickups disponíveis no estoque. 🛻
@@ -1713,11 +1736,11 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
   /**
    * Get vehicle recommendations based on profile
-   * Returns { recommendations, noPickupsFound, noSevenSeaters } to indicate if category was not found
+   * Returns { recommendations, noPickupsFound, noFurgoesFound, noSevenSeaters } to indicate if category was not found
    */
   private async getRecommendations(
     profile: Partial<CustomerProfile>
-  ): Promise<{ recommendations: VehicleRecommendation[], noPickupsFound?: boolean, wantsPickup?: boolean, noSevenSeaters?: boolean, requiredSeats?: number }> {
+  ): Promise<{ recommendations: VehicleRecommendation[], noPickupsFound?: boolean, wantsPickup?: boolean, noFurgoesFound?: boolean, wantsFurgao?: boolean, noSevenSeaters?: boolean, requiredSeats?: number }> {
     try {
       // Build search query
       const query = this.buildSearchQuery(profile);
@@ -1749,40 +1772,94 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const prioritiesText = (profile.priorities || []).join(' ').toLowerCase();
       const hasPickupInPriorities = pickupKeywords.some(kw => prioritiesText.includes(kw));
 
-      const wantsPickup = profile.bodyType === 'pickup' ||
+      // Detect furgão/van requirements
+      const furgaoKeywords = ['furgão', 'furgao', 'van de carga', 'van de entrega', 'utilitário', 'utilitario', 'entrega', 'entregas'];
+      const furgaoModels = ['fiorino', 'ducato', 'doblo', 'kangoo', 'master', 'sprinter', 'partner', 'expert', 'boxer'];
+      const hasFurgaoInText = furgaoKeywords.some(kw => searchTextLower.includes(kw));
+      const hasFurgaoInPriorities = furgaoKeywords.some(kw => prioritiesText.includes(kw)) ||
+        prioritiesText.includes('furgao');
+      const hasFurgaoModel = furgaoModels.some(m => searchTextLower.includes(m));
+
+      const wantsFurgao = profile.bodyType === 'furgao' ||
+        hasFurgaoInText ||
+        hasFurgaoInPriorities ||
+        hasFurgaoModel;
+
+      // Pickup: only if not wanting furgão (furgão is more specific)
+      const wantsPickup = !wantsFurgao && (
+        profile.bodyType === 'pickup' ||
         hasPickupInText ||
         hasPickupInPriorities ||
-        (hasWorkUsage && pickupKeywords.some(kw => usageText.includes(kw)));
+        (hasWorkUsage && pickupKeywords.some(kw => usageText.includes(kw)))
+      );
 
       logger.info({
         wantsPickup,
+        wantsFurgao,
         bodyType: profile.bodyType,
         searchTextLower,
         hasPickupInText,
+        hasFurgaoInText,
         usageText,
         hasWorkUsage
-      }, 'Pickup detection check');
+      }, 'Vehicle type detection check');
 
       const isWork = profile.usoPrincipal === 'trabalho' ||
         profile.usage === 'trabalho' ||
         profile.priorities?.includes('trabalho');
 
-      // Search vehicles - include brand/model filter for specific requests
-      const results = await vehicleSearchAdapter.search(query.searchText, {
-        maxPrice: query.filters.maxPrice,
-        minYear: query.filters.minYear,
-        bodyType: wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
-        brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
-        model: query.filters.model?.[0], // Filtrar por modelo quando especificado
-        limit: 10, // Get more to filter
-        // Apply Uber filters
-        aptoUber: isUberX || undefined,
-        aptoUberBlack: isUberBlack || undefined,
-        // Apply family filter (only if family, not for pickup/work)
-        aptoFamilia: (isFamily && !wantsPickup) || undefined,
-        // Apply work filter
-        aptoTrabalho: isWork || undefined,
-      });
+      // Determine bodyType for search
+      let searchBodyType: string | undefined;
+      if (wantsFurgao) {
+        searchBodyType = 'furgao';
+      } else if (wantsPickup) {
+        searchBodyType = 'pickup';
+      } else {
+        searchBodyType = query.filters.bodyType?.[0];
+      }
+
+      // For furgão, search by specific models since "furgão" might not be in carroceria
+      let results: VehicleRecommendation[];
+      if (wantsFurgao) {
+        // Search for furgão models specifically
+        const furgaoSearchTerms = 'fiorino ducato doblo kangoo master sprinter furgão van utilitário';
+        results = await vehicleSearchAdapter.search(furgaoSearchTerms, {
+          maxPrice: query.filters.maxPrice,
+          minYear: query.filters.minYear,
+          limit: 10,
+        });
+        
+        // Filter results to only include actual furgão models
+        const furgaoModelsList = ['fiorino', 'ducato', 'doblo', 'kangoo', 'master', 'sprinter', 'partner', 'expert', 'boxer', 'daily', 'hr'];
+        results = results.filter(r => {
+          const modelLower = (r.vehicle.model || '').toLowerCase();
+          const bodyTypeLower = (r.vehicle.bodyType || '').toLowerCase();
+          return furgaoModelsList.some(m => modelLower.includes(m)) || 
+                 bodyTypeLower.includes('furgao') || 
+                 bodyTypeLower.includes('van') ||
+                 bodyTypeLower.includes('furgão');
+        });
+      } else {
+        // Regular search
+        results = await vehicleSearchAdapter.search(query.searchText, {
+          maxPrice: query.filters.maxPrice,
+          minYear: query.filters.minYear,
+          bodyType: searchBodyType,
+          brand: query.filters.brand?.[0],
+          model: query.filters.model?.[0],
+          limit: 10,
+          aptoUber: isUberX || undefined,
+          aptoUberBlack: isUberBlack || undefined,
+          aptoFamilia: (isFamily && !wantsPickup) || undefined,
+          aptoTrabalho: isWork || undefined,
+        });
+      }
+
+      // Se não encontrou furgões e o usuário quer furgão, informar
+      if (wantsFurgao && results.length === 0) {
+        logger.info({ profile }, 'No furgões found in inventory');
+        return { recommendations: [], noFurgoesFound: true, wantsFurgao: true };
+      }
 
       // Se não encontrou pickups e o usuário quer pickup, informar
       if (wantsPickup && results.length === 0) {

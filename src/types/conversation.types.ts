@@ -71,6 +71,7 @@ export interface ConversationResponse {
     confidence?: number;
     llmUsed?: string;
     noPickupsFound?: boolean; // Indicates no pickups were found for user request
+    noFurgoesFound?: boolean; // Indicates no furgões/vans were found for user request
     noSevenSeaters?: boolean; // Indicates no 7-seat vehicles were found for user request
     exactMatch?: boolean;     // Indicates if response comes from exact model+year search
     alternativeYears?: boolean; // Indicates if response suggests alternative years
