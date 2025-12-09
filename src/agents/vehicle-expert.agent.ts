@@ -164,7 +164,7 @@ export class VehicleExpertAgent {
 
         return {
           response,
-          extractedPreferences: { 
+          extractedPreferences: {
             ...extracted.extracted,
             _waitingForUberXAlternatives: true
           },
@@ -631,9 +631,9 @@ export class VehicleExpertAgent {
           // Verificar se usuário já informou carro de troca
           const hasTradeInInfo = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
           const tradeInText = hasTradeInInfo
-            ? (updatedProfile.tradeInYear 
-                ? `${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear}` 
-                : capitalizeWords(updatedProfile.tradeInModel))
+            ? (updatedProfile.tradeInYear
+              ? `${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear}`
+              : capitalizeWords(updatedProfile.tradeInModel))
             : null;
 
           // Se tem troca, o carro É a entrada - vai direto pro vendedor
@@ -693,28 +693,28 @@ export class VehicleExpertAgent {
         const specificModelMatch = exactSearchParser.parse(userMessage);
         if (specificModelMatch.model) {
           // Check if this model was NOT in the shown vehicles
-          const modelInShown = lastShownVehicles.some(v => 
+          const modelInShown = lastShownVehicles.some(v =>
             v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
             specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
           );
-          
+
           if (!modelInShown) {
             // User is asking for a different model - do a new search
-            logger.info({ 
-              requestedModel: specificModelMatch.model, 
+            logger.info({
+              requestedModel: specificModelMatch.model,
               year: specificModelMatch.year,
               shownModels: lastShownVehicles.map(v => v.model)
             }, 'User asking for specific model not in shown list - doing new search');
-            
+
             // Continue to the main search logic below (don't return here, let it fall through)
             // The search logic will handle this as a new model search
           }
         }
 
-        if (postRecommendationIntent === 'want_others' && !(specificModelMatch.model && !lastShownVehicles.some(v => 
-            v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
-            specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
-          ))) {
+        if (postRecommendationIntent === 'want_others' && !(specificModelMatch.model && !lastShownVehicles.some(v =>
+          v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
+          specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
+        ))) {
           // User wants to see other options - search for similar vehicles directly
           logger.info({ userMessage, lastShownVehicles, extractedBudget: extracted.extracted.budget }, 'User wants other options after seeing recommendation');
 
@@ -1019,7 +1019,7 @@ export class VehicleExpertAgent {
         if (waitingForUberXAlternatives && userAccepts) {
           // User accepted Uber X/99Pop alternatives - search for Uber X eligible vehicles
           logger.info('User accepted Uber X/99Pop alternatives - searching Uber X vehicles');
-          
+
           const uberXVehicles = await vehicleSearchAdapter.search('', {
             aptoUber: true,
             limit: 10
@@ -1598,14 +1598,19 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
       const readiness = this.assessReadiness(updatedProfile, context);
 
       if (readiness.canRecommend) {
-        // Check recent messages for pickup keywords before recommendations
+        // Check recent USER messages for pickup keywords before recommendations
+        // IMPORTANT: Filter only user messages to avoid false positives from assistant examples like "SUV, sedan, pickup..."
         const pickupKeywords = ['pickup', 'picape', 'caminhonete', 'caçamba', 'cacamba', 'carga', 'obra', 'material', 'construção', 'construcao', 'carregar', 'entulho'];
-        const recentMessages = context.messages.slice(-5).map(m => m.content.toLowerCase()).join(' ');
-        const hasPickupInMessages = pickupKeywords.some(kw => recentMessages.includes(kw));
+        const recentUserMessages = context.messages
+          .filter(m => m.role === 'user')
+          .slice(-5)
+          .map(m => m.content.toLowerCase())
+          .join(' ');
+        const hasPickupInMessages = pickupKeywords.some(kw => recentUserMessages.includes(kw));
 
         // If pickup detected in messages but not in profile, add it
         if (hasPickupInMessages && !updatedProfile.bodyType) {
-          logger.info({ recentMessages: recentMessages.substring(0, 100) }, 'Pickup detected in recent messages, adding to profile');
+          logger.info({ recentMessages: recentUserMessages.substring(0, 100) }, 'Pickup detected in recent messages, adding to profile');
           updatedProfile.bodyType = 'pickup';
           if (!updatedProfile.priorities) {
             updatedProfile.priorities = ['pickup'];
@@ -1898,6 +1903,21 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           const neverForFamily = ['mobi', 'kwid', 'up!', 'uno', 'ka', 'march', 'sandero'];
           if (neverForFamily.some(n => model.includes(n))) {
             return false;
+          }
+
+          // Para família: pickups GRANDES de cabine dupla são OK (espaço similar a SUVs)
+          // Pickups COMPACTAS devem ser excluídas (cabine menor, menos conforto)
+          const isPickup = bodyType.includes('pickup') || bodyType.includes('picape') || bodyType.includes('cabine');
+          if (isPickup) {
+            // Pickups grandes de cabine dupla - PERMITIDAS para família
+            const largePickups = ['ranger', 'amarok', 's10', 'hilux', 'frontier', 'l200', 'triton', 'toro'];
+            const isLargePickup = largePickups.some(p => model.includes(p));
+
+            // Se for pickup compacta (Strada, Saveiro, Montana), excluir para família
+            if (!isLargePickup) {
+              return false;
+            }
+            // Pickups grandes passam no filtro (são adequadas para família)
           }
 
           // Com cadeirinha: precisa de mais espaço
