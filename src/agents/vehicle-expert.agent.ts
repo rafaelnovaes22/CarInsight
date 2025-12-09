@@ -143,7 +143,13 @@ export class VehicleExpertAgent {
       // "Quero trocar meu polo 2020 em um carro mais novo" → Polo is TRADE-IN, not what they want
       const isTradeInContext = exactSearchParser.isTradeInContext(userMessage);
 
-      if (isTradeInContext && exactMatch.model && exactMatch.year) {
+      // IMPORTANT: Only treat as initial trade-in if we HAVEN'T shown a recommendation yet
+      // If we already showed recommendations, the trade-in mention should be handled by the post-recommendation flow
+      const alreadyShowedRecommendationForTradeIn = context.profile?._showedRecommendation && 
+        context.profile?._lastShownVehicles && 
+        context.profile._lastShownVehicles.length > 0;
+
+      if (isTradeInContext && exactMatch.model && exactMatch.year && !alreadyShowedRecommendationForTradeIn) {
         // User mentioned a vehicle they OWN - extract as trade-in and ask what they want
         logger.info({
           tradeInModel: exactMatch.model,
@@ -495,7 +501,13 @@ export class VehicleExpertAgent {
         // AUTO-DETECTION: Trade-In Discussion (Post-Recommendation)
         // If user mentions trade-in, we need to know WHICH car they have
         if (extracted.extracted.hasTradeIn || /troca|meu carro|tenho um|minha/i.test(userMessage)) {
-          const hasTradeInDetails = extracted.extracted.tradeInModel || updatedProfile.tradeInModel;
+          // Try to extract trade-in info directly from the message
+          // This handles cases like "Tenho um Civic 2010 na troca" where user provides all info at once
+          const directTradeInInfo = this.extractTradeInInfo(userMessage);
+          
+          const hasTradeInDetails = extracted.extracted.tradeInModel || 
+            updatedProfile.tradeInModel || 
+            directTradeInInfo.model; // Also check direct extraction
 
           // Se AINDA NÃO temos os dados do carro de troca, PERGUNTAR
           if (!hasTradeInDetails) {
@@ -523,17 +535,48 @@ export class VehicleExpertAgent {
 
           // Se JÁ TEMOS os dados do carro de troca, encaminhar para vendedor avaliar
           // NÃO fazemos simulação porque o valor do carro de troca depende da avaliação presencial
-          const tradeInCar = updatedProfile.tradeInModel
-            ? `${capitalizeWords(updatedProfile.tradeInBrand || '')} ${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear || ''}`.trim()
-            : `${capitalizeWords(extracted.extracted.tradeInModel || '')} ${extracted.extracted.tradeInYear || ''}`.trim();
+          // Priority: direct extraction > extracted preferences > profile
+          let tradeInCar: string;
+          let tradeInBrand: string | undefined;
+          let tradeInModel: string | undefined;
+          let tradeInYear: number | undefined;
+          let tradeInKm: number | undefined;
+          
+          if (directTradeInInfo.model) {
+            // Use direct extraction (user said "Tenho um Civic 2010 na troca")
+            tradeInBrand = directTradeInInfo.brand;
+            tradeInModel = directTradeInInfo.model;
+            tradeInYear = directTradeInInfo.year;
+            tradeInKm = directTradeInInfo.km;
+            tradeInCar = [
+              tradeInBrand,
+              capitalizeWords(tradeInModel),
+              tradeInYear,
+              tradeInKm ? `(${tradeInKm.toLocaleString('pt-BR')} km)` : null
+            ].filter(Boolean).join(' ');
+          } else if (updatedProfile.tradeInModel) {
+            tradeInBrand = updatedProfile.tradeInBrand;
+            tradeInModel = updatedProfile.tradeInModel;
+            tradeInYear = updatedProfile.tradeInYear;
+            tradeInKm = updatedProfile.tradeInKm;
+            tradeInCar = `${capitalizeWords(tradeInBrand || '')} ${capitalizeWords(tradeInModel)} ${tradeInYear || ''}`.trim();
+          } else {
+            tradeInModel = extracted.extracted.tradeInModel;
+            tradeInYear = extracted.extracted.tradeInYear;
+            tradeInCar = `${capitalizeWords(extracted.extracted.tradeInModel || '')} ${tradeInYear || ''}`.trim();
+          }
 
-          logger.info({ tradeInCar }, 'User provided trade-in car details - routing to seller');
+          logger.info({ tradeInCar, directTradeInInfo }, 'User provided trade-in car details - routing to seller');
 
           return {
             response: `Perfeito! O ${tradeInCar} pode entrar na negociação do ${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}! 🚗🔄\n\n⚠️ O valor do seu carro na troca depende de uma avaliação presencial pela nossa equipe.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInCar}\n• Apresentar a proposta final\n• Tirar todas as suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
             extractedPreferences: {
               ...extracted.extracted,
               hasTradeIn: true,
+              tradeInBrand: tradeInBrand?.toLowerCase(),
+              tradeInModel: tradeInModel?.toLowerCase(),
+              tradeInYear: tradeInYear,
+              tradeInKm: tradeInKm,
               _awaitingTradeInDetails: false,
               _showedRecommendation: true,
               _lastShownVehicles: lastShownVehicles,

@@ -4,6 +4,66 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Mock environment config before importing any modules that depend on it
+vi.mock('../../src/config/env', () => ({
+  env: {
+    NODE_ENV: 'test',
+    DATABASE_URL: 'file:./test.db',
+    OPENAI_API_KEY: 'test-key',
+    GROQ_API_KEY: 'test-key',
+    META_WHATSAPP_TOKEN: 'test-token',
+    META_WHATSAPP_PHONE_NUMBER_ID: '123456789',
+    META_WHATSAPP_BUSINESS_ACCOUNT_ID: '123456789',
+    META_WEBHOOK_VERIFY_TOKEN: 'test-webhook-token',
+  },
+  isDev: false,
+  isProduction: false,
+}));
+
+// Mock embedding router
+vi.mock('../../src/lib/embedding-router', () => ({
+  getEmbedding: vi.fn(async () => new Array(1536).fill(0)),
+  getEmbeddings: vi.fn(async (texts: string[]) => texts.map(() => new Array(1536).fill(0))),
+}));
+
+// Mock vehicle search adapter
+vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
+  vehicleSearchAdapter: {
+    search: vi.fn(async (query: string, options?: any) => {
+      // Return mock vehicle recommendations
+      return [
+        {
+          vehicleId: 'v1',
+          vehicle: {
+            brand: 'HYUNDAI',
+            model: 'HB20',
+            year: 2021,
+            price: 55000,
+            mileage: 30000,
+            bodyType: 'hatch',
+          },
+          score: 0.95,
+          matchScore: 95, // For percentage display
+        },
+        {
+          vehicleId: 'v2',
+          vehicle: {
+            brand: 'CHEVROLET',
+            model: 'ONIX',
+            year: 2022,
+            price: 58000,
+            mileage: 25000,
+            bodyType: 'hatch',
+          },
+          score: 0.90,
+          matchScore: 90, // For percentage display
+        },
+      ];
+    }),
+  },
+}));
+
 import { VehicleExpertAgent } from '../../src/agents/vehicle-expert.agent';
 import { ConversationContext, ConversationMode } from '../../src/types/conversation.types';
 
@@ -88,6 +148,12 @@ vi.mock('../../src/agents/preference-extractor.agent', () => ({
         result.fieldsExtracted.push('people');
       }
       
+      // Trade-in detection
+      if (msg.includes('troca') || msg.includes('tenho um') || msg.includes('meu carro')) {
+        result.extracted.hasTradeIn = true;
+        result.fieldsExtracted.push('hasTradeIn');
+      }
+      
       return result;
     }),
     mergeWithProfile: vi.fn((current: any, extracted: any) => ({ ...current, ...extracted }))
@@ -104,6 +170,11 @@ vi.mock('../../src/agents/preference-extractor.agent', () => ({
       if (msg.includes('5 pessoas')) result.extracted.people = 5;
       if (msg.includes('4 pessoas')) result.extracted.people = 4;
       if (msg.includes('5 pesoas')) result.extracted.people = 5;
+      
+      // Trade-in detection
+      if (msg.includes('troca') || msg.includes('tenho um') || msg.includes('meu carro')) {
+        result.extracted.hasTradeIn = true;
+      }
       
       return result;
     }),
@@ -411,6 +482,79 @@ describe('VehicleExpertAgent', () => {
       
       expect(response.extractedPreferences.budget).toBe(50000);
       expect(response.extractedPreferences.people).toBe(5);
+    });
+  });
+  
+  describe('Trade-in after recommendation', () => {
+    /**
+     * REGRESSION TEST: Fixes bug where "Tenho um Civic 2010 na troca" after
+     * seeing a recommendation would restart the discovery flow instead of
+     * extracting the trade-in vehicle info.
+     */
+    it('should extract trade-in info when user provides car details after recommendation', async () => {
+      const context = createContext({
+        mode: 'recommendation' as ConversationMode,
+        profile: {
+          budget: 100000,
+          people: 4,
+          _showedRecommendation: true,
+          _lastShownVehicles: [
+            {
+              vehicleId: 'v123',
+              brand: 'JEEP',
+              model: 'COMPASS',
+              year: 2018,
+              price: 89990
+            }
+          ]
+        },
+        messages: [
+          { role: 'assistant', content: 'Encontramos o JEEP COMPASS 2018 que você procurava! 🚗\n\n💰 R$ 89.990\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?', timestamp: new Date() }
+        ]
+      });
+      
+      const response = await expert.chat('Tenho um Civic 2010 na troca', context);
+      
+      // Should NOT restart discovery flow asking for preferences
+      expect(response.response).not.toContain('Qual tipo de carro você está procurando');
+      expect(response.response).not.toContain('Tem um orçamento em mente');
+      
+      // Should extract trade-in info
+      expect(response.extractedPreferences.hasTradeIn).toBe(true);
+      // The trade-in model should be extracted (civic)
+      expect(response.extractedPreferences.tradeInModel?.toLowerCase()).toContain('civic');
+      
+      // Should continue the negotiation flow
+      expect(response.nextMode).toBe('negotiation');
+    });
+
+    it('should NOT trigger initial trade-in flow when recommendation was shown', async () => {
+      const context = createContext({
+        mode: 'recommendation' as ConversationMode,
+        profile: {
+          budget: 100000,
+          people: 4,
+          _showedRecommendation: true,
+          _lastShownVehicles: [
+            {
+              vehicleId: 'v456',
+              brand: 'HYUNDAI',
+              model: 'CRETA',
+              year: 2024,
+              price: 98990
+            }
+          ]
+        }
+      });
+      
+      const response = await expert.chat('tenho um Corolla 2015 pra trocar', context);
+      
+      // The response should mention the trade-in car, not ask about preferences
+      expect(response.extractedPreferences.hasTradeIn).toBe(true);
+      
+      // Should NOT be asking discovery questions
+      expect(response.response.toLowerCase()).not.toContain('qual tipo de carro');
+      expect(response.response.toLowerCase()).not.toContain('tem um orçamento');
     });
   });
 });
