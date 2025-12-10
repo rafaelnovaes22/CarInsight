@@ -1165,7 +1165,9 @@ export class VehicleExpertAgent {
                 budget: existingBudget,
                 _waitingForSuggestionResponse: false,
                 _searchedItem: undefined,
-                minSeats: undefined,
+                minSeats: undefined, // Remover requisito de 7 lugares
+                people: undefined, // Remover referência a 7 pessoas (agora são 5 lugares)
+                _acceptedFiveSeaterAlternative: true, // Flag para não mostrar "X pessoas" na recomendação
                 bodyType: 'suv' as const
               };
 
@@ -1194,7 +1196,9 @@ export class VehicleExpertAgent {
               ...extracted.extracted,
               _waitingForSuggestionResponse: false,
               _searchedItem: undefined,
-              minSeats: undefined, // Remover requisito de lugares
+              minSeats: undefined, // Remover requisito de 7 lugares
+              people: undefined, // Remover referência a 7 pessoas (agora são 5 lugares)
+              _acceptedFiveSeaterAlternative: true, // Flag para não mostrar "X pessoas" na recomendação
               bodyType: 'suv' as const, // Mostrar SUVs espaçosos como alternativa
               priorities: [...(extracted.extracted.priorities || []), 'espaco']
             };

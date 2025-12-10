@@ -147,7 +147,9 @@ export function generateRecommendationIntro(
         parts.push(usageMap[profile.usage] || profile.usage);
     }
 
-    if (profile.people) {
+    // Não mostrar "X pessoas" se o cliente aceitou alternativa de 5 lugares
+    // (quando pediu 7 lugares e não tínhamos disponível)
+    if (profile.people && !(profile as any)._acceptedFiveSeaterAlternative) {
         parts.push(`${profile.people} pessoas`);
     }
 
