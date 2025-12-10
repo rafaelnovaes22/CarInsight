@@ -11,6 +11,7 @@ import {
     handleSchedule,
     handleDetails,
     handleAcknowledgment,
+    handleInterest,
     routePostRecommendationIntent,
     PostRecommendationContext,
     ShownVehicle,
@@ -177,6 +178,64 @@ describe('Post-Recommendation Handlers', () => {
     });
 
     // ============================================
+    // handleInterest tests
+    // ============================================
+    describe('handleInterest', () => {
+        it('should return handled=true', () => {
+            const result = handleInterest(mockContext);
+            expect(result.handled).toBe(true);
+        });
+
+        it('should include vehicle name in response', () => {
+            const result = handleInterest(mockContext);
+            expect(result.response?.response).toContain('HONDA CIVIC 2020');
+        });
+
+        it('should include vehicle price in response', () => {
+            const result = handleInterest(mockContext);
+            expect(result.response?.response).toContain('89.990');
+        });
+
+        it('should NOT include URL/link in response', () => {
+            const result = handleInterest(mockContext);
+            // The response should NOT have a link - user already saw it
+            expect(result.response?.response).not.toContain('http');
+            expect(result.response?.response).not.toContain('🔗');
+        });
+
+        it('should ask about payment method', () => {
+            const result = handleInterest(mockContext);
+            expect(result.response?.response).toContain('pagar');
+        });
+
+        it('should offer payment options', () => {
+            const result = handleInterest(mockContext);
+            expect(result.response?.response).toContain('vista');
+            expect(result.response?.response).toContain('Financiamento');
+            expect(result.response?.response).toContain('troca');
+        });
+
+        it('should set nextMode to negotiation', () => {
+            const result = handleInterest(mockContext);
+            expect(result.response?.nextMode).toBe('negotiation');
+        });
+
+        it('should select correct vehicle when user mentions model name', () => {
+            const multiVehicleContext = {
+                ...mockContext,
+                userMessage: 'Gostei do Corolla',
+                lastShownVehicles: [
+                    mockVehicle,
+                    { ...mockVehicle, vehicleId: 'v456', model: 'COROLLA', brand: 'TOYOTA', price: 95990 },
+                ],
+            };
+            const result = handleInterest(multiVehicleContext);
+            expect(result.response?.response).toContain('TOYOTA COROLLA');
+            expect(result.response?.response).toContain('95.990');
+        });
+    });
+
+    // ============================================
     // routePostRecommendationIntent tests
     // ============================================
     describe('routePostRecommendationIntent', () => {
@@ -206,6 +265,12 @@ describe('Post-Recommendation Handlers', () => {
         it('should route acknowledgment to handleAcknowledgment', () => {
             const result = routePostRecommendationIntent('acknowledgment', mockContext);
             expect(result.handled).toBe(true);
+        });
+
+        it('should route want_interest to handleInterest', () => {
+            const result = routePostRecommendationIntent('want_interest', mockContext);
+            expect(result.handled).toBe(true);
+            expect(result.response?.response).toContain('Como você pretende pagar');
         });
 
         it('should return handled=false for want_others (handled separately)', () => {

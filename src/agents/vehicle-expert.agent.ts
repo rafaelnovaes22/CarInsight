@@ -916,8 +916,8 @@ export class VehicleExpertAgent {
           }
         }
 
-        // Route to handlers for: want_details, want_schedule, want_financing, want_tradein, acknowledgment
-        if (['want_details', 'want_schedule', 'want_financing', 'want_tradein', 'acknowledgment'].includes(postRecommendationIntent)) {
+        // Route to handlers for: want_details, want_schedule, want_financing, want_tradein, acknowledgment, want_interest
+        if (['want_details', 'want_schedule', 'want_financing', 'want_tradein', 'acknowledgment', 'want_interest'].includes(postRecommendationIntent)) {
           const handlerContext: PostRecommendationContext = {
             userMessage,
             lastShownVehicles: lastShownVehicles as ShownVehicle[],
