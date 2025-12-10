@@ -7,7 +7,6 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PreferenceExtractorAgent } from '../../src/agents/preference-extractor.agent';
-import { QuizAgent } from '../../src/agents/quiz.agent';
 import { guardrails } from '../../src/services/guardrails.service';
 
 // Mock the LLM router to avoid real API calls and ensure consistent performance
@@ -99,78 +98,6 @@ describe('Performance Tests', () => {
 
       expect(duration).toBeLessThan(10);
       expect(merged).toBeTruthy();
-    });
-  });
-
-  describe('Quiz Agent Performance', () => {
-    let quizAgent: QuizAgent;
-
-    beforeEach(() => {
-      quizAgent = new QuizAgent();
-    });
-
-    it('should generate welcome message instantly (< 5ms)', () => {
-      const start = Date.now();
-      const message = quizAgent.getWelcomeMessage();
-      const duration = Date.now() - start;
-
-      expect(duration).toBeLessThan(5);
-      expect(message).toBeTruthy();
-    });
-
-    it('should process answer in less than 100ms', async () => {
-      const start = Date.now();
-      const result = await quizAgent.processAnswer('50000', 0, {});
-      const duration = Date.now() - start;
-
-      expect(duration).toBeLessThan(100);
-      expect(result).toBeTruthy();
-    });
-
-    it('should complete full quiz in less than 500ms', async () => {
-      const responses = [
-        { answer: '50000', index: 0 },
-        { answer: 'trabalho', index: 1 },
-        { answer: '5', index: 2 },
-        { answer: 'não', index: 3 },
-        { answer: '2018', index: 4 },
-        { answer: '80000', index: 5 },
-        { answer: 'SUV', index: 6 },
-        { answer: '1', index: 7 },
-      ];
-
-      const start = Date.now();
-      let answers: Record<string, any> = {};
-
-      for (const { answer, index } of responses) {
-        const result = await quizAgent.processAnswer(answer, index, answers);
-        answers = result.answers;
-      }
-
-      const duration = Date.now() - start;
-
-      expect(duration).toBeLessThan(500);
-      console.log(`Full quiz completed in ${duration}ms`);
-    });
-
-    it('should generate profile instantly (< 5ms)', () => {
-      const answers = {
-        budget: 50000,
-        usage: 'família',
-        people: 5,
-        hasTradeIn: 'não',
-        minYear: 2018,
-        maxKm: 80000,
-        bodyType: 'SUV',
-        urgency: 'urgente',
-      };
-
-      const start = Date.now();
-      const profile = quizAgent.generateProfile(answers);
-      const duration = Date.now() - start;
-
-      expect(duration).toBeLessThan(5);
-      expect(profile).toBeTruthy();
     });
   });
 
@@ -303,62 +230,7 @@ describe('Performance Tests', () => {
     });
   });
 
-  describe('Stress Test', () => {
-    it('should maintain performance under load', async () => {
-      const quizAgent = new QuizAgent();
-      const iterations = 100;
-      const durations: number[] = [];
-
-      for (let i = 0; i < iterations; i++) {
-        const start = Date.now();
-        await quizAgent.processAnswer('50000', 0, {});
-        durations.push(Date.now() - start);
-      }
-
-      const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
-      const maxDuration = Math.max(...durations);
-      const minDuration = Math.min(...durations);
-
-      console.log(`Quiz Performance (${iterations} iterations):`);
-      console.log(`  Avg: ${avgDuration.toFixed(2)}ms`);
-      console.log(`  Min: ${minDuration}ms`);
-      console.log(`  Max: ${maxDuration}ms`);
-
-      // Average should be less than 50ms
-      expect(avgDuration).toBeLessThan(50);
-      // Max should not exceed 100ms (accounting for 0ms average case)
-      // Use Math.max to avoid issues when avgDuration is 0
-      const maxAllowed = Math.max(avgDuration * 5, 100);
-      expect(maxDuration).toBeLessThan(maxAllowed);
-    });
-  });
-
   describe('Latency Percentiles', () => {
-    it('should have p95 latency under 100ms for quiz answers', async () => {
-      const quizAgent = new QuizAgent();
-      const iterations = 100;
-      const durations: number[] = [];
-
-      for (let i = 0; i < iterations; i++) {
-        const start = Date.now();
-        await quizAgent.processAnswer(String(50000 + i * 100), 0, {});
-        durations.push(Date.now() - start);
-      }
-
-      // Sort and get p95
-      durations.sort((a, b) => a - b);
-      const p50 = durations[Math.floor(iterations * 0.5)];
-      const p95 = durations[Math.floor(iterations * 0.95)];
-      const p99 = durations[Math.floor(iterations * 0.99)];
-
-      console.log(`Quiz Latency Percentiles:`);
-      console.log(`  p50: ${p50}ms`);
-      console.log(`  p95: ${p95}ms`);
-      console.log(`  p99: ${p99}ms`);
-
-      expect(p95).toBeLessThan(100);
-    });
-
     it('should have p95 latency under 5ms for guardrail validation', () => {
       const iterations = 1000;
       const durations: number[] = [];

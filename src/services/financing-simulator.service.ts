@@ -155,7 +155,11 @@ export function extractMoneyValue(text: string): number | null {
     }
 
     // Padrão: "R$ 15.000" ou "15000" ou "15.000"
-    const valueMatch = normalized.match(/r?\$?\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?|\d+)/);
+    // IMPORTANTE: A primeira alternativa usa + (não *) para exigir pelo menos um separador de milhar
+    // Isso evita que "10000" seja parseado como "100" (pegando apenas os primeiros 3 dígitos)
+    // - Com separador: \d{1,3}(?:[.,]\d{3})+ captura "10.000", "100.000", etc.
+    // - Sem separador: \d+ captura "10000", "15000", etc.
+    const valueMatch = normalized.match(/r?\$?\s*(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{2})?|\d+)/);
     if (valueMatch) {
         // Remove pontos de milhar e converte vírgula para ponto
         let value = valueMatch[1].replace(/\./g, '').replace(',', '.');
