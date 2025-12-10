@@ -191,8 +191,15 @@ export class VehicleExpertAgent {
       // "Quero trocar meu polo 2020 em um carro mais novo" → Polo is TRADE-IN, not what they want
       const isTradeInContext = exactSearchParser.isTradeInContext(userMessage);
 
-      if (isTradeInContext && exactMatch.model && exactMatch.year) {
+      // IMPORTANTE: Verificar se já mostramos uma recomendação e o cliente selecionou um veículo
+      // Se sim, o trade-in deve ser processado como parte do fluxo de NEGOCIAÇÃO, não como busca inicial
+      const alreadyHasSelectedVehicle = context.profile?._showedRecommendation &&
+        context.profile?._lastShownVehicles &&
+        context.profile._lastShownVehicles.length > 0;
+
+      if (isTradeInContext && exactMatch.model && exactMatch.year && !alreadyHasSelectedVehicle) {
         // User mentioned a vehicle they OWN - extract as trade-in and ask what they want
+        // ONLY if they haven't already selected a vehicle to buy
         logger.info({
           tradeInModel: exactMatch.model,
           tradeInYear: exactMatch.year
@@ -218,6 +225,46 @@ export class VehicleExpertAgent {
             confidence: 0.95,
             llmUsed: 'rule-based',
             tradeInDetected: true
+          } as any
+        };
+      }
+
+      // Se o cliente JÁ SELECIONOU um veículo e está mencionando trade-in com modelo+ano,
+      // precisamos redirecionar para o fluxo de trade-in pós-recomendação
+      if (isTradeInContext && exactMatch.model && exactMatch.year && alreadyHasSelectedVehicle) {
+        const lastShownVehicles = context.profile!._lastShownVehicles!;
+        const selectedVehicle = lastShownVehicles[0];
+        const selectedVehicleName = `${selectedVehicle.brand} ${selectedVehicle.model} ${selectedVehicle.year}`;
+        const tradeInBrand = this.inferBrandFromModel(exactMatch.model);
+        const tradeInText = `${tradeInBrand ? capitalize(tradeInBrand) + ' ' : ''}${capitalize(exactMatch.model)} ${exactMatch.year}`;
+
+        logger.info({
+          tradeInModel: exactMatch.model,
+          tradeInYear: exactMatch.year,
+          selectedVehicle: selectedVehicleName
+        }, 'VehicleExpert: Detected trade-in vehicle AFTER vehicle selection - maintaining context');
+
+        return {
+          response: `Perfeito! O ${tradeInText} pode entrar na negociação do ${selectedVehicleName}! 🚗🔄\n\n⚠️ O valor do seu carro na troca depende de uma avaliação presencial pela nossa equipe.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInText}\n• Apresentar a proposta final para o ${selectedVehicleName}\n• Tirar todas as suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
+          extractedPreferences: {
+            ...extracted.extracted,
+            hasTradeIn: true,
+            tradeInBrand: tradeInBrand,
+            tradeInModel: exactMatch.model.toLowerCase(),
+            tradeInYear: exactMatch.year,
+            _awaitingTradeInDetails: false,
+            _showedRecommendation: true,
+            _lastShownVehicles: lastShownVehicles,
+          },
+          needsMoreInfo: [],
+          canRecommend: false,
+          nextMode: 'negotiation',
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 0.95,
+            llmUsed: 'rule-based',
+            tradeInDetected: true,
+            maintainedContext: true
           } as any
         };
       }
