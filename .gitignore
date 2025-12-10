@@ -97,3 +97,6 @@ server.log
 *_PASSOS_*.md
 RECOMENDACOES_*.md
 .env.save*
+
+# Core dumps
+core
