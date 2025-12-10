@@ -56,11 +56,10 @@ export const handleInterest = (ctx: PostRecommendationContext): HandlerResult =>
 
 💰 Valor: R$ ${selectedPrice}
 
-Como você pretende pagar?
-
-1️⃣ *À vista* - Conseguimos um desconto especial!
-2️⃣ *Financiamento*
-3️⃣ *Tenho carro na troca* - Pode ajudar na entrada`;
+Me conta como pretende pagar:
+• À vista
+• Financiamento
+• Tem carro na troca?`;
 
     return {
         handled: true,

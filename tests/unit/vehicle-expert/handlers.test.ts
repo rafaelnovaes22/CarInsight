@@ -205,14 +205,18 @@ describe('Post-Recommendation Handlers', () => {
 
         it('should ask about payment method', () => {
             const result = handleInterest(mockContext);
-            expect(result.response?.response).toContain('pagar');
+            expect(result.response?.response).toContain('como pretende pagar');
         });
 
-        it('should offer payment options', () => {
+        it('should offer payment options without numbered choices', () => {
             const result = handleInterest(mockContext);
             expect(result.response?.response).toContain('vista');
             expect(result.response?.response).toContain('Financiamento');
             expect(result.response?.response).toContain('troca');
+            // Should NOT have numbered options - user writes in free text
+            expect(result.response?.response).not.toContain('1️⃣');
+            expect(result.response?.response).not.toContain('2️⃣');
+            expect(result.response?.response).not.toContain('3️⃣');
         });
 
         it('should set nextMode to negotiation', () => {
@@ -270,7 +274,7 @@ describe('Post-Recommendation Handlers', () => {
         it('should route want_interest to handleInterest', () => {
             const result = routePostRecommendationIntent('want_interest', mockContext);
             expect(result.handled).toBe(true);
-            expect(result.response?.response).toContain('Como você pretende pagar');
+            expect(result.response?.response).toContain('como pretende pagar');
         });
 
         it('should return handled=false for want_others (handled separately)', () => {
