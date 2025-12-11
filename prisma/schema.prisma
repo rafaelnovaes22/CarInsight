@@ -10,13 +10,14 @@ datasource db {
 // Veículos no estoque
 model Vehicle {
   id          String   @id @default(uuid())
+  externalId  String?  @unique // ID do veículo no site original (para sync)
   marca       String
   modelo      String
   versao      String?
   ano         Int
   km          Int
-  preco       Float
-  cor         String
+  preco       Float?   // Opcional - pode ser null quando "Consulte"
+  cor         String?  // Opcional - pode ser null quando não informado
   carroceria  String   // hatch, sedan, SUV, picape
   combustivel String   @default("Flex")
   cambio      String   @default("Manual")
@@ -35,12 +36,16 @@ model Vehicle {
   som               Boolean @default(false)
   portas            Int     @default(4)
   
+  // Lista de opcionais (JSON string array)
+  opcionais     String?  // JSON array com todos os opcionais do veículo
+  
   // Mídia
   fotoUrl       String?
   fotosUrls     String   @default("") // JSON string array
   
-  // URL do veículo no site da loja
+  // URL do veículo no site da loja (página de detalhes)
   url           String?
+  detailUrl     String?  // Link completo para cliente acessar
   
   // Descrição
   descricao     String?
