@@ -230,7 +230,7 @@ export class AudioTranscriptionService {
             }
 
             // Step 4: Validate transcription quality (detect corrupted/garbage output)
-            const transcribedText = result.text.trim();
+            let transcribedText = result.text.trim();
             if (this.isCorruptedTranscription(transcribedText)) {
                 this.logTranscription({
                     mediaId,
@@ -248,6 +248,9 @@ export class AudioTranscriptionService {
                     errorCode: 'LOW_QUALITY',
                 };
             }
+
+            // Step 5: Clean up short response hallucinations (e.g., "Não. Nelson?" -> "Não")
+            transcribedText = this.cleanShortResponseHallucinations(transcribedText);
 
             // Success
             this.logTranscription({
@@ -313,6 +316,61 @@ export class AudioTranscriptionService {
         } else {
             logger.error(logData, '❌ Audio transcription failed');
         }
+    }
+
+    /**
+     * Clean hallucinated content from short responses
+     * Whisper sometimes adds random names/words to very short audio clips
+     * e.g., "Não. Nelson?" should be just "Não"
+     */
+    cleanShortResponseHallucinations(text: string): string {
+        const cleaned = text.trim();
+
+        // Pattern: short response + punctuation + random word/name
+        // e.g., "Não. Nelson?" "Sim. João." "Ok. Pedro?"
+        const shortResponsePattern = /^(não|nao|sim|ok|okay|oi|olá|ola|certo|beleza|pode|pois|bom|boa|tá|ta|hum|é|e)\s*[.,!?]+\s*([A-Za-záàâãéèêíìóòôõúùûç]+)[.,!?]*$/i;
+        const match = cleaned.match(shortResponsePattern);
+
+        if (match) {
+            const mainResponse = match[1];
+            const hallucinatedWord = match[2].toLowerCase();
+
+            // List of common names that are likely hallucinations after short responses
+            const commonHallucinatedNames = [
+                'nelson', 'wilson', 'edison', 'nilson', 'elson', 'kelson',
+                'jason', 'mason', 'jackson', 'johnson', 'henderson',
+                'rafael', 'gabriel', 'miguel', 'daniel', 'samuel',
+                'joao', 'jose', 'maria', 'ana', 'pedro', 'paulo',
+                'jordan', 'morgan', 'logan', 'ryan', 'brian',
+            ];
+
+            // Check if the second word looks like a hallucinated name
+            if (commonHallucinatedNames.includes(hallucinatedWord) ||
+                hallucinatedWord.length >= 4 && hallucinatedWord.match(/^[A-Za-záàâãéèêíìóòôõúùûç]+$/)) {
+
+                // Log the cleanup
+                logger.info({
+                    original: text,
+                    cleaned: mainResponse,
+                    hallucinatedWord
+                }, '🧹 Cleaned hallucination from short response');
+
+                return mainResponse;
+            }
+        }
+
+        // Also handle: "Não, não" -> "Não" (stuttering/repetition)
+        const repetitionPattern = /^(não|nao|sim|ok|okay)\s*[.,!?]*\s*\1[.,!?]*$/i;
+        if (repetitionPattern.test(cleaned)) {
+            const singleResponse = cleaned.match(repetitionPattern)?.[1] || cleaned;
+            logger.info({
+                original: text,
+                cleaned: singleResponse
+            }, '🧹 Cleaned repetition from transcription');
+            return singleResponse;
+        }
+
+        return text;
     }
 
     /**
