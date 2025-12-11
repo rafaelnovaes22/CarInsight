@@ -465,6 +465,22 @@ export const detectPostRecommendationIntent = (
         return 'want_details';
     }
 
+    // PRIORITY: Check if user expressed interest in a shown vehicle BEFORE checking WANT_OTHERS
+    // This prevents "Gostei do HB20" from being detected as 'want_others' because "20" matches the budget pattern
+    // Patterns like "gostei do [modelo]", "quero o [modelo]", "curti o [modelo]" should be 'want_interest'
+    if (_lastShownVehicles && _lastShownVehicles.length > 0) {
+        const hasPositiveExpression = /gost[eiao]|curt[io]|quero|interessei|esse|bom|legal|perfeito/i.test(normalized);
+        const mentionedShownVehicle = _lastShownVehicles.some(v =>
+            normalized.includes(v.model.toLowerCase()) ||
+            normalized.includes(v.brand.toLowerCase())
+        );
+        // If user expressed interest AND mentioned a shown vehicle, it's 'want_interest'
+        // unless they also said "não" (negation)
+        if (hasPositiveExpression && mentionedShownVehicle && !/\bnão\b/i.test(normalized)) {
+            return 'want_interest';
+        }
+    }
+
     // IMPORTANT: Check WANT_OTHERS before WANT_INTEREST
     // Patterns like "não gostei" should be OTHERS, not INTEREST even though "gostei" is present
     if (WANT_OTHERS_PATTERNS.some(p => p.test(normalized))) {
@@ -476,6 +492,7 @@ export const detectPostRecommendationIntent = (
     }
 
     // Check if user mentioned a model from the shown vehicles (e.g., "gostei do HB20", "quero o civic")
+    // This is a fallback for cases without explicit positive expression
     if (_lastShownVehicles && _lastShownVehicles.length > 0) {
         const mentionedShownVehicle = _lastShownVehicles.some(v =>
             normalized.includes(v.model.toLowerCase()) ||

@@ -171,6 +171,42 @@ describe('Intent Detector', () => {
             });
         });
 
+        describe('want_interest with model names containing numbers', () => {
+            const shownVehicles = [
+                { brand: 'HYUNDAI', model: 'HB20', year: 2024, price: 85990 },
+                { brand: 'PEUGEOT', model: '208', year: 2023, price: 79990 },
+                { brand: 'TOYOTA', model: 'YARIS', year: 2024, price: 81990 },
+            ];
+
+            it('should detect "Gostei do HB20" as want_interest when HB20 is in shown vehicles', () => {
+                expect(detectPostRecommendationIntent('Gostei do HB20', shownVehicles)).toBe('want_interest');
+            });
+
+            it('should detect "Curti o 208" as want_interest when 208 is in shown vehicles', () => {
+                expect(detectPostRecommendationIntent('Curti o 208', shownVehicles)).toBe('want_interest');
+            });
+
+            it('should detect "Quero o HB20" as want_interest when HB20 is in shown vehicles', () => {
+                expect(detectPostRecommendationIntent('Quero o HB20', shownVehicles)).toBe('want_interest');
+            });
+
+            it('should detect "Esse HB20 me interessou" as want_interest', () => {
+                expect(detectPostRecommendationIntent('Esse HB20 me interessou', shownVehicles)).toBe('want_interest');
+            });
+
+            it('should detect "Gostei do Yaris" as want_interest', () => {
+                expect(detectPostRecommendationIntent('Gostei do Yaris', shownVehicles)).toBe('want_interest');
+            });
+
+            it('should NOT detect "Não gostei do HB20" as want_interest (negation)', () => {
+                expect(detectPostRecommendationIntent('Não gostei do HB20', shownVehicles)).toBe('want_others');
+            });
+
+            it('should still detect pure budget as want_others', () => {
+                expect(detectPostRecommendationIntent('100000', shownVehicles)).toBe('want_others');
+            });
+        });
+
         describe('acknowledgment', () => {
             it('should detect acknowledgments', () => {
                 expect(detectPostRecommendationIntent('ok')).toBe('acknowledgment');
