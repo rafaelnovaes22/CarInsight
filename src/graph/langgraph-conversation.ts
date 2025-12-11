@@ -297,7 +297,7 @@ export class LangGraphConversation {
       // Já tem nome, perguntar o que procura
       return {
         nextState: 'DISCOVERY',
-        response: `${state.profile.customerName}, o que você está procurando hoje? 🚗\n\nPode me contar:\n• Tipo de carro (SUV, sedan, hatch, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico que tem em mente`,
+        response: `${state.profile.customerName}, o que você está procurando hoje? 🚗\n\nPode me contar:\n• Tipo de carro (SUV, sedan, hatch, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico que tem em mente`,
         profile: {},
       };
     }
@@ -455,7 +455,7 @@ export class LangGraphConversation {
           // Resposta curta pois já fizemos a apresentação
           return {
             nextState: 'DISCOVERY',
-            response: `Prazer, ${possibleName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico`,
+            response: `Prazer, ${possibleName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`,
             profile: { customerName: possibleName },
           };
         }
@@ -463,7 +463,7 @@ export class LangGraphConversation {
         // Primeira interação - apresentação completa
         return {
           nextState: 'DISCOVERY',
-          response: `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, Uber...)\n• Ou um modelo específico`,
+          response: `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`,
           profile: { customerName: possibleName },
         };
       }

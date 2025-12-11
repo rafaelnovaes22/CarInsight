@@ -29,6 +29,7 @@ export interface CustomerProfile {
   usagePattern?: string; // legacy support
   usoPrincipal?: string; // alias for usage (Portuguese)
   tipoUber?: 'uberx' | 'comfort' | 'black'; // Uber category
+  appMencionado?: '99' | 'uber' | 'app'; // App de transporte mencionado pelo usuário (preserva o nome original)
 
   // People
   people?: number;

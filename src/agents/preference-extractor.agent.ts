@@ -35,14 +35,28 @@ REGRAS:
    etc.
 
 CAMPOS POSSÍVEIS:
-- budget: number (valor em reais)
+- budget: number (valor em reais - CONVERTER valores por extenso para número!)
 - budgetMin: number (se mencionar "a partir de X")
 - budgetMax: number (se mencionar "até X")
+
+IMPORTANTE - VALORES POR EXTENSO E ERROS DE TRANSCRIÇÃO:
+- Converta SEMPRE valores por extenso para números:
+  - "setenta e cinco mil" → 75000
+  - "cinquenta mil" → 50000
+  - "oitenta mil" → 80000
+  - "cem mil" → 100000
+- CORRIJA erros comuns de transcrição de áudio:
+  - "serentia" ou "serenita" → "setenta" (70)
+  - "sinquenta" ou "cinquanta" → "cinquenta" (50)
+  - "oitento" → "oitenta" (80)
+  - "cento" → "cem" ou "cento" (100)
+- Se a mensagem parece um valor mal transcrito, interprete a intenção!
 - people: number (passageiros + motorista)
 - minSeats: number (número MÍNIMO de lugares, ex: "7 lugares" → minSeats: 7)
 - usage: "cidade" | "viagem" | "trabalho" | "misto"
 - usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "outro"
 - tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
+- appMencionado: "99" | "uber" | "app" (IMPORTANTE: preserve EXATAMENTE o nome do app que o usuário mencionou - se disse "99", use "99", se disse "Uber", use "uber")
 - bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan"
 - minYear: number (ano mínimo aceito)
 - maxKm: number (quilometragem máxima)
@@ -96,6 +110,28 @@ Saída: {
   "fieldsExtracted": ["budget", "budgetMax", "people"]
 }
 
+Entrada: "Setenta e cinco mil" ou "75 mil" ou "setenta cinco"
+Saída: {
+  "extracted": {
+    "budget": 75000,
+    "budgetMax": 75000
+  },
+  "confidence": 0.95,
+  "reasoning": "Valor por extenso convertido para número",
+  "fieldsExtracted": ["budget", "budgetMax"]
+}
+
+Entrada: "Serentia e Cinco Mil" (ERRO DE TRANSCRIÇÃO - "serentia" = "setenta")
+Saída: {
+  "extracted": {
+    "budget": 75000,
+    "budgetMax": 75000
+  },
+  "confidence": 0.85,
+  "reasoning": "Corrigido erro de transcrição: 'serentia' interpretado como 'setenta' (70) + 5 = 75 mil",
+  "fieldsExtracted": ["budget", "budgetMax"]
+}
+
 Entrada: "Preciso de um automático econômico para cidade"
 Saída: {
   "extracted": {
@@ -123,6 +159,7 @@ Entrada: "Preciso de um carro para Uber, até 60 mil"
 Saída: {
   "extracted": {
     "usoPrincipal": "uber",
+    "appMencionado": "uber",
     "budget": 60000,
     "budgetMax": 60000,
     "priorities": ["apto_uber"],
@@ -130,13 +167,27 @@ Saída: {
   },
   "confidence": 0.95,
   "reasoning": "Contexto Uber identificado, orçamento definido, ano mínimo implícito",
-  "fieldsExtracted": ["usoPrincipal", "budget", "budgetMax", "priorities", "minYear"]
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "budget", "budgetMax", "priorities", "minYear"]
+}
+
+Entrada: "Quero um carro para fazer 99" ou "Carro pra 99" ou "Quero rodar no 99"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "appMencionado": "99",
+    "priorities": ["apto_uber"],
+    "minYear": 2012
+  },
+  "confidence": 0.95,
+  "reasoning": "Contexto app de transporte (99) identificado - PRESERVAR o nome '99' em appMencionado",
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "priorities", "minYear"]
 }
 
 Entrada: "Quero trabalhar com Uber Black, precisa ser sedan"
 Saída: {
   "extracted": {
     "usoPrincipal": "uber",
+    "appMencionado": "uber",
     "tipoUber": "black",
     "bodyType": "sedan",
     "priorities": ["apto_uber"],
@@ -144,7 +195,20 @@ Saída: {
   },
   "confidence": 0.9,
   "reasoning": "Uber Black requer sedan, ano mínimo 2018",
-  "fieldsExtracted": ["usoPrincipal", "tipoUber", "bodyType", "priorities", "minYear"]
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "tipoUber", "bodyType", "priorities", "minYear"]
+}
+
+Entrada: "Carro pra aplicativo" ou "Trabalhar com app" ou "Motorista de aplicativo"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "appMencionado": "app",
+    "priorities": ["apto_uber"],
+    "minYear": 2012
+  },
+  "confidence": 0.9,
+  "reasoning": "Contexto app de transporte genérico identificado",
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "priorities", "minYear"]
 }
 
 Entrada: "Spin" ou "Quero uma Spin" ou "Tem Chevrolet Spin?"
@@ -507,12 +571,20 @@ Saída: {
       sanitized.dealBreakers = extracted.dealBreakers.filter(d => typeof d === 'string' && d.length > 0);
     }
 
-    // Also copy usoPrincipal and tipoUber if present
+    // Also copy usoPrincipal, tipoUber and appMencionado if present
     if (extracted.usoPrincipal) {
       sanitized.usoPrincipal = extracted.usoPrincipal;
     }
     if (extracted.tipoUber) {
       sanitized.tipoUber = extracted.tipoUber;
+    }
+    // IMPORTANTE: Preservar o nome exato do app mencionado pelo usuário (99, uber, ou app)
+    if (extracted.appMencionado) {
+      const validApps = ['99', 'uber', 'app'];
+      const appLower = extracted.appMencionado.toLowerCase();
+      if (validApps.includes(appLower)) {
+        sanitized.appMencionado = appLower as '99' | 'uber' | 'app';
+      }
     }
 
     // Financing fields

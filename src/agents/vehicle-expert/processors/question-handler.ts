@@ -87,10 +87,18 @@ export async function generateNextQuestion(
     try {
         const { profile, missingFields, context } = options;
 
+        // Determinar qual nome do app usar nas respostas
+        const appName = profile.appMencionado === '99' ? '99' : 
+                        profile.appMencionado === 'uber' ? 'Uber' :
+                        profile.appMencionado === 'app' ? 'app de transporte' : null;
+        
+        const appContext = appName ? `\n\n⚠️ IMPORTANTE: O cliente mencionou "${appName}" - USE ESTE NOME nas suas respostas, NÃO substitua por outro nome de app!` : '';
+
         const prompt = `${SYSTEM_PROMPT}
 
 PERFIL ATUAL DO CLIENTE:
 ${JSON.stringify(profile, null, 2)}
+${appContext}
 
 INFORMAÇÕES QUE AINDA PRECISAMOS:
 ${missingFields.join(', ')}
@@ -108,6 +116,7 @@ Gere a PRÓXIMA MELHOR PERGUNTA para fazer ao cliente.
         4. Faça UMA pergunta por vez
         5. Se apropriado, ofereça contexto antes de perguntar
         6. Use emojis com moderação (apenas se natural)
+        7. Se o cliente mencionou um app de transporte específico (99, Uber), USE ESSE NOME na sua resposta
 
 EXEMPLO BOM:
 "Legal! Para viagens em família, temos SUVs e sedans muito confortáveis. Quantas pessoas costumam viajar juntas?"

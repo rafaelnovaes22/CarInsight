@@ -84,6 +84,34 @@ import {
   type ShownVehicle,
 } from './vehicle-expert/handlers';
 
+/**
+ * Helper function to get the correct app name based on user's mention
+ * Returns the name the user actually used (99, Uber, or generic "app")
+ */
+function getAppName(profile: Partial<CustomerProfile>): string {
+  if (profile.appMencionado === '99') return '99';
+  if (profile.appMencionado === 'uber') return 'Uber';
+  if (profile.appMencionado === 'app') return 'app de transporte';
+  return 'Uber/99'; // Default when not specified
+}
+
+/**
+ * Helper function to get the app category name (e.g., "99Pop" or "Uber X")
+ */
+function getAppCategoryName(profile: Partial<CustomerProfile>, category: 'x' | 'black' | 'comfort'): string {
+  const is99 = profile.appMencionado === '99';
+  switch (category) {
+    case 'x':
+      return is99 ? '99Pop' : 'Uber X';
+    case 'black':
+      return is99 ? '99Black' : 'Uber Black';
+    case 'comfort':
+      return is99 ? '99TOP' : 'Uber Comfort';
+    default:
+      return is99 ? '99' : 'Uber';
+  }
+}
+
 export class VehicleExpertAgent {
 
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
@@ -158,8 +186,9 @@ export class VehicleExpertAgent {
           });
           response += `_Quer saber mais sobre algum?_`;
         } else {
+          const altCategory = getAppCategoryName(updatedProfile, 'x');
           response += `❌ No momento não temos veículos aptos para Uber Black no estoque.\n\n`;
-          response += `Mas temos veículos aptos para Uber X/99Pop. Quer ver?`;
+          response += `Mas temos veículos aptos para ${altCategory}. Quer ver?`;
         }
 
         return {
@@ -1064,8 +1093,9 @@ export class VehicleExpertAgent {
         const userDeclines = detectNegativeResponse(userMessage);
 
         if (waitingForUberXAlternatives && userAccepts) {
-          // User accepted Uber X/99Pop alternatives - search for Uber X eligible vehicles
-          logger.info('User accepted Uber X/99Pop alternatives - searching Uber X vehicles');
+          // User accepted app alternatives - search for eligible vehicles
+          const appCategory = getAppCategoryName(updatedProfile, 'x');
+          logger.info(`User accepted ${appCategory} alternatives - searching eligible vehicles`);
 
           const uberXVehicles = await vehicleSearchAdapter.search('', {
             aptoUber: true,
@@ -1080,7 +1110,7 @@ export class VehicleExpertAgent {
               'recommendation'
             );
 
-            const intro = `Perfeito! Encontrei ${uberXVehicles.length} veículos aptos para Uber X/99Pop:\n\n`;
+            const intro = `Perfeito! Encontrei ${uberXVehicles.length} veículos aptos para ${appCategory}:\n\n`;
 
             return {
               response: intro + formattedResponse,
@@ -1110,7 +1140,7 @@ export class VehicleExpertAgent {
             };
           } else {
             return {
-              response: `Desculpe, no momento também não temos veículos aptos para Uber X/99Pop disponíveis. 😕\n\nPosso te ajudar a encontrar outro tipo de veículo?`,
+              response: `Desculpe, no momento também não temos veículos aptos para ${appCategory} disponíveis. 😕\n\nPosso te ajudar a encontrar outro tipo de veículo?`,
               extractedPreferences: { ...extracted.extracted, _waitingForUberXAlternatives: false },
               needsMoreInfo: ['budget', 'usage'],
               canRecommend: false,
@@ -2039,6 +2069,34 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         isFamily,
         wantsPickup
       }, 'Generated recommendations');
+
+      // Fallback para busca de apps de transporte: se não encontrou com filtro aptoUber,
+      // tentar buscar veículos compatíveis (sedans/hatches de 2012+) sem o filtro rigoroso
+      if ((isUberX || isUberBlack) && filteredResults.length === 0) {
+        logger.info({ isUberX, isUberBlack }, 'App transport search found no results, trying fallback without aptoUber filter');
+        
+        // Buscar veículos que seriam aptos para apps (sedan/hatch, 2012+, com ar)
+        // mas que podem não ter o campo aptoUber marcado no banco
+        const fallbackResults = await vehicleSearchAdapter.search('sedan hatch carro', {
+          maxPrice: query.filters.maxPrice,
+          minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
+          limit: 10,
+          // NÃO usar filtro aptoUber/aptoUberBlack aqui
+        });
+        
+        // Filtrar manualmente por carroceria adequada
+        const compatibleResults = fallbackResults.filter(rec => {
+          const bodyType = (rec.vehicle.bodyType || '').toLowerCase();
+          // Para apps: apenas sedan, hatch ou minivan
+          return bodyType.includes('sedan') || bodyType.includes('hatch') || 
+                 bodyType.includes('minivan') || bodyType === '';
+        });
+        
+        if (compatibleResults.length > 0) {
+          logger.info({ count: compatibleResults.length }, 'Fallback found compatible vehicles for app transport');
+          return { recommendations: compatibleResults.slice(0, 5), wantsPickup: false };
+        }
+      }
 
       return { recommendations: filteredResults.slice(0, 5), wantsPickup };
 
