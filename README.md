@@ -52,7 +52,7 @@ O sistema utiliza um **router inteligente** com fallback automático e circuit b
 ### Backend & IA
 - **Node.js 20+** com TypeScript 5.3
 - **Express.js** - API REST
-- **LangChain / LangGraph** - Orquestração de conversas com máquina de estados
+- **State Machine** - Orquestração de conversas em TypeScript puro
 - **OpenAI SDK** - GPT-4o-mini (LLM primário) + Embeddings
 - **Groq SDK** - LLaMA 3.1 8B Instant (LLM fallback)
 - **Cohere SDK** - Embeddings multilingual (fallback)
@@ -77,13 +77,13 @@ O sistema utiliza um **router inteligente** com fallback automático e circuit b
 - **Pino** - Structured logging
 - **Husky** - Git hooks (pre-commit)
 
-## 🔄 LangGraph - Orquestração de Conversas
+## 🔄 State Machine - Orquestração de Conversas
 
-O sistema utiliza **LangGraph** para gerenciar o fluxo de estados da conversa de forma declarativa:
+O sistema utiliza uma **State Machine em TypeScript puro** para gerenciar o fluxo de estados da conversa:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    LangGraph State Machine                       │
+│                      TypeScript State Machine                     │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │   START → GREETING → DISCOVERY → CLARIFICATION → RECOMMENDATION │
@@ -135,7 +135,7 @@ Cada estado é processado por um **node** especializado:
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
-│              LangGraph Conversation Manager                  │
+│              TypeScript State Machine Manager                │
 │  • State machine orchestration                              │
 │  • Transition conditions evaluation                         │
 │  • Node routing (greeting → quiz → recommendation)          │
@@ -364,7 +364,7 @@ faciliauto-mvp-v2/
 │   ├── config/                     # Configurações
 │   │   ├── env.ts                  # Variáveis de ambiente
 │   │   └── disclosure.messages.ts  # ISO42001 disclaimers
-│   └── graph/                      # LangGraph (experimental)
+│   └── graph/                      # State Machine (TypeScript puro)
 │       └── conversation-graph.ts
 ├── prisma/
 │   ├── schema.prisma               # Database schema
