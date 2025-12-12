@@ -44,7 +44,7 @@ app.get('/health', (req, res) => {
 app.get('/stats', async (req, res) => {
   try {
     const { prisma } = await import('./lib/prisma');
-    
+
     const [conversations, leads, recommendations] = await Promise.all([
       prisma.conversation.count(),
       prisma.lead.count(),
@@ -67,7 +67,7 @@ app.get('/stats', async (req, res) => {
 app.post('/message', async (req, res) => {
   try {
     const { phone, message } = req.body;
-    
+
     if (!phone || !message) {
       return res.status(400).json({ error: 'phone and message are required' });
     }
@@ -110,7 +110,9 @@ async function start() {
       logger.info(`💬 Send message: POST http://localhost:${PORT}/message`);
       logger.info('');
       logger.info('📱 Example curl command:');
-      logger.info(`curl -X POST http://localhost:${PORT}/message -H "Content-Type: application/json" -d '{"phone":"5511999999999","message":"Olá, quero comprar um carro"}'`);
+      logger.info(
+        `curl -X POST http://localhost:${PORT}/message -H "Content-Type: application/json" -d '{"phone":"5511999999999","message":"Olá, quero comprar um carro"}'`
+      );
     });
   } catch (error) {
     logger.error({ error }, '❌ Failed to start server');

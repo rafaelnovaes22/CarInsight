@@ -29,7 +29,7 @@ class InMemoryVectorStore {
     this.initializing = true;
 
     // Inicializa em background sem bloquear o servidor
-    this.initializeInBackground().catch((error) => {
+    this.initializeInBackground().catch(error => {
       console.error('❌ Erro ao inicializar vector store:', error);
       this.initializing = false;
     });
@@ -83,26 +83,33 @@ class InMemoryVectorStore {
 
     this.initialized = true;
     this.initializing = false;
-    console.log(`✅ Vector store pronto: ${loadedFromDb} carregados do DB, ${generatedNew} gerados novos`);
+    console.log(
+      `✅ Vector store pronto: ${loadedFromDb} carregados do DB, ${generatedNew} gerados novos`
+    );
   }
 
   /**
    * Gera embedding e salva no banco para não precisar regenerar
    */
-  private async generateAndSaveEmbedding(vehicleId: string, description: string): Promise<number[]> {
+  private async generateAndSaveEmbedding(
+    vehicleId: string,
+    description: string
+  ): Promise<number[]> {
     const embedding = await generateEmbedding(description);
-    
+
     // Salvar no banco para próxima inicialização
-    await prisma.vehicle.update({
-      where: { id: vehicleId },
-      data: {
-        embedding: JSON.stringify(embedding),
-        embeddingModel: 'text-embedding-3-small',
-        embeddingGeneratedAt: new Date(),
-      },
-    }).catch((error) => {
-      console.warn(`⚠️ Erro ao salvar embedding do veículo ${vehicleId}:`, error.message);
-    });
+    await prisma.vehicle
+      .update({
+        where: { id: vehicleId },
+        data: {
+          embedding: JSON.stringify(embedding),
+          embeddingModel: 'text-embedding-3-small',
+          embeddingGeneratedAt: new Date(),
+        },
+      })
+      .catch(error => {
+        console.warn(`⚠️ Erro ao salvar embedding do veículo ${vehicleId}:`, error.message);
+      });
 
     return embedding;
   }
@@ -116,7 +123,7 @@ class InMemoryVectorStore {
 
     const queryEmbedding = await generateEmbedding(queryText);
 
-    const results = this.embeddings.map((item) => ({
+    const results = this.embeddings.map(item => ({
       vehicleId: item.vehicleId,
       similarity: this.cosineSimilarity(queryEmbedding, item.embedding),
       metadata: item.metadata,
@@ -124,7 +131,7 @@ class InMemoryVectorStore {
 
     results.sort((a, b) => b.similarity - a.similarity);
 
-    return results.slice(0, limit).map((r) => r.vehicleId);
+    return results.slice(0, limit).map(r => r.vehicleId);
   }
 
   async searchWithScores(
@@ -139,7 +146,7 @@ class InMemoryVectorStore {
 
     const queryEmbedding = await generateEmbedding(queryText);
 
-    const results = this.embeddings.map((item) => ({
+    const results = this.embeddings.map(item => ({
       vehicleId: item.vehicleId,
       score: this.cosineSimilarity(queryEmbedding, item.embedding),
     }));
@@ -180,7 +187,7 @@ class InMemoryVectorStore {
     if (vehicle.abs) features.push('abs');
     if (vehicle.vidroEletrico) features.push('vidro elétrico');
     if (vehicle.travaEletrica) features.push('trava elétrica');
-    
+
     if (features.length > 0) {
       parts.push(`equipamentos: ${features.join(', ')}`);
     }

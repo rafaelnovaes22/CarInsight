@@ -18,7 +18,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'BMW 125i M Sport, veículo premium com ótimo desempenho',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_1-1.jpg',
   },
   {
     marca: 'BMW',
@@ -36,7 +37,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'SUV premium BMW X5, espaçosa e potente',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg',
   },
   {
     marca: 'Chevrolet',
@@ -54,7 +56,8 @@ export const renatinhuVehicles = [
     airbag: false,
     abs: false,
     descricao: 'Econômico e ideal para o dia a dia',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg',
   },
   {
     marca: 'Chevrolet',
@@ -72,7 +75,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Sedan completo, confortável e econômico',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg',
   },
   {
     marca: 'Chevrolet',
@@ -90,7 +94,8 @@ export const renatinhuVehicles = [
     airbag: false,
     abs: false,
     descricao: 'Compacto e econômico',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg',
   },
   {
     marca: 'Chevrolet',
@@ -108,7 +113,8 @@ export const renatinhuVehicles = [
     airbag: false,
     abs: false,
     descricao: 'Picape compacta ideal para trabalho',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_607_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_607_1-1.jpg',
   },
   {
     marca: 'Chevrolet',
@@ -126,7 +132,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Sedan médio completo e confortável',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg',
   },
   {
     marca: 'Chevrolet',
@@ -144,7 +151,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Compacto moderno e econômico',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg',
   },
   {
     marca: 'Chevrolet',
@@ -162,7 +170,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Picape cabine dupla, robusta e versátil',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_695_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_695_1-1.jpg',
   },
   {
     marca: 'Dodge',
@@ -180,7 +189,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'SUV 7 lugares, espaçoso e confortável',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg',
   },
   {
     marca: 'Fiat',
@@ -215,7 +225,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Compacto confiável e econômico',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg',
   },
   {
     marca: 'Fiat',
@@ -233,7 +244,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: false,
     descricao: 'Sedan econômico e espaçoso',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg',
   },
   {
     marca: 'Fiat',
@@ -251,7 +263,8 @@ export const renatinhuVehicles = [
     airbag: false,
     abs: false,
     descricao: 'Picape compacta, ideal para trabalho',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg',
   },
   {
     marca: 'Fiat',
@@ -269,7 +282,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Compacto moderno, baixa quilometragem',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg',
   },
   {
     marca: 'Ford',
@@ -304,7 +318,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Sedan médio confortável e econômico',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg',
   },
   {
     marca: 'Honda',
@@ -339,7 +354,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Sedan médio, conforto e qualidade Honda',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg',
   },
   {
     marca: 'Honda',
@@ -357,7 +373,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Clássico Civic, confiável e econômico',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg',
   },
   {
     marca: 'Honda',
@@ -375,7 +392,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'SUV confiável Honda CR-V',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_658_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_658_1-1.jpg',
   },
   {
     marca: 'Hyundai',
@@ -410,7 +428,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'SUV premium Land Rover, design sofisticado',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg',
   },
   {
     marca: 'Renault',
@@ -428,7 +447,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'SUV compacto moderno e estiloso',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg',
   },
   {
     marca: 'Renault',
@@ -446,7 +466,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'SUV robusto, ideal para aventuras',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg',
   },
   {
     marca: 'Renault',
@@ -464,7 +485,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: false,
     descricao: 'Compacto econômico, ideal para cidade',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg',
   },
   {
     marca: 'Toyota',
@@ -482,7 +504,8 @@ export const renatinhuVehicles = [
     airbag: true,
     abs: true,
     descricao: 'Sedan médio, referência em qualidade',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg',
   },
   {
     marca: 'Volkswagen',
@@ -517,7 +540,8 @@ export const renatinhuVehicles = [
     airbag: false,
     abs: false,
     descricao: 'Clássico Fusca, colecionador',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg',
   },
   {
     marca: 'Volkswagen',

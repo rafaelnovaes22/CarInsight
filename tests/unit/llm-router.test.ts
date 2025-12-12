@@ -58,7 +58,7 @@ describe('LLM Router', () => {
       expect(Array.isArray(status)).toBe(true);
       expect(status.length).toBeGreaterThan(0);
 
-      status.forEach((provider) => {
+      status.forEach(provider => {
         expect(provider).toHaveProperty('name');
         expect(provider).toHaveProperty('model');
         expect(provider).toHaveProperty('enabled');
@@ -70,7 +70,7 @@ describe('LLM Router', () => {
 
     it('deve incluir OpenAI como primário', () => {
       const status = getLLMProvidersStatus();
-      const openai = status.find((p) => p.name === 'openai');
+      const openai = status.find(p => p.name === 'openai');
 
       expect(openai).toBeDefined();
       expect(openai?.priority).toBe(1);
@@ -79,7 +79,7 @@ describe('LLM Router', () => {
 
     it('deve incluir Groq como fallback', () => {
       const status = getLLMProvidersStatus();
-      const groq = status.find((p) => p.name === 'groq');
+      const groq = status.find(p => p.name === 'groq');
 
       expect(groq).toBeDefined();
       expect(groq?.priority).toBe(2);
@@ -92,7 +92,7 @@ describe('LLM Router', () => {
       resetCircuitBreaker();
       const status = getLLMProvidersStatus();
 
-      status.forEach((provider) => {
+      status.forEach(provider => {
         expect(provider.circuitBreakerOpen).toBe(false);
       });
     });

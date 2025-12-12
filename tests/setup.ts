@@ -12,7 +12,7 @@ let prismaInstance: any = null;
 // Setup global antes de todos os testes
 beforeAll(async () => {
   console.log('🚀 Iniciando setup de testes...');
-  
+
   // Garantir que estamos em ambiente de teste
   if (process.env.NODE_ENV !== 'test') {
     process.env.NODE_ENV = 'test';
@@ -20,8 +20,11 @@ beforeAll(async () => {
 
   // Tentar conectar ao banco de teste (opcional)
   const databaseUrl = process.env.DATABASE_URL;
-  
-  if (databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))) {
+
+  if (
+    databaseUrl &&
+    (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'))
+  ) {
     try {
       const { PrismaClient } = await import('@prisma/client');
       prismaInstance = new PrismaClient({
@@ -45,7 +48,7 @@ beforeAll(async () => {
 // Cleanup após todos os testes
 afterAll(async () => {
   console.log('🧹 Limpando ambiente de teste...');
-  
+
   if (prismaInstance) {
     try {
       await prismaInstance.$disconnect();
@@ -84,9 +87,9 @@ export async function resetDatabase() {
     console.warn('⚠️  Banco não disponível para reset');
     return;
   }
-  
+
   const tables = ['Message', 'Recommendation', 'Event', 'Lead', 'Conversation', 'Vehicle'];
-  
+
   for (const table of tables) {
     try {
       await prismaInstance.$executeRawUnsafe(`DELETE FROM "${table}";`);

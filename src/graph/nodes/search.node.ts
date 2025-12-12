@@ -46,7 +46,10 @@ function calculateMatchScore(vehicle: any, profile: any): number {
 
   // Usage pattern matching
   if (profile.usagePattern === 'cidade') {
-    if (vehicle.tipo && (vehicle.tipo.toLowerCase() === 'hatch' || vehicle.tipo.toLowerCase() === 'sedan')) {
+    if (
+      vehicle.tipo &&
+      (vehicle.tipo.toLowerCase() === 'hatch' || vehicle.tipo.toLowerCase() === 'sedan')
+    ) {
       score += 5;
     }
     if (vehicle.combustivel && vehicle.combustivel.toLowerCase().includes('flex')) {
@@ -55,14 +58,20 @@ function calculateMatchScore(vehicle: any, profile: any): number {
   }
 
   if (profile.usagePattern === 'viagem') {
-    if (vehicle.tipo && (vehicle.tipo.toLowerCase() === 'sedan' || vehicle.tipo.toLowerCase() === 'suv')) {
+    if (
+      vehicle.tipo &&
+      (vehicle.tipo.toLowerCase() === 'sedan' || vehicle.tipo.toLowerCase() === 'suv')
+    ) {
       score += 5;
     }
   }
 
   // Family size matching
   if (profile.familySize >= 5) {
-    if (vehicle.tipo && (vehicle.tipo.toLowerCase() === 'suv' || vehicle.tipo.toLowerCase() === 'sedan')) {
+    if (
+      vehicle.tipo &&
+      (vehicle.tipo.toLowerCase() === 'suv' || vehicle.tipo.toLowerCase() === 'sedan')
+    ) {
       score += 5;
     }
   }
@@ -78,15 +87,15 @@ function generateReasoning(vehicle: any, profile: any, matchScore: number): stri
   const reasons: string[] = [];
 
   const priceFloat = parseFloat(vehicle.preco);
-  
+
   if (priceFloat <= profile.budget) {
     reasons.push('Dentro do orçamento');
   }
-  
+
   if (vehicle.ano >= profile.minYear + 2) {
     reasons.push('Modelo recente');
   }
-  
+
   if (vehicle.km < 50000) {
     reasons.push('Baixa quilometragem');
   } else if (vehicle.km < profile.maxKm * 0.7) {
@@ -112,7 +121,10 @@ function generateReasoning(vehicle: any, profile: any, matchScore: number): stri
  * SearchNode - Find vehicles matching customer profile using vector search
  */
 export async function searchNode(state: ConversationState): Promise<StateUpdate> {
-  logger.info({ conversationId: state.conversationId, profile: state.profile }, 'SearchNode: Searching vehicles');
+  logger.info(
+    { conversationId: state.conversationId, profile: state.profile },
+    'SearchNode: Searching vehicles'
+  );
 
   if (!state.profile) {
     logger.error({ conversationId: state.conversationId }, 'SearchNode: No profile available');
@@ -136,10 +148,13 @@ export async function searchNode(state: ConversationState): Promise<StateUpdate>
   const profile = state.profile;
 
   try {
-    logger.info({ 
-      conversationId: state.conversationId, 
-      profile 
-    }, 'SearchNode: Searching vehicles with vector search');
+    logger.info(
+      {
+        conversationId: state.conversationId,
+        profile,
+      },
+      'SearchNode: Searching vehicles with vector search'
+    );
 
     // Build search criteria from profile
     const criteria: VehicleSearchCriteria = {
@@ -154,11 +169,14 @@ export async function searchNode(state: ConversationState): Promise<StateUpdate>
     // Use vector search service (with automatic fallback to SQL)
     const scoredVehicles = await vectorSearchService.searchVehicles(criteria, 3);
 
-    logger.info({ 
-      conversationId: state.conversationId, 
-      vehiclesFound: scoredVehicles.length,
-      topScores: scoredVehicles.map(v => v.matchScore),
-    }, 'SearchNode: Vehicles found');
+    logger.info(
+      {
+        conversationId: state.conversationId,
+        vehiclesFound: scoredVehicles.length,
+        topScores: scoredVehicles.map(v => v.matchScore),
+      },
+      'SearchNode: Vehicles found'
+    );
 
     if (scoredVehicles.length === 0) {
       // No vehicles found
@@ -206,10 +224,13 @@ export async function searchNode(state: ConversationState): Promise<StateUpdate>
       };
     });
 
-    logger.info({
-      conversationId: state.conversationId,
-      topScores: topRecommendations.map(r => r.matchScore),
-    }, 'SearchNode: Top recommendations selected');
+    logger.info(
+      {
+        conversationId: state.conversationId,
+        topScores: topRecommendations.map(r => r.matchScore),
+      },
+      'SearchNode: Top recommendations selected'
+    );
 
     return {
       recommendations: topRecommendations,
@@ -225,7 +246,10 @@ export async function searchNode(state: ConversationState): Promise<StateUpdate>
       },
     };
   } catch (error) {
-    logger.error({ error, conversationId: state.conversationId }, 'SearchNode: Error searching vehicles');
+    logger.error(
+      { error, conversationId: state.conversationId },
+      'SearchNode: Error searching vehicles'
+    );
 
     return {
       messages: [

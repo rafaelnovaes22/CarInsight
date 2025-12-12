@@ -26,7 +26,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
         },
         timeout: 10000,
       }
@@ -44,12 +44,12 @@ function generateMockEmbedding(text: string): number[] {
   const dimension = 1536;
   const seed = hashString(text);
   const random = seededRandom(seed);
-  
+
   const embedding = [];
   for (let i = 0; i < dimension; i++) {
     embedding.push(random() * 2 - 1);
   }
-  
+
   const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
   return embedding.map(val => val / norm);
 }
@@ -58,7 +58,7 @@ function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
   return Math.abs(hash);

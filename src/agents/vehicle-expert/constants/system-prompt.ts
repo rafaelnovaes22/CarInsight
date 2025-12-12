@@ -1,6 +1,6 @@
 /**
  * Vehicle Expert System Prompt
- * 
+ *
  * The main prompt that defines the AI's personality, knowledge base,
  * and behavioral guidelines for vehicle sales conversations.
  */

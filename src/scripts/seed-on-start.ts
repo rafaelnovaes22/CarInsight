@@ -4,7 +4,7 @@ import { logger } from '../lib/logger';
 async function seedOnStart() {
   try {
     const count = await prisma.vehicle.count();
-    
+
     if (count > 0) {
       logger.info(`✅ Database já tem ${count} veículos. Pulando seed.`);
       return;

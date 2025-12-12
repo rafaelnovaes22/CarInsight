@@ -1,6 +1,6 @@
 /**
  * VehicleExpertAgent
- * 
+ *
  * AI agent specialized in vehicle sales conversations.
  * Knows the entire inventory, answers questions, guides conversation,
  * and generates personalized recommendations.
@@ -18,7 +18,7 @@ import {
   ConversationMode,
   ReadinessAssessment,
   QuestionGenerationOptions,
-  VehicleSearchQuery
+  VehicleSearchQuery,
 } from '../types/conversation.types';
 
 // Import constants from refactored module
@@ -35,10 +35,7 @@ import {
 } from './vehicle-expert/constants';
 
 // Import extractors
-import {
-  extractTradeInInfo,
-  inferBrandFromModel,
-} from './vehicle-expert/extractors';
+import { extractTradeInInfo, inferBrandFromModel } from './vehicle-expert/extractors';
 
 // Import formatters
 import {
@@ -98,7 +95,10 @@ function getAppName(profile: Partial<CustomerProfile>): string {
 /**
  * Helper function to get the app category name (e.g., "99Pop" or "Uber X")
  */
-function getAppCategoryName(profile: Partial<CustomerProfile>, category: 'x' | 'black' | 'comfort'): string {
+function getAppCategoryName(
+  profile: Partial<CustomerProfile>,
+  category: 'x' | 'black' | 'comfort'
+): string {
   const is99 = profile.appMencionado === '99';
   switch (category) {
     case 'x':
@@ -113,7 +113,6 @@ function getAppCategoryName(profile: Partial<CustomerProfile>, category: 'x' | '
 }
 
 export class VehicleExpertAgent {
-
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
 
   /**
@@ -135,22 +134,22 @@ export class VehicleExpertAgent {
   /**
    * Main chat interface - processes user message and generates response
    */
-  async chat(
-    userMessage: string,
-    context: ConversationContext
-  ): Promise<ConversationResponse> {
+  async chat(userMessage: string, context: ConversationContext): Promise<ConversationResponse> {
     const startTime = Date.now();
 
     try {
-      logger.info({
-        mode: context.mode,
-        messageCount: context.metadata.messageCount
-      }, 'VehicleExpert processing message');
+      logger.info(
+        {
+          mode: context.mode,
+          messageCount: context.metadata.messageCount,
+        },
+        'VehicleExpert processing message'
+      );
 
       // 1. Extract preferences from current message
       const extracted = await preferenceExtractor.extract(userMessage, {
         currentProfile: context.profile,
-        conversationHistory: context.messages.slice(-3).map(m => m.content)
+        conversationHistory: context.messages.slice(-3).map(m => m.content),
       });
 
       // 2. Merge with existing profile
@@ -165,7 +164,7 @@ export class VehicleExpertAgent {
         // Search for Uber Black eligible vehicles
         const uberBlackVehicles = await vehicleSearchAdapter.search('', {
           aptoUberBlack: true,
-          limit: 10
+          limit: 10,
         });
 
         let response = `🚖 *Critérios para Uber Black:*\n\n`;
@@ -195,7 +194,7 @@ export class VehicleExpertAgent {
           response,
           extractedPreferences: {
             ...extracted.extracted,
-            _waitingForUberXAlternatives: true
+            _waitingForUberXAlternatives: true,
           },
           needsMoreInfo: [],
           canRecommend: false,
@@ -203,8 +202,8 @@ export class VehicleExpertAgent {
           metadata: {
             processingTime: Date.now() - startTime,
             confidence: 1.0,
-            llmUsed: 'rule-based'
-          }
+            llmUsed: 'rule-based',
+          },
         };
       }
 
@@ -222,17 +221,21 @@ export class VehicleExpertAgent {
 
       // IMPORTANTE: Verificar se já mostramos uma recomendação e o cliente selecionou um veículo
       // Se sim, o trade-in deve ser processado como parte do fluxo de NEGOCIAÇÃO, não como busca inicial
-      const alreadyHasSelectedVehicle = context.profile?._showedRecommendation &&
+      const alreadyHasSelectedVehicle =
+        context.profile?._showedRecommendation &&
         context.profile?._lastShownVehicles &&
         context.profile._lastShownVehicles.length > 0;
 
       if (isTradeInContext && exactMatch.model && exactMatch.year && !alreadyHasSelectedVehicle) {
         // User mentioned a vehicle they OWN - extract as trade-in and ask what they want
         // ONLY if they haven't already selected a vehicle to buy
-        logger.info({
-          tradeInModel: exactMatch.model,
-          tradeInYear: exactMatch.year
-        }, 'VehicleExpert: Detected trade-in vehicle from initial message');
+        logger.info(
+          {
+            tradeInModel: exactMatch.model,
+            tradeInYear: exactMatch.year,
+          },
+          'VehicleExpert: Detected trade-in vehicle from initial message'
+        );
 
         return {
           response: `Entendi! Você tem um ${exactMatch.model} ${exactMatch.year} para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`,
@@ -253,8 +256,8 @@ export class VehicleExpertAgent {
             processingTime: Date.now() - startTime,
             confidence: 0.95,
             llmUsed: 'rule-based',
-            tradeInDetected: true
-          } as any
+            tradeInDetected: true,
+          } as any,
         };
       }
 
@@ -267,11 +270,14 @@ export class VehicleExpertAgent {
         const tradeInBrand = this.inferBrandFromModel(exactMatch.model);
         const tradeInText = `${tradeInBrand ? capitalize(tradeInBrand) + ' ' : ''}${capitalize(exactMatch.model)} ${exactMatch.year}`;
 
-        logger.info({
-          tradeInModel: exactMatch.model,
-          tradeInYear: exactMatch.year,
-          selectedVehicle: selectedVehicleName
-        }, 'VehicleExpert: Detected trade-in vehicle AFTER vehicle selection - maintaining context');
+        logger.info(
+          {
+            tradeInModel: exactMatch.model,
+            tradeInYear: exactMatch.year,
+            selectedVehicle: selectedVehicleName,
+          },
+          'VehicleExpert: Detected trade-in vehicle AFTER vehicle selection - maintaining context'
+        );
 
         return {
           response: `Perfeito! O ${tradeInText} pode entrar na negociação do ${selectedVehicleName}! 🚗🔄\n\n⚠️ O valor do seu carro na troca depende de uma avaliação presencial pela nossa equipe.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInText}\n• Apresentar a proposta final para o ${selectedVehicleName}\n• Tirar todas as suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
@@ -293,14 +299,15 @@ export class VehicleExpertAgent {
             confidence: 0.95,
             llmUsed: 'rule-based',
             tradeInDetected: true,
-            maintainedContext: true
-          } as any
+            maintainedContext: true,
+          } as any,
         };
       }
 
       if (targetModel && targetYear) {
         // Ignorar se estivermos no meio de um fluxo de negociação ou se for menção de troca
-        const isTradeInMention = isTradeInContext ||
+        const isTradeInMention =
+          isTradeInContext ||
           (/tenho|minha|meu|troca|possuo/i.test(userMessage) && !updatedProfile.model);
 
         // IMPORTANTE: Pular se já estamos esperando resposta de sugestão de anos alternativos
@@ -309,8 +316,8 @@ export class VehicleExpertAgent {
 
         // IMPORTANTE: Pular se estamos aguardando detalhes de financiamento (entrada, carro de troca)
         // Se o usuário disse "10 mil de entrada e um Fiesta 2016", o Fiesta é o carro DE TROCA, não uma nova busca
-        const isAwaitingFinancingDetails = context.profile?._awaitingFinancingDetails ||
-          context.profile?._awaitingTradeInDetails;
+        const isAwaitingFinancingDetails =
+          context.profile?._awaitingFinancingDetails || context.profile?._awaitingTradeInDetails;
 
         // IMPORTANTE: Pular se já mostramos uma recomendação e o usuário está respondendo sobre ela
         // (financiamento, troca, agendamento, etc.) - NÃO RE-FAZER A BUSCA
@@ -320,37 +327,47 @@ export class VehicleExpertAgent {
         // Verifica se o modelo mencionado está entre os veículos já mostrados
         // Se sim, é interesse no veículo, não nova busca
         const msgLower = userMessage.toLowerCase();
-        const mentionedShownVehicleModel = lastShownVehicles.some((v: { model: string; brand: string }) => {
-          const modelLower = v.model.toLowerCase();
-          const brandLower = v.brand.toLowerCase();
-          return msgLower.includes(modelLower) || msgLower.includes(brandLower);
-        });
-
-        const isPostRecommendationIntent = alreadyShowedRecommendation && (
-          // Financiamento
-          extracted.extracted.wantsFinancing ||
-          /financ|parcel|entrada|presta[çc]/i.test(userMessage) ||
-          // Troca de veículo
-          extracted.extracted.hasTradeIn ||
-          /troca|meu carro|tenho um|minha/i.test(userMessage) ||
-          // Agendamento / Vendedor
-          /agendar|visita|vendedor|ver pessoal|ir a[íi]/i.test(userMessage) ||
-          // Interesse / Gostei (agora inclui quando menciona modelo já mostrado)
-          /gostei|interessei|curti|quero esse|esse (mesmo|a[íi])/i.test(userMessage) ||
-          mentionedShownVehicleModel ||
-          // Perguntas sobre o veículo mostrado
-          /mais (info|detalhe)|quilometr|km|opcional|documento/i.test(userMessage)
+        const mentionedShownVehicleModel = lastShownVehicles.some(
+          (v: { model: string; brand: string }) => {
+            const modelLower = v.model.toLowerCase();
+            const brandLower = v.brand.toLowerCase();
+            return msgLower.includes(modelLower) || msgLower.includes(brandLower);
+          }
         );
 
-        if (!isTradeInMention && !isWaitingForSuggestion && !isPostRecommendationIntent && !isAwaitingFinancingDetails) {
+        const isPostRecommendationIntent =
+          alreadyShowedRecommendation &&
+          // Financiamento
+          (extracted.extracted.wantsFinancing ||
+            /financ|parcel|entrada|presta[çc]/i.test(userMessage) ||
+            // Troca de veículo
+            extracted.extracted.hasTradeIn ||
+            /troca|meu carro|tenho um|minha/i.test(userMessage) ||
+            // Agendamento / Vendedor
+            /agendar|visita|vendedor|ver pessoal|ir a[íi]/i.test(userMessage) ||
+            // Interesse / Gostei (agora inclui quando menciona modelo já mostrado)
+            /gostei|interessei|curti|quero esse|esse (mesmo|a[íi])/i.test(userMessage) ||
+            mentionedShownVehicleModel ||
+            // Perguntas sobre o veículo mostrado
+            /mais (info|detalhe)|quilometr|km|opcional|documento/i.test(userMessage));
+
+        if (
+          !isTradeInMention &&
+          !isWaitingForSuggestion &&
+          !isPostRecommendationIntent &&
+          !isAwaitingFinancingDetails
+        ) {
           logger.info({ model: targetModel, year: targetYear }, 'Intercepting Exact Search intent');
 
           // 1. Tentar busca exata
-          const exactResults = await vehicleSearchAdapter.search(userMessage.length > 3 ? userMessage : targetModel, {
-            limit: 5,
-            model: targetModel,
-            minYear: targetYear
-          });
+          const exactResults = await vehicleSearchAdapter.search(
+            userMessage.length > 3 ? userMessage : targetModel,
+            {
+              limit: 5,
+              model: targetModel,
+              minYear: targetYear,
+            }
+          );
 
           // Verificamos se o PRIMEIRO resultado bate com o ano solicitado
           const foundExact = exactResults.length > 0 && exactResults[0].vehicle.year === targetYear;
@@ -360,7 +377,9 @@ export class VehicleExpertAgent {
             logger.info('Exact match found - returning recommendation immediately');
 
             // Extrair anos disponíveis
-            const availableYears = [...new Set(exactResults.map(r => r.vehicle.year))].sort((a, b) => b - a);
+            const availableYears = [...new Set(exactResults.map(r => r.vehicle.year))].sort(
+              (a, b) => b - a
+            );
 
             const formattedResponse = await this.formatRecommendations(
               exactResults,
@@ -385,8 +404,8 @@ export class VehicleExpertAgent {
                   model: r.vehicle.model,
                   year: r.vehicle.year,
                   price: r.vehicle.price,
-                  bodyType: r.vehicle.bodyType
-                }))
+                  bodyType: r.vehicle.bodyType,
+                })),
               },
               needsMoreInfo: [],
               canRecommend: true,
@@ -396,27 +415,34 @@ export class VehicleExpertAgent {
                 processingTime: Date.now() - startTime,
                 confidence: 1.0,
                 llmUsed: 'rule-based',
-                exactMatch: true
-              } as any
+                exactMatch: true,
+              } as any,
             };
           } else {
             // Não encontrou o ano exato - verificar se O MODELO existe em outros anos
             const modelResults = await vehicleSearchAdapter.search(targetModel, {
               model: targetModel,
-              limit: 20
+              limit: 20,
             });
 
             if (modelResults.length > 0) {
-              const availableYears = [...new Set(modelResults.map(r => r.vehicle.year))].sort((a, b) => b - a);
-              logger.info({ availableYears }, 'Exact year not found, but model exists in other years');
+              const availableYears = [...new Set(modelResults.map(r => r.vehicle.year))].sort(
+                (a, b) => b - a
+              );
+              logger.info(
+                { availableYears },
+                'Exact year not found, but model exists in other years'
+              );
 
-              const yearsText = availableYears.length === 1
-                ? `no ano: ${availableYears[0]}`
-                : `nos anos: ${availableYears.join(', ')}`;
+              const yearsText =
+                availableYears.length === 1
+                  ? `no ano: ${availableYears[0]}`
+                  : `nos anos: ${availableYears.join(', ')}`;
 
-              const questionText = availableYears.length === 1
-                ? 'Quer ver essa opção?'
-                : 'Quer ver alguma dessas opções?';
+              const questionText =
+                availableYears.length === 1
+                  ? 'Quer ver essa opção?'
+                  : 'Quer ver alguma dessas opções?';
 
               return {
                 response: `Não encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. 😕\n\nMas tenho esse modelo ${yearsText}.\n\n${questionText}`,
@@ -424,7 +450,7 @@ export class VehicleExpertAgent {
                   ...updatedProfile,
                   _searchedItem: targetModel,
                   _availableYears: availableYears,
-                  _waitingForSuggestionResponse: true
+                  _waitingForSuggestionResponse: true,
                 },
                 needsMoreInfo: [],
                 canRecommend: false,
@@ -433,8 +459,8 @@ export class VehicleExpertAgent {
                   processingTime: Date.now() - startTime,
                   confidence: 0.9,
                   llmUsed: 'rule-based',
-                  alternativeYears: true
-                } as any
+                  alternativeYears: true,
+                } as any,
               };
             }
           }
@@ -442,25 +468,33 @@ export class VehicleExpertAgent {
       }
 
       // 2.2. Intercept Hard Constraints (FAIL FAST) - 7 seats
-      if (updatedProfile.minSeats && updatedProfile.minSeats >= 7 && !context.profile?._waitingForSuggestionResponse) {
+      if (
+        updatedProfile.minSeats &&
+        updatedProfile.minSeats >= 7 &&
+        !context.profile?._waitingForSuggestionResponse
+      ) {
         // Search specifically for 7 seaters to check availability
         const results = await vehicleSearchAdapter.search('7 lugares', {
-          limit: 20
+          limit: 20,
         });
 
         // Filter strictly for 7 seaters
         const sevenSeaters = results.filter(r => isSevenSeater(r.vehicle.model || ''));
 
         if (sevenSeaters.length === 0) {
-          const seatsText = updatedProfile.minSeats === 7 ? '7 lugares' : `${updatedProfile.minSeats} lugares`;
-          logger.info({ minSeats: updatedProfile.minSeats }, 'Intercepting flow: 7-seater request with no inventory');
+          const seatsText =
+            updatedProfile.minSeats === 7 ? '7 lugares' : `${updatedProfile.minSeats} lugares`;
+          logger.info(
+            { minSeats: updatedProfile.minSeats },
+            'Intercepting flow: 7-seater request with no inventory'
+          );
 
           return {
             response: `No momento não temos veículos de ${seatsText} disponíveis no estoque. 🚗\n\nQuer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alternativa?`,
             extractedPreferences: {
               ...extracted.extracted,
               _waitingForSuggestionResponse: true,
-              _searchedItem: `veículo de ${seatsText}`
+              _searchedItem: `veículo de ${seatsText}`,
             },
             needsMoreInfo: [],
             canRecommend: false,
@@ -469,15 +503,17 @@ export class VehicleExpertAgent {
               processingTime: Date.now() - startTime,
               confidence: 1.0,
               llmUsed: 'rule-based',
-              noSevenSeaters: true
-            } as any
+              noSevenSeaters: true,
+            } as any,
           };
         }
       }
 
       // 2.3. Intercept Pending Similar Vehicles Approval
       if (context.profile?._waitingForSimilarApproval) {
-        const isYes = /sim|claro|pode|quero|manda|gostaria|ok|beleza|sim pode|com certeza/i.test(userMessage);
+        const isYes = /sim|claro|pode|quero|manda|gostaria|ok|beleza|sim pode|com certeza/i.test(
+          userMessage
+        );
         const isNo = /n[ãa]o|agora n[ãa]o|depois|nenhum|parar|cancela|deixa/i.test(userMessage);
 
         if (isYes) {
@@ -505,8 +541,8 @@ export class VehicleExpertAgent {
                   model: r.vehicle?.model || '',
                   year: r.vehicle?.year || 0,
                   price: r.vehicle?.price || 0,
-                  bodyType: r.vehicle?.bodyType
-                }))
+                  bodyType: r.vehicle?.bodyType,
+                })),
               },
               needsMoreInfo: [],
               canRecommend: true,
@@ -515,8 +551,8 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.95,
-                llmUsed: 'rule-based'
-              }
+                llmUsed: 'rule-based',
+              },
             };
           }
         } else if (isNo || detectUserQuestion(userMessage)) {
@@ -525,13 +561,17 @@ export class VehicleExpertAgent {
 
           if (isNo) {
             return {
-              response: "Entendido. O que você gostaria de buscar então?",
+              response: 'Entendido. O que você gostaria de buscar então?',
               extractedPreferences: { ...extracted.extracted, _waitingForSimilarApproval: false },
               canRecommend: false,
               needsMoreInfo: [],
               nextMode: 'discovery',
-              metadata: { processingTime: Date.now() - startTime, confidence: 0.9, llmUsed: 'rule-based' }
-            }
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.9,
+                llmUsed: 'rule-based',
+              },
+            };
           }
         }
       }
@@ -559,8 +599,10 @@ export class VehicleExpertAgent {
             tradeInInfo.brand,
             tradeInInfo.model,
             tradeInInfo.year,
-            tradeInInfo.km ? `(${tradeInInfo.km.toLocaleString('pt-BR')} km)` : null
-          ].filter(Boolean).join(' ');
+            tradeInInfo.km ? `(${tradeInInfo.km.toLocaleString('pt-BR')} km)` : null,
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return {
             response: `Perfeito! Anotei o ${tradeInText} como carro de troca. 🚗🔄\n\n⚠️ O valor do seu carro depende de uma avaliação presencial.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInText}\n• Apresentar a proposta final para o ${vehicleName}\n• Tirar suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
@@ -581,8 +623,8 @@ export class VehicleExpertAgent {
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.95,
-              llmUsed: 'rule-based'
-            }
+              llmUsed: 'rule-based',
+            },
           };
         }
       }
@@ -591,10 +633,18 @@ export class VehicleExpertAgent {
       const awaitingFinancingDetails = context.profile?._awaitingFinancingDetails;
 
       // Only process as financing if NOT waiting for trade-in details
-      if (awaitingFinancingDetails && !awaitingTradeInDetails && lastShownVehicles && lastShownVehicles.length > 0) {
+      if (
+        awaitingFinancingDetails &&
+        !awaitingTradeInDetails &&
+        lastShownVehicles &&
+        lastShownVehicles.length > 0
+      ) {
         // Check if this message is a financing response (contains entry value)
         if (isFinancingResponse(userMessage, true)) {
-          logger.info({ userMessage, awaitingFinancingDetails }, 'Processing financing response with entry value');
+          logger.info(
+            { userMessage, awaitingFinancingDetails },
+            'Processing financing response with entry value'
+          );
 
           const handlerContext: PostRecommendationContext = {
             userMessage,
@@ -615,7 +665,6 @@ export class VehicleExpertAgent {
 
       // 2.55. Check if user is responding after seeing a recommendation
       if (showedRecommendation && lastShownVehicles && lastShownVehicles.length > 0) {
-
         // AUTO-DETECTION: Trade-In Discussion (Post-Recommendation)
         // If user mentions trade-in, we need to know WHICH car they have
         if (extracted.extracted.hasTradeIn || /troca|meu carro|tenho um|minha/i.test(userMessage)) {
@@ -630,7 +679,7 @@ export class VehicleExpertAgent {
               extractedPreferences: {
                 ...extracted.extracted,
                 hasTradeIn: true,
-                _awaitingTradeInDetails: true,  // Flag to capture trade-in car details
+                _awaitingTradeInDetails: true, // Flag to capture trade-in car details
                 _showedRecommendation: true,
                 _lastShownVehicles: lastShownVehicles,
               },
@@ -640,8 +689,8 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.95,
-                llmUsed: 'rule-based'
-              }
+                llmUsed: 'rule-based',
+              },
             };
           }
 
@@ -668,8 +717,8 @@ export class VehicleExpertAgent {
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.95,
-              llmUsed: 'rule-based'
-            }
+              llmUsed: 'rule-based',
+            },
           };
         }
 
@@ -698,8 +747,8 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.95,
-                llmUsed: 'rule-based'
-              }
+                llmUsed: 'rule-based',
+              },
             };
           }
 
@@ -707,9 +756,9 @@ export class VehicleExpertAgent {
           // Verificar se usuário já informou carro de troca
           const hasTradeInInfo = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
           const tradeInText = hasTradeInInfo
-            ? (updatedProfile.tradeInYear
+            ? updatedProfile.tradeInYear
               ? `${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear}`
-              : capitalizeWords(updatedProfile.tradeInModel))
+              : capitalizeWords(updatedProfile.tradeInModel)
             : null;
 
           // Se tem troca, o carro É a entrada - vai direto pro vendedor
@@ -729,8 +778,8 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.95,
-                llmUsed: 'rule-based'
-              }
+                llmUsed: 'rule-based',
+              },
             };
           }
 
@@ -740,7 +789,7 @@ export class VehicleExpertAgent {
             extractedPreferences: {
               ...extracted.extracted,
               wantsFinancing: true,
-              _awaitingFinancingDetails: true,  // Flag to catch next message with entry/trade-in
+              _awaitingFinancingDetails: true, // Flag to catch next message with entry/trade-in
               _showedRecommendation: true,
               _lastShownVehicles: lastShownVehicles,
             },
@@ -750,49 +799,69 @@ export class VehicleExpertAgent {
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.95,
-              llmUsed: 'rule-based'
-            }
+              llmUsed: 'rule-based',
+            },
           };
         }
 
-        const postRecommendationIntent = detectPostRecommendationIntent(userMessage, lastShownVehicles);
-
-        logger.info({
+        const postRecommendationIntent = detectPostRecommendationIntent(
           userMessage,
-          postRecommendationIntent,
-          lastSearchType,
-          lastShownCount: lastShownVehicles.length
-        }, 'Post-recommendation intent detection');
+          lastShownVehicles
+        );
+
+        logger.info(
+          {
+            userMessage,
+            postRecommendationIntent,
+            lastSearchType,
+            lastShownCount: lastShownVehicles.length,
+          },
+          'Post-recommendation intent detection'
+        );
 
         // PRIORITY: Check if user is asking for a SPECIFIC MODEL not in the shown list
         // e.g., "Não tem HB20?", "Tem Onix?", "E o Civic?"
         const specificModelMatch = exactSearchParser.parse(userMessage);
         if (specificModelMatch.model) {
           // Check if this model was NOT in the shown vehicles
-          const modelInShown = lastShownVehicles.some(v =>
-            v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
-            specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
+          const modelInShown = lastShownVehicles.some(
+            v =>
+              v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
+              specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
           );
 
           if (!modelInShown) {
             // User is asking for a different model - do a new search
-            logger.info({
-              requestedModel: specificModelMatch.model,
-              year: specificModelMatch.year,
-              shownModels: lastShownVehicles.map(v => v.model)
-            }, 'User asking for specific model not in shown list - doing new search');
+            logger.info(
+              {
+                requestedModel: specificModelMatch.model,
+                year: specificModelMatch.year,
+                shownModels: lastShownVehicles.map(v => v.model),
+              },
+              'User asking for specific model not in shown list - doing new search'
+            );
 
             // Continue to the main search logic below (don't return here, let it fall through)
             // The search logic will handle this as a new model search
           }
         }
 
-        if (postRecommendationIntent === 'want_others' && !(specificModelMatch.model && !lastShownVehicles.some(v =>
-          v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
-          specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
-        ))) {
+        if (
+          postRecommendationIntent === 'want_others' &&
+          !(
+            specificModelMatch.model &&
+            !lastShownVehicles.some(
+              v =>
+                v.model.toLowerCase().includes(specificModelMatch.model!.toLowerCase()) ||
+                specificModelMatch.model!.toLowerCase().includes(v.model.toLowerCase())
+            )
+          )
+        ) {
           // User wants to see other options - search for similar vehicles directly
-          logger.info({ userMessage, lastShownVehicles, extractedBudget: extracted.extracted.budget }, 'User wants other options after seeing recommendation');
+          logger.info(
+            { userMessage, lastShownVehicles, extractedBudget: extracted.extracted.budget },
+            'User wants other options after seeing recommendation'
+          );
 
           const firstVehicle = lastShownVehicles[0];
           const wasSpecificSearch = lastSearchType === 'specific';
@@ -806,8 +875,12 @@ export class VehicleExpertAgent {
 
           // Check for price adjustment intent
           const msgLower = userMessage.toLowerCase();
-          const isCheaper = /barato|em conta|menos|menor|acess[íi]vel|abaixo/i.test(msgLower) && !msgLower.includes('menos caro de manter'); // avoid false positives
-          const isExpensive = /caro|alto|melhor|maior|acima|top|premium/i.test(msgLower) && !msgLower.includes('muito caro'); // avoid "achei muito caro" interpreted as wanting expensive
+          const isCheaper =
+            /barato|em conta|menos|menor|acess[íi]vel|abaixo/i.test(msgLower) &&
+            !msgLower.includes('menos caro de manter'); // avoid false positives
+          const isExpensive =
+            /caro|alto|melhor|maior|acima|top|premium/i.test(msgLower) &&
+            !msgLower.includes('muito caro'); // avoid "achei muito caro" interpreted as wanting expensive
 
           if (isCheaper) {
             logger.info('User specifically asked for CHEAPER options');
@@ -838,9 +911,55 @@ export class VehicleExpertAgent {
             bodyTypeKeyword = 'pickup';
           } else {
             // Infer from known models
-            const sedanModels = ['voyage', 'prisma', 'onix plus', 'cronos', 'virtus', 'hb20s', 'city', 'civic', 'corolla', 'yaris sedan', 'logan', 'versa', 'sentra'];
-            const hatchModels = ['gol', 'fox', 'up', 'polo', 'onix', 'argo', 'mobi', 'uno', 'hb20', 'kwid', 'sandero', 'march', 'fit', 'ka', 'celta', 'palio'];
-            const suvModels = ['tcross', 't-cross', 'nivus', 'tracker', 'creta', 'hrv', 'hr-v', 'kicks', 'duster', 'captur', 'renegade', 'compass', 'tucson', 'tiggo'];
+            const sedanModels = [
+              'voyage',
+              'prisma',
+              'onix plus',
+              'cronos',
+              'virtus',
+              'hb20s',
+              'city',
+              'civic',
+              'corolla',
+              'yaris sedan',
+              'logan',
+              'versa',
+              'sentra',
+            ];
+            const hatchModels = [
+              'gol',
+              'fox',
+              'up',
+              'polo',
+              'onix',
+              'argo',
+              'mobi',
+              'uno',
+              'hb20',
+              'kwid',
+              'sandero',
+              'march',
+              'fit',
+              'ka',
+              'celta',
+              'palio',
+            ];
+            const suvModels = [
+              'tcross',
+              't-cross',
+              'nivus',
+              'tracker',
+              'creta',
+              'hrv',
+              'hr-v',
+              'kicks',
+              'duster',
+              'captur',
+              'renegade',
+              'compass',
+              'tucson',
+              'tiggo',
+            ];
 
             const modelLower = referenceModel.toLowerCase();
             if (sedanModels.some(m => modelLower.includes(m))) {
@@ -855,14 +974,34 @@ export class VehicleExpertAgent {
           // Determine vehicle category based on price range for more specific search
           // Sedans compactos: Voyage, Prisma, Logan, Versa, HB20S (~35-55k)
           // Sedans médios: Cruze, Focus, Civic, Corolla, Sentra (~55-90k)
-          const sedanCompactModels = ['voyage', 'prisma', 'logan', 'versa', 'hb20s', 'cronos', 'virtus', 'onix plus'];
-          const sedanMediumModels = ['cruze', 'focus', 'civic', 'corolla', 'sentra', 'jetta', 'city'];
+          const sedanCompactModels = [
+            'voyage',
+            'prisma',
+            'logan',
+            'versa',
+            'hb20s',
+            'cronos',
+            'virtus',
+            'onix plus',
+          ];
+          const sedanMediumModels = [
+            'cruze',
+            'focus',
+            'civic',
+            'corolla',
+            'sentra',
+            'jetta',
+            'city',
+          ];
           const modelLower = referenceModel.toLowerCase();
 
           if (bodyTypeKeyword === 'sedan') {
             if (sedanCompactModels.some(m => modelLower.includes(m)) || referencePrice <= 60000) {
               vehicleCategory = 'compacto';
-            } else if (sedanMediumModels.some(m => modelLower.includes(m)) || referencePrice > 60000) {
+            } else if (
+              sedanMediumModels.some(m => modelLower.includes(m)) ||
+              referencePrice > 60000
+            ) {
               vehicleCategory = 'medio';
             }
           } else if (bodyTypeKeyword === 'hatch') {
@@ -883,26 +1022,26 @@ export class VehicleExpertAgent {
             searchQuery = `carro usado`;
           }
 
-          logger.info({
-            searchQuery,
-            searchMaxPrice,
-            searchMinPrice,
-            userBudget,
-            referencePrice,
-            bodyTypeKeyword,
-            referenceBodyType
-          }, 'Searching for similar vehicles by type');
+          logger.info(
+            {
+              searchQuery,
+              searchMaxPrice,
+              searchMinPrice,
+              userBudget,
+              referencePrice,
+              bodyTypeKeyword,
+              referenceBodyType,
+            },
+            'Searching for similar vehicles by type'
+          );
 
           // Search for similar vehicles with same body type
-          const similarResults = await vehicleSearchAdapter.search(
-            searchQuery,
-            {
-              maxPrice: searchMaxPrice,
-              minYear: referenceYear - 5,
-              bodyType: bodyTypeKeyword || undefined,
-              limit: 20
-            }
-          );
+          const similarResults = await vehicleSearchAdapter.search(searchQuery, {
+            maxPrice: searchMaxPrice,
+            minYear: referenceYear - 5,
+            bodyType: bodyTypeKeyword || undefined,
+            limit: 20,
+          });
 
           // Filter results to match same body type and exclude already shown
           const shownVehicleIds = lastShownVehicles.map(v => v.vehicleId);
@@ -946,8 +1085,8 @@ export class VehicleExpertAgent {
                   brand: r.vehicle.brand,
                   model: r.vehicle.model,
                   year: r.vehicle.year,
-                  price: r.vehicle.price
-                }))
+                  price: r.vehicle.price,
+                })),
               },
               needsMoreInfo: [],
               canRecommend: true,
@@ -956,8 +1095,8 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.9,
-                llmUsed: 'gpt-4o-mini'
-              }
+                llmUsed: 'gpt-4o-mini',
+              },
             };
           } else {
             // No similar vehicles found - ask for preferences but KEEP lastShownVehicles to exclude later
@@ -978,7 +1117,7 @@ export class VehicleExpertAgent {
                 _lastShownVehicles: lastShownVehicles, // MANTER para excluir depois
                 _lastSearchType: undefined,
                 _waitingForSuggestionResponse: true,
-                _excludeVehicleIds: lastShownVehicles.map(v => v.vehicleId) // IDs a excluir
+                _excludeVehicleIds: lastShownVehicles.map(v => v.vehicleId), // IDs a excluir
               },
               needsMoreInfo: missingInfo,
               canRecommend: false,
@@ -986,14 +1125,23 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.8,
-                llmUsed: 'gpt-4o-mini'
-              }
+                llmUsed: 'gpt-4o-mini',
+              },
             };
           }
         }
 
         // Route to handlers for: want_details, want_schedule, want_financing, want_tradein, acknowledgment, want_interest
-        if (['want_details', 'want_schedule', 'want_financing', 'want_tradein', 'acknowledgment', 'want_interest'].includes(postRecommendationIntent)) {
+        if (
+          [
+            'want_details',
+            'want_schedule',
+            'want_financing',
+            'want_tradein',
+            'acknowledgment',
+            'want_interest',
+          ].includes(postRecommendationIntent)
+        ) {
           const handlerContext: PostRecommendationContext = {
             userMessage,
             lastShownVehicles: lastShownVehicles as ShownVehicle[],
@@ -1010,7 +1158,6 @@ export class VehicleExpertAgent {
           }
         }
 
-
         // If 'none', clear the recommendation state and continue normal processing
         // The user might be asking something else or making a new search
         updatedProfile._showedRecommendation = false;
@@ -1024,17 +1171,20 @@ export class VehicleExpertAgent {
           if (availableYears.includes(selectedYear)) {
             const searchedModel = context.profile?._searchedItem;
 
-            logger.info({
-              selectedYear,
-              searchedModel,
-              availableYears
-            }, 'User selected alternative year - returning vehicle directly');
+            logger.info(
+              {
+                selectedYear,
+                searchedModel,
+                availableYears,
+              },
+              'User selected alternative year - returning vehicle directly'
+            );
 
             // Search for the model with selected year
             const results = await vehicleSearchAdapter.search(searchedModel || '', {
               model: searchedModel,
               minYear: selectedYear,
-              limit: 5
+              limit: 5,
             });
 
             // Filter for exact year match
@@ -1043,7 +1193,12 @@ export class VehicleExpertAgent {
             if (matchingResults.length > 0) {
               const formattedResponse = await this.formatRecommendations(
                 matchingResults,
-                { ...updatedProfile, _availableYears: undefined, _waitingForSuggestionResponse: false, _searchedItem: undefined },
+                {
+                  ...updatedProfile,
+                  _availableYears: undefined,
+                  _waitingForSuggestionResponse: false,
+                  _searchedItem: undefined,
+                },
                 context,
                 'specific' // Usuário escolheu um ano alternativo - busca específica
               );
@@ -1063,8 +1218,8 @@ export class VehicleExpertAgent {
                     brand: r.vehicle.brand,
                     model: r.vehicle.model,
                     year: r.vehicle.year,
-                    price: r.vehicle.price
-                  }))
+                    price: r.vehicle.price,
+                  })),
                 },
                 needsMoreInfo: [],
                 canRecommend: true,
@@ -1073,8 +1228,8 @@ export class VehicleExpertAgent {
                 metadata: {
                   processingTime: Date.now() - startTime,
                   confidence: 0.95,
-                  llmUsed: 'gpt-4o-mini'
-                }
+                  llmUsed: 'gpt-4o-mini',
+                },
               };
             }
           }
@@ -1084,8 +1239,12 @@ export class VehicleExpertAgent {
       if (wasWaitingForSuggestionResponse) {
         // First, check if user is asking a NEW question or making a new request
         const isNewQuestion = detectUserQuestion(userMessage);
-        const hasNewPreferences = Object.keys(extracted.extracted).length > 0 &&
-          (extracted.extracted.bodyType || extracted.extracted.brand || extracted.extracted.model || extracted.extracted.budget);
+        const hasNewPreferences =
+          Object.keys(extracted.extracted).length > 0 &&
+          (extracted.extracted.bodyType ||
+            extracted.extracted.brand ||
+            extracted.extracted.model ||
+            extracted.extracted.budget);
 
         // Check if user is responding to Uber X/99Pop alternative offer
         const waitingForUberXAlternatives = context.profile?._waitingForUberXAlternatives;
@@ -1099,7 +1258,7 @@ export class VehicleExpertAgent {
 
           const uberXVehicles = await vehicleSearchAdapter.search('', {
             aptoUber: true,
-            limit: 10
+            limit: 10,
           });
 
           if (uberXVehicles.length > 0) {
@@ -1125,8 +1284,8 @@ export class VehicleExpertAgent {
                   model: r.vehicle.model,
                   year: r.vehicle.year,
                   price: r.vehicle.price,
-                  bodyType: r.vehicle.bodyType
-                }))
+                  bodyType: r.vehicle.bodyType,
+                })),
               },
               needsMoreInfo: [],
               canRecommend: true,
@@ -1135,8 +1294,8 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.9,
-                llmUsed: 'rule-based'
-              }
+                llmUsed: 'rule-based',
+              },
             };
           } else {
             return {
@@ -1148,20 +1307,23 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.9,
-                llmUsed: 'gpt-4o-mini'
-              }
+                llmUsed: 'gpt-4o-mini',
+              },
             };
           }
         }
 
         // If user is asking a question or has new preferences, process normally (don't treat as yes/no)
         if (isNewQuestion || hasNewPreferences) {
-          logger.info({
-            userMessage,
-            isNewQuestion,
-            hasNewPreferences,
-            extracted: extracted.extracted
-          }, 'User asked new question while waiting for suggestion response, processing normally');
+          logger.info(
+            {
+              userMessage,
+              isNewQuestion,
+              hasNewPreferences,
+              extracted: extracted.extracted,
+            },
+            'User asked new question while waiting for suggestion response, processing normally'
+          );
 
           // Clear the waiting flag and continue to normal processing
           updatedProfile._waitingForSuggestionResponse = false;
@@ -1171,22 +1333,35 @@ export class VehicleExpertAgent {
           // Don't return here - let the flow continue to handle the new question/request
         } else if (userAccepts) {
           const searchedItem = context.profile?._searchedItem;
-          const wasLookingForSevenSeater = searchedItem?.includes('lugares') || context.profile?.minSeats;
+          const wasLookingForSevenSeater =
+            searchedItem?.includes('lugares') || context.profile?.minSeats;
           const hasAvailableYears = availableYears && availableYears.length > 0;
 
-          logger.info({ userMessage, searchedItem, wasLookingForSevenSeater, hasAvailableYears, availableYears }, 'User accepted suggestion');
+          logger.info(
+            {
+              userMessage,
+              searchedItem,
+              wasLookingForSevenSeater,
+              hasAvailableYears,
+              availableYears,
+            },
+            'User accepted suggestion'
+          );
 
           // Se temos anos alternativos disponíveis, mostrar o carro do primeiro ano diretamente
           if (hasAvailableYears && searchedItem) {
             const firstAvailableYear = availableYears[0]; // Ano mais recente
 
-            logger.info({ searchedItem, firstAvailableYear }, 'User accepted to see alternative year - showing vehicle directly');
+            logger.info(
+              { searchedItem, firstAvailableYear },
+              'User accepted to see alternative year - showing vehicle directly'
+            );
 
             // Buscar o veículo do ano alternativo
             const results = await vehicleSearchAdapter.search(searchedItem, {
               model: searchedItem,
               minYear: firstAvailableYear,
-              limit: 5
+              limit: 5,
             });
 
             // Filtrar para o ano específico
@@ -1195,7 +1370,12 @@ export class VehicleExpertAgent {
             if (matchingResults.length > 0) {
               const formattedResponse = await this.formatRecommendations(
                 matchingResults,
-                { ...updatedProfile, _availableYears: undefined, _waitingForSuggestionResponse: false, _searchedItem: undefined },
+                {
+                  ...updatedProfile,
+                  _availableYears: undefined,
+                  _waitingForSuggestionResponse: false,
+                  _searchedItem: undefined,
+                },
                 context,
                 'specific' // Busca específica do ano alternativo
               );
@@ -1215,8 +1395,8 @@ export class VehicleExpertAgent {
                     brand: r.vehicle.brand,
                     model: r.vehicle.model,
                     year: r.vehicle.year,
-                    price: r.vehicle.price
-                  }))
+                    price: r.vehicle.price,
+                  })),
                 },
                 needsMoreInfo: [],
                 canRecommend: true,
@@ -1225,8 +1405,8 @@ export class VehicleExpertAgent {
                 metadata: {
                   processingTime: Date.now() - startTime,
                   confidence: 0.95,
-                  llmUsed: 'gpt-4o-mini'
-                }
+                  llmUsed: 'gpt-4o-mini',
+                },
               };
             }
           }
@@ -1245,25 +1425,36 @@ export class VehicleExpertAgent {
                 minSeats: undefined, // Remover requisito de 7 lugares
                 people: undefined, // Remover referência a 7 pessoas (agora são 5 lugares)
                 _acceptedFiveSeaterAlternative: true, // Flag para não mostrar "X pessoas" na recomendação
-                bodyType: 'suv' as const
+                bodyType: 'suv' as const,
               };
 
               const results = await vehicleSearchAdapter.search('suv espaçoso', {
                 bodyType: 'suv',
                 limit: 5,
-                maxPrice: existingBudget
+                maxPrice: existingBudget,
               });
 
               if (results.length > 0) {
-                const formattedResponse = await this.formatRecommendations(results, altProfile, context, 'recommendation');
+                const formattedResponse = await this.formatRecommendations(
+                  results,
+                  altProfile,
+                  context,
+                  'recommendation'
+                );
                 return {
-                  response: `Entendido! Considerando seu orçamento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opções de SUVs espaçosos:\n\n` + formattedResponse,
+                  response:
+                    `Entendido! Considerando seu orçamento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opções de SUVs espaçosos:\n\n` +
+                    formattedResponse,
                   extractedPreferences: altProfile,
                   needsMoreInfo: [],
                   canRecommend: true,
                   recommendations: results,
                   nextMode: 'recommendation',
-                  metadata: { processingTime: Date.now() - startTime, confidence: 0.9, llmUsed: 'rule-based' }
+                  metadata: {
+                    processingTime: Date.now() - startTime,
+                    confidence: 0.9,
+                    llmUsed: 'rule-based',
+                  },
                 };
               }
             }
@@ -1277,7 +1468,7 @@ export class VehicleExpertAgent {
               people: undefined, // Remover referência a 7 pessoas (agora são 5 lugares)
               _acceptedFiveSeaterAlternative: true, // Flag para não mostrar "X pessoas" na recomendação
               bodyType: 'suv' as const, // Mostrar SUVs espaçosos como alternativa
-              priorities: [...(extracted.extracted.priorities || []), 'espaco']
+              priorities: [...(extracted.extracted.priorities || []), 'espaco'],
             };
 
             return {
@@ -1289,37 +1480,45 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.9,
-                llmUsed: 'gpt-4o-mini'
-              }
+                llmUsed: 'gpt-4o-mini',
+              },
             };
           }
 
           // Start asking questions to build profile for suggestions
           return {
             response: `Ótimo! Vou te fazer algumas perguntas rápidas para encontrar o carro ideal pra você. 🚗\n\n💰 Até quanto você pretende investir no carro?`,
-            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: false, _searchedItem: undefined },
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: false,
+              _searchedItem: undefined,
+            },
             needsMoreInfo: ['budget', 'usage'],
             canRecommend: false,
             nextMode: 'discovery',
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini'
-            }
+              llmUsed: 'gpt-4o-mini',
+            },
           };
         } else if (userDeclines) {
           // User explicitly declined
           return {
             response: `Sem problemas! 🙂 Se mudar de ideia ou quiser ver outros veículos, é só me chamar!`,
-            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: false, _searchedItem: undefined },
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: false,
+              _searchedItem: undefined,
+            },
             needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'discovery',
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.8,
-              llmUsed: 'gpt-4o-mini'
-            }
+              llmUsed: 'gpt-4o-mini',
+            },
           };
         }
         // If neither yes nor no, continue processing normally
@@ -1334,21 +1533,30 @@ export class VehicleExpertAgent {
 
       // Parse user message for exact model+year search
       const exactFilters = exactSearchParser.parse(userMessage);
-      const hasExactModelYear = !!(exactFilters.model && (exactFilters.year || exactFilters.yearRange));
+      const hasExactModelYear = !!(
+        exactFilters.model &&
+        (exactFilters.year || exactFilters.yearRange)
+      );
 
-      if ((hasSpecificModel || hasExactModelYear) && !userMessage.match(/parecid|similar|tipo\s|estilo|como\s|igual/i)) {
+      if (
+        (hasSpecificModel || hasExactModelYear) &&
+        !userMessage.match(/parecid|similar|tipo\s|estilo|como\s|igual/i)
+      ) {
         const requestedBrand = extracted.extracted.brand?.toLowerCase();
         const requestedModel = (exactFilters.model || extracted.extracted.model)?.toLowerCase();
         const requestedYear = exactFilters.year;
         const requestedYearRange = exactFilters.yearRange;
 
-        logger.info({
-          brand: requestedBrand,
-          model: requestedModel,
-          year: requestedYear,
-          yearRange: requestedYearRange,
-          hasExactModelYear
-        }, 'VehicleExpert: Specific model/brand/year mentioned, searching directly');
+        logger.info(
+          {
+            brand: requestedBrand,
+            model: requestedModel,
+            year: requestedYear,
+            yearRange: requestedYearRange,
+            hasExactModelYear,
+          },
+          'VehicleExpert: Specific model/brand/year mentioned, searching directly'
+        );
 
         // Search for specific model/brand - the adapter will use ExactSearchService if year is detected
         const result = await this.getRecommendations(updatedProfile);
@@ -1375,20 +1583,26 @@ export class VehicleExpertAgent {
           }
 
           // If user requested a year range, vehicle must be within range
-          if (requestedYearRange && (vehicleYear < requestedYearRange.min || vehicleYear > requestedYearRange.max)) {
+          if (
+            requestedYearRange &&
+            (vehicleYear < requestedYearRange.min || vehicleYear > requestedYearRange.max)
+          ) {
             return false;
           }
 
           return true;
         });
 
-        logger.info({
-          totalResults: result.recommendations.length,
-          matchingResults: matchingResults.length,
-          requestedBrand,
-          requestedModel,
-          requestedYear
-        }, 'VehicleExpert: Filtered results for specific brand/model/year');
+        logger.info(
+          {
+            totalResults: result.recommendations.length,
+            matchingResults: matchingResults.length,
+            requestedBrand,
+            requestedModel,
+            requestedYear,
+          },
+          'VehicleExpert: Filtered results for specific brand/model/year'
+        );
 
         if (matchingResults.length > 0) {
           const formattedResponse = await this.formatRecommendations(
@@ -1409,8 +1623,8 @@ export class VehicleExpertAgent {
                 brand: r.vehicle.brand,
                 model: r.vehicle.model,
                 year: r.vehicle.year,
-                price: r.vehicle.price
-              }))
+                price: r.vehicle.price,
+              })),
             },
             needsMoreInfo: [],
             canRecommend: true,
@@ -1419,17 +1633,19 @@ export class VehicleExpertAgent {
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini'
-            }
+              llmUsed: 'gpt-4o-mini',
+            },
           };
         } else {
           // Model/brand/year not found in inventory
           // Try to get model from various sources, with fallback to extracting from user message
-          let searchedItem = requestedModel || extracted.extracted.model || extracted.extracted.brand;
+          let searchedItem =
+            requestedModel || extracted.extracted.model || extracted.extracted.brand;
 
           // If still no model found, try to extract from user message (words that aren't years)
           if (!searchedItem) {
-            const wordsFromMessage = userMessage.toLowerCase()
+            const wordsFromMessage = userMessage
+              .toLowerCase()
               .replace(/\d{4}/g, '') // Remove 4-digit years
               .replace(/\b(um|uma|o|a|de|do|da|para|pra|quero|tem|tenho|busco|procuro)\b/gi, '') // Remove common words
               .trim()
@@ -1438,7 +1654,11 @@ export class VehicleExpertAgent {
             searchedItem = wordsFromMessage ? capitalize(wordsFromMessage) : null;
           }
 
-          const yearText = requestedYear ? ` ${requestedYear}` : (requestedYearRange ? ` ${requestedYearRange.min}-${requestedYearRange.max}` : '');
+          const yearText = requestedYear
+            ? ` ${requestedYear}`
+            : requestedYearRange
+              ? ` ${requestedYearRange.min}-${requestedYearRange.max}`
+              : '';
 
           // Check if we have the model but not the year - offer year alternatives
           if (requestedYear && requestedModel) {
@@ -1448,7 +1668,9 @@ export class VehicleExpertAgent {
             });
 
             if (sameModelResults.length > 0) {
-              const availableYears = [...new Set(sameModelResults.map(r => r.vehicle.year))].sort((a, b) => b - a);
+              const availableYears = [...new Set(sameModelResults.map(r => r.vehicle.year))].sort(
+                (a, b) => b - a
+              );
               const yearsText = availableYears.slice(0, 5).join(', ');
               const isPlural = availableYears.length > 1;
 
@@ -1460,15 +1682,20 @@ Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
 
               return {
                 response: yearAlternativeResponse,
-                extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: searchedItem, _availableYears: availableYears },
+                extractedPreferences: {
+                  ...extracted.extracted,
+                  _waitingForSuggestionResponse: true,
+                  _searchedItem: searchedItem,
+                  _availableYears: availableYears,
+                },
                 needsMoreInfo: [],
                 canRecommend: false,
                 nextMode: 'clarification',
                 metadata: {
                   processingTime: Date.now() - startTime,
                   confidence: 0.8,
-                  llmUsed: 'gpt-4o-mini'
-                }
+                  llmUsed: 'gpt-4o-mini',
+                },
               };
             }
           }
@@ -1479,10 +1706,66 @@ Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
 
           // Before saying "not found", try to find similar vehicles of the same type
           // Infer body type from model name for pickup models like Saveiro, Strada, S10
-          const pickupModels = ['saveiro', 'strada', 's10', 'montana', 'hilux', 'ranger', 'toro', 'amarok', 'l200', 'frontier', 'triton', 'oroch'];
-          const sedanModels = ['voyage', 'prisma', 'cronos', 'virtus', 'hb20s', 'city', 'civic', 'corolla', 'logan', 'versa', 'sentra', 'cruze', 'focus'];
-          const suvModels = ['tcross', 't-cross', 'nivus', 'tracker', 'creta', 'hrv', 'hr-v', 'kicks', 'duster', 'captur', 'renegade', 'compass', 'ecosport'];
-          const hatchModels = ['gol', 'polo', 'onix', 'argo', 'mobi', 'uno', 'hb20', 'kwid', 'sandero', 'ka', 'celta', 'palio', 'fox', 'up'];
+          const pickupModels = [
+            'saveiro',
+            'strada',
+            's10',
+            'montana',
+            'hilux',
+            'ranger',
+            'toro',
+            'amarok',
+            'l200',
+            'frontier',
+            'triton',
+            'oroch',
+          ];
+          const sedanModels = [
+            'voyage',
+            'prisma',
+            'cronos',
+            'virtus',
+            'hb20s',
+            'city',
+            'civic',
+            'corolla',
+            'logan',
+            'versa',
+            'sentra',
+            'cruze',
+            'focus',
+          ];
+          const suvModels = [
+            'tcross',
+            't-cross',
+            'nivus',
+            'tracker',
+            'creta',
+            'hrv',
+            'hr-v',
+            'kicks',
+            'duster',
+            'captur',
+            'renegade',
+            'compass',
+            'ecosport',
+          ];
+          const hatchModels = [
+            'gol',
+            'polo',
+            'onix',
+            'argo',
+            'mobi',
+            'uno',
+            'hb20',
+            'kwid',
+            'sandero',
+            'ka',
+            'celta',
+            'palio',
+            'fox',
+            'up',
+          ];
 
           const modelLower = (searchedItem || '').toLowerCase();
           let inferredBodyType = '';
@@ -1504,21 +1787,23 @@ Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
 
           // If we inferred a body type, search for similar vehicles
           if (inferredBodyType) {
-            logger.info({ searchedItem, inferredBodyType }, 'Searching for similar vehicles of same type');
-
-            const similarResults = await vehicleSearchAdapter.search(
-              `${inferredBodyType} usado`,
-              {
-                bodyType: inferredBodyType,
-                limit: 10
-              }
+            logger.info(
+              { searchedItem, inferredBodyType },
+              'Searching for similar vehicles of same type'
             );
+
+            const similarResults = await vehicleSearchAdapter.search(`${inferredBodyType} usado`, {
+              bodyType: inferredBodyType,
+              limit: 10,
+            });
 
             if (similarResults.length > 0) {
               // Sort by price (cheapest first) to be friendly to budget-conscious buyers
               similarResults.sort((a, b) => a.vehicle.price - b.vehicle.price);
 
-              const firstPrice = similarResults[0].vehicle.price.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+              const firstPrice = similarResults[0].vehicle.price.toLocaleString('pt-BR', {
+                minimumFractionDigits: 0,
+              });
 
               const intro = `Não temos ${vehicleDescription} disponível no momento. 😕\n\nMas encontrei algumas opções de ${bodyTypeName || inferredBodyType} similares (a partir de R$ ${firstPrice}).\n\nGostaria de ver essas opções?`;
 
@@ -1527,7 +1812,7 @@ Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
                 extractedPreferences: {
                   ...extracted.extracted,
                   _waitingForSimilarApproval: true,
-                  _pendingSimilarResults: similarResults.slice(0, 5) // Store pending results
+                  _pendingSimilarResults: similarResults.slice(0, 5), // Store pending results
                 },
                 needsMoreInfo: [],
                 canRecommend: false,
@@ -1535,8 +1820,8 @@ Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
                 metadata: {
                   processingTime: Date.now() - startTime,
                   confidence: 0.85,
-                  llmUsed: 'gpt-4o-mini'
-                }
+                  llmUsed: 'gpt-4o-mini',
+                },
               };
             }
           }
@@ -1548,15 +1833,19 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
 
           return {
             response: notFoundResponse,
-            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: searchedItem },
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: true,
+              _searchedItem: searchedItem,
+            },
             needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'clarification',
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.8,
-              llmUsed: 'gpt-4o-mini'
-            }
+              llmUsed: 'gpt-4o-mini',
+            },
           };
         }
       }
@@ -1567,62 +1856,94 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
       // 5. Route based on question detection
       if (isUserQuestion) {
         // Check if it's a question about vehicle availability (e.g., "qual pickup você tem?")
-        const availabilityKeywords = ['tem', 'têm', 'disponível', 'disponivel', 'estoque', 'vocês', 'voces'];
+        const availabilityKeywords = [
+          'tem',
+          'têm',
+          'disponível',
+          'disponivel',
+          'estoque',
+          'vocês',
+          'voces',
+        ];
         const vehicleTypeKeywords = ['pickup', 'picape', 'suv', 'sedan', 'hatch', 'caminhonete'];
         const messageLower = userMessage.toLowerCase();
 
-        const isAvailabilityQuestion = availabilityKeywords.some(kw => messageLower.includes(kw)) &&
+        const isAvailabilityQuestion =
+          availabilityKeywords.some(kw => messageLower.includes(kw)) &&
           vehicleTypeKeywords.some(kw => messageLower.includes(kw));
 
         if (isAvailabilityQuestion) {
           // Detect which vehicle type user is asking about
           const askedBodyType = vehicleTypeKeywords.find(kw => messageLower.includes(kw));
-          const normalizedBodyType = (askedBodyType === 'picape' || askedBodyType === 'caminhonete' ? 'pickup' : askedBodyType) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | undefined;
+          const normalizedBodyType = (
+            askedBodyType === 'picape' || askedBodyType === 'caminhonete' ? 'pickup' : askedBodyType
+          ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | undefined;
 
-          logger.info({ userMessage, askedBodyType: normalizedBodyType }, 'User asking about vehicle availability');
+          logger.info(
+            { userMessage, askedBodyType: normalizedBodyType },
+            'User asking about vehicle availability'
+          );
 
           // Para perguntas de disponibilidade, buscar DIRETO por categoria (sem filtros extras)
           const categoryResults = await vehicleSearchAdapter.search(`${normalizedBodyType}`, {
             bodyType: normalizedBodyType,
-            limit: 5,  // Retornar até 5 veículos da categoria
+            limit: 5, // Retornar até 5 veículos da categoria
           });
 
           if (categoryResults.length === 0) {
-            const categoryName = askedBodyType === 'pickup' || askedBodyType === 'picape' ? 'picapes' :
-              askedBodyType === 'suv' ? 'SUVs' :
-                askedBodyType === 'sedan' ? 'sedans' :
-                  askedBodyType === 'hatch' ? 'hatches' :
-                    `${askedBodyType}s`;
+            const categoryName =
+              askedBodyType === 'pickup' || askedBodyType === 'picape'
+                ? 'picapes'
+                : askedBodyType === 'suv'
+                  ? 'SUVs'
+                  : askedBodyType === 'sedan'
+                    ? 'sedans'
+                    : askedBodyType === 'hatch'
+                      ? 'hatches'
+                      : `${askedBodyType}s`;
 
             return {
               response: `No momento não temos ${categoryName} disponíveis no estoque. 😕\n\nQuer que eu busque outras opções para você?`,
-              extractedPreferences: { ...extracted.extracted, bodyType: normalizedBodyType, _waitingForSuggestionResponse: true },
+              extractedPreferences: {
+                ...extracted.extracted,
+                bodyType: normalizedBodyType,
+                _waitingForSuggestionResponse: true,
+              },
               needsMoreInfo: [],
               canRecommend: false,
               nextMode: 'clarification',
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.9,
-                llmUsed: 'gpt-4o-mini'
-              }
+                llmUsed: 'gpt-4o-mini',
+              },
             };
           }
 
           // Found vehicles - format for category availability response
-          const categoryName = askedBodyType === 'pickup' || askedBodyType === 'picape' ? 'picapes' :
-            askedBodyType === 'suv' ? 'SUVs' :
-              askedBodyType === 'sedan' ? 'sedans' :
-                askedBodyType === 'hatch' ? 'hatches' :
-                  `${askedBodyType}s`;
+          const categoryName =
+            askedBodyType === 'pickup' || askedBodyType === 'picape'
+              ? 'picapes'
+              : askedBodyType === 'suv'
+                ? 'SUVs'
+                : askedBodyType === 'sedan'
+                  ? 'sedans'
+                  : askedBodyType === 'hatch'
+                    ? 'hatches'
+                    : `${askedBodyType}s`;
 
           const intro = `Temos ${categoryResults.length} ${categoryName} disponíveis! 🚗\n\n`;
-          const vehicleList = categoryResults.map((rec, i) => {
-            const v = rec.vehicle;
-            const emoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
-            return `${emoji} ${v.brand} ${v.model} ${v.year}\n` +
-              `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n` +
-              `   📍 ${v.mileage.toLocaleString('pt-BR')}km`;
-          }).join('\n\n');
+          const vehicleList = categoryResults
+            .map((rec, i) => {
+              const v = rec.vehicle;
+              const emoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
+              return (
+                `${emoji} ${v.brand} ${v.model} ${v.year}\n` +
+                `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n` +
+                `   📍 ${v.mileage.toLocaleString('pt-BR')}km`
+              );
+            })
+            .join('\n\n');
 
           const footer = '\n\n💬 Quer saber mais detalhes de algum? Me diz qual te interessou!';
 
@@ -1643,8 +1964,8 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
                 brand: r.vehicle.brand,
                 model: r.vehicle.model,
                 year: r.vehicle.year,
-                price: r.vehicle.price
-              }))
+                price: r.vehicle.price,
+              })),
             },
             needsMoreInfo: [],
             canRecommend: true,
@@ -1653,8 +1974,8 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini'
-            }
+              llmUsed: 'gpt-4o-mini',
+            },
           };
         }
 
@@ -1670,8 +1991,8 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
           metadata: {
             processingTime: Date.now() - startTime,
             confidence: extracted.confidence,
-            llmUsed: 'gpt-4o-mini'
-          }
+            llmUsed: 'gpt-4o-mini',
+          },
         };
       }
 
@@ -1681,7 +2002,20 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
       if (readiness.canRecommend) {
         // Check recent USER messages for pickup keywords before recommendations
         // IMPORTANT: Filter only user messages to avoid false positives from assistant examples like "SUV, sedan, pickup..."
-        const pickupKeywords = ['pickup', 'picape', 'caminhonete', 'caçamba', 'cacamba', 'carga', 'obra', 'material', 'construção', 'construcao', 'carregar', 'entulho'];
+        const pickupKeywords = [
+          'pickup',
+          'picape',
+          'caminhonete',
+          'caçamba',
+          'cacamba',
+          'carga',
+          'obra',
+          'material',
+          'construção',
+          'construcao',
+          'carregar',
+          'entulho',
+        ];
         const recentUserMessages = context.messages
           .filter(m => m.role === 'user')
           .slice(-5)
@@ -1691,7 +2025,10 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
 
         // If pickup detected in messages but not in profile, add it
         if (hasPickupInMessages && !updatedProfile.bodyType) {
-          logger.info({ recentMessages: recentUserMessages.substring(0, 100) }, 'Pickup detected in recent user messages, adding to profile');
+          logger.info(
+            { recentMessages: recentUserMessages.substring(0, 100) },
+            'Pickup detected in recent user messages, adding to profile'
+          );
           updatedProfile.bodyType = 'pickup';
           if (!updatedProfile.priorities) {
             updatedProfile.priorities = ['pickup'];
@@ -1711,7 +2048,11 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
 
           return {
             response: noPickupResponse,
-            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: 'pickup' },
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: true,
+              _searchedItem: 'pickup',
+            },
             needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'clarification',
@@ -1719,21 +2060,26 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
               processingTime: Date.now() - startTime,
               confidence: 0.9,
               llmUsed: 'gpt-4o-mini',
-              noPickupsFound: true
-            }
+              noPickupsFound: true,
+            },
           };
         }
 
         // Se não encontrou veículos de 7 lugares, informar e perguntar se quer alternativas
         if (result.noSevenSeaters) {
-          const seatsText = result.requiredSeats === 7 ? '7 lugares' : `${result.requiredSeats} lugares`;
+          const seatsText =
+            result.requiredSeats === 7 ? '7 lugares' : `${result.requiredSeats} lugares`;
           const noSevenSeaterResponse = `No momento não temos veículos de ${seatsText} disponíveis no estoque. 🚗
 
 Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alternativa?`;
 
           return {
             response: noSevenSeaterResponse,
-            extractedPreferences: { ...extracted.extracted, _waitingForSuggestionResponse: true, _searchedItem: `veículo de ${seatsText}` },
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: true,
+              _searchedItem: `veículo de ${seatsText}`,
+            },
             needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'clarification',
@@ -1741,8 +2087,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               processingTime: Date.now() - startTime,
               confidence: 0.9,
               llmUsed: 'gpt-4o-mini',
-              noSevenSeaters: true
-            }
+              noSevenSeaters: true,
+            },
           };
         }
 
@@ -1755,7 +2101,10 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         const allExcludeIds = [...new Set([...excludeFromList, ...excludeFromShown])];
 
         if (allExcludeIds.length > 0) {
-          logger.info({ allExcludeIds, excludeFromList, excludeFromShown }, 'Excluding previously shown vehicles from recommendations');
+          logger.info(
+            { allExcludeIds, excludeFromList, excludeFromShown },
+            'Excluding previously shown vehicles from recommendations'
+          );
           filteredRecommendations = result.recommendations.filter(
             r => !allExcludeIds.includes(r.vehicleId)
           );
@@ -1764,7 +2113,10 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         // If all recommendations were filtered out, try to get more without the exclusion
         if (filteredRecommendations.length === 0 && result.recommendations.length > 0) {
           filteredRecommendations = result.recommendations; // Use original if nothing left
-          logger.warn({ allExcludeIds }, 'All recommendations were excluded, showing original results');
+          logger.warn(
+            { allExcludeIds },
+            'All recommendations were excluded, showing original results'
+          );
         }
 
         const formattedResponse = await this.formatRecommendations(
@@ -1785,9 +2137,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               brand: r.vehicle.brand,
               model: r.vehicle.model,
               year: r.vehicle.year,
-              price: r.vehicle.price
+              price: r.vehicle.price,
             })),
-            _excludeVehicleIds: undefined // Limpar após usar
+            _excludeVehicleIds: undefined, // Limpar após usar
           },
           needsMoreInfo: [],
           canRecommend: true,
@@ -1796,8 +2148,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           metadata: {
             processingTime: Date.now() - startTime,
             confidence: readiness.confidence,
-            llmUsed: 'gpt-4o-mini'
-          }
+            llmUsed: 'gpt-4o-mini',
+          },
         };
       }
 
@@ -1805,7 +2157,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const nextQuestion = await this.generateNextQuestion({
         profile: updatedProfile,
         missingFields: readiness.missingRequired,
-        context: this.summarizeContext(context)
+        context: this.summarizeContext(context),
       });
 
       return {
@@ -1817,10 +2169,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         metadata: {
           processingTime: Date.now() - startTime,
           confidence: extracted.confidence,
-          llmUsed: 'gpt-4o-mini'
-        }
+          llmUsed: 'gpt-4o-mini',
+        },
       };
-
     } catch (error) {
       logger.error({ error, userMessage }, 'VehicleExpert chat failed');
 
@@ -1832,8 +2183,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         canRecommend: false,
         nextMode: context.mode,
         metadata: {
-          processingTime: Date.now() - startTime
-        }
+          processingTime: Date.now() - startTime,
+        },
       };
     }
   }
@@ -1858,9 +2209,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
    * Generate next contextual question to ask the user
    * @deprecated Use generateNextQuestion from './vehicle-expert/processors' instead
    */
-  private async generateNextQuestion(
-    options: QuestionGenerationOptions
-  ): Promise<string> {
+  private async generateNextQuestion(options: QuestionGenerationOptions): Promise<string> {
     return generateNextQuestionUtil(options);
   }
 
@@ -1868,15 +2217,20 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
    * Get vehicle recommendations based on profile
    * Returns { recommendations, noPickupsFound, noSevenSeaters } to indicate if category was not found
    */
-  private async getRecommendations(
-    profile: Partial<CustomerProfile>
-  ): Promise<{ recommendations: VehicleRecommendation[], noPickupsFound?: boolean, wantsPickup?: boolean, noSevenSeaters?: boolean, requiredSeats?: number }> {
+  private async getRecommendations(profile: Partial<CustomerProfile>): Promise<{
+    recommendations: VehicleRecommendation[];
+    noPickupsFound?: boolean;
+    wantsPickup?: boolean;
+    noSevenSeaters?: boolean;
+    requiredSeats?: number;
+  }> {
     try {
       // Build search query
       const query = this.buildSearchQuery(profile);
 
       // Detect Uber requirements from profile
-      const isUberBlack = profile.usoPrincipal === 'uber' &&
+      const isUberBlack =
+        profile.usoPrincipal === 'uber' &&
         (profile.priorities?.includes('uber_black') ||
           profile.priorities?.includes('black') ||
           profile.tipoUber === 'black');
@@ -1884,13 +2238,27 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const isUberX = profile.usoPrincipal === 'uber' && !isUberBlack;
 
       // Detect family requirements (only if explicitly mentioned, not just by people count)
-      const isFamily = profile.usoPrincipal === 'familia' ||
+      const isFamily =
+        profile.usoPrincipal === 'familia' ||
         profile.priorities?.includes('familia') ||
         profile.priorities?.includes('cadeirinha') ||
         profile.priorities?.includes('crianca');
 
       // Detect pickup/work requirements - check profile, search text AND context messages
-      const pickupKeywords = ['pickup', 'picape', 'caminhonete', 'caçamba', 'cacamba', 'carga', 'obra', 'material', 'construção', 'construcao', 'carregar', 'entulho'];
+      const pickupKeywords = [
+        'pickup',
+        'picape',
+        'caminhonete',
+        'caçamba',
+        'cacamba',
+        'carga',
+        'obra',
+        'material',
+        'construção',
+        'construcao',
+        'carregar',
+        'entulho',
+      ];
       const searchTextLower = query.searchText.toLowerCase();
       const hasPickupInText = pickupKeywords.some(kw => searchTextLower.includes(kw));
 
@@ -1902,21 +2270,26 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const prioritiesText = (profile.priorities || []).join(' ').toLowerCase();
       const hasPickupInPriorities = pickupKeywords.some(kw => prioritiesText.includes(kw));
 
-      const wantsPickup = profile.bodyType === 'pickup' ||
+      const wantsPickup =
+        profile.bodyType === 'pickup' ||
         hasPickupInText ||
         hasPickupInPriorities ||
         (hasWorkUsage && pickupKeywords.some(kw => usageText.includes(kw)));
 
-      logger.info({
-        wantsPickup,
-        bodyType: profile.bodyType,
-        searchTextLower,
-        hasPickupInText,
-        usageText,
-        hasWorkUsage
-      }, 'Pickup detection check');
+      logger.info(
+        {
+          wantsPickup,
+          bodyType: profile.bodyType,
+          searchTextLower,
+          hasPickupInText,
+          usageText,
+          hasWorkUsage,
+        },
+        'Pickup detection check'
+      );
 
-      const isWork = profile.usoPrincipal === 'trabalho' ||
+      const isWork =
+        profile.usoPrincipal === 'trabalho' ||
         profile.usage === 'trabalho' ||
         profile.priorities?.includes('trabalho');
 
@@ -1946,7 +2319,10 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       // Post-filter: apply minimum seats requirement (RIGOROSO)
       const requiredSeats = profile.minSeats;
       if (requiredSeats && requiredSeats >= 7) {
-        logger.info({ requiredSeats, resultsBeforeFilter: results.length }, 'Filtering for 7+ seat vehicles');
+        logger.info(
+          { requiredSeats, resultsBeforeFilter: results.length },
+          'Filtering for 7+ seat vehicles'
+        );
 
         // Filtrar APENAS veículos de 7 lugares
         const sevenSeaterResults = results.filter(rec => {
@@ -1954,11 +2330,14 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           return isSevenSeater(modelLower);
         });
 
-        logger.info({
-          requiredSeats,
-          sevenSeaterResults: sevenSeaterResults.length,
-          filteredModels: sevenSeaterResults.map(r => r.vehicle.model)
-        }, 'Seven seater filter results');
+        logger.info(
+          {
+            requiredSeats,
+            sevenSeaterResults: sevenSeaterResults.length,
+            filteredModels: sevenSeaterResults.map(r => r.vehicle.model),
+          },
+          'Seven seater filter results'
+        );
 
         if (sevenSeaterResults.length === 0) {
           // Não encontrou veículos de 7 lugares - NÃO retornar alternativas automaticamente
@@ -1972,8 +2351,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       // Post-filter: apply family-specific rules
       let filteredResults = results;
       if (isFamily) {
-        const hasCadeirinha = profile.priorities?.includes('cadeirinha') ||
-          profile.priorities?.includes('crianca');
+        const hasCadeirinha =
+          profile.priorities?.includes('cadeirinha') || profile.priorities?.includes('crianca');
         const peopleCount = profile.people || 4;
 
         filteredResults = results.filter(rec => {
@@ -1988,10 +2367,22 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
           // Para família: pickups GRANDES de cabine dupla são OK (espaço similar a SUVs)
           // Pickups COMPACTAS devem ser excluídas (cabine menor, menos conforto)
-          const isPickup = bodyType.includes('pickup') || bodyType.includes('picape') || bodyType.includes('cabine');
+          const isPickup =
+            bodyType.includes('pickup') ||
+            bodyType.includes('picape') ||
+            bodyType.includes('cabine');
           if (isPickup) {
             // Pickups grandes de cabine dupla - PERMITIDAS para família
-            const largePickups = ['ranger', 'amarok', 's10', 'hilux', 'frontier', 'l200', 'triton', 'toro'];
+            const largePickups = [
+              'ranger',
+              'amarok',
+              's10',
+              'hilux',
+              'frontier',
+              'l200',
+              'triton',
+              'toro',
+            ];
             const isLargePickup = largePickups.some(p => model.includes(p));
 
             // Se for pickup compacta (Strada, Saveiro, Montana), excluir para família
@@ -2006,15 +2397,39 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             // Ideais para 2 cadeirinhas: SUVs, Sedans médios/grandes, Minivans
             const idealForCadeirinha = [
               // SUVs compactos bons
-              'creta', 'kicks', 't-cross', 'tcross', 'tracker', 'hr-v', 'hrv', 'renegade',
+              'creta',
+              'kicks',
+              't-cross',
+              'tcross',
+              'tracker',
+              'hr-v',
+              'hrv',
+              'renegade',
               // SUVs médios (excelentes)
-              'tucson', 'compass', 'corolla cross', 'tiguan', 'sw4', 'trailblazer', 'commander',
+              'tucson',
+              'compass',
+              'corolla cross',
+              'tiguan',
+              'sw4',
+              'trailblazer',
+              'commander',
               // Sedans médios/grandes (muito bons)
-              'corolla', 'civic', 'cruze', 'sentra', 'jetta', 'virtus',
+              'corolla',
+              'civic',
+              'cruze',
+              'sentra',
+              'jetta',
+              'virtus',
               // Sedans compactos (aceitáveis)
-              'hb20s', 'onix plus', 'cronos', 'voyage', 'prisma',
+              'hb20s',
+              'onix plus',
+              'cronos',
+              'voyage',
+              'prisma',
               // Minivans (excelentes)
-              'spin', 'livina', 'zafira'
+              'spin',
+              'livina',
+              'zafira',
             ];
 
             // Se é hatch, só aceita se for espaçoso
@@ -2052,7 +2467,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           // Tenta pegar pelo menos sedans e SUVs
           filteredResults = results.filter(rec => {
             const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
-            return bodyType.includes('suv') || bodyType.includes('sedan') || bodyType.includes('minivan');
+            return (
+              bodyType.includes('suv') || bodyType.includes('sedan') || bodyType.includes('minivan')
+            );
           });
 
           if (filteredResults.length < 3) {
@@ -2061,20 +2478,26 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         }
       }
 
-      logger.info({
-        profileKeys: Object.keys(profile),
-        resultsCount: filteredResults.length,
-        isUberBlack,
-        isUberX,
-        isFamily,
-        wantsPickup
-      }, 'Generated recommendations');
+      logger.info(
+        {
+          profileKeys: Object.keys(profile),
+          resultsCount: filteredResults.length,
+          isUberBlack,
+          isUberX,
+          isFamily,
+          wantsPickup,
+        },
+        'Generated recommendations'
+      );
 
       // Fallback para busca de apps de transporte: se não encontrou com filtro aptoUber,
       // tentar buscar veículos compatíveis (sedans/hatches de 2012+) sem o filtro rigoroso
       if ((isUberX || isUberBlack) && filteredResults.length === 0) {
-        logger.info({ isUberX, isUberBlack }, 'App transport search found no results, trying fallback without aptoUber filter');
-        
+        logger.info(
+          { isUberX, isUberBlack },
+          'App transport search found no results, trying fallback without aptoUber filter'
+        );
+
         // Buscar veículos que seriam aptos para apps (sedan/hatch, 2012+, com ar)
         // mas que podem não ter o campo aptoUber marcado no banco
         const fallbackResults = await vehicleSearchAdapter.search('sedan hatch carro', {
@@ -2083,23 +2506,29 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           limit: 10,
           // NÃO usar filtro aptoUber/aptoUberBlack aqui
         });
-        
+
         // Filtrar manualmente por carroceria adequada
         const compatibleResults = fallbackResults.filter(rec => {
           const bodyType = (rec.vehicle.bodyType || '').toLowerCase();
           // Para apps: apenas sedan, hatch ou minivan
-          return bodyType.includes('sedan') || bodyType.includes('hatch') || 
-                 bodyType.includes('minivan') || bodyType === '';
+          return (
+            bodyType.includes('sedan') ||
+            bodyType.includes('hatch') ||
+            bodyType.includes('minivan') ||
+            bodyType === ''
+          );
         });
-        
+
         if (compatibleResults.length > 0) {
-          logger.info({ count: compatibleResults.length }, 'Fallback found compatible vehicles for app transport');
+          logger.info(
+            { count: compatibleResults.length },
+            'Fallback found compatible vehicles for app transport'
+          );
           return { recommendations: compatibleResults.slice(0, 5), wantsPickup: false };
         }
       }
 
       return { recommendations: filteredResults.slice(0, 5), wantsPickup };
-
     } catch (error) {
       logger.error({ error, profile }, 'Failed to get recommendations');
       return { recommendations: [] };

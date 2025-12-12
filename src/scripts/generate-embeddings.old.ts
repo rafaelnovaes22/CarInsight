@@ -114,7 +114,7 @@ async function generateAndStoreEmbeddings() {
 
     console.log('\n🎯 Top 3 resultados:');
     results.ids[0]?.forEach((id, idx) => {
-      const vehicle = vehicles.find((v) => v.id === id);
+      const vehicle = vehicles.find(v => v.id === id);
       const distance = results.distances?.[0]?.[idx] || 0;
       const similarity = Math.round((1 - distance) * 100);
       console.log(`   ${idx + 1}. ${vehicle?.brand} ${vehicle?.model} (${similarity}% match)`);
@@ -135,7 +135,7 @@ generateAndStoreEmbeddings()
     console.log('\n🎉 Processo concluído!');
     process.exit(0);
   })
-  .catch((error) => {
+  .catch(error => {
     console.error('\n💥 Erro fatal:', error);
     process.exit(1);
   });

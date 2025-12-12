@@ -134,7 +134,6 @@ export class GuardrailsService {
    * Detect prompt injection attempts
    */
   private detectPromptInjection(message: string): GuardrailResult {
-
     // Common prompt injection patterns
     const injectionPatterns = [
       // System prompt manipulation (English)

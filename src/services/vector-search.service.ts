@@ -1,9 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import {
-  generateEmbedding,
-  stringToEmbedding,
-  searchSimilar,
-} from '../lib/embeddings';
+import { generateEmbedding, stringToEmbedding, searchSimilar } from '../lib/embeddings';
 import { logger } from '../lib/logger';
 
 const prisma = new PrismaClient();
@@ -108,12 +104,12 @@ export class VectorSearchService {
 
       // Parsear embeddings e preparar para busca
       const vehiclesWithEmbeddings = vehicles
-        .map((v) => ({
+        .map(v => ({
           id: v.id,
           embedding: stringToEmbedding(v.embedding),
           vehicle: v,
         }))
-        .filter((v) => v.embedding !== null) as Array<{
+        .filter(v => v.embedding !== null) as Array<{
         id: string;
         embedding: number[];
         vehicle: any;
@@ -125,11 +121,7 @@ export class VectorSearchService {
       }
 
       // Buscar veículos similares
-      const similarVehicles = searchSimilar(
-        queryEmbedding,
-        vehiclesWithEmbeddings,
-        limit * 2
-      );
+      const similarVehicles = searchSimilar(queryEmbedding, vehiclesWithEmbeddings, limit * 2);
 
       logger.info(
         {
@@ -140,10 +132,8 @@ export class VectorSearchService {
       );
 
       // Calcular score híbrido (40% semântico + 60% critérios)
-      const scoredVehicles = similarVehicles.map((result) => {
-        const vehicleData = vehiclesWithEmbeddings.find(
-          (v) => v.id === result.id
-        );
+      const scoredVehicles = similarVehicles.map(result => {
+        const vehicleData = vehiclesWithEmbeddings.find(v => v.id === result.id);
         if (!vehicleData) {
           throw new Error(`Veículo ${result.id} não encontrado`);
         }
@@ -226,7 +216,7 @@ export class VectorSearchService {
         orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],
       });
 
-      const scoredVehicles = vehicles.map((vehicle) => {
+      const scoredVehicles = vehicles.map(vehicle => {
         const criteriaScore = this.calculateCriteriaMatch(vehicle, criteria);
         const matchReasons = this.generateMatchReasons(vehicle, criteria);
 
@@ -307,10 +297,7 @@ export class VectorSearchService {
   /**
    * Calcula score baseado em critérios objetivos
    */
-  private calculateCriteriaMatch(
-    vehicle: any,
-    criteria: VehicleSearchCriteria
-  ): number {
+  private calculateCriteriaMatch(vehicle: any, criteria: VehicleSearchCriteria): number {
     let score = 0;
     let totalWeight = 0;
 
@@ -369,9 +356,7 @@ export class VectorSearchService {
       const brandWeight = 0.1;
       totalWeight += brandWeight;
 
-      if (
-        vehicle.marca.toLowerCase().includes(criteria.brand.toLowerCase())
-      ) {
+      if (vehicle.marca.toLowerCase().includes(criteria.brand.toLowerCase())) {
         score += brandWeight;
       }
     }
@@ -382,7 +367,7 @@ export class VectorSearchService {
       totalWeight += itemsWeight;
 
       let matchedItems = 0;
-      criteria.essentialItems.forEach((item) => {
+      criteria.essentialItems.forEach(item => {
         const itemLower = item.toLowerCase();
         if (
           (itemLower.includes('ar') && vehicle.arCondicionado) ||
@@ -397,8 +382,7 @@ export class VectorSearchService {
         }
       });
 
-      score +=
-        itemsWeight * (matchedItems / criteria.essentialItems.length);
+      score += itemsWeight * (matchedItems / criteria.essentialItems.length);
     }
 
     return totalWeight > 0 ? score / totalWeight : 0.5;
@@ -407,10 +391,7 @@ export class VectorSearchService {
   /**
    * Gera razões do match
    */
-  private generateMatchReasons(
-    vehicle: any,
-    criteria: VehicleSearchCriteria
-  ): string[] {
+  private generateMatchReasons(vehicle: any, criteria: VehicleSearchCriteria): string[] {
     const reasons: string[] = [];
 
     if (criteria.budget && vehicle.preco <= criteria.budget) {
@@ -425,10 +406,7 @@ export class VectorSearchService {
       reasons.push('Baixa quilometragem');
     }
 
-    if (
-      criteria.bodyType &&
-      vehicle.carroceria.toLowerCase() === criteria.bodyType.toLowerCase()
-    ) {
+    if (criteria.bodyType && vehicle.carroceria.toLowerCase() === criteria.bodyType.toLowerCase()) {
       reasons.push(`Carroceria ${vehicle.carroceria}`);
     }
 

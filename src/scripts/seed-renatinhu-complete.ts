@@ -28,8 +28,10 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'BMW 125i M Sport, motor 2.0 turbo com 218cv, acabamento premium em couro, sistema de som Harman Kardon, teto solar, faróis em LED, rodas aro 18". Veículo revisado na concessionária autorizada.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_1-1.jpg',
+    descricao:
+      'BMW 125i M Sport, motor 2.0 turbo com 218cv, acabamento premium em couro, sistema de som Harman Kardon, teto solar, faróis em LED, rodas aro 18". Veículo revisado na concessionária autorizada.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_1-1.jpg',
     fotosUrls: JSON.stringify([
       'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_1-1.jpg',
       'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_2-1.jpg',
@@ -56,9 +58,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'BMW X5 3.0 6 cilindros, tração 4x4 xDrive, 7 lugares, teto solar panorâmico, bancos em couro, sistema multimídia iDrive. SUV premium com muito espaço.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg']),
+    descricao:
+      'BMW X5 3.0 6 cilindros, tração 4x4 xDrive, 7 lugares, teto solar panorâmico, bancos em couro, sistema multimídia iDrive. SUV premium com muito espaço.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg',
+    ]),
   },
   {
     marca: 'Chevrolet',
@@ -81,9 +87,13 @@ const vehiclesComplete = [
     alarme: false,
     rodaLigaLeve: false,
     som: true,
-    descricao: 'Chevrolet Celta Life 2011, compacto econômico ideal para o dia a dia. Motor 1.0 flex, baixo consumo de combustível.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg']),
+    descricao:
+      'Chevrolet Celta Life 2011, compacto econômico ideal para o dia a dia. Motor 1.0 flex, baixo consumo de combustível.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg',
+    ]),
   },
   {
     marca: 'Chevrolet',
@@ -106,9 +116,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Cobalt LTZ top de linha, central multimídia MyLink com bluetooth, sensor de estacionamento traseiro, volante multifuncional, controle de estabilidade.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg']),
+    descricao:
+      'Cobalt LTZ top de linha, central multimídia MyLink com bluetooth, sensor de estacionamento traseiro, volante multifuncional, controle de estabilidade.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg',
+    ]),
   },
   {
     marca: 'Chevrolet',
@@ -131,9 +145,13 @@ const vehiclesComplete = [
     alarme: false,
     rodaLigaLeve: false,
     som: true,
-    descricao: 'Corsa Sedan Joy 2007, compacto e econômico. Ótimo custo-benefício para o dia a dia.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg']),
+    descricao:
+      'Corsa Sedan Joy 2007, compacto e econômico. Ótimo custo-benefício para o dia a dia.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg',
+    ]),
   },
   {
     marca: 'Chevrolet',
@@ -156,9 +174,13 @@ const vehiclesComplete = [
     alarme: false,
     rodaLigaLeve: false,
     som: false,
-    descricao: 'Corsa Pick-up ST 2003, picape compacta ideal para pequenos fretes e trabalho. Motor 1.6 a gasolina.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_607_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_607_1-1.jpg']),
+    descricao:
+      'Corsa Pick-up ST 2003, picape compacta ideal para pequenos fretes e trabalho. Motor 1.6 a gasolina.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_607_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_607_1-1.jpg',
+    ]),
   },
   {
     marca: 'Chevrolet',
@@ -181,9 +203,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Cruze LT 2012, sedan médio completo, câmbio automático de 6 marchas, central multimídia, controle de estabilidade e tração.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg']),
+    descricao:
+      'Cruze LT 2012, sedan médio completo, câmbio automático de 6 marchas, central multimídia, controle de estabilidade e tração.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg',
+    ]),
   },
   {
     marca: 'Chevrolet',
@@ -206,9 +232,13 @@ const vehiclesComplete = [
     alarme: false,
     rodaLigaLeve: false,
     som: true,
-    descricao: 'Onix LS 2016, hatch moderno e econômico, ideal para cidade. Motor 1.0 SPE/4 com baixo consumo.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg']),
+    descricao:
+      'Onix LS 2016, hatch moderno e econômico, ideal para cidade. Motor 1.0 SPE/4 com baixo consumo.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg',
+    ]),
   },
   {
     marca: 'Chevrolet',
@@ -231,9 +261,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'S10 Rodeio cabine dupla, picape robusta ideal para trabalho e lazer. Caçamba espaçosa, motor 2.4 flex.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_695_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_695_1-1.jpg']),
+    descricao:
+      'S10 Rodeio cabine dupla, picape robusta ideal para trabalho e lazer. Caçamba espaçosa, motor 2.4 flex.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_695_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_695_1-1.jpg',
+    ]),
   },
   {
     marca: 'Dodge',
@@ -256,9 +290,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Dodge Journey RT 2013, SUV 7 lugares, motor V6 3.6 com 283cv, teto solar, sistema de som premium, central multimídia touchscreen.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg']),
+    descricao:
+      'Dodge Journey RT 2013, SUV 7 lugares, motor V6 3.6 com 283cv, teto solar, sistema de som premium, central multimídia touchscreen.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg',
+    ]),
   },
   {
     marca: 'Fiat',
@@ -281,7 +319,8 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: false,
     som: true,
-    descricao: 'Fiat Doblo Essence 7 lugares, ideal para famílias grandes. Espaço interno amplo, bancos reclináveis.',
+    descricao:
+      'Fiat Doblo Essence 7 lugares, ideal para famílias grandes. Espaço interno amplo, bancos reclináveis.',
     fotoUrl: '',
     fotosUrls: JSON.stringify([]),
   },
@@ -307,8 +346,11 @@ const vehiclesComplete = [
     rodaLigaLeve: false,
     som: true,
     descricao: 'Palio Attractive 2014, compacto confiável e econômico. Motor 1.4 Fire flex.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg']),
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg',
+    ]),
   },
   {
     marca: 'Fiat',
@@ -332,8 +374,11 @@ const vehiclesComplete = [
     rodaLigaLeve: false,
     som: true,
     descricao: 'Siena EL 2013, sedan econômico com porta-malas amplo. Motor 1.0 flex.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg']),
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg',
+    ]),
   },
   {
     marca: 'Fiat',
@@ -357,8 +402,11 @@ const vehiclesComplete = [
     rodaLigaLeve: false,
     som: true,
     descricao: 'Strada Adventure 2010, picape compacta cabine estendida. Ideal para trabalho.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg']),
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg',
+    ]),
   },
   {
     marca: 'Fiat',
@@ -381,9 +429,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Uno Way 2021, modelo novo com baixa quilometragem. Central multimídia com bluetooth, volante multifuncional.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg']),
+    descricao:
+      'Uno Way 2021, modelo novo com baixa quilometragem. Central multimídia com bluetooth, volante multifuncional.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg',
+    ]),
   },
   {
     marca: 'Ford',
@@ -406,7 +458,8 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: false,
     som: true,
-    descricao: 'Ford Ka+ SE Plus 2018, praticamente zero km com apenas 140km rodados! Sedan compacto completo.',
+    descricao:
+      'Ford Ka+ SE Plus 2018, praticamente zero km com apenas 140km rodados! Sedan compacto completo.',
     fotoUrl: '',
     fotosUrls: JSON.stringify([]),
   },
@@ -431,9 +484,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Honda City LX 2016, sedan médio automático. Câmbio CVT, central multimídia, câmera de ré. Qualidade Honda.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg']),
+    descricao:
+      'Honda City LX 2016, sedan médio automático. Câmbio CVT, central multimídia, câmera de ré. Qualidade Honda.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg',
+    ]),
   },
   {
     marca: 'Honda',
@@ -481,9 +538,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Honda Civic LXL 2012, referência em sedan médio. Bancos em couro, câmbio automático, conforto e durabilidade.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg']),
+    descricao:
+      'Honda Civic LXL 2012, referência em sedan médio. Bancos em couro, câmbio automático, conforto e durabilidade.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg',
+    ]),
   },
   {
     marca: 'Honda',
@@ -507,8 +568,11 @@ const vehiclesComplete = [
     rodaLigaLeve: true,
     som: true,
     descricao: 'Honda Civic LXS 2010, clássico sedan com motor i-VTEC 1.8. Econômico e confiável.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg']),
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg',
+    ]),
   },
   {
     marca: 'Honda',
@@ -532,8 +596,11 @@ const vehiclesComplete = [
     rodaLigaLeve: true,
     som: true,
     descricao: 'Honda CR-V EX 2007, SUV confiável e espaçoso. Tração AWD, ideal para aventuras.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_658_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_658_1-1.jpg']),
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_658_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_658_1-1.jpg',
+    ]),
   },
   {
     marca: 'Hyundai',
@@ -556,7 +623,8 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Hyundai Creta Attitude 2019, SUV compacto moderno. Central multimídia, porta-malas amplo.',
+    descricao:
+      'Hyundai Creta Attitude 2019, SUV compacto moderno. Central multimídia, porta-malas amplo.',
     fotoUrl: '',
     fotosUrls: JSON.stringify([]),
   },
@@ -581,9 +649,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Range Rover Evoque Prestige 2012, SUV premium com design sofisticado. Tração 4WD, teto solar, bancos em couro Windsor, sistema de som Meridian.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg']),
+    descricao:
+      'Range Rover Evoque Prestige 2012, SUV premium com design sofisticado. Tração 4WD, teto solar, bancos em couro Windsor, sistema de som Meridian.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg',
+    ]),
   },
   {
     marca: 'Renault',
@@ -606,9 +678,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Renault Captur Intense 2019, SUV moderno e estiloso. Câmbio CVT, central multimídia touchscreen 7", câmera de ré, sensor de estacionamento.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg']),
+    descricao:
+      'Renault Captur Intense 2019, SUV moderno e estiloso. Câmbio CVT, central multimídia touchscreen 7", câmera de ré, sensor de estacionamento.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg',
+    ]),
   },
   {
     marca: 'Renault',
@@ -631,9 +707,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Renault Duster Dynamique 2016, SUV robusto ideal para aventuras. Banco traseiro reclinável, porta-malas 475L.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg']),
+    descricao:
+      'Renault Duster Dynamique 2016, SUV robusto ideal para aventuras. Banco traseiro reclinável, porta-malas 475L.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg',
+    ]),
   },
   {
     marca: 'Renault',
@@ -656,9 +736,13 @@ const vehiclesComplete = [
     alarme: false,
     rodaLigaLeve: false,
     som: true,
-    descricao: 'Renault Kwid Zen 2018, compacto econômico ideal para cidade. Central multimídia Media Evolution.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg']),
+    descricao:
+      'Renault Kwid Zen 2018, compacto econômico ideal para cidade. Central multimídia Media Evolution.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg',
+    ]),
   },
   {
     marca: 'Toyota',
@@ -681,9 +765,13 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Toyota Corolla XEI 2.0 2016, referência em sedan médio. Motor VVT-i, bancos em couro, sistema multimídia com câmera de ré.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg']),
+    descricao:
+      'Toyota Corolla XEI 2.0 2016, referência em sedan médio. Motor VVT-i, bancos em couro, sistema multimídia com câmera de ré.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg',
+    ]),
   },
   {
     marca: 'Volkswagen',
@@ -731,9 +819,13 @@ const vehiclesComplete = [
     alarme: false,
     rodaLigaLeve: false,
     som: false,
-    descricao: 'Volkswagen Fusca 1300 1975, clássico para colecionadores. Veículo original, motor boxer refrigerado a ar.',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg',
-    fotosUrls: JSON.stringify(['https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg']),
+    descricao:
+      'Volkswagen Fusca 1300 1975, clássico para colecionadores. Veículo original, motor boxer refrigerado a ar.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg',
+    fotosUrls: JSON.stringify([
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg',
+    ]),
   },
   {
     marca: 'Volkswagen',
@@ -756,7 +848,8 @@ const vehiclesComplete = [
     alarme: true,
     rodaLigaLeve: true,
     som: true,
-    descricao: 'Volkswagen T-Cross Highline 2025, SUV moderno top de linha. Motor turbo 1.4 TSI, teto solar, painel digital Active Info Display, sistema Beats de som.',
+    descricao:
+      'Volkswagen T-Cross Highline 2025, SUV moderno top de linha. Motor turbo 1.4 TSI, teto solar, painel digital Active Info Display, sistema Beats de som.',
     fotoUrl: '',
     fotosUrls: JSON.stringify([]),
   },
@@ -791,11 +884,7 @@ async function main() {
     withMultiplePhotos: await prisma.vehicle.count({ where: { fotosUrls: { not: '[]' } } }),
     complete: await prisma.vehicle.count({
       where: {
-        AND: [
-          { vidroEletrico: true },
-          { travaEletrica: true },
-          { alarme: true },
-        ],
+        AND: [{ vidroEletrico: true }, { travaEletrica: true }, { alarme: true }],
       },
     }),
   };
@@ -816,7 +905,9 @@ async function main() {
 
   console.log('\n📈 Vehicles by brand:');
   brands.forEach(brand => {
-    const avgPrice = brand._avg.preco ? `R$ ${brand._avg.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A';
+    const avgPrice = brand._avg.preco
+      ? `R$ ${brand._avg.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+      : 'N/A';
     console.log(`  ${brand.marca}: ${brand._count.marca} veículos (avg: ${avgPrice})`);
   });
 
@@ -825,7 +916,7 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Seed failed:', e);
     process.exit(1);
   })

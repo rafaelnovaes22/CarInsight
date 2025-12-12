@@ -1,6 +1,6 @@
 /**
  * Uber Eligibility Validator
- * 
+ *
  * Uses LLM to validate Uber/99 eligibility based on official criteria
  * instead of static whitelist (which becomes outdated quickly)
  */
@@ -28,7 +28,6 @@ export interface VehicleInfo {
 }
 
 export class UberEligibilityValidator {
-
   private readonly UBER_CRITERIA_PROMPT = `Você é um especialista em requisitos do Uber e 99 no Brasil.
 
 CRITÉRIOS OFICIAIS UBER/99 (2024):
@@ -116,30 +115,30 @@ ${vehicle.cor ? `- Cor: ${vehicle.cor}` : ''}
 
 Retorne APENAS o JSON, sem texto adicional:`;
 
-      const response = await chatCompletion([
-        { role: 'user', content: prompt }
-      ], {
+      const response = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0.1, // Baixa temperatura para consistência
-        maxTokens: 300
+        maxTokens: 300,
       });
 
       // Parse JSON response
       const result = JSON.parse(response.trim());
 
-      logger.info({
-        vehicle: `${vehicle.marca} ${vehicle.modelo}`,
-        result,
-        processingTime: Date.now() - startTime
-      }, 'Uber eligibility validated');
+      logger.info(
+        {
+          vehicle: `${vehicle.marca} ${vehicle.modelo}`,
+          result,
+          processingTime: Date.now() - startTime,
+        },
+        'Uber eligibility validated'
+      );
 
       return {
         uberX: result.uberX || false,
         uberComfort: result.uberComfort || false,
         uberBlack: result.uberBlack || false,
         reasoning: result.reasoning || 'No reasoning provided',
-        confidence: result.confidence || 0.8
+        confidence: result.confidence || 0.8,
       };
-
     } catch (error) {
       logger.error({ error, vehicle }, 'Error validating Uber eligibility');
 
@@ -155,8 +154,7 @@ Retorne APENAS o JSON, sem texto adicional:`;
     const carrNorm = vehicle.carroceria.toLowerCase();
 
     // Conservative: reject if any doubt
-    const isMinivan = carrNorm.includes('minivan') ||
-      vehicle.modelo.toLowerCase().includes('spin');
+    const isMinivan = carrNorm.includes('minivan') || vehicle.modelo.toLowerCase().includes('spin');
     const isSUV = carrNorm.includes('suv');
     const isPickup = carrNorm.includes('pickup') || carrNorm.includes('picape');
     const isSedan = carrNorm.includes('sedan');
@@ -169,32 +167,25 @@ Retorne APENAS o JSON, sem texto adicional:`;
         uberComfort: false,
         uberBlack: false,
         reasoning: 'Fallback: Does not meet basic requirements',
-        confidence: 0.9
+        confidence: 0.9,
       };
     }
 
     // Uber X: Only sedan/hatch, 2012+
-    const uberX = (isSedan || isHatch) &&
-      !isSUV &&
-      !isMinivan &&
-      vehicle.ano >= 2012;
+    const uberX = (isSedan || isHatch) && !isSUV && !isMinivan && vehicle.ano >= 2012;
 
     // Uber Comfort: Sedan, minivan, SUV médio, 2015+
-    const uberComfort = (isSedan || isMinivan || isSUV) &&
-      vehicle.ano >= 2015;
+    const uberComfort = (isSedan || isMinivan || isSUV) && vehicle.ano >= 2015;
 
     // Uber Black: Only sedan, 2018+
-    const uberBlack = isSedan &&
-      !isMinivan &&
-      !isSUV &&
-      vehicle.ano >= 2018;
+    const uberBlack = isSedan && !isMinivan && !isSUV && vehicle.ano >= 2018;
 
     return {
       uberX,
       uberComfort,
       uberBlack,
       reasoning: 'Fallback: Conservative rule-based validation',
-      confidence: 0.6
+      confidence: 0.6,
     };
   }
 
@@ -212,7 +203,7 @@ Retorne APENAS o JSON, sem texto adicional:`;
       const batch = vehicles.slice(i, i + batchSize);
 
       const batchResults = await Promise.all(
-        batch.map(async (vehicle) => {
+        batch.map(async vehicle => {
           const key = `${vehicle.marca}-${vehicle.modelo}-${vehicle.ano}`;
           const result = await this.validateEligibility(vehicle);
           return { key, result };
@@ -229,12 +220,15 @@ Retorne APENAS o JSON, sem texto adicional:`;
       }
     }
 
-    logger.info({
-      total: vehicles.length,
-      uberX: Array.from(results.values()).filter(r => r.uberX).length,
-      uberComfort: Array.from(results.values()).filter(r => r.uberComfort).length,
-      uberBlack: Array.from(results.values()).filter(r => r.uberBlack).length
-    }, 'Batch validation completed');
+    logger.info(
+      {
+        total: vehicles.length,
+        uberX: Array.from(results.values()).filter(r => r.uberX).length,
+        uberComfort: Array.from(results.values()).filter(r => r.uberComfort).length,
+        uberBlack: Array.from(results.values()).filter(r => r.uberBlack).length,
+      },
+      'Batch validation completed'
+    );
 
     return results;
   }

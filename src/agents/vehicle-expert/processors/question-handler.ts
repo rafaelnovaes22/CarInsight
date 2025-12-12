@@ -1,6 +1,6 @@
 /**
  * Question Handler
- * 
+ *
  * Handles user questions and generates contextual follow-up questions.
  */
 
@@ -14,36 +14,40 @@ import { summarizeContext } from '../assessors';
 
 /**
  * Answer user's question using RAG (Retrieval Augmented Generation)
- * 
+ *
  * @param question - User's question
  * @param context - Conversation context
  * @param profile - Customer profile
  * @returns Answer string
  */
 export async function answerQuestion(
-    question: string,
-    context: ConversationContext,
-    profile: Partial<CustomerProfile>
+  question: string,
+  context: ConversationContext,
+  profile: Partial<CustomerProfile>
 ): Promise<string> {
-    try {
-        // Search relevant vehicles semantically
-        const relevantVehicles = await vehicleSearchAdapter.search(question, {
-            maxPrice: profile.budget,
-            bodyType: profile.bodyType,
-            minYear: profile.minYear,
-            limit: 3
-        });
+  try {
+    // Search relevant vehicles semantically
+    const relevantVehicles = await vehicleSearchAdapter.search(question, {
+      maxPrice: profile.budget,
+      bodyType: profile.bodyType,
+      minYear: profile.minYear,
+      limit: 3,
+    });
 
-        // Build context for LLM
-        const vehicleContext = relevantVehicles.length > 0
-            ? `VEÍCULOS RELEVANTES NO ESTOQUE:\n${relevantVehicles.map((v, i) =>
+    // Build context for LLM
+    const vehicleContext =
+      relevantVehicles.length > 0
+        ? `VEÍCULOS RELEVANTES NO ESTOQUE:\n${relevantVehicles
+            .map(
+              (v, i) =>
                 `${i + 1}. ${v.vehicle.brand} ${v.vehicle.model} ${v.vehicle.year} - R$ ${v.vehicle.price.toLocaleString('pt-BR')}`
-            ).join('\n')}`
-            : 'Nenhum veículo específico encontrado para essa pergunta.';
+            )
+            .join('\n')}`
+        : 'Nenhum veículo específico encontrado para essa pergunta.';
 
-        const conversationSummary = summarizeContext(context);
+    const conversationSummary = summarizeContext(context);
 
-        const prompt = `${SYSTEM_PROMPT}
+    const prompt = `${SYSTEM_PROMPT}
 
 PERGUNTA DO CLIENTE: "${question}"
 
@@ -59,42 +63,49 @@ Responda a pergunta de forma natural e útil, usando exemplos dos veículos quan
 Se a pergunta for sobre diferenças entre categorias, explique claramente.
 Sempre mantenha o foco em ajudar o cliente a encontrar o carro ideal.`;
 
-        const response = await chatCompletion([
-            { role: 'system', content: prompt },
-            { role: 'user', content: question }
-        ], {
-            temperature: 0.7,
-            maxTokens: 350
-        });
+    const response = await chatCompletion(
+      [
+        { role: 'system', content: prompt },
+        { role: 'user', content: question },
+      ],
+      {
+        temperature: 0.7,
+        maxTokens: 350,
+      }
+    );
 
-        return response.trim();
-
-    } catch (error) {
-        logger.error({ error, question }, 'Failed to answer question');
-        return 'Desculpe, não consegui processar sua pergunta. Pode reformular de outra forma?';
-    }
+    return response.trim();
+  } catch (error) {
+    logger.error({ error, question }, 'Failed to answer question');
+    return 'Desculpe, não consegui processar sua pergunta. Pode reformular de outra forma?';
+  }
 }
 
 /**
  * Generate next contextual question to ask the user
- * 
+ *
  * @param options - Question generation options
  * @returns Generated question string
  */
-export async function generateNextQuestion(
-    options: QuestionGenerationOptions
-): Promise<string> {
-    try {
-        const { profile, missingFields, context } = options;
+export async function generateNextQuestion(options: QuestionGenerationOptions): Promise<string> {
+  try {
+    const { profile, missingFields, context } = options;
 
-        // Determinar qual nome do app usar nas respostas
-        const appName = profile.appMencionado === '99' ? '99' : 
-                        profile.appMencionado === 'uber' ? 'Uber' :
-                        profile.appMencionado === 'app' ? 'app de transporte' : null;
-        
-        const appContext = appName ? `\n\n⚠️ IMPORTANTE: O cliente mencionou "${appName}" - USE ESTE NOME nas suas respostas, NÃO substitua por outro nome de app!` : '';
+    // Determinar qual nome do app usar nas respostas
+    const appName =
+      profile.appMencionado === '99'
+        ? '99'
+        : profile.appMencionado === 'uber'
+          ? 'Uber'
+          : profile.appMencionado === 'app'
+            ? 'app de transporte'
+            : null;
 
-        const prompt = `${SYSTEM_PROMPT}
+    const appContext = appName
+      ? `\n\n⚠️ IMPORTANTE: O cliente mencionou "${appName}" - USE ESTE NOME nas suas respostas, NÃO substitua por outro nome de app!`
+      : '';
+
+    const prompt = `${SYSTEM_PROMPT}
 
 PERFIL ATUAL DO CLIENTE:
 ${JSON.stringify(profile, null, 2)}
@@ -126,29 +137,31 @@ EXEMPLO RUIM:
 
 Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
-        const response = await chatCompletion([
-            { role: 'system', content: prompt },
-            { role: 'user', content: 'Qual a próxima melhor pergunta?' }
-        ], {
-            temperature: 0.8,
-            maxTokens: 150
-        });
+    const response = await chatCompletion(
+      [
+        { role: 'system', content: prompt },
+        { role: 'user', content: 'Qual a próxima melhor pergunta?' },
+      ],
+      {
+        temperature: 0.8,
+        maxTokens: 150,
+      }
+    );
 
-        return response.trim();
+    return response.trim();
+  } catch (error) {
+    logger.error({ error }, 'Failed to generate question');
 
-    } catch (error) {
-        logger.error({ error }, 'Failed to generate question');
+    // Fallback to basic question based on missing fields
+    const { profile, missingFields } = options;
 
-        // Fallback to basic question based on missing fields
-        const { profile, missingFields } = options;
-
-        if (missingFields.includes('budget') || !profile.budget) {
-            return '💰 Até quanto você pretende investir no carro?';
-        }
-        if (missingFields.includes('usage') || !profile.usage) {
-            return '🚗 Qual vai ser o uso principal? Cidade, viagens, trabalho?';
-        }
-
-        return 'Me conta mais sobre o que você busca no carro ideal?';
+    if (missingFields.includes('budget') || !profile.budget) {
+      return '💰 Até quanto você pretende investir no carro?';
     }
+    if (missingFields.includes('usage') || !profile.usage) {
+      return '🚗 Qual vai ser o uso principal? Cidade, viagens, trabalho?';
+    }
+
+    return 'Me conta mais sobre o que você busca no carro ideal?';
+  }
 }

@@ -1,6 +1,6 @@
 /**
  * PreferenceExtractorAgent
- * 
+ *
  * Extracts structured customer preferences from natural language messages
  * using LLM-based semantic understanding.
  */
@@ -355,10 +355,7 @@ Saída: {
   /**
    * Extract preferences from user message
    */
-  async extract(
-    message: string,
-    config: ExtractionConfig = {}
-  ): Promise<ExtractionResult> {
+  async extract(message: string, config: ExtractionConfig = {}): Promise<ExtractionResult> {
     const startTime = Date.now();
 
     try {
@@ -374,19 +371,22 @@ Saída: {
       }
 
       // Call LLM
-      const result = await chatCompletion([
+      const result = await chatCompletion(
+        [
+          {
+            role: 'system',
+            content: this.EXTRACTION_PROMPT + contextString,
+          },
+          {
+            role: 'user',
+            content: `MENSAGEM DO CLIENTE: "${message}"\n\nRetorne APENAS o JSON de extração:`,
+          },
+        ],
         {
-          role: 'system',
-          content: this.EXTRACTION_PROMPT + contextString
-        },
-        {
-          role: 'user',
-          content: `MENSAGEM DO CLIENTE: "${message}"\n\nRetorne APENAS o JSON de extração:`
+          temperature: 0.1, // Low temperature for deterministic extraction
+          maxTokens: 400,
         }
-      ], {
-        temperature: 0.1, // Low temperature for deterministic extraction
-        maxTokens: 400
-      });
+      );
 
       // Parse result
       const parsed = this.parseExtractionResult(result);
@@ -394,23 +394,28 @@ Saída: {
       // Validate confidence
       const minConfidence = config.minConfidence ?? 0.5;
       if (parsed.confidence < minConfidence) {
-        logger.warn({
-          message,
-          confidence: parsed.confidence,
-          minConfidence
-        }, 'Extraction confidence below threshold');
+        logger.warn(
+          {
+            message,
+            confidence: parsed.confidence,
+            minConfidence,
+          },
+          'Extraction confidence below threshold'
+        );
       }
 
       // Log extraction
-      logger.info({
-        message: message.substring(0, 100),
-        extracted: parsed.extracted,
-        confidence: parsed.confidence,
-        processingTime: Date.now() - startTime
-      }, 'Preferences extracted');
+      logger.info(
+        {
+          message: message.substring(0, 100),
+          extracted: parsed.extracted,
+          confidence: parsed.confidence,
+          processingTime: Date.now() - startTime,
+        },
+        'Preferences extracted'
+      );
 
       return parsed;
-
     } catch (error) {
       logger.error({ error, message }, 'Failed to extract preferences');
 
@@ -419,7 +424,7 @@ Saída: {
         extracted: {},
         confidence: 0,
         reasoning: `Erro na extração: ${error.message}`,
-        fieldsExtracted: []
+        fieldsExtracted: [],
       };
     }
   }
@@ -459,7 +464,6 @@ Saída: {
       parsed.extracted = this.sanitizeExtracted(parsed.extracted);
 
       return parsed as ExtractionResult;
-
     } catch (error) {
       logger.error({ error, llmResponse }, 'Failed to parse extraction result');
       throw new Error(`Parse error: ${error.message}`);
@@ -517,11 +521,10 @@ Saída: {
       // AUTO-FILL PEOPLE BASED ON MIN_SEATS
       // If user asks for X seats (e.g. "7 lugares"), imply they need capacity for X people
       // This prevents asking "how many people?" redundantly
-      if ((!sanitized.people && !extracted.people) && sanitized.minSeats > 4) {
+      if (!sanitized.people && !extracted.people && sanitized.minSeats > 4) {
         sanitized.people = sanitized.minSeats;
       }
     }
-
 
     // Transmission validation
     const validTransmission = ['manual', 'automatico'];
@@ -565,10 +568,14 @@ Saída: {
 
     // Array fields
     if (Array.isArray(extracted.priorities)) {
-      sanitized.priorities = extracted.priorities.filter(p => typeof p === 'string' && p.length > 0);
+      sanitized.priorities = extracted.priorities.filter(
+        p => typeof p === 'string' && p.length > 0
+      );
     }
     if (Array.isArray(extracted.dealBreakers)) {
-      sanitized.dealBreakers = extracted.dealBreakers.filter(d => typeof d === 'string' && d.length > 0);
+      sanitized.dealBreakers = extracted.dealBreakers.filter(
+        d => typeof d === 'string' && d.length > 0
+      );
     }
 
     // Also copy usoPrincipal, tipoUber and appMencionado if present
@@ -619,21 +626,21 @@ Saída: {
     const normalized = brand.toLowerCase().trim();
 
     const brandMap: Record<string, string> = {
-      'volkswagen': 'volkswagen',
-      'vw': 'volkswagen',
-      'gm': 'chevrolet',
-      'chevy': 'chevrolet',
-      'fiat': 'fiat',
-      'honda': 'honda',
-      'toyota': 'toyota',
-      'hyundai': 'hyundai',
-      'ford': 'ford',
-      'renault': 'renault',
-      'nissan': 'nissan',
-      'jeep': 'jeep',
-      'citroen': 'citroen',
-      'peugeot': 'peugeot',
-      'mitsubishi': 'mitsubishi',
+      volkswagen: 'volkswagen',
+      vw: 'volkswagen',
+      gm: 'chevrolet',
+      chevy: 'chevrolet',
+      fiat: 'fiat',
+      honda: 'honda',
+      toyota: 'toyota',
+      hyundai: 'hyundai',
+      ford: 'ford',
+      renault: 'renault',
+      nissan: 'nissan',
+      jeep: 'jeep',
+      citroen: 'citroen',
+      peugeot: 'peugeot',
+      mitsubishi: 'mitsubishi',
     };
 
     return brandMap[normalized] || normalized;
@@ -646,19 +653,19 @@ Saída: {
     const modelLower = model.toLowerCase().trim();
 
     const pickupBrandMap: Record<string, string> = {
-      'strada': 'fiat',
-      'toro': 'fiat',
-      's10': 'chevrolet',
-      'montana': 'chevrolet',
-      'hilux': 'toyota',
-      'ranger': 'ford',
-      'maverick': 'ford',
-      'saveiro': 'volkswagen',
-      'amarok': 'volkswagen',
-      'l200': 'mitsubishi',
-      'triton': 'mitsubishi',
-      'frontier': 'nissan',
-      'oroch': 'renault',
+      strada: 'fiat',
+      toro: 'fiat',
+      s10: 'chevrolet',
+      montana: 'chevrolet',
+      hilux: 'toyota',
+      ranger: 'ford',
+      maverick: 'ford',
+      saveiro: 'volkswagen',
+      amarok: 'volkswagen',
+      l200: 'mitsubishi',
+      triton: 'mitsubishi',
+      frontier: 'nissan',
+      oroch: 'renault',
       'duster oroch': 'renault',
     };
 
@@ -677,14 +684,13 @@ Saída: {
       ...extracted,
 
       // Merge arrays intelligently
-      priorities: [
-        ...(currentProfile.priorities || []),
-        ...(extracted.priorities || [])
-      ].filter((v, i, a) => a.indexOf(v) === i), // unique
+      priorities: [...(currentProfile.priorities || []), ...(extracted.priorities || [])].filter(
+        (v, i, a) => a.indexOf(v) === i
+      ), // unique
 
       dealBreakers: [
         ...(currentProfile.dealBreakers || []),
-        ...(extracted.dealBreakers || [])
+        ...(extracted.dealBreakers || []),
       ].filter((v, i, a) => a.indexOf(v) === i), // unique
     };
   }

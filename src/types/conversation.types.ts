@@ -9,12 +9,12 @@ import { CustomerProfile, VehicleRecommendation, BotMessage } from './state.type
  * Conversation modes (lifecycle stages)
  */
 export type ConversationMode =
-  | 'discovery'           // Understanding client needs (messages 1-2)
-  | 'clarification'       // Asking contextual questions (messages 3-6)
-  | 'ready_to_recommend'  // Ready to show vehicles
-  | 'recommendation'      // Showing vehicle recommendations
-  | 'negotiation'         // Discussing trade-in and financing
-  | 'refinement';         // Adjusting based on feedback
+  | 'discovery' // Understanding client needs (messages 1-2)
+  | 'clarification' // Asking contextual questions (messages 3-6)
+  | 'ready_to_recommend' // Ready to show vehicles
+  | 'recommendation' // Showing vehicle recommendations
+  | 'negotiation' // Discussing trade-in and financing
+  | 'refinement'; // Adjusting based on feedback
 
 /**
  * Main conversation context (replaces quiz state)
@@ -72,7 +72,7 @@ export interface ConversationResponse {
     llmUsed?: string;
     noPickupsFound?: boolean; // Indicates no pickups were found for user request
     noSevenSeaters?: boolean; // Indicates no 7-seat vehicles were found for user request
-    exactMatch?: boolean;     // Indicates if response comes from exact model+year search
+    exactMatch?: boolean; // Indicates if response comes from exact model+year search
     alternativeYears?: boolean; // Indicates if response suggests alternative years
   };
 }
@@ -146,7 +146,7 @@ export interface VehicleSearchQuery {
     transmission?: string[];
     fuelType?: string[];
     brand?: string[];
-    model?: string[];  // Modelo específico (ex: "Compass", "Civic")
+    model?: string[]; // Modelo específico (ex: "Compass", "Civic")
   };
 
   // Soft preferences (for scoring)

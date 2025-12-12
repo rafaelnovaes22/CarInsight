@@ -24,11 +24,17 @@ const envSchema = z.object({
   META_WEBHOOK_VERIFY_TOKEN: z.string().optional().default('faciliauto_webhook_2025'),
 
   // Feature Flags
-  ENABLE_CONVERSATIONAL_MODE: z.string().transform(val => val === 'true').default('false'),
+  ENABLE_CONVERSATIONAL_MODE: z
+    .string()
+    .transform(val => val === 'true')
+    .default('false'),
   CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.string().transform(Number).default('0'), // 0-100
 
   // Audio Transcription
-  ENABLE_AUDIO_TRANSCRIPTION: z.string().transform(val => val === 'true').default('true'),
+  ENABLE_AUDIO_TRANSCRIPTION: z
+    .string()
+    .transform(val => val === 'true')
+    .default('true'),
   AUDIO_MAX_DURATION_SECONDS: z.string().transform(Number).default('120'), // 2 minutes max
 });
 

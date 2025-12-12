@@ -1,15 +1,15 @@
 /**
  * Testes de Integração com LLM Real
- * 
+ *
  * IMPORTANTE: Estes testes chamam APIs reais e:
  * - Custam dinheiro (tokens)
  * - São mais lentos
  * - Podem falhar por rate limiting
  * - Resultados podem variar ligeiramente
- * 
+ *
  * Para rodar apenas estes testes:
  * npm run test:integration
- * 
+ *
  * Requer variáveis de ambiente:
  * - OPENAI_API_KEY ou GROQ_API_KEY
  */
@@ -20,19 +20,20 @@ import { PreferenceExtractorAgent } from '../../src/agents/preference-extractor.
 import { env } from '../../src/config/env';
 
 // Skip se não houver API keys VÁLIDAS (não placeholders/mocks)
-const isValidOpenAIKey = env.OPENAI_API_KEY && 
-                         !env.OPENAI_API_KEY.includes('mock') && 
-                         !env.OPENAI_API_KEY.includes('test') && 
-                         env.OPENAI_API_KEY.length > 20;
-const isValidGroqKey = env.GROQ_API_KEY && 
-                       !env.GROQ_API_KEY.includes('mock') && 
-                       !env.GROQ_API_KEY.includes('test') &&
-                       env.GROQ_API_KEY.length > 20;
+const isValidOpenAIKey =
+  env.OPENAI_API_KEY &&
+  !env.OPENAI_API_KEY.includes('mock') &&
+  !env.OPENAI_API_KEY.includes('test') &&
+  env.OPENAI_API_KEY.length > 20;
+const isValidGroqKey =
+  env.GROQ_API_KEY &&
+  !env.GROQ_API_KEY.includes('mock') &&
+  !env.GROQ_API_KEY.includes('test') &&
+  env.GROQ_API_KEY.length > 20;
 const hasValidApiKeys = isValidOpenAIKey || isValidGroqKey;
 const describeIfApiKeys = hasValidApiKeys ? describe : describe.skip;
 
 describeIfApiKeys('LLM Integration Tests (Real API)', () => {
-  
   beforeAll(() => {
     console.log('🔑 Testando com LLM real...');
     console.log(`   OpenAI: ${env.OPENAI_API_KEY ? '✓' : '✗'}`);
@@ -55,7 +56,7 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
       expect(response).toBeTruthy();
       expect(typeof response).toBe('string');
       expect(response.length).toBeGreaterThan(5);
-      
+
       console.log(`   Resposta LLM: "${response.substring(0, 100)}..."`);
     }, 30000);
 
@@ -67,14 +68,14 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
 - QUALIFICAR (quer comprar carro)
 - HUMANO (quer falar com vendedor)
 - INFORMACAO (pergunta geral)
-- OUTRO`
+- OUTRO`,
         },
         { role: 'user' as const, content: 'Quero comprar um carro SUV' },
       ];
 
-      const response = await chatCompletion(messages, { 
-        temperature: 0.1, 
-        maxTokens: 20 
+      const response = await chatCompletion(messages, {
+        temperature: 0.1,
+        maxTokens: 20,
       });
 
       expect(response.toUpperCase()).toContain('QUALIFICAR');
@@ -88,14 +89,14 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
 - QUALIFICAR (quer comprar carro)
 - HUMANO (quer falar com vendedor/atendente/pessoa)
 - INFORMACAO (pergunta geral)
-- OUTRO`
+- OUTRO`,
         },
         { role: 'user' as const, content: 'Quero falar com um vendedor humano' },
       ];
 
-      const response = await chatCompletion(messages, { 
-        temperature: 0.1, 
-        maxTokens: 20 
+      const response = await chatCompletion(messages, {
+        temperature: 0.1,
+        maxTokens: 20,
       });
 
       expect(response.toUpperCase()).toContain('HUMANO');
@@ -117,8 +118,8 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
       console.log(`   Confiança: ${result.confidence}`);
 
       // O LLM deve extrair budget
-      const hasBudget = result.extracted.budget !== undefined || 
-                        result.extracted.budgetMax !== undefined;
+      const hasBudget =
+        result.extracted.budget !== undefined || result.extracted.budgetMax !== undefined;
       expect(hasBudget).toBe(true);
 
       const budgetValue = result.extracted.budget || result.extracted.budgetMax;
@@ -155,8 +156,9 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
       console.log(`   Extraído: ${JSON.stringify(result.extracted)}`);
 
       // Deve extrair dealBreakers e/ou minYear
-      const hasDealBreakers = (result.extracted.dealBreakers && result.extracted.dealBreakers.length > 0) ||
-                              result.extracted.minYear !== undefined;
+      const hasDealBreakers =
+        (result.extracted.dealBreakers && result.extracted.dealBreakers.length > 0) ||
+        result.extracted.minYear !== undefined;
       expect(hasDealBreakers).toBe(true);
     }, 30000);
 
@@ -167,8 +169,8 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
       console.log(`   Extraído: ${JSON.stringify(result.extracted)}`);
 
       // Deve extrair brand ou model
-      const hasModelInfo = result.extracted.brand !== undefined || 
-                          result.extracted.model !== undefined;
+      const hasModelInfo =
+        result.extracted.brand !== undefined || result.extracted.model !== undefined;
       expect(hasModelInfo).toBe(true);
     }, 30000);
   });
@@ -176,13 +178,9 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
   describe('Smoke Tests - Fluxo Crítico', () => {
     it('deve completar extração de perfil completo', async () => {
       const extractor = new PreferenceExtractorAgent();
-      
+
       // Simula sequência de mensagens
-      const messages = [
-        'Quero um carro até 60 mil',
-        'Para uso na cidade',
-        'Para 4 pessoas',
-      ];
+      const messages = ['Quero um carro até 60 mil', 'Para uso na cidade', 'Para 4 pessoas'];
 
       let profile: any = {};
 
@@ -209,9 +207,8 @@ describe('LLM Availability Check', () => {
 
     // Não deve lançar erro - usa mock se não houver API keys
     const response = await chatCompletion(messages);
-    
+
     expect(response).toBeTruthy();
     expect(typeof response).toBe('string');
   }, 10000);
 });
-

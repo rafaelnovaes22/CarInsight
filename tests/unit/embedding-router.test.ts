@@ -33,7 +33,7 @@ describe('Embedding Router', () => {
 
       expect(Array.isArray(embedding)).toBe(true);
       expect(embedding.length).toBe(EMBEDDING_DIMENSIONS);
-      embedding.forEach((value) => {
+      embedding.forEach(value => {
         expect(typeof value).toBe('number');
         expect(isNaN(value)).toBe(false);
       });
@@ -44,9 +44,7 @@ describe('Embedding Router', () => {
       const embedding = await generateEmbedding(text);
 
       // Calcular magnitude
-      const magnitude = Math.sqrt(
-        embedding.reduce((sum, val) => sum + val * val, 0)
-      );
+      const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
 
       // Embeddings normalizados têm magnitude próxima a 1
       expect(magnitude).toBeGreaterThan(0.9);
@@ -68,16 +66,12 @@ describe('Embedding Router', () => {
 
   describe('generateEmbeddingsBatch', () => {
     it('deve gerar múltiplos embeddings', async () => {
-      const texts = [
-        'Carro sedan',
-        'SUV familiar',
-        'Hatchback compacto',
-      ];
+      const texts = ['Carro sedan', 'SUV familiar', 'Hatchback compacto'];
 
       const embeddings = await generateEmbeddingsBatch(texts);
 
       expect(embeddings.length).toBe(texts.length);
-      embeddings.forEach((emb) => {
+      embeddings.forEach(emb => {
         expect(emb.length).toBe(EMBEDDING_DIMENSIONS);
       });
     }, 30000);
@@ -151,7 +145,7 @@ describe('Embedding Router', () => {
       expect(Array.isArray(status)).toBe(true);
       expect(status.length).toBeGreaterThan(0);
 
-      status.forEach((provider) => {
+      status.forEach(provider => {
         expect(provider).toHaveProperty('name');
         expect(provider).toHaveProperty('model');
         expect(provider).toHaveProperty('dimensions');
@@ -164,7 +158,7 @@ describe('Embedding Router', () => {
 
     it('deve incluir OpenAI como primário', () => {
       const status = getEmbeddingProvidersStatus();
-      const openai = status.find((p) => p.name === 'openai');
+      const openai = status.find(p => p.name === 'openai');
 
       expect(openai).toBeDefined();
       expect(openai?.priority).toBe(1);
@@ -174,7 +168,7 @@ describe('Embedding Router', () => {
 
     it('deve incluir Cohere como fallback', () => {
       const status = getEmbeddingProvidersStatus();
-      const cohere = status.find((p) => p.name === 'cohere');
+      const cohere = status.find(p => p.name === 'cohere');
 
       expect(cohere).toBeDefined();
       expect(cohere?.priority).toBe(2);
@@ -188,7 +182,7 @@ describe('Embedding Router', () => {
       resetCircuitBreaker();
       const status = getEmbeddingProvidersStatus();
 
-      status.forEach((provider) => {
+      status.forEach(provider => {
         expect(provider.circuitBreakerOpen).toBe(false);
       });
     });
@@ -205,7 +199,7 @@ describe('Embedding Router', () => {
 
     it('deve gerar batch em menos de 30s', async () => {
       const texts = Array(5).fill('Carro');
-      
+
       const start = Date.now();
       await generateEmbeddingsBatch(texts);
       const duration = Date.now() - start;

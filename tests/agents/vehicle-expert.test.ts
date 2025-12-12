@@ -13,7 +13,10 @@ vi.mock('../../src/lib/llm-router', () => ({
     const userMessage = messages[messages.length - 1].content.toLowerCase();
 
     // Question detection responses
-    if (userMessage.includes('diferença entre suv e sedan') || userMessage.includes('suv e sedan')) {
+    if (
+      userMessage.includes('diferença entre suv e sedan') ||
+      userMessage.includes('suv e sedan')
+    ) {
       return 'SUV (Sport Utility Vehicle) são veículos mais altos, com maior espaço interno e geralmente tração 4x4. Sedans são mais baixos, com porta-malas tradicional e melhor consumo de combustível. SUVs são ideais para terrenos irregulares e famílias grandes, enquanto sedans são melhores para uso urbano e economia.';
     }
 
@@ -21,7 +24,10 @@ vi.mock('../../src/lib/llm-router', () => ({
       return 'O financiamento funciona assim: você dá uma entrada e parcela o restante em até 60 meses. Os juros variam de acordo com o banco e seu perfil de crédito. Geralmente exigimos entrada mínima de 20%.';
     }
 
-    if (userMessage.includes('automático e manual') || userMessage.includes('automático ou manual')) {
+    if (
+      userMessage.includes('automático e manual') ||
+      userMessage.includes('automático ou manual')
+    ) {
       return 'Carros automáticos são mais confortáveis no trânsito, mas consomem um pouco mais. Manuais dão mais controle e são mais baratos de manter.';
     }
 
@@ -38,9 +44,9 @@ vi.mock('../../src/lib/llm-router', () => ({
       extracted: {},
       confidence: 0.5,
       reasoning: 'Mock extraction',
-      fieldsExtracted: []
+      fieldsExtracted: [],
     });
-  })
+  }),
 }));
 
 // Mock preference extractor
@@ -48,7 +54,12 @@ vi.mock('../../src/agents/preference-extractor.agent', () => ({
   preferenceExtractor: {
     extract: vi.fn(async (message: string) => {
       const msg = message.toLowerCase();
-      const result: any = { extracted: {}, confidence: 0.9, reasoning: 'Mock', fieldsExtracted: [] };
+      const result: any = {
+        extracted: {},
+        confidence: 0.9,
+        reasoning: 'Mock',
+        fieldsExtracted: [],
+      };
 
       // Budget extraction
       if (msg.includes('até 60 mil') || msg.includes('60 mil')) {
@@ -83,19 +94,25 @@ vi.mock('../../src/agents/preference-extractor.agent', () => ({
         result.extracted.people = 4;
         result.fieldsExtracted.push('people');
       }
-      if (msg.includes('5 pesoas')) { // typo
+      if (msg.includes('5 pesoas')) {
+        // typo
         result.extracted.people = 5;
         result.fieldsExtracted.push('people');
       }
 
       return result;
     }),
-    mergeWithProfile: vi.fn((current: any, extracted: any) => ({ ...current, ...extracted }))
+    mergeWithProfile: vi.fn((current: any, extracted: any) => ({ ...current, ...extracted })),
   },
   PreferenceExtractorAgent: vi.fn().mockImplementation(() => ({
     extract: vi.fn(async (message: string) => {
       const msg = message.toLowerCase();
-      const result: any = { extracted: {}, confidence: 0.9, reasoning: 'Mock', fieldsExtracted: [] };
+      const result: any = {
+        extracted: {},
+        confidence: 0.9,
+        reasoning: 'Mock',
+        fieldsExtracted: [],
+      };
 
       if (msg.includes('50 mil')) result.extracted.budget = 50000;
       if (msg.includes('60 mil')) result.extracted.budget = 60000;
@@ -107,8 +124,8 @@ vi.mock('../../src/agents/preference-extractor.agent', () => ({
 
       return result;
     }),
-    mergeWithProfile: vi.fn((current: any, extracted: any) => ({ ...current, ...extracted }))
-  }))
+    mergeWithProfile: vi.fn((current: any, extracted: any) => ({ ...current, ...extracted })),
+  })),
 }));
 
 // Mock logger
@@ -141,9 +158,9 @@ describe('VehicleExpertAgent', () => {
       messageCount: 0,
       extractionCount: 0,
       questionsAsked: 0,
-      userQuestions: 0
+      userQuestions: 0,
     },
-    ...overrides
+    ...overrides,
   });
 
   describe('Question detection', () => {
@@ -173,8 +190,8 @@ describe('VehicleExpertAgent', () => {
           messageCount: 2,
           extractionCount: 0,
           questionsAsked: 1,
-          userQuestions: 0
-        }
+          userQuestions: 0,
+        },
       });
 
       const response = await expert.chat('Até 50 mil', context);
@@ -207,7 +224,7 @@ describe('VehicleExpertAgent', () => {
   describe('Conversation flow', () => {
     it('should ask contextual questions when info is missing', async () => {
       const context = createContext({
-        profile: { budget: 50000 }
+        profile: { budget: 50000 },
       });
 
       const response = await expert.chat('Quero um carro', context);
@@ -223,7 +240,7 @@ describe('VehicleExpertAgent', () => {
         profile: {
           budget: 50000,
           usage: 'cidade',
-          people: 4
+          people: 4,
         },
         metadata: {
           startedAt: new Date(),
@@ -231,8 +248,8 @@ describe('VehicleExpertAgent', () => {
           messageCount: 3,
           extractionCount: 3,
           questionsAsked: 2,
-          userQuestions: 0
-        }
+          userQuestions: 0,
+        },
       });
 
       const response = await expert.chat('Pode me mostrar os carros', context);
@@ -246,7 +263,7 @@ describe('VehicleExpertAgent', () => {
       const context = createContext({
         profile: {
           budget: 50000,
-          usage: 'cidade'
+          usage: 'cidade',
           // Missing people
         },
         metadata: {
@@ -255,8 +272,8 @@ describe('VehicleExpertAgent', () => {
           messageCount: 8, // Many messages
           extractionCount: 2,
           questionsAsked: 6,
-          userQuestions: 0
-        }
+          userQuestions: 0,
+        },
       });
 
       const response = await expert.chat('Ok, pode mostrar', context);
@@ -272,8 +289,8 @@ describe('VehicleExpertAgent', () => {
         profile: {
           budget: 50000,
           usage: 'cidade',
-          people: 4
-        }
+          people: 4,
+        },
       });
 
       const response = await expert.chat('Vamos lá', context);
@@ -289,8 +306,8 @@ describe('VehicleExpertAgent', () => {
           messageCount: 2,
           extractionCount: 1,
           questionsAsked: 1,
-          userQuestions: 0
-        }
+          userQuestions: 0,
+        },
       });
 
       const response = await expert.chat('Sim', context);
@@ -312,7 +329,7 @@ describe('VehicleExpertAgent', () => {
 
     it('should use inventory context in answers', async () => {
       const context = createContext({
-        profile: { budget: 60000 }
+        profile: { budget: 60000 },
       });
 
       const response = await expert.chat('Quais SUVs vocês têm?', context);
@@ -329,8 +346,8 @@ describe('VehicleExpertAgent', () => {
           budget: 60000,
           usage: 'cidade',
           people: 4,
-          bodyType: 'hatch'
-        }
+          bodyType: 'hatch',
+        },
       });
 
       const response = await expert.chat('Me mostra', context);
@@ -348,8 +365,8 @@ describe('VehicleExpertAgent', () => {
           usage: 'cidade',
           people: 8, // Many people
           bodyType: 'pickup', // Rare + expensive
-          minYear: 2023 // Very new
-        }
+          minYear: 2023, // Very new
+        },
       });
 
       const response = await expert.chat('Me mostra', context);
@@ -365,11 +382,15 @@ describe('VehicleExpertAgent', () => {
       const context = createContext({
         profile: {
           budget: 50000,
-          usage: 'viagem'
+          usage: 'viagem',
         },
         messages: [
           { role: 'user', content: 'Quero um carro para viagens', timestamp: new Date() },
-          { role: 'assistant', content: 'Legal! Para viagens temos SUVs e sedans...', timestamp: new Date() }
+          {
+            role: 'assistant',
+            content: 'Legal! Para viagens temos SUVs e sedans...',
+            timestamp: new Date(),
+          },
         ],
         metadata: {
           startedAt: new Date(),
@@ -377,8 +398,8 @@ describe('VehicleExpertAgent', () => {
           messageCount: 2,
           extractionCount: 1,
           questionsAsked: 1,
-          userQuestions: 0
-        }
+          userQuestions: 0,
+        },
       });
 
       const response = await expert.chat('Para 6 pessoas', context);

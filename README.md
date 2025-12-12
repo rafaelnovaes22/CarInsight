@@ -2,6 +2,7 @@
 
 > Assistente inteligente de vendas automotivas via WhatsApp com IA Generativa, RAG e Multi-LLM Routing
 
+[![CI/CD](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)](https://www.postgresql.org/)

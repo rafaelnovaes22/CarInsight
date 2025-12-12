@@ -88,6 +88,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check Prettier formatting
+        run: npm run format:check
+
       - name: Check for exposed secrets
         run: |
           if grep -rE "(gsk_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})" --include=*.js --include=*.ts --include=*.md --exclude-dir=node_modules .; then

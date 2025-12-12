@@ -1,6 +1,6 @@
 /**
  * Onboarding Handler
- * 
+ *
  * Manages initial greeting, name collection, and context understanding
  * for new conversations in conversational mode.
  */
@@ -17,7 +17,6 @@ export interface OnboardingStep {
 }
 
 export class OnboardingHandler {
-
   /**
    * Check if conversation needs onboarding
    */
@@ -52,7 +51,7 @@ export class OnboardingHandler {
         step: 'greeting',
         needsName: true,
         needsContext: true,
-        isComplete: false
+        isComplete: false,
       };
     }
 
@@ -61,7 +60,7 @@ export class OnboardingHandler {
         step: 'name_collection',
         needsName: true,
         needsContext: true,
-        isComplete: false
+        isComplete: false,
       };
     }
 
@@ -70,7 +69,7 @@ export class OnboardingHandler {
         step: 'context_discovery',
         needsName: false,
         needsContext: true,
-        isComplete: false
+        isComplete: false,
       };
     }
 
@@ -78,7 +77,7 @@ export class OnboardingHandler {
       step: 'complete',
       needsName: false,
       needsContext: false,
-      isComplete: true
+      isComplete: true,
     };
   }
 
@@ -91,11 +90,14 @@ export class OnboardingHandler {
   ): Promise<{ response: string; updatedProfile: Partial<CustomerProfile> }> {
     const step = this.getCurrentStep(state);
 
-    logger.debug({
-      conversationId: state.conversationId,
-      step: step.step,
-      messageCount: state.messages.length
-    }, 'Onboarding: processing step');
+    logger.debug(
+      {
+        conversationId: state.conversationId,
+        step: step.step,
+        messageCount: state.messages.length,
+      },
+      'Onboarding: processing step'
+    );
 
     switch (step.step) {
       case 'greeting':
@@ -130,7 +132,7 @@ Me conta: o que você está procurando?`;
 
       return {
         response,
-        updatedProfile: { customerName: extractedName }
+        updatedProfile: { customerName: extractedName },
       };
     }
 
@@ -143,7 +145,7 @@ Para começar, qual é o seu nome?`;
 
     return {
       response,
-      updatedProfile: {}
+      updatedProfile: {},
     };
   }
 
@@ -160,7 +162,7 @@ Para começar, qual é o seu nome?`;
       // Couldn't extract name, ask again politely
       return {
         response: 'Desculpe, não entendi seu nome. Pode me dizer de novo? 😊',
-        updatedProfile: {}
+        updatedProfile: {},
       };
     }
 
@@ -170,7 +172,7 @@ Me conta: o que você está procurando?`;
 
     return {
       response,
-      updatedProfile: { customerName: extractedName }
+      updatedProfile: { customerName: extractedName },
     };
   }
 
@@ -184,21 +186,24 @@ Me conta: o que você está procurando?`;
   ): Promise<{ response: string; updatedProfile: Partial<CustomerProfile> }> {
     // First, check if user mentioned a specific brand or model
     const brandModel = await this.extractBrandModel(message);
-    
+
     if (brandModel.brand || brandModel.model) {
-      logger.info({ brand: brandModel.brand, model: brandModel.model }, 'User mentioned specific brand/model in context discovery');
-      
+      logger.info(
+        { brand: brandModel.brand, model: brandModel.model },
+        'User mentioned specific brand/model in context discovery'
+      );
+
       // Return with brand/model to let vehicle expert handle the search
       return {
         response: '', // Empty response signals to pass to vehicle expert
-        updatedProfile: { 
+        updatedProfile: {
           brand: brandModel.brand || undefined,
           model: brandModel.model || undefined,
-          _skipOnboarding: true // Flag to skip rest of onboarding
-        }
+          _skipOnboarding: true, // Flag to skip rest of onboarding
+        },
       };
     }
-    
+
     // Extract context using LLM
     const context = await this.extractContext(message);
 
@@ -257,14 +262,16 @@ E qual vai ser o uso principal? Cidade, viagens, trabalho ou aplicativo (Uber/99
 
     return {
       response,
-      updatedProfile
+      updatedProfile,
     };
   }
 
   /**
    * Extract brand and model from message
    */
-  private async extractBrandModel(message: string): Promise<{ brand: string | null; model: string | null }> {
+  private async extractBrandModel(
+    message: string
+  ): Promise<{ brand: string | null; model: string | null }> {
     try {
       const prompt = `Identifique se há MARCA ou MODELO de carro nesta mensagem.
 
@@ -286,11 +293,9 @@ Exemplos:
 
 Responda APENAS o JSON:`;
 
-      const response = await chatCompletion([
-        { role: 'user', content: prompt }
-      ], {
+      const response = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0,
-        maxTokens: 50
+        maxTokens: 50,
       });
 
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -301,9 +306,8 @@ Responda APENAS o JSON:`;
       const json = JSON.parse(jsonMatch[0]);
       return {
         brand: json.brand === 'null' || !json.brand ? null : json.brand.toLowerCase(),
-        model: json.model === 'null' || !json.model ? null : json.model.toLowerCase()
+        model: json.model === 'null' || !json.model ? null : json.model.toLowerCase(),
       };
-
     } catch (error) {
       logger.error({ error }, 'Error extracting brand/model');
       return { brand: null, model: null };
@@ -331,11 +335,9 @@ IMPORTANTE: Retorne APENAS o primeiro nome, sem sobrenome. Se não houver nome, 
 
 Nome:`;
 
-      const response = await chatCompletion([
-        { role: 'user', content: prompt }
-      ], {
+      const response = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0,
-        maxTokens: 20
+        maxTokens: 20,
       });
 
       const extracted = response.trim();
@@ -346,7 +348,6 @@ Nome:`;
 
       // Capitalize first letter
       return extracted.charAt(0).toUpperCase() + extracted.slice(1).toLowerCase();
-
     } catch (error) {
       logger.error({ error }, 'Error extracting name');
       return null;
@@ -394,11 +395,9 @@ Exemplos:
 
 JSON:`;
 
-      const response = await chatCompletion([
-        { role: 'user', content: prompt }
-      ], {
+      const response = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0,
-        maxTokens: 100
+        maxTokens: 100,
       });
 
       // Try to parse JSON from response
@@ -410,10 +409,10 @@ JSON:`;
       const json = JSON.parse(jsonMatch[0]);
 
       return {
-        usoPrincipal: json.usoPrincipal === 'null' || json.usoPrincipal === null ? null : json.usoPrincipal,
-        orcamento: json.orcamento || budgetMatch
+        usoPrincipal:
+          json.usoPrincipal === 'null' || json.usoPrincipal === null ? null : json.usoPrincipal,
+        orcamento: json.orcamento || budgetMatch,
       };
-
     } catch (error) {
       logger.error({ error }, 'Error extracting context');
       // Fallback to simple budget extraction
@@ -429,10 +428,10 @@ JSON:`;
 
     // Match patterns like: 50mil, 50k, 50000, R$50.000, 50.000
     const patterns = [
-      /(\d+)\s*mil/i,           // 50 mil, 50mil
-      /(\d+)\s*k/i,             // 50k, 50K
-      /r?\$?\s*(\d{2,3})\.?(\d{3})/i,  // R$ 50.000, 50000, 50.000
-      /^(\d{4,6})$/,            // Just numbers: 50000
+      /(\d+)\s*mil/i, // 50 mil, 50mil
+      /(\d+)\s*k/i, // 50k, 50K
+      /r?\$?\s*(\d{2,3})\.?(\d{3})/i, // R$ 50.000, 50000, 50.000
+      /^(\d{4,6})$/, // Just numbers: 50000
     ];
 
     for (const pattern of patterns) {

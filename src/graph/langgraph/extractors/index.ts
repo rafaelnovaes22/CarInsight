@@ -1,6 +1,6 @@
 /**
  * LangGraph Extractors Index
- * 
+ *
  * Central export for all extractors.
  */
 

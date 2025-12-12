@@ -30,7 +30,7 @@ interface SpecificModelResult {
 }
 
 // Helper para capitalizar primeira letra do modelo
-const capitalize = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+const capitalize = (str: string) => (str ? str.charAt(0).toUpperCase() + str.slice(1) : str);
 
 export class RecommendationAgent {
   async generateRecommendations(
@@ -52,14 +52,17 @@ export class RecommendationAgent {
       const specificModelResult = await this.handleSpecificModelRequest(vehicles, answers);
 
       if (specificModelResult.requestedModel) {
-        logger.info({
-          requestedModel: specificModelResult.requestedModel,
-          requestedYear: specificModelResult.requestedYear,
-          found: specificModelResult.found,
-          exactMatches: specificModelResult.exactMatches.length,
-          yearAlternatives: specificModelResult.yearAlternatives.length,
-          resultType: specificModelResult.resultType,
-        }, 'Specific model requested');
+        logger.info(
+          {
+            requestedModel: specificModelResult.requestedModel,
+            requestedYear: specificModelResult.requestedYear,
+            found: specificModelResult.found,
+            exactMatches: specificModelResult.exactMatches.length,
+            yearAlternatives: specificModelResult.yearAlternatives.length,
+            resultType: specificModelResult.resultType,
+          },
+          'Specific model requested'
+        );
 
         // Se encontrou o modelo exato, retornar com prioridade
         if (specificModelResult.found && specificModelResult.exactMatches.length > 0) {
@@ -134,7 +137,10 @@ export class RecommendationAgent {
   /**
    * Salva recomendações no banco e registra evento
    */
-  private async saveRecommendations(conversationId: string, matches: VehicleMatch[]): Promise<void> {
+  private async saveRecommendations(
+    conversationId: string,
+    matches: VehicleMatch[]
+  ): Promise<void> {
     for (let i = 0; i < matches.length; i++) {
       await prisma.recommendation.create({
         data: {
@@ -158,16 +164,19 @@ export class RecommendationAgent {
       },
     });
 
-    logger.info({
-      conversationId,
-      recommendationsCount: matches.length,
-      topScore: matches[0]?.matchScore,
-    }, 'Recommendations saved');
+    logger.info(
+      {
+        conversationId,
+        recommendationsCount: matches.length,
+        topScore: matches[0]?.matchScore,
+      },
+      'Recommendations saved'
+    );
   }
 
   /**
    * Detecta e processa pedido de modelo específico
-   * 
+   *
    * **Feature: exact-vehicle-search**
    * Requirements: 2.1, 3.1, 4.1 - Handle exact search results with year alternatives and suggestions
    */
@@ -228,13 +237,16 @@ export class RecommendationAgent {
       // Use ExactSearchService for model+year searches
       const exactResult = exactSearchService.search(extractedFilters, inventory);
 
-      logger.info({
-        requestedModel: exactResult.requestedModel,
-        requestedYear: exactResult.requestedYear,
-        resultType: exactResult.type,
-        vehiclesFound: exactResult.vehicles.length,
-        availableYears: exactResult.availableYears,
-      }, 'ExactSearchService result in recommendation agent');
+      logger.info(
+        {
+          requestedModel: exactResult.requestedModel,
+          requestedYear: exactResult.requestedYear,
+          resultType: exactResult.type,
+          vehiclesFound: exactResult.vehicles.length,
+          availableYears: exactResult.availableYears,
+        },
+        'ExactSearchService result in recommendation agent'
+      );
 
       return this.convertExactSearchResult(exactResult, vehicles);
     }
@@ -272,7 +284,7 @@ export class RecommendationAgent {
 
   /**
    * Convert ExactSearchResult to SpecificModelResult
-   * 
+   *
    * **Feature: exact-vehicle-search**
    * Requirements: 2.1, 3.1, 4.1
    */
@@ -302,11 +314,13 @@ export class RecommendationAgent {
           requestedModel: result.requestedModel,
           requestedYear: result.requestedYear,
           exactMatches: [],
-          yearAlternatives: result.vehicles.map(m => ({
-            vehicle: getOriginalVehicle(m.vehicle.id),
-            matchScore: m.matchScore,
-            reasoning: m.reasoning,
-          })).filter(m => m.vehicle),
+          yearAlternatives: result.vehicles
+            .map(m => ({
+              vehicle: getOriginalVehicle(m.vehicle.id),
+              matchScore: m.matchScore,
+              reasoning: m.reasoning,
+            }))
+            .filter(m => m.vehicle),
           similarSuggestions: [],
           availableYears: result.availableYears,
           message: result.message,
@@ -320,11 +334,13 @@ export class RecommendationAgent {
           requestedYear: result.requestedYear,
           exactMatches: [],
           yearAlternatives: [],
-          similarSuggestions: result.vehicles.map(m => ({
-            vehicle: getOriginalVehicle(m.vehicle.id),
-            matchScore: m.matchScore,
-            reasoning: m.reasoning,
-          })).filter(m => m.vehicle),
+          similarSuggestions: result.vehicles
+            .map(m => ({
+              vehicle: getOriginalVehicle(m.vehicle.id),
+              matchScore: m.matchScore,
+              reasoning: m.reasoning,
+            }))
+            .filter(m => m.vehicle),
           message: result.message,
           resultType: 'suggestions',
         };
@@ -353,7 +369,9 @@ export class RecommendationAgent {
       answers.bodyType || '',
       answers.preferredModel || '',
       answers.freeText || '',
-    ].join(' ').toLowerCase();
+    ]
+      .join(' ')
+      .toLowerCase();
 
     // Se não tem texto suficiente, não tentar detectar
     if (userText.trim().length < 3) {
@@ -378,12 +396,12 @@ Exemplos:
 - "quero uma hilux" → "Hilux"
 - "procuro um corolla ou civic" → "Corolla"
 - "quero uma picape pra trabalhar" → "NENHUM"
-- "carro pra uber" → "NENHUM"`
+- "carro pra uber" → "NENHUM"`,
       },
       {
         role: 'user',
-        content: userText
-      }
+        content: userText,
+      },
     ];
 
     try {
@@ -419,31 +437,34 @@ Exemplos:
     const minYear = answers.minYear || 1990;
     const maxKm = answers.maxKm || 500000;
 
-    return vehicles.filter(v => {
-      // Verificar se modelo ou marca contém o termo buscado
-      const matchesModel = v.modelo.toLowerCase().includes(modelLower) ||
-        v.marca.toLowerCase().includes(modelLower) ||
-        `${v.marca} ${v.modelo}`.toLowerCase().includes(modelLower);
+    return vehicles
+      .filter(v => {
+        // Verificar se modelo ou marca contém o termo buscado
+        const matchesModel =
+          v.modelo.toLowerCase().includes(modelLower) ||
+          v.marca.toLowerCase().includes(modelLower) ||
+          `${v.marca} ${v.modelo}`.toLowerCase().includes(modelLower);
 
-      if (!matchesModel) return false;
+        if (!matchesModel) return false;
 
-      // Aplicar filtros de orçamento/ano/km (com tolerância de 20% no orçamento)
-      const preco = parseFloat(v.preco);
-      if (preco > budget * 1.2) return false;
-      if (v.ano < minYear) return false;
-      if (v.km > maxKm) return false;
+        // Aplicar filtros de orçamento/ano/km (com tolerância de 20% no orçamento)
+        const preco = parseFloat(v.preco);
+        if (preco > budget * 1.2) return false;
+        if (v.ano < minYear) return false;
+        if (v.km > maxKm) return false;
 
-      return true;
-    }).sort((a, b) => {
-      // Preço mais alto primeiro
-      const precoA = parseFloat(a.preco);
-      const precoB = parseFloat(b.preco);
-      if (precoB !== precoA) return precoB - precoA;
-      // Ano mais novo segundo
-      if (b.ano !== a.ano) return b.ano - a.ano;
-      // Menos km terceiro
-      return a.km - b.km;
-    });
+        return true;
+      })
+      .sort((a, b) => {
+        // Preço mais alto primeiro
+        const precoA = parseFloat(a.preco);
+        const precoB = parseFloat(b.preco);
+        if (precoB !== precoA) return precoB - precoA;
+        // Ano mais novo segundo
+        if (b.ano !== a.ano) return b.ano - a.ano;
+        // Menos km terceiro
+        return a.km - b.km;
+      });
   }
 
   /**
@@ -486,7 +507,7 @@ Retorne APENAS um JSON no formato:
   ]
 }
 
-IMPORTANTE: No reasoning, SEMPRE mencione que não temos o modelo pedido e explique por que essa é uma boa alternativa.`
+IMPORTANTE: No reasoning, SEMPRE mencione que não temos o modelo pedido e explique por que essa é uma boa alternativa.`,
       },
       {
         role: 'user',
@@ -495,8 +516,8 @@ IMPORTANTE: No reasoning, SEMPRE mencione que não temos o modelo pedido e expli
 VEÍCULOS DISPONÍVEIS:
 ${vehiclesList.map((v, i) => `${i + 1}. [${v.id}] ${v.descricao}`).join('\n')}
 
-Sugira as 3 melhores alternativas similares.`
-      }
+Sugira as 3 melhores alternativas similares.`,
+      },
     ];
 
     try {
@@ -561,21 +582,23 @@ Sugira as 3 melhores alternativas similares.`
     const minYear = answers.minYear || 1990;
     const maxKm = answers.maxKm || 500000;
 
-    return vehicles.filter(vehicle => {
-      const preco = parseFloat(vehicle.preco);
-      // Permitir 10% acima do orçamento para dar opções
-      if (preco > budget * 1.1) return false;
-      if (vehicle.ano < minYear) return false;
-      if (vehicle.km > maxKm) return false;
-      return true;
-    }).sort((a, b) => {
-      // Ordenar por preço (desc), km (asc), ano (desc)
-      const precoA = parseFloat(a.preco);
-      const precoB = parseFloat(b.preco);
-      if (precoB !== precoA) return precoB - precoA;
-      if (b.ano !== a.ano) return b.ano - a.ano;
-      return a.km - b.km;
-    });
+    return vehicles
+      .filter(vehicle => {
+        const preco = parseFloat(vehicle.preco);
+        // Permitir 10% acima do orçamento para dar opções
+        if (preco > budget * 1.1) return false;
+        if (vehicle.ano < minYear) return false;
+        if (vehicle.km > maxKm) return false;
+        return true;
+      })
+      .sort((a, b) => {
+        // Ordenar por preço (desc), km (asc), ano (desc)
+        const precoA = parseFloat(a.preco);
+        const precoB = parseFloat(b.preco);
+        if (precoB !== precoA) return precoB - precoA;
+        if (b.ano !== a.ano) return b.ano - a.ano;
+        return a.km - b.km;
+      });
   }
 
   /**
@@ -620,7 +643,7 @@ O score deve refletir:
 - 50-69: Aceitável, pode funcionar
 - 0-49: Não adequado para o contexto
 
-Seja RIGOROSO: se o cliente precisa de picape para obra, NÃO recomende sedans/hatches.`
+Seja RIGOROSO: se o cliente precisa de picape para obra, NÃO recomende sedans/hatches.`,
       },
       {
         role: 'user',
@@ -630,8 +653,8 @@ ${userContext}
 VEÍCULOS DISPONÍVEIS:
 ${vehiclesList.map((v, i) => `${i + 1}. [${v.id}] ${v.descricao}`).join('\n')}
 
-Avalie cada veículo e retorne o JSON com as avaliações.`
-      }
+Avalie cada veículo e retorne o JSON com as avaliações.`,
+      },
     ];
 
     try {
@@ -700,7 +723,10 @@ Avalie cada veículo e retorne o JSON com as avaliações.`
   /**
    * Avaliação de fallback caso o LLM falhe
    */
-  private fallbackEvaluation(vehicles: any[], answers: Record<string, any>): LLMVehicleEvaluation[] {
+  private fallbackEvaluation(
+    vehicles: any[],
+    answers: Record<string, any>
+  ): LLMVehicleEvaluation[] {
     return vehicles.map(vehicle => ({
       vehicleId: vehicle.id,
       score: 70, // Score neutro

@@ -27,7 +27,7 @@ router.get('/seed-robustcar', async (req, res) => {
     logger.warn('Tentativa de acesso não autorizado ao endpoint de seed');
     return res.status(403).json({
       success: false,
-      error: 'Unauthorized - Invalid secret'
+      error: 'Unauthorized - Invalid secret',
     });
   }
 
@@ -51,7 +51,7 @@ router.get('/seed-robustcar', async (req, res) => {
       cwd: process.cwd(),
       env: process.env,
       encoding: 'utf-8',
-      maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
     });
 
     logger.info('Seed output:', seedOutput);
@@ -62,7 +62,7 @@ router.get('/seed-robustcar', async (req, res) => {
       cwd: process.cwd(),
       env: process.env,
       encoding: 'utf-8',
-      maxBuffer: 10 * 1024 * 1024
+      maxBuffer: 10 * 1024 * 1024,
     });
 
     logger.info('Embeddings output:', embeddingsOutput);
@@ -74,7 +74,7 @@ router.get('/seed-robustcar', async (req, res) => {
       message: '✅ Seed e embeddings executados com sucesso!',
       seedOutput: seedOutput.split('\n').slice(-10).join('\n'), // Últimas 10 linhas
       embeddingsOutput: embeddingsOutput.split('\n').slice(-10).join('\n'),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
     logger.error({ error }, '❌ Erro ao executar seed');
@@ -84,14 +84,14 @@ router.get('/seed-robustcar', async (req, res) => {
       stderr: error.stderr?.toString(),
       stdout: error.stdout?.toString(),
       code: error.code,
-      cmd: error.cmd
+      cmd: error.cmd,
     };
 
     res.status(500).json({
       success: false,
       error: error.message,
       details: errorDetails,
-      help: 'Verifique: 1) Arquivo robustcar-vehicles.json existe, 2) DATABASE_URL configurado, 3) OPENAI_API_KEY configurado'
+      help: 'Verifique: 1) Arquivo robustcar-vehicles.json existe, 2) DATABASE_URL configurado, 3) OPENAI_API_KEY configurado',
     });
   }
 });
@@ -107,7 +107,7 @@ router.post('/schema-push', requireSecret, async (req, res) => {
     const output = execSync('npx prisma db push --accept-data-loss --skip-generate', {
       encoding: 'utf-8',
       env: { ...process.env },
-      maxBuffer: 10 * 1024 * 1024
+      maxBuffer: 10 * 1024 * 1024,
     });
 
     logger.info('✅ Admin: Schema applied successfully');
@@ -115,16 +115,15 @@ router.post('/schema-push', requireSecret, async (req, res) => {
     res.json({
       success: true,
       message: 'Schema applied successfully',
-      output: output.substring(output.length - 500) // Last 500 chars
+      output: output.substring(output.length - 500), // Last 500 chars
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Schema push failed');
     res.status(500).json({
       success: false,
       error: 'Schema push failed',
       details: error.message,
-      stderr: error.stderr?.toString()
+      stderr: error.stderr?.toString(),
     });
   }
 });
@@ -139,7 +138,7 @@ const UBER_X_MODELS: any = {
   ford: ['ka', 'fiesta'],
   hyundai: ['hb20', 'hb20s', 'accent', 'elantra'],
   nissan: ['march', 'versa', 'sentra'],
-  renault: ['logan', 'sandero', 'kwid']
+  renault: ['logan', 'sandero', 'kwid'],
 };
 
 const UBER_BLACK_MODELS: any = {
@@ -147,13 +146,17 @@ const UBER_BLACK_MODELS: any = {
   toyota: ['corolla'],
   chevrolet: ['cruze'],
   volkswagen: ['jetta'],
-  nissan: ['sentra']
+  nissan: ['sentra'],
 };
 
 const NEVER_ALLOWED_TYPES = ['suv', 'pickup', 'picape', 'minivan', 'van'];
 
 function normalizeStr(str: string): string {
-  return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
 }
 
 function isInWhitelist(marca: string, modelo: string, whitelist: any): boolean {
@@ -186,7 +189,8 @@ async function updateUberWithLLM(req: any, res: any) {
   try {
     logger.info('🚖 Admin: Updating Uber eligibility with LLM...');
 
-    const { uberEligibilityValidator } = await import('../services/uber-eligibility-validator.service');
+    const { uberEligibilityValidator } =
+      await import('../services/uber-eligibility-validator.service');
     const vehicles = await prisma.vehicle.findMany();
 
     let uberXCount = 0;
@@ -203,15 +207,15 @@ async function updateUberWithLLM(req: any, res: any) {
         arCondicionado: vehicle.arCondicionado,
         portas: vehicle.portas,
         cambio: vehicle.cambio,
-        cor: vehicle.cor
+        cor: vehicle.cor,
       });
 
       await prisma.vehicle.update({
         where: { id: vehicle.id },
         data: {
           aptoUber: eligibility.uberX,
-          aptoUberBlack: eligibility.uberBlack
-        }
+          aptoUberBlack: eligibility.uberBlack,
+        },
       });
 
       if (eligibility.uberX) uberXCount++;
@@ -227,12 +231,15 @@ async function updateUberWithLLM(req: any, res: any) {
           uberComfort: eligibility.uberComfort,
           uberBlack: eligibility.uberBlack,
           reasoning: eligibility.reasoning,
-          confidence: eligibility.confidence
+          confidence: eligibility.confidence,
         });
       }
     }
 
-    logger.info({ uberXCount, uberComfortCount, uberBlackCount }, '✅ Admin: Uber eligibility updated (LLM)');
+    logger.info(
+      { uberXCount, uberComfortCount, uberBlackCount },
+      '✅ Admin: Uber eligibility updated (LLM)'
+    );
 
     res.json({
       success: true,
@@ -242,37 +249,36 @@ async function updateUberWithLLM(req: any, res: any) {
         totalVehicles: vehicles.length,
         uberX: uberXCount,
         uberComfort: uberComfortCount,
-        uberBlack: uberBlackCount
+        uberBlack: uberBlackCount,
       },
-      results: results.slice(0, 10)
+      results: results.slice(0, 10),
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Update Uber eligibility with LLM failed');
     res.status(500).json({
       success: false,
       error: 'Update failed',
-      details: error.message
+      details: error.message,
     });
   }
 }
 
 /**
  * Update Uber eligibility based on official requirements (sem whitelist)
- * 
+ *
  * CRITÉRIOS UBER/99 OFICIAIS:
- * 
+ *
  * Uber X / 99Pop:
  * - Ano: 2012 ou mais recente
  * - 4 portas
  * - Ar condicionado funcionando
  * - Sedan, Hatch ou Minivan (Spin, etc)
- * 
+ *
  * Uber Comfort / 99TOP:
  * - Ano: 2015 ou mais recente
  * - Sedan médio/grande
  * - Espaço interno generoso
- * 
+ *
  * Uber Black:
  * - Ano: 2018 ou mais recente
  * - Sedan executivo/premium
@@ -309,21 +315,24 @@ async function updateUberWithWhitelist(req: any, res: any) {
       const isUberBlackBodyType = uberBlackBodyTypes.some(type => carrNorm.includes(type));
 
       // Uber X / 99Pop - Critérios oficiais (SEM whitelist)
-      const isUberX = !isNeverAllowed &&
+      const isUberX =
+        !isNeverAllowed &&
         vehicle.ano >= 2012 &&
         vehicle.arCondicionado === true &&
         vehicle.portas >= 4 &&
         isUberXBodyType;
 
       // Uber Comfort / 99TOP
-      const isUberComfort = !isNeverAllowed &&
+      const isUberComfort =
+        !isNeverAllowed &&
         vehicle.ano >= 2015 &&
         vehicle.arCondicionado === true &&
         vehicle.portas >= 4 &&
         (carrNorm.includes('sedan') || carrNorm.includes('minivan'));
 
       // Uber Black - Critérios oficiais (SEM whitelist)
-      const isUberBlack = !isNeverAllowed &&
+      const isUberBlack =
+        !isNeverAllowed &&
         vehicle.ano >= 2018 &&
         vehicle.arCondicionado === true &&
         vehicle.portas === 4 &&
@@ -340,14 +349,10 @@ async function updateUberWithWhitelist(req: any, res: any) {
       // Family-friendly
       const aptoFamilia =
         vehicle.portas >= 4 &&
-        (carrNorm.includes('suv') ||
-          carrNorm.includes('sedan') ||
-          carrNorm.includes('minivan'));
+        (carrNorm.includes('suv') || carrNorm.includes('sedan') || carrNorm.includes('minivan'));
 
       // Work-suitable
-      const aptoTrabalho =
-        economiaCombustivel !== 'baixa' &&
-        vehicle.arCondicionado === true;
+      const aptoTrabalho = economiaCombustivel !== 'baixa' && vehicle.arCondicionado === true;
 
       // Update
       await prisma.vehicle.update({
@@ -357,8 +362,8 @@ async function updateUberWithWhitelist(req: any, res: any) {
           aptoUberBlack: isUberBlack,
           economiaCombustivel,
           aptoFamilia,
-          aptoTrabalho
-        }
+          aptoTrabalho,
+        },
       });
 
       if (isUberX) uberXCount++;
@@ -376,16 +381,21 @@ async function updateUberWithWhitelist(req: any, res: any) {
           preco: vehicle.preco,
           uberX: isUberX,
           uberComfort: isUberComfort,
-          uberBlack: isUberBlack
+          uberBlack: isUberBlack,
         });
-      } else if (!isNeverAllowed && vehicle.ano >= 2012 && vehicle.arCondicionado && vehicle.portas >= 4) {
+      } else if (
+        !isNeverAllowed &&
+        vehicle.ano >= 2012 &&
+        vehicle.arCondicionado &&
+        vehicle.portas >= 4
+      ) {
         // Log vehicles that meet basic criteria but wrong body type
         rejectedVehicles.push({
           marca: vehicle.marca,
           modelo: vehicle.modelo,
           ano: vehicle.ano,
           carroceria: vehicle.carroceria,
-          reason: `Carroceria "${vehicle.carroceria}" não aceita para apps`
+          reason: `Carroceria "${vehicle.carroceria}" não aceita para apps`,
         });
       }
     }
@@ -396,7 +406,7 @@ async function updateUberWithWhitelist(req: any, res: any) {
       uberComfort: uberComfortCount,
       uberBlack: uberBlackCount,
       familia: familiaCount,
-      trabalho: trabalhoCount
+      trabalho: trabalhoCount,
     };
 
     logger.info({ summary }, '✅ Admin: Uber eligibility updated');
@@ -406,15 +416,14 @@ async function updateUberWithWhitelist(req: any, res: any) {
       message: 'Uber eligibility updated (whitelist mode)',
       summary,
       uberVehicles: uberVehicles.slice(0, 10), // First 10
-      rejectedVehicles: rejectedVehicles.slice(0, 5) // Show some rejected
+      rejectedVehicles: rejectedVehicles.slice(0, 5), // Show some rejected
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Update Uber eligibility failed');
     res.status(500).json({
       success: false,
       error: 'Update failed',
-      details: error.message
+      details: error.message,
     });
   }
 }
@@ -445,24 +454,23 @@ router.get('/vehicles-uber', requireSecret, async (req, res) => {
         km: true,
         carroceria: true,
         aptoUber: true,
-        aptoUberBlack: true
+        aptoUberBlack: true,
       },
-      orderBy: { preco: 'asc' }
+      orderBy: { preco: 'asc' },
     });
 
     res.json({
       success: true,
       count: vehicles.length,
       type: type || 'x',
-      vehicles
+      vehicles,
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: List Uber vehicles failed');
     res.status(500).json({
       success: false,
       error: 'Failed to list vehicles',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -478,15 +486,15 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
-        url: { not: null }
+        url: { not: null },
       },
       select: {
         id: true,
         marca: true,
         modelo: true,
         ano: true,
-        url: true
-      }
+        url: true,
+      },
     });
 
     logger.info(`📊 Total de veículos para validar: ${vehicles.length}`);
@@ -497,7 +505,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
 
     // Função para verificar URL
     const checkUrl = (url: string): Promise<{ valid: boolean; reason?: string }> => {
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         if (!url) {
           resolve({ valid: false, reason: 'URL vazia' });
           return;
@@ -505,36 +513,37 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
 
         const options = {
           headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-          timeout: 10000
+          timeout: 10000,
         };
 
-        https.get(url, options, (response: any) => {
-          let data = '';
-          response.on('data', (chunk: string) => data += chunk);
-          response.on('end', () => {
-            const html = data.toLowerCase();
+        https
+          .get(url, options, (response: any) => {
+            let data = '';
+            response.on('data', (chunk: string) => (data += chunk));
+            response.on('end', () => {
+              const html = data.toLowerCase();
 
-            if (response.statusCode === 404 || response.statusCode === 410) {
-              resolve({ valid: false, reason: `HTTP ${response.statusCode}` });
-              return;
-            }
+              if (response.statusCode === 404 || response.statusCode === 410) {
+                resolve({ valid: false, reason: `HTTP ${response.statusCode}` });
+                return;
+              }
 
-            const isInvalid =
-              html.includes('página não encontrada') ||
-              html.includes('veículo não disponível') ||
-              html.includes('anúncio não encontrado') ||
-              html.includes('vendido') ||
-              html.includes('não existe') ||
-              (html.length < 5000 && !html.includes('quilometragem'));
+              const isInvalid =
+                html.includes('página não encontrada') ||
+                html.includes('veículo não disponível') ||
+                html.includes('anúncio não encontrado') ||
+                html.includes('vendido') ||
+                html.includes('não existe') ||
+                (html.length < 5000 && !html.includes('quilometragem'));
 
-            if (isInvalid) {
-              resolve({ valid: false, reason: 'Página inválida/vendido' });
-              return;
-            }
+              if (isInvalid) {
+                resolve({ valid: false, reason: 'Página inválida/vendido' });
+                return;
+              }
 
-            resolve({ valid: true });
-          });
-        })
+              resolve({ valid: true });
+            });
+          })
           .on('error', (err: Error) => {
             resolve({ valid: false, reason: err.message });
           })
@@ -550,7 +559,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
       const batch = vehicles.slice(i, i + batchSize);
 
       const results = await Promise.all(
-        batch.map(async (vehicle) => {
+        batch.map(async vehicle => {
           const result = await checkUrl(vehicle.url || '');
           return { vehicle, result };
         })
@@ -564,7 +573,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
             id: vehicle.id,
             name: `${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}`,
             url: vehicle.url,
-            reason: result.reason
+            reason: result.reason,
           });
         }
       }
@@ -580,13 +589,16 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
       const invalidIds = invalidVehicles.map(v => v.id);
       await prisma.vehicle.updateMany({
         where: { id: { in: invalidIds } },
-        data: { disponivel: false }
+        data: { disponivel: false },
       });
     }
 
     const finalCount = await prisma.vehicle.count({ where: { disponivel: true } });
 
-    logger.info({ validCount, invalidCount: invalidVehicles.length, finalCount }, '✅ Admin: Validação concluída');
+    logger.info(
+      { validCount, invalidCount: invalidVehicles.length, finalCount },
+      '✅ Admin: Validação concluída'
+    );
 
     res.json({
       success: true,
@@ -595,17 +607,16 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
         total: vehicles.length,
         valid: validCount,
         invalid: invalidVehicles.length,
-        remainingAvailable: finalCount
+        remainingAvailable: finalCount,
       },
-      invalidVehicles: invalidVehicles.slice(0, 20)
+      invalidVehicles: invalidVehicles.slice(0, 20),
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Validação de URLs falhou');
     res.status(500).json({
       success: false,
       error: 'Validação falhou',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -636,17 +647,49 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
     // Fallback: Mapeamento estático de categorias
     const CATEGORY_MAP: Record<string, string> = {
-      'CRETA': 'SUV', 'COMPASS': 'SUV', 'RENEGADE': 'SUV', 'TRACKER': 'SUV',
-      'ECOSPORT': 'SUV', 'DUSTER': 'SUV', 'HR-V': 'SUV', 'HRV': 'SUV',
-      'TUCSON': 'SUV', 'SPORTAGE': 'SUV', 'RAV4': 'SUV', 'TIGGO': 'SUV',
-      'KICKS': 'SUV', 'CAPTUR': 'SUV', 'T-CROSS': 'SUV', 'TCROSS': 'SUV',
-      'CIVIC': 'SEDAN', 'COROLLA': 'SEDAN', 'CITY': 'SEDAN', 'CRUZE': 'SEDAN',
-      'HB20S': 'SEDAN', 'SENTRA': 'SEDAN', 'LOGAN': 'SEDAN', 'VIRTUS': 'SEDAN',
-      'ONIX': 'HATCH', 'HB20': 'HATCH', 'POLO': 'HATCH', 'GOL': 'HATCH',
-      'MOBI': 'HATCH', 'KWID': 'HATCH', 'ARGO': 'HATCH', 'YARIS': 'HATCH',
-      'TORO': 'PICKUP', 'STRADA': 'PICKUP', 'SAVEIRO': 'PICKUP', 'MONTANA': 'PICKUP',
-      'HILUX': 'PICKUP', 'S10': 'PICKUP', 'RANGER': 'PICKUP', 'AMAROK': 'PICKUP',
-      'SPIN': 'MINIVAN', 'MERIVA': 'MINIVAN', 'IDEA': 'MINIVAN',
+      CRETA: 'SUV',
+      COMPASS: 'SUV',
+      RENEGADE: 'SUV',
+      TRACKER: 'SUV',
+      ECOSPORT: 'SUV',
+      DUSTER: 'SUV',
+      'HR-V': 'SUV',
+      HRV: 'SUV',
+      TUCSON: 'SUV',
+      SPORTAGE: 'SUV',
+      RAV4: 'SUV',
+      TIGGO: 'SUV',
+      KICKS: 'SUV',
+      CAPTUR: 'SUV',
+      'T-CROSS': 'SUV',
+      TCROSS: 'SUV',
+      CIVIC: 'SEDAN',
+      COROLLA: 'SEDAN',
+      CITY: 'SEDAN',
+      CRUZE: 'SEDAN',
+      HB20S: 'SEDAN',
+      SENTRA: 'SEDAN',
+      LOGAN: 'SEDAN',
+      VIRTUS: 'SEDAN',
+      ONIX: 'HATCH',
+      HB20: 'HATCH',
+      POLO: 'HATCH',
+      GOL: 'HATCH',
+      MOBI: 'HATCH',
+      KWID: 'HATCH',
+      ARGO: 'HATCH',
+      YARIS: 'HATCH',
+      TORO: 'PICKUP',
+      STRADA: 'PICKUP',
+      SAVEIRO: 'PICKUP',
+      MONTANA: 'PICKUP',
+      HILUX: 'PICKUP',
+      S10: 'PICKUP',
+      RANGER: 'PICKUP',
+      AMAROK: 'PICKUP',
+      SPIN: 'MINIVAN',
+      MERIVA: 'MINIVAN',
+      IDEA: 'MINIVAN',
     };
 
     const detectCategoryFallback = (brand: string, model: string): string => {
@@ -660,14 +703,20 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     // Função para fazer requisição HTTPS
     const fetchPage = (url: string): Promise<string> => {
       return new Promise((resolve, reject) => {
-        https.get(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-          timeout: 15000
-        }, (res: any) => {
-          let data = '';
-          res.on('data', (chunk: string) => data += chunk);
-          res.on('end', () => resolve(data));
-        }).on('error', reject);
+        https
+          .get(
+            url,
+            {
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+              timeout: 15000,
+            },
+            (res: any) => {
+              let data = '';
+              res.on('data', (chunk: string) => (data += chunk));
+              res.on('end', () => resolve(data));
+            }
+          )
+          .on('error', reject);
       });
     };
 
@@ -693,8 +742,13 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           const model = mvParts[0];
           const version = mvParts.slice(1).join(' ');
 
-          const price = priceMatch ?
-            parseFloat(priceMatch[1].replace(/R\$|\./g, '').replace(',', '.').trim()) || null
+          const price = priceMatch
+            ? parseFloat(
+                priceMatch[1]
+                  .replace(/R\$|\./g, '')
+                  .replace(',', '.')
+                  .trim()
+              ) || null
             : null;
 
           vehicles.push({
@@ -707,7 +761,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
             color: (listData[1] || 'N/I').toUpperCase(),
             price,
             detailUrl: urlMatch[1].startsWith('http') ? urlMatch[1] : `${baseUrl}${urlMatch[1]}`,
-            category: detectCategoryFallback(brand, model) // Categoria inicial, pode ser atualizada pelo LLM
+            category: detectCategoryFallback(brand, model), // Categoria inicial, pode ser atualizada pelo LLM
           });
         } catch (e) {
           // Skip malformed entries
@@ -741,7 +795,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     for (const vehicle of allVehicles) {
       try {
         const existing = await prisma.vehicle.findFirst({
-          where: { url: vehicle.detailUrl }
+          where: { url: vehicle.detailUrl },
         });
 
         // Usar LLM para classificar se habilitado
@@ -753,16 +807,22 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
               modelo: vehicle.model,
               ano: vehicle.year,
               carroceria: vehicle.category,
-              combustivel: vehicle.fuel
+              combustivel: vehicle.fuel,
             });
             llmClassified++;
-            logger.info({
-              vehicle: `${vehicle.brand} ${vehicle.model}`,
-              category: classification.category,
-              confidence: classification.confidence
-            }, 'LLM classification');
+            logger.info(
+              {
+                vehicle: `${vehicle.brand} ${vehicle.model}`,
+                category: classification.category,
+                confidence: classification.confidence,
+              },
+              'LLM classification'
+            );
           } catch (llmError) {
-            logger.warn({ vehicle: vehicle.model, error: llmError }, 'LLM classification failed, using fallback');
+            logger.warn(
+              { vehicle: vehicle.model, error: llmError },
+              'LLM classification failed, using fallback'
+            );
           }
         }
 
@@ -792,7 +852,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
         if (existing) {
           await prisma.vehicle.update({
             where: { id: existing.id },
-            data: vehicleData
+            data: vehicleData,
           });
           updated++;
         } else {
@@ -809,14 +869,17 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     const outdatedResult = await prisma.vehicle.updateMany({
       where: {
         url: { notIn: validUrls },
-        disponivel: true
+        disponivel: true,
       },
-      data: { disponivel: false }
+      data: { disponivel: false },
     });
 
     const finalCount = await prisma.vehicle.count({ where: { disponivel: true } });
 
-    logger.info({ created, updated, llmClassified, outdated: outdatedResult.count, finalCount }, '✅ Admin: Scraping concluído');
+    logger.info(
+      { created, updated, llmClassified, outdated: outdatedResult.count, finalCount },
+      '✅ Admin: Scraping concluído'
+    );
 
     res.json({
       success: true,
@@ -828,16 +891,15 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
         updated,
         llmClassified: useLLM ? llmClassified : 0,
         markedOutdated: outdatedResult.count,
-        totalAvailable: finalCount
-      }
+        totalAvailable: finalCount,
+      },
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Scraping falhou');
     res.status(500).json({
       success: false,
       error: 'Scraping falhou',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -855,24 +917,31 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
 
     const vehiclesToValidate = await prisma.vehicle.findMany({
       where: { disponivel: true, url: { not: null } },
-      select: { id: true, url: true }
+      select: { id: true, url: true },
     });
 
     const https = await import('https');
     let invalidCount = 0;
 
     const checkUrlQuick = (url: string): Promise<boolean> => {
-      return new Promise((resolve) => {
-        https.get(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
-          timeout: 5000
-        }, (res: any) => {
-          if (res.statusCode === 404 || res.statusCode === 410) {
-            resolve(false);
-          } else {
-            resolve(true);
-          }
-        }).on('error', () => resolve(false)).on('timeout', () => resolve(false));
+      return new Promise(resolve => {
+        https
+          .get(
+            url,
+            {
+              headers: { 'User-Agent': 'Mozilla/5.0' },
+              timeout: 5000,
+            },
+            (res: any) => {
+              if (res.statusCode === 404 || res.statusCode === 410) {
+                resolve(false);
+              } else {
+                resolve(true);
+              }
+            }
+          )
+          .on('error', () => resolve(false))
+          .on('timeout', () => resolve(false));
       });
     };
 
@@ -881,9 +950,9 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
     for (let i = 0; i < vehiclesToValidate.length; i += 10) {
       const batch = vehiclesToValidate.slice(i, i + 10);
       const results = await Promise.all(
-        batch.map(async (v) => ({
+        batch.map(async v => ({
           id: v.id,
-          valid: await checkUrlQuick(v.url || '')
+          valid: await checkUrlQuick(v.url || ''),
         }))
       );
       results.filter(r => !r.valid).forEach(r => invalidIds.push(r.id));
@@ -892,7 +961,7 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
     if (invalidIds.length > 0) {
       await prisma.vehicle.updateMany({
         where: { id: { in: invalidIds } },
-        data: { disponivel: false }
+        data: { disponivel: false },
       });
       invalidCount = invalidIds.length;
     }
@@ -903,11 +972,13 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
     const baseUrl = 'https://robustcar.com.br';
     const fetchPage = (url: string): Promise<string> => {
       return new Promise((resolve, reject) => {
-        https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 10000 }, (res: any) => {
-          let data = '';
-          res.on('data', (chunk: string) => data += chunk);
-          res.on('end', () => resolve(data));
-        }).on('error', reject);
+        https
+          .get(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 10000 }, (res: any) => {
+            let data = '';
+            res.on('data', (chunk: string) => (data += chunk));
+            res.on('end', () => resolve(data));
+          })
+          .on('error', reject);
       });
     };
 
@@ -937,19 +1008,19 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
       summary: {
         urlsInvalidated: invalidCount,
         potentialNewVehicles: newVehicles,
-        totalAvailable: finalCount
+        totalAvailable: finalCount,
       },
-      note: newVehicles > 0
-        ? `Encontrados ${newVehicles} novos veículos. Execute /admin/scrape-robustcar para importá-los.`
-        : 'Inventário atualizado, sem novos veículos.'
+      note:
+        newVehicles > 0
+          ? `Encontrados ${newVehicles} novos veículos. Execute /admin/scrape-robustcar para importá-los.`
+          : 'Inventário atualizado, sem novos veículos.',
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Refresh falhou');
     res.status(500).json({
       success: false,
       error: 'Refresh falhou',
-      details: error.message
+      details: error.message,
     });
   }
 });
@@ -969,7 +1040,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
       by: ['carroceria'],
       _count: true,
       where: { disponivel: true },
-      orderBy: { _count: { carroceria: 'desc' } }
+      orderBy: { _count: { carroceria: 'desc' } },
     });
 
     // Buscar pickups especificamente (case insensitive não funciona no groupBy)
@@ -983,7 +1054,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
           { modelo: { contains: 'toro', mode: 'insensitive' } },
           { modelo: { contains: 'saveiro', mode: 'insensitive' } },
           { modelo: { contains: 'hilux', mode: 'insensitive' } },
-        ]
+        ],
       },
       select: {
         id: true,
@@ -992,15 +1063,15 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
         ano: true,
         carroceria: true,
         disponivel: true,
-        preco: true
-      }
+        preco: true,
+      },
     });
 
     // Listar todos os valores únicos de carroceria
     const allBodyTypes = await prisma.vehicle.findMany({
       where: { disponivel: true },
       select: { carroceria: true },
-      distinct: ['carroceria']
+      distinct: ['carroceria'],
     });
 
     res.json({
@@ -1008,7 +1079,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
       summary: {
         total,
         available,
-        byBodyType: byBodyType.map(b => ({ type: b.carroceria, count: b._count }))
+        byBodyType: byBodyType.map(b => ({ type: b.carroceria, count: b._count })),
       },
       uniqueBodyTypes: allBodyTypes.map(b => b.carroceria),
       pickupsFound: pickups.length,
@@ -1017,15 +1088,14 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
         name: `${p.marca} ${p.modelo} ${p.ano}`,
         carroceria: p.carroceria,
         disponivel: p.disponivel,
-        preco: p.preco
-      }))
+        preco: p.preco,
+      })),
     });
-
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Debug vehicles failed');
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -1043,8 +1113,8 @@ router.get('/health', (req, res) => {
       scrapeRobustcar: 'POST /admin/scrape-robustcar?secret=YOUR_SECRET',
       refreshInventory: 'POST /admin/refresh-inventory?secret=YOUR_SECRET',
       debugVehicles: '/admin/debug-vehicles?secret=YOUR_SECRET',
-      debug: '/admin/debug-env?secret=YOUR_SECRET'
-    }
+      debug: '/admin/debug-env?secret=YOUR_SECRET',
+    },
   });
 });
 
@@ -1075,22 +1145,22 @@ router.get('/debug-env', async (req, res) => {
         json: jsonPath,
         jsonExists: existsSync(jsonPath),
         seed: seedPath,
-        seedExists: existsSync(seedPath)
+        seedExists: existsSync(seedPath),
       },
       env: {
         DATABASE_URL: process.env.DATABASE_URL ? '✅ Configurado' : '❌ Não configurado',
         OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '✅ Configurado' : '❌ Não configurado',
-        NODE_ENV: process.env.NODE_ENV
+        NODE_ENV: process.env.NODE_ENV,
       },
       files: {
         scripts: scriptsFiles.split('\n').filter(l => l.includes('robustcar')),
-        prisma: prismaFiles.split('\n').filter(l => l.includes('seed'))
-      }
+        prisma: prismaFiles.split('\n').filter(l => l.includes('seed')),
+      },
     });
   } catch (error: any) {
     res.status(500).json({
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
   }
 });

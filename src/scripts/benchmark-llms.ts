@@ -40,14 +40,16 @@ const TEST_CASES: TestCase[] = [
   {
     id: 'greeting',
     description: 'Saudação inicial do cliente',
-    systemPrompt: 'Você é um assistente de vendas de carros da Renatinhu\'s Cars. Seja cordial e profissional.',
+    systemPrompt:
+      "Você é um assistente de vendas de carros da Renatinhu's Cars. Seja cordial e profissional.",
     userMessage: 'Olá, bom dia!',
     expectedKeywords: ['olá', 'ajudar', 'carro'],
   },
   {
     id: 'intent-extraction',
     description: 'Extração de intenção de compra',
-    systemPrompt: 'Identifique a intenção do cliente. Retorne apenas: PURCHASE, INQUIRY, HELP, ou OTHER.',
+    systemPrompt:
+      'Identifique a intenção do cliente. Retorne apenas: PURCHASE, INQUIRY, HELP, ou OTHER.',
     userMessage: 'Quero comprar um carro usado econômico para trabalhar',
     expectedKeywords: ['PURCHASE'],
   },
@@ -55,14 +57,16 @@ const TEST_CASES: TestCase[] = [
     id: 'recommendation-reasoning',
     description: 'Geração de raciocínio para recomendação',
     systemPrompt: 'Explique por que este veículo é uma boa escolha para o cliente.',
-    userMessage: 'Cliente: orçamento R$ 50.000, uso trabalho, 4 pessoas\nVeículo: Honda Civic 2010, R$ 42.000, sedan, automático, baixo consumo',
+    userMessage:
+      'Cliente: orçamento R$ 50.000, uso trabalho, 4 pessoas\nVeículo: Honda Civic 2010, R$ 42.000, sedan, automático, baixo consumo',
     expectedKeywords: ['orçamento', 'econômico', 'espaço', 'confortável'],
   },
   {
     id: 'complex-question',
     description: 'Pergunta complexa sobre financiamento',
     systemPrompt: 'Você é especialista em financiamento de veículos. Explique de forma clara.',
-    userMessage: 'Qual a diferença entre financiamento SAC e PRICE? Qual é melhor para um carro de R$ 60.000 em 48 meses?',
+    userMessage:
+      'Qual a diferença entre financiamento SAC e PRICE? Qual é melhor para um carro de R$ 60.000 em 48 meses?',
     expectedKeywords: ['SAC', 'PRICE', 'juros', 'parcela'],
   },
   {
@@ -84,8 +88,8 @@ const TEST_CASES: TestCase[] = [
 // Preços por 1M tokens (input/output)
 const PRICING = {
   'llama-3.3-70b': { input: 0.59, output: 0.79 }, // Groq
-  'gpt-4o': { input: 2.50, output: 10.00 }, // OpenAI GPT-4o
-  'gpt-4o-mini': { input: 0.150, output: 0.600 }, // OpenAI GPT-4o-mini
+  'gpt-4o': { input: 2.5, output: 10.0 }, // OpenAI GPT-4o
+  'gpt-4o-mini': { input: 0.15, output: 0.6 }, // OpenAI GPT-4o-mini
 };
 
 async function benchmarkGroq(testCase: TestCase): Promise<BenchmarkResult> {
@@ -206,10 +210,13 @@ function evaluateQuality(
 
   // Relevância: Contém keywords esperadas?
   if (testCase.expectedKeywords) {
-    const foundKeywords = testCase.expectedKeywords.filter((keyword) =>
+    const foundKeywords = testCase.expectedKeywords.filter(keyword =>
       response.toLowerCase().includes(keyword.toLowerCase())
     );
-    relevance = Math.max(1, Math.round((foundKeywords.length / testCase.expectedKeywords.length) * 5));
+    relevance = Math.max(
+      1,
+      Math.round((foundKeywords.length / testCase.expectedKeywords.length) * 5)
+    );
   }
 
   // Accuracy: Resposta tem tamanho adequado?
@@ -218,7 +225,7 @@ function evaluateQuality(
   else if (response.length > 1000) accuracy = 4;
 
   // Coherence: Texto bem estruturado?
-  const sentences = response.split(/[.!?]+/).filter((s) => s.trim().length > 0);
+  const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 0);
   if (sentences.length === 0) coherence = 1;
   else if (sentences.length === 1) coherence = 3;
   else coherence = 5;
@@ -229,7 +236,7 @@ function evaluateQuality(
 async function runBenchmark() {
   console.log('🚀 Iniciando Benchmark: Groq LLaMA 3.3 vs GPT-4o vs GPT-4o-mini\n');
   console.log('📊 Usando embeddings OpenAI (text-embedding-3-small) para contexto\n');
-  console.log('=' .repeat(80));
+  console.log('='.repeat(80));
 
   const results: {
     testCase: TestCase;
@@ -266,7 +273,7 @@ async function runBenchmark() {
       });
 
       // Delay para não bater rate limit
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error: any) {
       console.log(`❌ Erro: ${error.message}`);
     }
@@ -313,34 +320,58 @@ function generateReport(
       coherence: results.reduce((acc, r) => acc + r.gpt4o.quality.coherence, 0) / results.length,
     },
     gpt4oMini: {
-      relevance: results.reduce((acc, r) => acc + r.gpt4oMini.quality.relevance, 0) / results.length,
+      relevance:
+        results.reduce((acc, r) => acc + r.gpt4oMini.quality.relevance, 0) / results.length,
       accuracy: results.reduce((acc, r) => acc + r.gpt4oMini.quality.accuracy, 0) / results.length,
-      coherence: results.reduce((acc, r) => acc + r.gpt4oMini.quality.coherence, 0) / results.length,
+      coherence:
+        results.reduce((acc, r) => acc + r.gpt4oMini.quality.coherence, 0) / results.length,
     },
   };
 
   console.log('\n📈 LATÊNCIA MÉDIA (menor é melhor)');
   console.log('━'.repeat(80));
   console.log(`   Groq LLaMA 3.3:  ${avgLatency.groq.toFixed(0)}ms`);
-  console.log(`   GPT-4o:          ${avgLatency.gpt4o.toFixed(0)}ms  (${(avgLatency.gpt4o / avgLatency.groq).toFixed(1)}x mais lento)`);
-  console.log(`   GPT-4o-mini:     ${avgLatency.gpt4oMini.toFixed(0)}ms  (${(avgLatency.gpt4oMini / avgLatency.groq).toFixed(1)}x mais lento)`);
+  console.log(
+    `   GPT-4o:          ${avgLatency.gpt4o.toFixed(0)}ms  (${(avgLatency.gpt4o / avgLatency.groq).toFixed(1)}x mais lento)`
+  );
+  console.log(
+    `   GPT-4o-mini:     ${avgLatency.gpt4oMini.toFixed(0)}ms  (${(avgLatency.gpt4oMini / avgLatency.groq).toFixed(1)}x mais lento)`
+  );
 
   console.log('\n💰 CUSTO MÉDIO POR REQUISIÇÃO (menor é melhor)');
   console.log('━'.repeat(80));
-  console.log(`   Groq LLaMA 3.3:  $${(avgCost.groq * 1000).toFixed(4)} (por 1k reqs: $${avgCost.groq.toFixed(2)})`);
-  console.log(`   GPT-4o:          $${(avgCost.gpt4o * 1000).toFixed(4)} (por 1k reqs: $${avgCost.gpt4o.toFixed(2)}) [${((avgCost.gpt4o / avgCost.groq).toFixed(1))}x mais caro]`);
-  console.log(`   GPT-4o-mini:     $${(avgCost.gpt4oMini * 1000).toFixed(4)} (por 1k reqs: $${avgCost.gpt4oMini.toFixed(2)}) [${((avgCost.gpt4oMini / avgCost.groq).toFixed(1))}x mais caro]`);
+  console.log(
+    `   Groq LLaMA 3.3:  $${(avgCost.groq * 1000).toFixed(4)} (por 1k reqs: $${avgCost.groq.toFixed(2)})`
+  );
+  console.log(
+    `   GPT-4o:          $${(avgCost.gpt4o * 1000).toFixed(4)} (por 1k reqs: $${avgCost.gpt4o.toFixed(2)}) [${(avgCost.gpt4o / avgCost.groq).toFixed(1)}x mais caro]`
+  );
+  console.log(
+    `   GPT-4o-mini:     $${(avgCost.gpt4oMini * 1000).toFixed(4)} (por 1k reqs: $${avgCost.gpt4oMini.toFixed(2)}) [${(avgCost.gpt4oMini / avgCost.groq).toFixed(1)}x mais caro]`
+  );
 
   console.log('\n⭐ QUALIDADE MÉDIA (máximo 5.0)');
   console.log('━'.repeat(80));
-  
-  const groqAvg = (avgQuality.groq.relevance + avgQuality.groq.accuracy + avgQuality.groq.coherence) / 3;
-  const gpt4oAvg = (avgQuality.gpt4o.relevance + avgQuality.gpt4o.accuracy + avgQuality.gpt4o.coherence) / 3;
-  const gpt4oMiniAvg = (avgQuality.gpt4oMini.relevance + avgQuality.gpt4oMini.accuracy + avgQuality.gpt4oMini.coherence) / 3;
 
-  console.log(`   Groq LLaMA 3.3:  ${groqAvg.toFixed(2)}/5.0 (Rel: ${avgQuality.groq.relevance.toFixed(1)}, Acc: ${avgQuality.groq.accuracy.toFixed(1)}, Coh: ${avgQuality.groq.coherence.toFixed(1)})`);
-  console.log(`   GPT-4o:          ${gpt4oAvg.toFixed(2)}/5.0 (Rel: ${avgQuality.gpt4o.relevance.toFixed(1)}, Acc: ${avgQuality.gpt4o.accuracy.toFixed(1)}, Coh: ${avgQuality.gpt4o.coherence.toFixed(1)})`);
-  console.log(`   GPT-4o-mini:     ${gpt4oMiniAvg.toFixed(2)}/5.0 (Rel: ${avgQuality.gpt4oMini.relevance.toFixed(1)}, Acc: ${avgQuality.gpt4oMini.accuracy.toFixed(1)}, Coh: ${avgQuality.gpt4oMini.coherence.toFixed(1)})`);
+  const groqAvg =
+    (avgQuality.groq.relevance + avgQuality.groq.accuracy + avgQuality.groq.coherence) / 3;
+  const gpt4oAvg =
+    (avgQuality.gpt4o.relevance + avgQuality.gpt4o.accuracy + avgQuality.gpt4o.coherence) / 3;
+  const gpt4oMiniAvg =
+    (avgQuality.gpt4oMini.relevance +
+      avgQuality.gpt4oMini.accuracy +
+      avgQuality.gpt4oMini.coherence) /
+    3;
+
+  console.log(
+    `   Groq LLaMA 3.3:  ${groqAvg.toFixed(2)}/5.0 (Rel: ${avgQuality.groq.relevance.toFixed(1)}, Acc: ${avgQuality.groq.accuracy.toFixed(1)}, Coh: ${avgQuality.groq.coherence.toFixed(1)})`
+  );
+  console.log(
+    `   GPT-4o:          ${gpt4oAvg.toFixed(2)}/5.0 (Rel: ${avgQuality.gpt4o.relevance.toFixed(1)}, Acc: ${avgQuality.gpt4o.accuracy.toFixed(1)}, Coh: ${avgQuality.gpt4o.coherence.toFixed(1)})`
+  );
+  console.log(
+    `   GPT-4o-mini:     ${gpt4oMiniAvg.toFixed(2)}/5.0 (Rel: ${avgQuality.gpt4oMini.relevance.toFixed(1)}, Acc: ${avgQuality.gpt4oMini.accuracy.toFixed(1)}, Coh: ${avgQuality.gpt4oMini.coherence.toFixed(1)})`
+  );
 
   console.log('\n🎯 TRADE-OFF SCORE (Qualidade / (Latência × Custo))');
   console.log('━'.repeat(80));
@@ -352,26 +383,33 @@ function generateReport(
   console.log(`   GPT-4o:          ${gpt4oScore.toFixed(4)}`);
   console.log(`   GPT-4o-mini:     ${gpt4oMiniScore.toFixed(4)}`);
 
-  const winner = groqScore > gpt4oScore && groqScore > gpt4oMiniScore 
-    ? 'Groq LLaMA 3.3' 
-    : gpt4oScore > gpt4oMiniScore 
-    ? 'GPT-4o' 
-    : 'GPT-4o-mini';
+  const winner =
+    groqScore > gpt4oScore && groqScore > gpt4oMiniScore
+      ? 'Groq LLaMA 3.3'
+      : gpt4oScore > gpt4oMiniScore
+        ? 'GPT-4o'
+        : 'GPT-4o-mini';
 
   console.log(`\n🏆 VENCEDOR: ${winner}`);
 
   console.log('\n📋 RECOMENDAÇÃO');
   console.log('━'.repeat(80));
-  
+
   if (winner === 'Groq LLaMA 3.3') {
     console.log('✅ Groq LLaMA 3.3 oferece o melhor custo-benefício!');
-    console.log(`   - ${(avgLatency.groq / avgLatency.gpt4o * 100).toFixed(0)}% mais rápido que GPT-4o`);
-    console.log(`   - ${((1 - avgCost.groq / avgCost.gpt4o) * 100).toFixed(0)}% mais barato que GPT-4o`);
+    console.log(
+      `   - ${((avgLatency.groq / avgLatency.gpt4o) * 100).toFixed(0)}% mais rápido que GPT-4o`
+    );
+    console.log(
+      `   - ${((1 - avgCost.groq / avgCost.gpt4o) * 100).toFixed(0)}% mais barato que GPT-4o`
+    );
     console.log(`   - Qualidade similar em casos de uso de vendas`);
   } else if (winner === 'GPT-4o') {
     console.log('⚠️  GPT-4o tem melhor qualidade, mas custa mais caro');
-    console.log(`   - ${((avgQuality.gpt4o.relevance - avgQuality.groq.relevance) / avgQuality.groq.relevance * 100).toFixed(0)}% mais relevante`);
-    console.log(`   - Porém ${((avgCost.gpt4o / avgCost.groq)).toFixed(1)}x mais caro`);
+    console.log(
+      `   - ${(((avgQuality.gpt4o.relevance - avgQuality.groq.relevance) / avgQuality.groq.relevance) * 100).toFixed(0)}% mais relevante`
+    );
+    console.log(`   - Porém ${(avgCost.gpt4o / avgCost.groq).toFixed(1)}x mais caro`);
   } else {
     console.log('💡 GPT-4o-mini oferece bom equilíbrio');
     console.log(`   - Mais rápido que GPT-4o`);
@@ -384,16 +422,13 @@ function generateReport(
 
   // Salvar resultados detalhados
   const fs = require('fs');
-  fs.writeFileSync(
-    'benchmark-results.json',
-    JSON.stringify(results, null, 2)
-  );
+  fs.writeFileSync('benchmark-results.json', JSON.stringify(results, null, 2));
   console.log('📄 Resultados detalhados salvos em: benchmark-results.json\n');
 }
 
 // Executar
 runBenchmark()
-  .catch((error) => {
+  .catch(error => {
     console.error('❌ Erro no benchmark:', error);
     process.exit(1);
   })

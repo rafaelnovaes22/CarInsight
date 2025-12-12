@@ -22,7 +22,11 @@ export interface AudioMessageOptions {
  * MessageHandlerV2 - New implementation using LangGraph
  */
 export class MessageHandlerV2 {
-  async handleMessage(phoneNumber: string, message: string, audioOptions?: AudioMessageOptions): Promise<string> {
+  async handleMessage(
+    phoneNumber: string,
+    message: string,
+    audioOptions?: AudioMessageOptions
+  ): Promise<string> {
     try {
       // 🛡️ GUARDRAIL: Validate input
       const inputValidation = guardrails.validateInput(phoneNumber, message);
@@ -37,8 +41,25 @@ export class MessageHandlerV2 {
 
       // 🔄 Check for exit/restart commands (available at any time)
       const exitCommands = ['sair', 'encerrar', 'tchau', 'bye', 'adeus'];
-      const restartCommands = ['reiniciar', 'recomeçar', 'voltar', 'cancelar', 'reset', 'nova busca'];
-      const greetingCommands = ['oi', 'olá', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'hey', 'hello', 'hi'];
+      const restartCommands = [
+        'reiniciar',
+        'recomeçar',
+        'voltar',
+        'cancelar',
+        'reset',
+        'nova busca',
+      ];
+      const greetingCommands = [
+        'oi',
+        'olá',
+        'ola',
+        'bom dia',
+        'boa tarde',
+        'boa noite',
+        'hey',
+        'hello',
+        'hi',
+      ];
 
       if (exitCommands.some(cmd => lowerMessage.includes(cmd))) {
         await this.resetConversation(phoneNumber);
@@ -68,7 +89,12 @@ Para começar, qual é o seu nome?`;
 
       // 👋 Check for greetings - but DON'T return immediately if the message has more content
       // This allows capturing vehicle intent in messages like "Oi, você tem Civic 2017?"
-      const isGreeting = greetingCommands.some(cmd => lowerMessage === cmd || lowerMessage.startsWith(cmd + ' ') || lowerMessage.startsWith(cmd + ','));
+      const isGreeting = greetingCommands.some(
+        cmd =>
+          lowerMessage === cmd ||
+          lowerMessage.startsWith(cmd + ' ') ||
+          lowerMessage.startsWith(cmd + ',')
+      );
 
       // Only return greeting immediately if the message is JUST a greeting (no additional content)
       // Messages like "oi" or "olá" alone should get the standard welcome
@@ -85,7 +111,10 @@ Para começar, qual é o seu nome?`;
         if (existingConversation && existingConversation.currentStep === 'quiz') {
           // Let the quiz node handle the greeting as an invalid answer
           // We'll just continue without resetting
-          logger.info({ phoneNumber, conversationId: existingConversation.id }, 'User sent greeting during quiz, not resetting');
+          logger.info(
+            { phoneNumber, conversationId: existingConversation.id },
+            'User sent greeting during quiz, not resetting'
+          );
           // Break out of greeting handling and continue to normal processing
         } else {
           // Otherwise, reset and start new conversation
@@ -155,7 +184,10 @@ Para começar, qual é o seu nome?`;
 
         if (existingConversation) {
           await this.resetConversation(phoneNumber);
-          logger.info({ phoneNumber, message: sanitizedMessage.substring(0, 50) }, 'User sent greeting with content, resetting and processing');
+          logger.info(
+            { phoneNumber, message: sanitizedMessage.substring(0, 50) },
+            'User sent greeting with content, resetting and processing'
+          );
         }
         // Continue to LangGraph processing - don't return here!
       }
@@ -209,21 +241,27 @@ Para começar, qual é o seu nome?`;
       const useConversational = featureFlags.shouldUseConversationalMode(phoneNumber);
       const useLangGraph = featureFlags.isEnabled('USE_LANGGRAPH', phoneNumber);
 
-      logger.info({
-        conversationId: conversation.id,
-        phoneNumber: phoneNumber.substring(0, 8) + '****',
-        useConversational,
-        useLangGraph,
-        hasCache: !!currentState,
-        currentNode: currentState?.graph.currentNode,
-      }, 'Routing decision');
+      logger.info(
+        {
+          conversationId: conversation.id,
+          phoneNumber: phoneNumber.substring(0, 8) + '****',
+          useConversational,
+          useLangGraph,
+          hasCache: !!currentState,
+          currentNode: currentState?.graph.currentNode,
+        },
+        'Routing decision'
+      );
 
       let newState: ConversationState;
       let response: string;
 
       if (useLangGraph || useConversational) {
         // 🆕 Use integrated LangGraph + VehicleExpertAgent
-        logger.debug({ conversationId: conversation.id }, 'Processing with LangGraph (integrated mode)');
+        logger.debug(
+          { conversationId: conversation.id },
+          'Processing with LangGraph (integrated mode)'
+        );
 
         // Initialize state if new conversation
         if (!currentState) {
@@ -233,7 +271,6 @@ Para começar, qual é o seu nome?`;
         const result = await langGraphConversation.processMessage(sanitizedMessage, currentState);
         newState = result.newState;
         response = result.response;
-
       } else {
         // 📋 Use legacy quiz mode (old LangGraph)
         logger.debug({ conversationId: conversation.id }, 'Processing with legacy quiz mode');
@@ -253,8 +290,12 @@ Para começar, qual é o seu nome?`;
       let finalResponse = response;
 
       if (!outputValidation.allowed) {
-        logger.error({ conversationId: conversation.id, reason: outputValidation.reason }, 'Output blocked by guardrails');
-        finalResponse = 'Desculpe, houve um erro ao processar sua solicitação. Por favor, tente novamente ou digite "vendedor" para falar com nossa equipe.';
+        logger.error(
+          { conversationId: conversation.id, reason: outputValidation.reason },
+          'Output blocked by guardrails'
+        );
+        finalResponse =
+          'Desculpe, houve um erro ao processar sua solicitação. Por favor, tente novamente ou digite "vendedor" para falar com nossa equipe.';
       }
 
       // Save state to cache (24h TTL)
@@ -293,30 +334,36 @@ Para começar, qual é o seu nome?`;
       }
 
       // If recommendations were generated, save them
-      if (newState.recommendations.length > 0 && (!currentState || currentState.recommendations.length === 0)) {
+      if (
+        newState.recommendations.length > 0 &&
+        (!currentState || currentState.recommendations.length === 0)
+      ) {
         for (const rec of newState.recommendations) {
-          await prisma.recommendation.create({
-            data: {
-              conversationId: conversation.id,
-              vehicleId: rec.vehicleId,
-              matchScore: rec.matchScore,
-              reasoning: rec.reasoning,
-            },
-          }).catch(error => {
-            // Ignore duplicate errors
-            if (!error.message.includes('Unique constraint')) {
-              logger.error({ error }, 'Error saving recommendation');
-            }
-          });
+          await prisma.recommendation
+            .create({
+              data: {
+                conversationId: conversation.id,
+                vehicleId: rec.vehicleId,
+                matchScore: rec.matchScore,
+                reasoning: rec.reasoning,
+              },
+            })
+            .catch(error => {
+              // Ignore duplicate errors
+              if (!error.message.includes('Unique constraint')) {
+                logger.error({ error }, 'Error saving recommendation');
+              }
+            });
         }
       }
 
       // Create lead ONLY when user explicitly requests to talk to a seller
       // Trade-in mention alone should NOT generate a lead - user must request handoff
-      const shouldCreateLead = !currentState?.metadata.flags.includes('lead_sent') && (
+      const shouldCreateLead =
+        !currentState?.metadata.flags.includes('lead_sent') &&
         // User explicitly requested to talk to a seller (typing "vendedor" or similar)
-        (newState.metadata.flags.includes('handoff_requested') && !currentState?.metadata.flags.includes('handoff_requested'))
-      );
+        newState.metadata.flags.includes('handoff_requested') &&
+        !currentState?.metadata.flags.includes('handoff_requested');
 
       if (shouldCreateLead) {
         await this.createLead(conversation, newState, phoneNumber);
@@ -326,7 +373,6 @@ Para começar, qual é o seu nome?`;
       }
 
       return finalResponse;
-
     } catch (error) {
       logger.error({ error, phoneNumber }, 'Error handling message');
       return 'Desculpe, ocorreu um erro. Por favor, tente novamente.';
@@ -397,7 +443,11 @@ Para começar, qual é o seu nome?`;
     return conversation;
   }
 
-  private async createLead(conversation: any, state: ConversationState, customerPhoneNumber: string) {
+  private async createLead(
+    conversation: any,
+    state: ConversationState,
+    customerPhoneNumber: string
+  ) {
     try {
       const answers = state.quiz.answers;
       const profile = state.profile;
@@ -423,17 +473,21 @@ Para começar, qual é o seu nome?`;
       // Even if it's the same as customer phone (for testing purposes)
       const salesPhone = process.env.SALES_PHONE_NUMBER;
 
-      logger.info({
-        salesPhone,
-        customerPhoneNumber,
-        envValue: process.env.SALES_PHONE_NUMBER
-      }, 'SALES_PHONE_NUMBER debug - sending notification');
+      logger.info(
+        {
+          salesPhone,
+          customerPhoneNumber,
+          envValue: process.env.SALES_PHONE_NUMBER,
+        },
+        'SALES_PHONE_NUMBER debug - sending notification'
+      );
 
       if (salesPhone) {
         try {
           // Helper function to capitalize brand/model names
           const capitalize = (text: string) => {
-            return text.split(' ')
+            return text
+              .split(' ')
               .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
               .join(' ');
           };
@@ -451,7 +505,8 @@ Para começar, qual é o seu nome?`;
               const model = capitalize(profile.tradeInModel);
               tradeInText = brand ? `${brand} ${model}` : model;
               if (profile.tradeInYear) tradeInText += ` ${profile.tradeInYear}`;
-              if (profile.tradeInKm) tradeInText += ` (${profile.tradeInKm.toLocaleString('pt-BR')} km)`;
+              if (profile.tradeInKm)
+                tradeInText += ` (${profile.tradeInKm.toLocaleString('pt-BR')} km)`;
             } else {
               tradeInText = 'Sim (veículo não especificado)';
             }
@@ -475,7 +530,9 @@ Para começar, qual é o seu nome?`;
           const interest = profile?._lastShownVehicles?.[0];
           if (interest) {
             const priceFormatted = interest.price?.toLocaleString('pt-BR') || 'Preço n/d';
-            details.push(`🚗 *Interesse:* ${interest.brand} ${interest.model} ${interest.year} (R$ ${priceFormatted})`);
+            details.push(
+              `🚗 *Interesse:* ${interest.brand} ${interest.model} ${interest.year} (R$ ${priceFormatted})`
+            );
           } else if (profile?._searchedItem) {
             details.push(`🔍 *Busca:* ${profile._searchedItem}`);
           }
@@ -485,12 +542,15 @@ Para começar, qual é o seu nome?`;
           // Dynamic import to avoid circular dependency
           const { WhatsAppMetaService } = await import('./whatsapp-meta.service');
           const whatsappService = new WhatsAppMetaService();
-          logger.info({
-            salesPhone,
-            customerPhone: customerPhoneNumber,
-            messageLength: message.length,
-            samePhone: salesPhone === customerPhoneNumber
-          }, 'Sending lead notification to sales phone');
+          logger.info(
+            {
+              salesPhone,
+              customerPhone: customerPhoneNumber,
+              messageLength: message.length,
+              samePhone: salesPhone === customerPhoneNumber,
+            },
+            'Sending lead notification to sales phone'
+          );
           await whatsappService.sendMessage(salesPhone, message);
 
           logger.info({ salesPhone }, 'Sales team notified via WhatsApp');
@@ -500,7 +560,6 @@ Para começar, qual é o seu nome?`;
       } else {
         logger.warn('SALES_PHONE_NUMBER not configured - skipping lead notification');
       }
-
     } catch (error) {
       logger.error({ error, conversationId: conversation.id }, 'Error creating lead');
     }
@@ -526,12 +585,12 @@ Para começar, qual é o seu nome?`;
       await prisma.conversation.updateMany({
         where: {
           phoneNumber,
-          status: 'active'
+          status: 'active',
         },
         data: {
           status: 'closed',
-          closedAt: new Date()
-        }
+          closedAt: new Date(),
+        },
       });
 
       logger.info({ phoneNumber, count: conversations.length }, 'Conversation reset');
@@ -544,7 +603,10 @@ Para começar, qual é o seu nome?`;
    * LGPD Compliance: Handle data rights commands
    * Art. 18 - Direitos do titular (esquecimento, portabilidade)
    */
-  private async handleDataRightsCommands(phoneNumber: string, message: string): Promise<string | null> {
+  private async handleDataRightsCommands(
+    phoneNumber: string,
+    message: string
+  ): Promise<string | null> {
     const lowerMessage = message.toLowerCase().trim();
 
     // Check for pending confirmation
@@ -575,11 +637,12 @@ Para começar, qual é o seu nome?`;
     }
 
     // Check for data deletion command
-    if (lowerMessage.includes('deletar meus dados') ||
+    if (
+      lowerMessage.includes('deletar meus dados') ||
       lowerMessage.includes('excluir meus dados') ||
       lowerMessage.includes('remover meus dados') ||
-      lowerMessage.includes('apagar meus dados')) {
-
+      lowerMessage.includes('apagar meus dados')
+    ) {
       logger.info({ phoneNumber }, 'LGPD: Data deletion request received');
 
       // Check if user has data
@@ -610,10 +673,11 @@ _Esta confirmação expira em 5 minutos._`;
     }
 
     // Check for data export command
-    if (lowerMessage.includes('exportar meus dados') ||
+    if (
+      lowerMessage.includes('exportar meus dados') ||
       lowerMessage.includes('baixar meus dados') ||
-      lowerMessage.includes('meus dados')) {
-
+      lowerMessage.includes('meus dados')
+    ) {
       logger.info({ phoneNumber }, 'LGPD: Data export request received');
 
       try {

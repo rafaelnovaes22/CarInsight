@@ -47,7 +47,7 @@ app.post('/api/reset-conversation', async (req, res) => {
     }
 
     const result = await prisma.conversation.deleteMany({
-      where: { phoneNumber }
+      where: { phoneNumber },
     });
 
     logger.info('🗑️ Conversation reset', { phoneNumber, count: result.count });
@@ -55,7 +55,7 @@ app.post('/api/reset-conversation', async (req, res) => {
     res.json({
       success: true,
       message: `${result.count} conversation(s) deleted`,
-      phoneNumber
+      phoneNumber,
     });
   } catch (error: any) {
     logger.error({ error }, 'Error resetting conversation');
@@ -97,7 +97,7 @@ async function start() {
       const { execSync } = require('child_process');
       execSync('npx prisma db push --accept-data-loss', {
         stdio: 'inherit',
-        env: { ...process.env, FORCE_COLOR: '0' }
+        env: { ...process.env, FORCE_COLOR: '0' },
       });
       logger.info('✅ Database schema ready');
     } catch (error) {
@@ -119,11 +119,14 @@ async function start() {
 
     // Initialize vector store in background (non-blocking)
     logger.info('🧠 Starting vector store initialization in background...');
-    inMemoryVectorStore.initialize().then(() => {
-      logger.info(`✅ Vector store ready with ${inMemoryVectorStore.getCount()} embeddings`);
-    }).catch((error) => {
-      logger.error({ error }, '⚠️  Vector store failed, will use SQL fallback');
-    });
+    inMemoryVectorStore
+      .initialize()
+      .then(() => {
+        logger.info(`✅ Vector store ready with ${inMemoryVectorStore.getCount()} embeddings`);
+      })
+      .catch(error => {
+        logger.error({ error }, '⚠️  Vector store failed, will use SQL fallback');
+      });
 
     // Start Express server
     app.listen(PORT, () => {

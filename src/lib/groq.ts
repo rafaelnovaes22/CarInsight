@@ -107,11 +107,11 @@ Retorne APENAS a palavra-chave, sem explicação.`,
   });
 
   const intent = result.trim().toUpperCase();
-  
+
   if (intent.includes('QUALIFICAR')) return 'QUALIFICAR';
   if (intent.includes('HUMANO')) return 'HUMANO';
   if (intent.includes('DUVIDA')) return 'DUVIDA';
-  
+
   return 'OUTRO';
 }
 

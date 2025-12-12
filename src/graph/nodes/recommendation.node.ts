@@ -21,7 +21,9 @@ function formatPhoneNumber(phone: string): string {
 /**
  * Gera link wa.me e número formatado para redirecionamento ao vendedor
  */
-function generateWhatsAppLink(profile?: CustomerProfile): { link: string; formattedPhone: string } | null {
+function generateWhatsAppLink(
+  profile?: CustomerProfile
+): { link: string; formattedPhone: string } | null {
   const salesPhone = process.env.SALES_PHONE_NUMBER;
   if (!salesPhone) return null;
 
@@ -40,10 +42,9 @@ function generateWhatsAppLink(profile?: CustomerProfile): { link: string; format
   const encodedText = encodeURIComponent(prefilledText);
   return {
     link: `https://wa.me/${salesPhone}?text=${encodedText}`,
-    formattedPhone: formatPhoneNumber(salesPhone)
+    formattedPhone: formatPhoneNumber(salesPhone),
   };
 }
-
 
 /**
  * Format recommendations into WhatsApp message
@@ -88,17 +89,24 @@ function formatRecommendations(recommendations: any[]): string {
  * RecommendationNode - Present recommendations to customer
  */
 export async function recommendationNode(state: ConversationState): Promise<StateUpdate> {
-  logger.info({
-    conversationId: state.conversationId,
-    recommendationsCount: state.recommendations.length
-  }, 'RecommendationNode: Formatting recommendations');
+  logger.info(
+    {
+      conversationId: state.conversationId,
+      recommendationsCount: state.recommendations.length,
+    },
+    'RecommendationNode: Formatting recommendations'
+  );
 
   // Check if user is asking to schedule or talk to human
   const lastMessage = state.messages[state.messages.length - 1];
   const lowerMessage = lastMessage.content.toLowerCase();
 
   // Handle "agendar" / schedule visit
-  if (lowerMessage.includes('agendar') || lowerMessage.includes('visita') || lowerMessage.includes('test drive')) {
+  if (
+    lowerMessage.includes('agendar') ||
+    lowerMessage.includes('visita') ||
+    lowerMessage.includes('test drive')
+  ) {
     logger.info({ conversationId: state.conversationId }, 'RecommendationNode: Visit requested');
     const waInfo = generateWhatsAppLink(state.profile);
     const linkMessage = waInfo
@@ -124,8 +132,15 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
   }
 
   // Handle "vendedor" / talk to human
-  if (lowerMessage.includes('vendedor') || lowerMessage.includes('humano') || lowerMessage.includes('atendente')) {
-    logger.info({ conversationId: state.conversationId }, 'RecommendationNode: Human handoff requested');
+  if (
+    lowerMessage.includes('vendedor') ||
+    lowerMessage.includes('humano') ||
+    lowerMessage.includes('atendente')
+  ) {
+    logger.info(
+      { conversationId: state.conversationId },
+      'RecommendationNode: Human handoff requested'
+    );
     const waInfo = generateWhatsAppLink(state.profile);
     const linkMessage = waInfo
       ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`

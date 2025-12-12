@@ -1,6 +1,6 @@
 /**
  * Conversational Handler
- * 
+ *
  * Handles natural language conversations using VehicleExpertAgent
  * Alternative to quiz-based flow
  */
@@ -30,9 +30,9 @@ export class ConversationalHandler {
           {
             role: 'user',
             content: message,
-            timestamp: new Date()
-          }
-        ]
+            timestamp: new Date(),
+          },
+        ],
       };
 
       // Check if needs onboarding (greeting + name + context)
@@ -40,24 +40,33 @@ export class ConversationalHandler {
       const shouldSkipOnboarding = stateWithUserMessage.profile?._skipOnboarding;
 
       if (onboardingHandler.needsOnboarding(stateWithUserMessage) && !shouldSkipOnboarding) {
-        logger.debug({
-          conversationId: stateWithUserMessage.conversationId,
-          messageCount: stateWithUserMessage.messages.length
-        }, 'Conversational: handling onboarding');
+        logger.debug(
+          {
+            conversationId: stateWithUserMessage.conversationId,
+            messageCount: stateWithUserMessage.messages.length,
+          },
+          'Conversational: handling onboarding'
+        );
 
-        const onboardingResult = await onboardingHandler.handleOnboarding(message, stateWithUserMessage);
+        const onboardingResult = await onboardingHandler.handleOnboarding(
+          message,
+          stateWithUserMessage
+        );
 
         // If onboarding detected brand/model, skip onboarding and let vehicle expert handle it
         if (onboardingResult.updatedProfile._skipOnboarding || onboardingResult.response === '') {
-          logger.info({
-            brand: onboardingResult.updatedProfile.brand,
-            model: onboardingResult.updatedProfile.model
-          }, 'Conversational: User mentioned brand/model, skipping onboarding to vehicle expert');
+          logger.info(
+            {
+              brand: onboardingResult.updatedProfile.brand,
+              model: onboardingResult.updatedProfile.model,
+            },
+            'Conversational: User mentioned brand/model, skipping onboarding to vehicle expert'
+          );
 
           // Update state with brand/model and continue to vehicle expert
           stateWithUserMessage.profile = {
             ...stateWithUserMessage.profile,
-            ...onboardingResult.updatedProfile
+            ...onboardingResult.updatedProfile,
           };
           // Don't return here - let it fall through to vehicle expert
         } else {
@@ -66,32 +75,35 @@ export class ConversationalHandler {
             ...stateWithUserMessage,
             profile: {
               ...stateWithUserMessage.profile,
-              ...onboardingResult.updatedProfile
+              ...onboardingResult.updatedProfile,
             },
             messages: [
               ...stateWithUserMessage.messages,
               {
                 role: 'assistant',
                 content: onboardingResult.response,
-                timestamp: new Date()
-              }
+                timestamp: new Date(),
+              },
             ],
             metadata: {
               ...stateWithUserMessage.metadata,
               lastMessageAt: new Date(),
-            }
+            },
           };
 
-          logger.info({
-            conversationId: state.conversationId,
-            hasName: !!updatedState.profile.customerName,
-            hasContext: !!updatedState.profile.usoPrincipal,
-            processingTime: Date.now() - startTime
-          }, 'Conversational: onboarding processed');
+          logger.info(
+            {
+              conversationId: state.conversationId,
+              hasName: !!updatedState.profile.customerName,
+              hasContext: !!updatedState.profile.usoPrincipal,
+              processingTime: Date.now() - startTime,
+            },
+            'Conversational: onboarding processed'
+          );
 
           return {
             response: onboardingResult.response,
-            updatedState
+            updatedState,
           };
         }
       }
@@ -99,18 +111,24 @@ export class ConversationalHandler {
       // Build conversation context from state (with user message already added)
       const context = this.buildConversationContext(stateWithUserMessage);
 
-      logger.debug({
-        conversationId: stateWithUserMessage.conversationId,
-        mode: context.mode,
-        messageCount: context.metadata.messageCount,
-        profileFields: Object.keys(context.profile).length
-      }, 'Conversational: processing message');
+      logger.debug(
+        {
+          conversationId: stateWithUserMessage.conversationId,
+          mode: context.mode,
+          messageCount: context.metadata.messageCount,
+          profileFields: Object.keys(context.profile).length,
+        },
+        'Conversational: processing message'
+      );
 
       // Call VehicleExpert
       const response = await vehicleExpert.chat(message, context);
 
       // Update state with extracted preferences
-      const updatedProfile = this.mergeProfiles(stateWithUserMessage.profile, response.extractedPreferences);
+      const updatedProfile = this.mergeProfiles(
+        stateWithUserMessage.profile,
+        response.extractedPreferences
+      );
 
       // Update state
       const updatedState: ConversationState = {
@@ -122,45 +140,50 @@ export class ConversationalHandler {
           {
             role: 'assistant',
             content: response.response,
-            timestamp: new Date()
-          }
+            timestamp: new Date(),
+          },
         ],
         graph: {
           ...state.graph,
           currentNode: this.mapConversationalModeToNode(response.nextMode || context.mode),
-          loopCount: state.graph.loopCount + 1
+          loopCount: state.graph.loopCount + 1,
         },
         metadata: {
           ...state.metadata,
           lastMessageAt: new Date(),
-        }
+        },
       };
 
       // Log success
-      logger.info({
-        conversationId: state.conversationId,
-        canRecommend: response.canRecommend,
-        extractedFields: Object.keys(response.extractedPreferences),
-        processingTime: Date.now() - startTime,
-        nextMode: response.nextMode
-      }, 'Conversational: message processed');
+      logger.info(
+        {
+          conversationId: state.conversationId,
+          canRecommend: response.canRecommend,
+          extractedFields: Object.keys(response.extractedPreferences),
+          processingTime: Date.now() - startTime,
+          nextMode: response.nextMode,
+        },
+        'Conversational: message processed'
+      );
 
       return {
         response: response.response,
-        updatedState
+        updatedState,
       };
-
     } catch (error) {
-      logger.error({
-        error,
-        conversationId: state.conversationId,
-        message: message.substring(0, 100)
-      }, 'Conversational: error processing message');
+      logger.error(
+        {
+          error,
+          conversationId: state.conversationId,
+          message: message.substring(0, 100),
+        },
+        'Conversational: error processing message'
+      );
 
       // Fallback response
       return {
         response: 'Desculpe, tive um problema ao processar sua mensagem. Pode reformular? 🤔',
-        updatedState: state
+        updatedState: state,
       };
     }
   }
@@ -184,10 +207,9 @@ export class ConversationalHandler {
         messageCount: state.messages.filter(m => m.role === 'user').length,
         extractionCount: 0, // Could track this separately
         questionsAsked: 0, // Could track this separately
-        userQuestions: state.messages.filter(m =>
-          m.role === 'user' && m.content.includes('?')
-        ).length
-      }
+        userQuestions: state.messages.filter(m => m.role === 'user' && m.content.includes('?'))
+          .length,
+      },
     };
   }
 
@@ -221,12 +243,12 @@ export class ConversationalHandler {
    */
   private mapConversationalModeToNode(mode: ConversationMode): string {
     const modeToNode: Record<ConversationMode, string> = {
-      'discovery': 'greeting',
-      'clarification': 'quiz',
-      'ready_to_recommend': 'search',
-      'recommendation': 'recommendation',
-      'negotiation': 'recommendation',
-      'refinement': 'recommendation'
+      discovery: 'greeting',
+      clarification: 'quiz',
+      ready_to_recommend: 'search',
+      recommendation: 'recommendation',
+      negotiation: 'recommendation',
+      refinement: 'recommendation',
     };
 
     return modeToNode[mode] || 'greeting';

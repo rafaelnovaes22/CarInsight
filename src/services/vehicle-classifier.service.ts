@@ -79,21 +79,26 @@ Responda APENAS com JSON válido:
  */
 export async function classifyVehicle(vehicle: VehicleToClassify): Promise<VehicleClassification> {
   try {
-    const prompt = CLASSIFICATION_PROMPT
-      .replace('{marca}', vehicle.marca || 'N/I')
+    const prompt = CLASSIFICATION_PROMPT.replace('{marca}', vehicle.marca || 'N/I')
       .replace('{modelo}', vehicle.modelo || 'N/I')
       .replace('{ano}', String(vehicle.ano || 'N/I'))
       .replace('{carroceria}', vehicle.carroceria || 'N/I')
       .replace('{portas}', String(vehicle.portas || 'N/I'))
       .replace('{combustivel}', vehicle.combustivel || 'N/I');
 
-    const response = await chatCompletion([
-      { role: 'system', content: 'Você é um classificador de veículos. Responda APENAS com JSON válido.' },
-      { role: 'user', content: prompt }
-    ], {
-      temperature: 0.1,
-      maxTokens: 300
-    });
+    const response = await chatCompletion(
+      [
+        {
+          role: 'system',
+          content: 'Você é um classificador de veículos. Responda APENAS com JSON válido.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      {
+        temperature: 0.1,
+        maxTokens: 300,
+      }
+    );
 
     // Extrair JSON da resposta
     const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -109,13 +114,15 @@ export async function classifyVehicle(vehicle: VehicleToClassify): Promise<Vehic
       classification.category = 'HATCH'; // Default
     }
 
-    logger.debug({
-      vehicle: `${vehicle.marca} ${vehicle.modelo}`,
-      classification
-    }, 'Vehicle classified by LLM');
+    logger.debug(
+      {
+        vehicle: `${vehicle.marca} ${vehicle.modelo}`,
+        classification,
+      },
+      'Vehicle classified by LLM'
+    );
 
     return classification;
-
   } catch (error) {
     logger.error({ error, vehicle }, 'Failed to classify vehicle with LLM');
 
@@ -134,16 +141,62 @@ function fallbackClassification(vehicle: VehicleToClassify): VehicleClassificati
   // Detectar categoria por palavras-chave
   let category: VehicleClassification['category'] = 'HATCH';
 
-  const suvKeywords = ['CRETA', 'TRACKER', 'COMPASS', 'RENEGADE', 'HR-V', 'HRV', 'KICKS', 'T-CROSS', 'TCROSS', 'TIGGO', 'RAV4', 'TUCSON', 'SPORTAGE', 'DUSTER', 'CAPTUR', 'ECOSPORT'];
-  const sedanKeywords = ['COROLLA', 'CIVIC', 'CRUZE', 'HB20S', 'ONIX PLUS', 'VIRTUS', 'CITY', 'SENTRA', 'VERSA', 'LOGAN', 'VOYAGE', 'PRISMA', 'CRONOS'];
-  const pickupKeywords = ['STRADA', 'TORO', 'SAVEIRO', 'MONTANA', 'HILUX', 'S10', 'RANGER', 'AMAROK', 'FRONTIER', 'OROCH'];
+  const suvKeywords = [
+    'CRETA',
+    'TRACKER',
+    'COMPASS',
+    'RENEGADE',
+    'HR-V',
+    'HRV',
+    'KICKS',
+    'T-CROSS',
+    'TCROSS',
+    'TIGGO',
+    'RAV4',
+    'TUCSON',
+    'SPORTAGE',
+    'DUSTER',
+    'CAPTUR',
+    'ECOSPORT',
+  ];
+  const sedanKeywords = [
+    'COROLLA',
+    'CIVIC',
+    'CRUZE',
+    'HB20S',
+    'ONIX PLUS',
+    'VIRTUS',
+    'CITY',
+    'SENTRA',
+    'VERSA',
+    'LOGAN',
+    'VOYAGE',
+    'PRISMA',
+    'CRONOS',
+  ];
+  const pickupKeywords = [
+    'STRADA',
+    'TORO',
+    'SAVEIRO',
+    'MONTANA',
+    'HILUX',
+    'S10',
+    'RANGER',
+    'AMAROK',
+    'FRONTIER',
+    'OROCH',
+  ];
   const minivanKeywords = ['SPIN', 'LIVINA', 'ZAFIRA', 'MERIVA', 'IDEA'];
 
   if (suvKeywords.some(k => modelo.includes(k)) || carroceria.includes('SUV')) {
     category = 'SUV';
   } else if (sedanKeywords.some(k => modelo.includes(k)) || carroceria.includes('SEDAN')) {
     category = 'SEDAN';
-  } else if (pickupKeywords.some(k => modelo.includes(k)) || carroceria.includes('PICKUP') || carroceria.includes('PICAPE')) {
+  } else if (
+    pickupKeywords.some(k => modelo.includes(k)) ||
+    carroceria.includes('PICKUP') ||
+    carroceria.includes('PICAPE')
+  ) {
     category = 'PICKUP';
   } else if (minivanKeywords.some(k => modelo.includes(k)) || carroceria.includes('MINIVAN')) {
     category = 'MINIVAN';
@@ -160,7 +213,7 @@ function fallbackClassification(vehicle: VehicleToClassify): VehicleClassificati
     aptoFamilia: ['SUV', 'SEDAN', 'MINIVAN'].includes(category),
     aptoTrabalho: category === 'PICKUP' || (isHatch && ano >= 2018),
     confidence: 0.6,
-    reasoning: 'Classificação por fallback (LLM indisponível)'
+    reasoning: 'Classificação por fallback (LLM indisponível)',
   };
 }
 
@@ -172,11 +225,11 @@ export async function classifyVehiclesBatch(
   onProgress?: (current: number, total: number) => void
 ): Promise<Map<string, VehicleClassification>> {
   const results = new Map<string, VehicleClassification>();
-  
+
   for (let i = 0; i < vehicles.length; i++) {
     const vehicle = vehicles[i];
     const key = `${vehicle.marca}-${vehicle.modelo}-${vehicle.ano}`;
-    
+
     // Evitar classificar duplicatas
     if (results.has(key)) {
       continue;
@@ -201,6 +254,5 @@ export async function classifyVehiclesBatch(
 export const vehicleClassifier = {
   classifyVehicle,
   classifyVehiclesBatch,
-  fallbackClassification
+  fallbackClassification,
 };
-

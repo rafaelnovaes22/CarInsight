@@ -1,8 +1,8 @@
 /**
  * Vehicle Search Adapter
- * 
+ *
  * Adapter to use inMemoryVectorStore with the interface expected by VehicleExpertAgent
- * 
+ *
  * **Feature: exact-vehicle-search**
  * Requirements: 1.1, 1.2
  */
@@ -22,7 +22,7 @@ interface SearchFilters {
   bodyType?: string;
   transmission?: string;
   brand?: string;
-  model?: string;  // Modelo específico (ex: "Compass", "Civic")
+  model?: string; // Modelo específico (ex: "Compass", "Civic")
   limit?: number;
   // Uber filters
   aptoUber?: boolean;
@@ -37,14 +37,11 @@ export class VehicleSearchAdapter {
   /**
    * Search vehicles using semantic search + filters
    * When brand is specified, does DIRECT database search (not semantic)
-   * 
+   *
    * **Feature: exact-vehicle-search**
    * Requirements: 1.1, 1.2 - Prioritizes exact model+year searches
    */
-  async search(
-    query: string,
-    filters: SearchFilters = {}
-  ): Promise<VehicleRecommendation[]> {
+  async search(query: string, filters: SearchFilters = {}): Promise<VehicleRecommendation[]> {
     try {
       const limit = filters.limit || 5;
 
@@ -53,12 +50,15 @@ export class VehicleSearchAdapter {
       const extractedFilters = exactSearchParser.parse(query);
 
       if (extractedFilters.model && (extractedFilters.year || extractedFilters.yearRange)) {
-        logger.info({
-          query,
-          model: extractedFilters.model,
-          year: extractedFilters.year,
-          yearRange: extractedFilters.yearRange
-        }, 'Exact search detected - routing to ExactSearchService');
+        logger.info(
+          {
+            query,
+            model: extractedFilters.model,
+            year: extractedFilters.year,
+            yearRange: extractedFilters.yearRange,
+          },
+          'Exact search detected - routing to ExactSearchService'
+        );
 
         const exactResult = await this.performExactSearch(extractedFilters, filters, limit);
         if (exactResult.length > 0 || extractedFilters.model) {
@@ -70,7 +70,10 @@ export class VehicleSearchAdapter {
       // Step 2: Se tem filtro de marca, modelo OU categoria específica, fazer busca DIRETA no banco
       // (não depender da busca semântica que pode não retornar o veículo)
       if (filters.brand || filters.model || filters.bodyType) {
-        logger.info({ brand: filters.brand, model: filters.model, bodyType: filters.bodyType, query }, 'Direct database search for specific filter');
+        logger.info(
+          { brand: filters.brand, model: filters.model, bodyType: filters.bodyType, query },
+          'Direct database search for specific filter'
+        );
         return this.searchDirectByFilters(filters);
       }
 
@@ -93,8 +96,12 @@ export class VehicleSearchAdapter {
           ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
           ...(filters.minYear && { ano: { gte: filters.minYear } }),
           ...(filters.maxKm && { km: { lte: filters.maxKm } }),
-          ...(filters.bodyType && { carroceria: { equals: filters.bodyType, mode: 'insensitive' } }),
-          ...(filters.transmission && { cambio: { equals: filters.transmission, mode: 'insensitive' } }),
+          ...(filters.bodyType && {
+            carroceria: { equals: filters.bodyType, mode: 'insensitive' },
+          }),
+          ...(filters.transmission && {
+            cambio: { equals: filters.transmission, mode: 'insensitive' },
+          }),
           ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
           // Uber filters
           ...(filters.aptoUber && { aptoUber: true }),
@@ -106,9 +113,9 @@ export class VehicleSearchAdapter {
         },
         take: limit,
         orderBy: [
-          { preco: 'desc' },  // Mais caro primeiro
-          { km: 'asc' },      // Menos rodado
-          { ano: 'desc' },    // Mais novo
+          { preco: 'desc' }, // Mais caro primeiro
+          { km: 'asc' }, // Menos rodado
+          { ano: 'desc' }, // Mais novo
         ],
       });
 
@@ -151,9 +158,8 @@ export class VehicleSearchAdapter {
           color: vehicle.cor,
           imageUrl: vehicle.fotoUrl || null,
           detailsUrl: vehicle.url || null,
-        }
+        },
       }));
-
     } catch (error) {
       logger.error({ error, query, filters }, 'Error searching vehicles');
       return [];
@@ -163,7 +169,7 @@ export class VehicleSearchAdapter {
   /**
    * Perform exact search using ExactSearchService
    * Fetches inventory from database and delegates to ExactSearchService
-   * 
+   *
    * **Feature: exact-vehicle-search**
    * Requirements: 1.1, 1.2 - Extract filters and prioritize exact matches
    */
@@ -205,13 +211,16 @@ export class VehicleSearchAdapter {
       // Perform exact search
       const result = exactSearchService.search(extractedFilters, inventory);
 
-      logger.info({
-        type: result.type,
-        vehiclesFound: result.vehicles.length,
-        requestedModel: result.requestedModel,
-        requestedYear: result.requestedYear,
-        availableYears: result.availableYears,
-      }, 'ExactSearchService result');
+      logger.info(
+        {
+          type: result.type,
+          vehiclesFound: result.vehicles.length,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          availableYears: result.availableYears,
+        },
+        'ExactSearchService result'
+      );
 
       // Convert ExactSearchResult to VehicleRecommendation[]
       return this.convertExactResultToRecommendations(result, limit);
@@ -223,14 +232,14 @@ export class VehicleSearchAdapter {
 
   /**
    * Convert ExactSearchResult to VehicleRecommendation format
-   * 
+   *
    * **Feature: exact-vehicle-search**
    */
   private convertExactResultToRecommendations(
     result: ExactSearchResult,
     limit: number
   ): VehicleRecommendation[] {
-    return result.vehicles.slice(0, limit).map((match) => ({
+    return result.vehicles.slice(0, limit).map(match => ({
       vehicleId: match.vehicle.id,
       matchScore: match.matchScore,
       reasoning: match.reasoning,
@@ -300,30 +309,33 @@ export class VehicleSearchAdapter {
         ...(filters.model && { modelo: { contains: filters.model, mode: 'insensitive' } }),
         // Filtro de categoria/carroceria (se especificado) - com variações
         ...(bodyTypeVariations.length > 0 && {
-          OR: bodyTypeVariations.map(bt => ({ carroceria: { contains: bt, mode: 'insensitive' as const } }))
+          OR: bodyTypeVariations.map(bt => ({
+            carroceria: { contains: bt, mode: 'insensitive' as const },
+          })),
         }),
         // Apply other filters
         ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
         ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
         ...(filters.maxKm && { km: { lte: filters.maxKm } }),
-        ...(filters.transmission && { cambio: { equals: filters.transmission, mode: 'insensitive' } }),
+        ...(filters.transmission && {
+          cambio: { equals: filters.transmission, mode: 'insensitive' },
+        }),
       },
       take: limit,
-      orderBy: [
-        { preco: 'desc' },
-        { km: 'asc' },
-        { ano: 'desc' },
-      ],
+      orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],
     });
 
-    logger.info({
-      brand: filters.brand,
-      model: filters.model,
-      bodyType: filters.bodyType,
-      bodyTypeVariations,
-      found: vehicles.length
-    }, 'Direct filter search results');
+    logger.info(
+      {
+        brand: filters.brand,
+        model: filters.model,
+        bodyType: filters.bodyType,
+        bodyTypeVariations,
+        found: vehicles.length,
+      },
+      'Direct filter search results'
+    );
 
     return this.formatVehicleResults(vehicles);
   }
@@ -335,7 +347,10 @@ export class VehicleSearchAdapter {
   private getBodyTypeVariations(bodyType?: string): string[] {
     if (!bodyType) return [];
 
-    const bt = bodyType.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Remove acentos
+    const bt = bodyType
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
 
     // Mapeamento completo de variações (inclui termos em PT e EN)
     const variationGroups: string[][] = [
@@ -383,7 +398,9 @@ export class VehicleSearchAdapter {
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
         ...(filters.maxKm && { km: { lte: filters.maxKm } }),
         ...(filters.bodyType && { carroceria: { equals: filters.bodyType, mode: 'insensitive' } }),
-        ...(filters.transmission && { cambio: { equals: filters.transmission, mode: 'insensitive' } }),
+        ...(filters.transmission && {
+          cambio: { equals: filters.transmission, mode: 'insensitive' },
+        }),
         ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
         ...(filters.aptoUber && { aptoUber: true }),
         ...(filters.aptoUberBlack && { aptoUberBlack: true }),
@@ -391,11 +408,7 @@ export class VehicleSearchAdapter {
         ...(filters.aptoTrabalho && { aptoTrabalho: true }),
       },
       take: limit,
-      orderBy: [
-        { preco: 'desc' },
-        { km: 'asc' },
-        { ano: 'desc' },
-      ],
+      orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],
     });
 
     logger.info({ filters, found: vehicles.length }, 'SQL fallback search results');
@@ -426,7 +439,7 @@ export class VehicleSearchAdapter {
         color: vehicle.cor,
         imageUrl: vehicle.fotoUrl || null,
         detailsUrl: vehicle.url || null,
-      }
+      },
     }));
   }
 

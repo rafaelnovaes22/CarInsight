@@ -59,15 +59,15 @@ export interface CustomerProfile {
   hasTradeIn?: boolean;
 
   // Trade-in (detailed)
-  tradeInBrand?: string;           // Marca do veículo na troca
-  tradeInModel?: string;           // Modelo do veículo na troca
-  tradeInYear?: number;            // Ano do veículo na troca
-  tradeInEstimatedValue?: number;  // Valor estimado
+  tradeInBrand?: string; // Marca do veículo na troca
+  tradeInModel?: string; // Modelo do veículo na troca
+  tradeInYear?: number; // Ano do veículo na troca
+  tradeInEstimatedValue?: number; // Valor estimado
 
   // Financing
-  wantsFinancing?: boolean;        // Se quer financiar
-  financingDownPayment?: number;   // Entrada disponível
-  financingMonths?: number;        // Prazo desejado (em meses)
+  wantsFinancing?: boolean; // Se quer financiar
+  financingDownPayment?: number; // Entrada disponível
+  financingMonths?: number; // Prazo desejado (em meses)
 
   // Urgency
   urgency?: 'imediato' | '1mes' | '3meses' | 'flexivel';
@@ -95,8 +95,8 @@ export interface CustomerProfile {
 
   // Financing/Trade-in flow control
   _awaitingFinancingDetails?: boolean; // Aguardando detalhes de financiamento (entrada, troca)
-  _awaitingTradeInDetails?: boolean;   // Aguardando detalhes do veículo de troca
-  tradeInKm?: number;                  // Km do veículo na troca
+  _awaitingTradeInDetails?: boolean; // Aguardando detalhes do veículo de troca
+  tradeInKm?: number; // Km do veículo na troca
 }
 
 /**
@@ -183,6 +183,4 @@ export type StateUpdate = Partial<ConversationState>;
 /**
  * Node function signature
  */
-export type NodeFunction = (
-  state: ConversationState
-) => Promise<StateUpdate> | StateUpdate;
+export type NodeFunction = (state: ConversationState) => Promise<StateUpdate> | StateUpdate;

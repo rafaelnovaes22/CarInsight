@@ -1,6 +1,6 @@
 /**
  * Post-Recommendation Handlers
- * 
+ *
  * Central export file for all post-recommendation handlers.
  * These handlers process user intents after showing vehicle recommendations.
  */
@@ -30,67 +30,63 @@ import { handleInterest } from './interest.handler';
 
 /**
  * Route post-recommendation intent to appropriate handler
- * 
+ *
  * @param intent - The detected post-recommendation intent
  * @param ctx - The handler context
  * @returns Handler result (handled + optional response)
  */
 export const routePostRecommendationIntent = (
-    intent: PostRecommendationIntent,
-    ctx: PostRecommendationContext
+  intent: PostRecommendationIntent,
+  ctx: PostRecommendationContext
 ): HandlerResult => {
-    switch (intent) {
-        case 'want_financing':
-            return handleFinancing(ctx);
+  switch (intent) {
+    case 'want_financing':
+      return handleFinancing(ctx);
 
-        case 'want_tradein':
-            return handleTradeIn(ctx);
+    case 'want_tradein':
+      return handleTradeIn(ctx);
 
-        case 'want_schedule':
-            return handleSchedule(ctx);
+    case 'want_schedule':
+      return handleSchedule(ctx);
 
-        case 'want_details':
-            return handleDetails(ctx);
+    case 'want_details':
+      return handleDetails(ctx);
 
-        case 'acknowledgment':
-            return handleAcknowledgment(ctx);
+    case 'acknowledgment':
+      return handleAcknowledgment(ctx);
 
-        case 'want_interest':
-            return handleInterest(ctx);
+    case 'want_interest':
+      return handleInterest(ctx);
 
-        // 'want_others' is handled separately due to async search logic
-        // 'new_search' and 'none' fall through to normal processing
-        default:
-            return { handled: false };
-    }
+    // 'want_others' is handled separately due to async search logic
+    // 'new_search' and 'none' fall through to normal processing
+    default:
+      return { handled: false };
+  }
 };
 
 /**
  * Process post-recommendation intent
- * 
+ *
  * Detects intent and routes to appropriate handler.
  * Note: 'want_others' requires async search and should be handled separately.
- * 
+ *
  * @param ctx - The handler context
  * @returns Handler result
  */
-export const processPostRecommendationIntent = (
-    ctx: PostRecommendationContext
-): HandlerResult => {
-    // First, check if we're awaiting financing details (user just said they want to finance)
-    // and the message contains entry information (value, "sem entrada", etc.)
-    const awaitingFinancing = ctx.updatedProfile?._awaitingFinancingDetails ||
-        ctx.extracted?.extracted?._awaitingFinancingDetails;
+export const processPostRecommendationIntent = (ctx: PostRecommendationContext): HandlerResult => {
+  // First, check if we're awaiting financing details (user just said they want to finance)
+  // and the message contains entry information (value, "sem entrada", etc.)
+  const awaitingFinancing =
+    ctx.updatedProfile?._awaitingFinancingDetails ||
+    ctx.extracted?.extracted?._awaitingFinancingDetails;
 
-    if (awaitingFinancing && isFinancingResponse(ctx.userMessage, true)) {
-        return handleFinancingResponse(ctx);
-    }
+  if (awaitingFinancing && isFinancingResponse(ctx.userMessage, true)) {
+    return handleFinancingResponse(ctx);
+  }
 
-    // Otherwise, detect intent normally
-    const intent = detectPostRecommendationIntent(
-        ctx.userMessage,
-        ctx.lastShownVehicles
-    );
+  // Otherwise, detect intent normally
+  const intent = detectPostRecommendationIntent(ctx.userMessage, ctx.lastShownVehicles);
 
-    return routePostRecommendationIntent(intent, ctx);
+  return routePostRecommendationIntent(intent, ctx);
 };

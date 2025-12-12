@@ -50,10 +50,14 @@ interface MetaWebhookEntry {
  * Requirements: 3.1, 3.2, 3.3, 3.4
  */
 const AUDIO_ERROR_MESSAGES: Record<string, string> = {
-  DOWNLOAD_FAILED: 'Não consegui baixar seu áudio. Pode tentar enviar novamente ou digitar sua mensagem?',
-  TRANSCRIPTION_FAILED: 'Não consegui entender seu áudio. Pode tentar enviar novamente com mais clareza ou digitar sua mensagem?',
-  DURATION_EXCEEDED: 'Seu áudio é muito longo (máximo 2 minutos). Pode enviar um áudio mais curto ou digitar sua mensagem?',
-  LOW_QUALITY: 'O áudio está com qualidade baixa. Pode enviar novamente em um ambiente mais silencioso ou digitar sua mensagem?',
+  DOWNLOAD_FAILED:
+    'Não consegui baixar seu áudio. Pode tentar enviar novamente ou digitar sua mensagem?',
+  TRANSCRIPTION_FAILED:
+    'Não consegui entender seu áudio. Pode tentar enviar novamente com mais clareza ou digitar sua mensagem?',
+  DURATION_EXCEEDED:
+    'Seu áudio é muito longo (máximo 2 minutos). Pode enviar um áudio mais curto ou digitar sua mensagem?',
+  LOW_QUALITY:
+    'O áudio está com qualidade baixa. Pode enviar novamente em um ambiente mais silencioso ou digitar sua mensagem?',
   DISABLED: 'No momento não estou conseguindo ouvir áudios. Pode digitar sua mensagem, por favor?',
 };
 
@@ -72,7 +76,9 @@ export class WhatsAppMetaService {
     this.apiUrl = `https://graph.facebook.com/v18.0/${this.phoneNumberId}/messages`;
 
     if (!this.phoneNumberId || !this.accessToken) {
-      logger.warn('⚠️  Meta Cloud API credentials not configured. Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID');
+      logger.warn(
+        '⚠️  Meta Cloud API credentials not configured. Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID'
+      );
     } else {
       logger.info('✅ Meta Cloud API WhatsApp ready', {
         phoneNumberId: this.phoneNumberId.substring(0, 10) + '...',
@@ -176,11 +182,14 @@ export class WhatsAppMetaService {
         length: response.length,
       });
     } catch (error: any) {
-      logger.error({
-        error: error.message,
-        stack: error.stack,
-        message
-      }, '❌ Error handling incoming message');
+      logger.error(
+        {
+          error: error.message,
+          stack: error.stack,
+          message,
+        },
+        '❌ Error handling incoming message'
+      );
       throw error;
     }
   }
@@ -247,7 +256,9 @@ export class WhatsAppMetaService {
     // Step 5: Process transcribed text with message handler (Requirement 1.4, 5.4)
     // Pass mediaId for audio message persistence
     logger.info('🤖 Processing transcribed text with bot...');
-    const response = await this.messageHandler.handleMessage(phoneNumber, transcribedText, { mediaId });
+    const response = await this.messageHandler.handleMessage(phoneNumber, transcribedText, {
+      mediaId,
+    });
 
     logger.info('📤 Sending response...', {
       to: phoneNumber,
@@ -333,7 +344,7 @@ export class WhatsAppMetaService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
+            Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
           },
           timeout: 10000, // 10 seconds timeout
@@ -345,15 +356,18 @@ export class WhatsAppMetaService {
         to: to,
       });
     } catch (error: any) {
-      logger.error({
-        error: error.response?.data || error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        to,
-        apiUrl: this.apiUrl,
-        hasToken: !!this.accessToken,
-        tokenPrefix: this.accessToken?.substring(0, 10),
-      }, '❌ Failed to send message via Meta API');
+      logger.error(
+        {
+          error: error.response?.data || error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          to,
+          apiUrl: this.apiUrl,
+          hasToken: !!this.accessToken,
+          tokenPrefix: this.accessToken?.substring(0, 10),
+        },
+        '❌ Failed to send message via Meta API'
+      );
       throw error;
     }
   }
@@ -361,7 +375,11 @@ export class WhatsAppMetaService {
   /**
    * Send message with buttons (interactive)
    */
-  async sendButtonMessage(to: string, bodyText: string, buttons: Array<{ id: string; title: string }>): Promise<void> {
+  async sendButtonMessage(
+    to: string,
+    bodyText: string,
+    buttons: Array<{ id: string; title: string }>
+  ): Promise<void> {
     try {
       const response = await axios.post(
         this.apiUrl,
@@ -388,7 +406,7 @@ export class WhatsAppMetaService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
+            Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
           },
         }
@@ -398,9 +416,12 @@ export class WhatsAppMetaService {
         messageId: response.data.messages?.[0]?.id,
       });
     } catch (error: any) {
-      logger.error({
-        error: error.response?.data || error.message,
-      }, '❌ Failed to send button message');
+      logger.error(
+        {
+          error: error.response?.data || error.message,
+        },
+        '❌ Failed to send button message'
+      );
       throw error;
     }
   }
@@ -419,7 +440,7 @@ export class WhatsAppMetaService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
+            Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
           },
         }
@@ -433,7 +454,12 @@ export class WhatsAppMetaService {
   /**
    * Send template message (requires pre-approved templates)
    */
-  async sendTemplate(to: string, templateName: string, languageCode: string = 'pt_BR', components?: any[]): Promise<void> {
+  async sendTemplate(
+    to: string,
+    templateName: string,
+    languageCode: string = 'pt_BR',
+    components?: any[]
+  ): Promise<void> {
     try {
       const response = await axios.post(
         this.apiUrl,
@@ -451,7 +477,7 @@ export class WhatsAppMetaService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
+            Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
           },
         }
@@ -462,10 +488,13 @@ export class WhatsAppMetaService {
         template: templateName,
       });
     } catch (error: any) {
-      logger.error({
-        error: error.response?.data || error.message,
-        template: templateName,
-      }, '❌ Failed to send template');
+      logger.error(
+        {
+          error: error.response?.data || error.message,
+          template: templateName,
+        },
+        '❌ Failed to send template'
+      );
       throw error;
     }
   }
@@ -475,21 +504,21 @@ export class WhatsAppMetaService {
    */
   async getMediaUrl(mediaId: string): Promise<string> {
     try {
-      const response = await axios.get(
-        `https://graph.facebook.com/v18.0/${mediaId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
-          },
-        }
-      );
+      const response = await axios.get(`https://graph.facebook.com/v18.0/${mediaId}`, {
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+      });
 
       return response.data.url;
     } catch (error: any) {
-      logger.error({
-        error: error.response?.data || error.message,
-        mediaId,
-      }, '❌ Failed to get media URL');
+      logger.error(
+        {
+          error: error.response?.data || error.message,
+          mediaId,
+        },
+        '❌ Failed to get media URL'
+      );
       throw error;
     }
   }

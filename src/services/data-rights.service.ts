@@ -19,7 +19,7 @@ export interface DataExportResult {
 export class DataRightsService {
   /**
    * Exclui todos os dados de um usuário (direito ao esquecimento - LGPD Art. 18, III)
-   * 
+   *
    * @param phoneNumber - Telefone do usuário
    * @returns true se exclusão bem-sucedida
    */
@@ -28,11 +28,11 @@ export class DataRightsService {
       logger.info({ phoneNumber }, 'LGPD: Solicitação de exclusão de dados');
 
       // Realizar exclusão em transação (tudo ou nada)
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async tx => {
         // Primeiro, buscar conversationId do usuário
         const conversation = await tx.conversation.findFirst({
           where: { phoneNumber },
-          select: { id: true }
+          select: { id: true },
         });
 
         if (!conversation) {
@@ -41,39 +41,42 @@ export class DataRightsService {
         }
 
         // 1. Deletar mensagens (através da conversa, por causa do cascade)
-        const deletedMessages = await tx.message.deleteMany({ 
-          where: { conversationId: conversation.id } 
+        const deletedMessages = await tx.message.deleteMany({
+          where: { conversationId: conversation.id },
         });
-        
+
         // 2. Deletar eventos
-        const deletedEvents = await tx.event.deleteMany({ 
-          where: { conversationId: conversation.id } 
+        const deletedEvents = await tx.event.deleteMany({
+          where: { conversationId: conversation.id },
         });
-        
+
         // 3. Deletar recomendações
-        const deletedRecommendations = await tx.recommendation.deleteMany({ 
-          where: { conversationId: conversation.id } 
+        const deletedRecommendations = await tx.recommendation.deleteMany({
+          where: { conversationId: conversation.id },
         });
-        
+
         // 4. Deletar lead (se existir)
-        const deletedLeads = await tx.lead.deleteMany({ 
-          where: { phone: phoneNumber } 
+        const deletedLeads = await tx.lead.deleteMany({
+          where: { phone: phoneNumber },
         });
-        
+
         // 5. Deletar conversas
-        const deletedConversations = await tx.conversation.deleteMany({ 
-          where: { phoneNumber } 
+        const deletedConversations = await tx.conversation.deleteMany({
+          where: { phoneNumber },
         });
 
         if (conversation) {
-          logger.info({
-            phoneNumber,
-            messages: deletedMessages.count,
-            events: deletedEvents.count,
-            recommendations: deletedRecommendations.count,
-            leads: deletedLeads.count,
-            conversations: deletedConversations.count,
-          }, 'LGPD: Dados excluídos com sucesso');
+          logger.info(
+            {
+              phoneNumber,
+              messages: deletedMessages.count,
+              events: deletedEvents.count,
+              recommendations: deletedRecommendations.count,
+              leads: deletedLeads.count,
+              conversations: deletedConversations.count,
+            },
+            'LGPD: Dados excluídos com sucesso'
+          );
         }
       });
 
@@ -89,7 +92,7 @@ export class DataRightsService {
 
   /**
    * Exporta dados de um usuário (portabilidade - LGPD Art. 18, V)
-   * 
+   *
    * @param phoneNumber - Telefone do usuário
    * @returns Objeto com todos os dados do usuário
    */
@@ -98,7 +101,7 @@ export class DataRightsService {
       logger.info({ phoneNumber }, 'LGPD: Solicitação de exportação de dados');
 
       const [conversation, messages, lead, recommendations] = await Promise.all([
-        prisma.conversation.findFirst({ 
+        prisma.conversation.findFirst({
           where: { phoneNumber },
           select: {
             id: true,
@@ -107,14 +110,14 @@ export class DataRightsService {
             currentStep: true,
             startedAt: true,
             lastMessageAt: true,
-          }
+          },
         }),
-        
-        prisma.message.findMany({ 
-          where: { 
+
+        prisma.message.findMany({
+          where: {
             conversation: {
-              phoneNumber: phoneNumber
-            }
+              phoneNumber: phoneNumber,
+            },
           },
           orderBy: { timestamp: 'asc' },
           select: {
@@ -122,10 +125,10 @@ export class DataRightsService {
             content: true,
             direction: true,
             timestamp: true,
-          }
+          },
         }),
-        
-        prisma.lead.findFirst({ 
+
+        prisma.lead.findFirst({
           where: { phone: phoneNumber },
           select: {
             id: true,
@@ -139,16 +142,16 @@ export class DataRightsService {
             status: true,
             createdAt: true,
             updatedAt: true,
-          }
-        }),
-        
-        prisma.recommendation.findMany({ 
-          where: { 
-            conversation: {
-              phoneNumber: phoneNumber
-            }
           },
-          include: { 
+        }),
+
+        prisma.recommendation.findMany({
+          where: {
+            conversation: {
+              phoneNumber: phoneNumber,
+            },
+          },
+          include: {
             vehicle: {
               select: {
                 id: true,
@@ -157,8 +160,8 @@ export class DataRightsService {
                 ano: true,
                 preco: true,
                 descricao: true,
-              }
-            }
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
         }),
@@ -171,13 +174,17 @@ export class DataRightsService {
         mensagens: messages,
         lead: lead,
         recomendacoes: recommendations,
-        totalRegistros: messages.length + recommendations.length + (lead ? 1 : 0) + (conversation ? 1 : 0),
+        totalRegistros:
+          messages.length + recommendations.length + (lead ? 1 : 0) + (conversation ? 1 : 0),
       };
 
-      logger.info({ 
-        phoneNumber, 
-        totalRecords: exportData.totalRegistros 
-      }, 'LGPD: Dados exportados com sucesso');
+      logger.info(
+        {
+          phoneNumber,
+          totalRecords: exportData.totalRegistros,
+        },
+        'LGPD: Dados exportados com sucesso'
+      );
 
       // Log para auditoria
       await this.logDataExportRequest(phoneNumber);
@@ -191,7 +198,7 @@ export class DataRightsService {
 
   /**
    * Verifica se um usuário possui dados no sistema
-   * 
+   *
    * @param phoneNumber - Telefone do usuário
    * @returns true se usuário possui dados
    */
@@ -217,11 +224,14 @@ export class DataRightsService {
     try {
       // TODO: Criar tabela DataRightRequest no schema se necessário
       // Temporariamente, apenas log
-      logger.info({
-        type: 'DATA_DELETION',
-        phoneNumber,
-        timestamp: new Date().toISOString(),
-      }, 'LGPD: Registro de solicitação de exclusão');
+      logger.info(
+        {
+          type: 'DATA_DELETION',
+          phoneNumber,
+          timestamp: new Date().toISOString(),
+        },
+        'LGPD: Registro de solicitação de exclusão'
+      );
     } catch (error) {
       logger.error({ error }, 'Erro ao registrar solicitação de exclusão');
     }
@@ -232,11 +242,14 @@ export class DataRightsService {
    */
   private async logDataExportRequest(phoneNumber: string): Promise<void> {
     try {
-      logger.info({
-        type: 'DATA_EXPORT',
-        phoneNumber,
-        timestamp: new Date().toISOString(),
-      }, 'LGPD: Registro de solicitação de exportação');
+      logger.info(
+        {
+          type: 'DATA_EXPORT',
+          phoneNumber,
+          timestamp: new Date().toISOString(),
+        },
+        'LGPD: Registro de solicitação de exportação'
+      );
     } catch (error) {
       logger.error({ error }, 'Erro ao registrar solicitação de exportação');
     }
@@ -271,10 +284,13 @@ export class DataRightsService {
         if (success) deletedCount++;
       }
 
-      logger.info({ 
-        deletedCount, 
-        totalInactive: inactiveConversations.length 
-      }, 'LGPD: Limpeza de dados concluída');
+      logger.info(
+        {
+          deletedCount,
+          totalInactive: inactiveConversations.length,
+        },
+        'LGPD: Limpeza de dados concluída'
+      );
 
       return deletedCount;
     } catch (error) {

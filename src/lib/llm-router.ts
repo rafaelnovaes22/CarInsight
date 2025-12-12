@@ -139,7 +139,7 @@ function mockResponse(messages: ChatMessage[]): {
 } {
   const userMessage = messages[messages.length - 1];
   const content = userMessage.content.toLowerCase();
-  const systemMessage = messages.find((m) => m.role === 'system')?.content.toLowerCase() || '';
+  const systemMessage = messages.find(m => m.role === 'system')?.content.toLowerCase() || '';
 
   // Intent classification
   if (systemMessage.includes('classificador') || systemMessage.includes('intenção')) {
@@ -157,7 +157,11 @@ function mockResponse(messages: ChatMessage[]): {
         model: 'mock',
       };
     }
-    if (content.includes('vendedor') || content.includes('humano') || content.includes('falar com')) {
+    if (
+      content.includes('vendedor') ||
+      content.includes('humano') ||
+      content.includes('falar com')
+    ) {
       return {
         content: 'HUMANO',
         usage: { prompt_tokens: 50, completion_tokens: 1, total_tokens: 51 },
@@ -181,7 +185,8 @@ function mockResponse(messages: ChatMessage[]): {
   // Recommendation reasoning
   if (content.includes('explique') || content.includes('por que') || content.includes('veículo:')) {
     return {
-      content: 'Excelente custo-benefício! Atende suas necessidades de espaço e está dentro do orçamento.',
+      content:
+        'Excelente custo-benefício! Atende suas necessidades de espaço e está dentro do orçamento.',
       usage: { prompt_tokens: 100, completion_tokens: 15, total_tokens: 115 },
       model: 'mock',
     };
@@ -196,7 +201,7 @@ function mockResponse(messages: ChatMessage[]): {
 
 /**
  * LLM Router com fallback automático e circuit breaker
- * 
+ *
  * Ordem de prioridade:
  * 1. GPT-4o-mini (OpenAI) - Primário
  * 2. LLaMA 3.1 8B Instant (Groq) - Fallback
@@ -207,7 +212,7 @@ export async function chatCompletion(
   options: LLMRouterOptions = {}
 ): Promise<string> {
   const maxRetries = options.retries ?? 2;
-  const providers = LLM_PROVIDERS.filter((p) => p.enabled).sort((a, b) => a.priority - b.priority);
+  const providers = LLM_PROVIDERS.filter(p => p.enabled).sort((a, b) => a.priority - b.priority);
 
   // Se nenhum provider está configurado, usar mock
   if (providers.length === 0) {
@@ -279,7 +284,7 @@ export async function chatCompletion(
 
         // Se não é a última tentativa, aguardar antes de retry
         if (attempt < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
       }
     }
@@ -295,7 +300,7 @@ export async function chatCompletion(
  * Obter estatísticas dos providers disponíveis
  */
 export function getLLMProvidersStatus() {
-  return LLM_PROVIDERS.map((provider) => ({
+  return LLM_PROVIDERS.map(provider => ({
     ...provider,
     circuitBreakerOpen: circuitBreaker.isOpen(provider.name),
   }));

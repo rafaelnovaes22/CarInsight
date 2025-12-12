@@ -58,15 +58,13 @@ export async function generateEmbedding(text: string): Promise<number[]> {
  * @param texts Array de textos
  * @returns Array de embeddings
  */
-export async function generateEmbeddingsBatch(
-  texts: string[]
-): Promise<number[][]> {
+export async function generateEmbeddingsBatch(texts: string[]): Promise<number[][]> {
   try {
     if (texts.length === 0) {
       return [];
     }
 
-    const cleanTexts = texts.map((t) => t.trim()).filter((t) => t.length > 0);
+    const cleanTexts = texts.map(t => t.trim()).filter(t => t.length > 0);
 
     if (cleanTexts.length === 0) {
       return [];
@@ -118,7 +116,7 @@ export function searchSimilar(
     return [];
   }
 
-  const results = items.map((item) => ({
+  const results = items.map(item => ({
     id: item.id,
     score: cosineSimilarity(queryEmbedding, item.embedding),
     metadata: item.metadata,
@@ -172,7 +170,7 @@ export function isValidEmbedding(embedding: any): boolean {
     return false;
   }
 
-  return embedding.every((n) => typeof n === 'number' && !isNaN(n));
+  return embedding.every(n => typeof n === 'number' && !isNaN(n));
 }
 
 /**
@@ -184,13 +182,10 @@ export function getEmbeddingStats(embedding: number[]) {
   const sum = embedding.reduce((acc, val) => acc + val, 0);
   const mean = sum / embedding.length;
   const variance =
-    embedding.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) /
-    embedding.length;
+    embedding.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / embedding.length;
   const stdDev = Math.sqrt(variance);
 
-  const magnitude = Math.sqrt(
-    embedding.reduce((acc, val) => acc + val * val, 0)
-  );
+  const magnitude = Math.sqrt(embedding.reduce((acc, val) => acc + val * val, 0));
 
   return {
     dimensions: embedding.length,

@@ -32,8 +32,10 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=661',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_1-1.jpg',
-    descricao: 'BMW 125I 2.0 M Sport 16V 4P 2014 - Esportivo premium com motor potente e acabamento de luxo.',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_661_1-1.jpg',
+    descricao:
+      'BMW 125I 2.0 M Sport 16V 4P 2014 - Esportivo premium com motor potente e acabamento de luxo.',
     disponivel: true,
   },
   {
@@ -58,7 +60,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=735',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_735_1-1.jpg',
     descricao: 'BMW X5 3.0 SI 4x4 24V 4P 2010 - SUV de luxo espaçoso, ideal para família.',
     disponivel: true,
   },
@@ -86,7 +89,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 2,
     url: 'https://www.renatinhuscars.com.br/?id=731',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_731_1-1.jpg',
     descricao: 'Chevrolet Celta 1.0 Life 2011 - Econômico e confiável para uso diário.',
     disponivel: true,
   },
@@ -112,7 +116,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=760',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_760_1-1.jpg',
     descricao: 'Chevrolet Cobalt 1.8 LTZ 2016 - Sedan espaçoso com bom custo-benefício.',
     disponivel: true,
   },
@@ -138,7 +143,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=593',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_593_1-1.jpg',
     descricao: 'Chevrolet Corsa 1.0 Joy 2007 - Compacto econômico para cidade.',
     disponivel: true,
   },
@@ -164,7 +170,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=749',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_749_1-1.jpg',
     descricao: 'Chevrolet Cruze 1.8 LT 2012 - Sedan confortável com automático.',
     disponivel: true,
   },
@@ -190,7 +197,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=727',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_727_1-1.jpg',
     descricao: 'Chevrolet Onix 1.0 LS 2016 - Hatch moderno e econômico.',
     disponivel: true,
   },
@@ -218,7 +226,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=691',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_691_1-1.jpg',
     descricao: 'Dodge Journey 3.6 RT 2013 - SUV 7 lugares potente e espaçoso.',
     disponivel: true,
   },
@@ -272,7 +281,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=717',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_717_1-1.jpg',
     descricao: 'Fiat Palio 1.4 Attractive 2014 - Hatch compacto confiável.',
     disponivel: true,
   },
@@ -298,7 +308,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=732',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_732_1-1.jpg',
     descricao: 'Fiat Siena EL 1.0 2013 - Sedan econômico com porta-malas amplo.',
     disponivel: true,
   },
@@ -324,7 +335,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 2,
     url: 'https://www.renatinhuscars.com.br/?id=708',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_708_1-1.jpg',
     descricao: 'Fiat Strada 1.8 Adventure 2010 - Picape versátil para trabalho e lazer.',
     disponivel: true,
   },
@@ -350,7 +362,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=739',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_739_1-1.jpg',
     descricao: 'Fiat Uno 1.0 Way 2021 - Hatch moderno e econômico, poucos km rodados.',
     disponivel: true,
   },
@@ -432,7 +445,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=715',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_715_1-1.jpg',
     descricao: 'Honda City 1.5 LX 2016 - Sedan premium Honda, automático.',
     disponivel: true,
   },
@@ -458,7 +472,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=754',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_754_1-1.jpg',
     descricao: 'Honda Civic 1.8 LXL 2012 - Sedan de luxo confiável e confortável.',
     disponivel: true,
   },
@@ -484,7 +499,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=682',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_682_1-1.jpg',
     descricao: 'Honda Civic 1.8 LXS 2010 - Sedã médio confiável e confortável.',
     disponivel: true,
   },
@@ -540,7 +556,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=654',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_654_1-1.jpg',
     descricao: 'Land Rover Evoque 2.0 Prestige 2012 - SUV de luxo premium 4x4.',
     disponivel: true,
   },
@@ -568,7 +585,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=679',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_679_1-1.jpg',
     descricao: 'Renault Captur 1.6 Intense 2019 - SUV compacto automático moderno.',
     disponivel: true,
   },
@@ -594,7 +612,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=725',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_725_1-1.jpg',
     descricao: 'Renault Duster 2.0 Dynamique 2016 - SUV robusto e espaçoso.',
     disponivel: true,
   },
@@ -620,7 +639,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=753',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_753_1-1.jpg',
     descricao: 'Renault Kwid 1.0 Zen 2018 - Hatch compacto econômico e moderno.',
     disponivel: true,
   },
@@ -648,7 +668,8 @@ const veiculosRenatinhu = [
     som: true,
     portas: 4,
     url: 'https://www.renatinhuscars.com.br/?id=757',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_757_1-1.jpg',
     descricao: 'Toyota Corolla 2.0 XEI 2016 - Sedan de luxo, confiável e valorizado.',
     disponivel: true,
   },
@@ -702,7 +723,8 @@ const veiculosRenatinhu = [
     som: false,
     portas: 2,
     url: 'https://www.renatinhuscars.com.br/?id=351',
-    fotoUrl: 'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg',
+    fotoUrl:
+      'https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_351_1-1.jpg',
     descricao: 'Volkswagen Fusca 1300 1975 - Clássico colecionável icônico.',
     disponivel: true,
   },
@@ -761,7 +783,7 @@ const veiculosRenatinhu = [
 ];
 
 async function main() {
-  console.log('🚀 Iniciando seed com dados REAIS da Renatinhu\'s Cars...\n');
+  console.log("🚀 Iniciando seed com dados REAIS da Renatinhu's Cars...\n");
 
   // Limpar tabela de veículos
   console.log('🧹 Limpando tabela de veículos...');
@@ -786,7 +808,7 @@ async function main() {
 
   console.log(`\n✅ Seed concluído! ${inserted} veículos inseridos.`);
   console.log('\n📊 Resumo do estoque:');
-  
+
   const total = await prisma.vehicle.count();
   const porMarca = await prisma.vehicle.groupBy({
     by: ['marca'],
@@ -795,7 +817,7 @@ async function main() {
 
   console.log(`\n   Total: ${total} veículos`);
   console.log('\n   Por marca:');
-  porMarca.forEach((item) => {
+  porMarca.forEach(item => {
     console.log(`   - ${item.marca}: ${item._count} veículos`);
   });
 
@@ -804,7 +826,7 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Erro no seed:', e);
     process.exit(1);
   })

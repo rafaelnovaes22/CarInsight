@@ -1,8 +1,8 @@
 /**
  * LangGraph Conversation System - Integrated with VehicleExpertAgent
- * 
+ *
  * Grafo de estados para conversação:
- * 
+ *
  * START → GREETING → DISCOVERY → CLARIFICATION → RECOMMENDATION → END
  *              ↑           ↓           ↓              ↓
  *              └───────────┴───────────┴──────────────┘
@@ -12,15 +12,24 @@
 import { logger } from '../lib/logger';
 import { vehicleExpert } from '../agents/vehicle-expert.agent';
 import { exactSearchParser } from '../services/exact-search-parser.service';
-import { CustomerProfile, ConversationState, BotMessage, VehicleRecommendation } from '../types/state.types';
-import { ConversationContext, ConversationMode, ConversationResponse } from '../types/conversation.types';
+import {
+  CustomerProfile,
+  ConversationState,
+  BotMessage,
+  VehicleRecommendation,
+} from '../types/state.types';
+import {
+  ConversationContext,
+  ConversationMode,
+  ConversationResponse,
+} from '../types/conversation.types';
 
 // Import from refactored modules
 import {
   GraphState,
   StateTransition,
   TransitionConditions,
-  isValidGraphState
+  isValidGraphState,
 } from './langgraph/types';
 import { extractName } from './langgraph/extractors';
 
@@ -47,7 +56,9 @@ function formatPhoneNumber(phone: string): string {
 /**
  * Gera link wa.me e número formatado para redirecionamento ao vendedor
  */
-function generateWhatsAppLink(profile?: CustomerProfile): { link: string; formattedPhone: string } | null {
+function generateWhatsAppLink(
+  profile?: CustomerProfile
+): { link: string; formattedPhone: string } | null {
   const salesPhone = process.env.SALES_PHONE_NUMBER;
   if (!salesPhone) return null;
 
@@ -70,7 +81,7 @@ function generateWhatsAppLink(profile?: CustomerProfile): { link: string; format
   const encodedText = encodeURIComponent(prefilledText);
   return {
     link: `https://wa.me/${salesPhone}?text=${encodedText}`,
-    formattedPhone: formatPhoneNumber(salesPhone)
+    formattedPhone: formatPhoneNumber(salesPhone),
   };
 }
 
@@ -79,7 +90,6 @@ function generateWhatsAppLink(profile?: CustomerProfile): { link: string; format
  * Gerencia o fluxo de estados da conversa
  */
 export class LangGraphConversation {
-
   /**
    * Processa uma mensagem e retorna o novo estado
    */
@@ -93,12 +103,15 @@ export class LangGraphConversation {
       // 1. Identificar estado atual
       const currentState = this.identifyCurrentState(state);
 
-      logger.info({
-        conversationId: state.conversationId,
-        currentState,
-        messageCount: state.messages.length,
-        hasProfile: !!state.profile,
-      }, 'LangGraph: Processing message');
+      logger.info(
+        {
+          conversationId: state.conversationId,
+          currentState,
+          messageCount: state.messages.length,
+          hasProfile: !!state.profile,
+        },
+        'LangGraph: Processing message'
+      );
 
       // 2. Adicionar mensagem do usuário ao estado
       const userMessage: BotMessage = {
@@ -154,20 +167,25 @@ export class LangGraphConversation {
         },
       };
 
-      logger.info({
-        conversationId: state.conversationId,
-        previousState: currentState,
-        nextState: transition.nextState,
-        processingTime: Date.now() - startTime,
-      }, 'LangGraph: State transition completed');
+      logger.info(
+        {
+          conversationId: state.conversationId,
+          previousState: currentState,
+          nextState: transition.nextState,
+          processingTime: Date.now() - startTime,
+        },
+        'LangGraph: State transition completed'
+      );
 
       return {
         response: transition.response,
         newState,
       };
-
     } catch (error) {
-      logger.error({ error, conversationId: state.conversationId }, 'LangGraph: Error processing message');
+      logger.error(
+        { error, conversationId: state.conversationId },
+        'LangGraph: Error processing message'
+      );
 
       return {
         response: 'Desculpe, tive um problema ao processar sua mensagem. Pode reformular? 🤔',
@@ -224,8 +242,16 @@ export class LangGraphConversation {
    */
   private isValidState(state: string): boolean {
     const validStates: GraphState[] = [
-      'START', 'GREETING', 'DISCOVERY', 'CLARIFICATION',
-      'SEARCH', 'RECOMMENDATION', 'NEGOTIATION', 'FOLLOW_UP', 'HANDOFF', 'END'
+      'START',
+      'GREETING',
+      'DISCOVERY',
+      'CLARIFICATION',
+      'SEARCH',
+      'RECOMMENDATION',
+      'NEGOTIATION',
+      'FOLLOW_UP',
+      'HANDOFF',
+      'END',
     ];
     return validStates.includes(state as GraphState);
   }
@@ -238,8 +264,18 @@ export class LangGraphConversation {
 
     return {
       hasName: !!profile.customerName,
-      hasContext: !!(profile.usoPrincipal || profile.usage || profile.bodyType || profile.brand || profile.model),
-      hasMinimalProfile: !!(profile.budget && (profile.usage || profile.usoPrincipal) && profile.people),
+      hasContext: !!(
+        profile.usoPrincipal ||
+        profile.usage ||
+        profile.bodyType ||
+        profile.brand ||
+        profile.model
+      ),
+      hasMinimalProfile: !!(
+        profile.budget &&
+        (profile.usage || profile.usoPrincipal) &&
+        profile.people
+      ),
       hasCompleteProfile: !!(profile.budget && profile.usage && profile.people && profile.bodyType),
       hasRecommendations: state.recommendations.length > 0,
       wantsHandoff: false, // será verificado no handleSpecialCommands
@@ -348,7 +384,9 @@ export class LangGraphConversation {
     state: ConversationState
   ): Promise<StateTransition> {
     // Primeira mensagem do usuário - provavelmente é o nome ou uma saudação
-    const isGreeting = /^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|hello|hi|e aí|eai)/i.test(message.trim());
+    const isGreeting = /^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|hello|hi|e aí|eai)/i.test(
+      message.trim()
+    );
 
     // Verificar se já tem nome no perfil
     if (state.profile?.customerName) {
@@ -372,15 +410,18 @@ export class LangGraphConversation {
       const isTradeInContext = exactSearchParser.isTradeInContext(message);
 
       // DEBUG: Log para entender por que não está detectando o modelo
-      logger.info({
-        message,
-        isGreeting,
-        messageCount: state.messages.length,
-        exactMatch,
-        hasModel: !!exactMatch?.model,
-        hasYear: !!exactMatch?.year,
-        isTradeInContext,
-      }, 'processGreeting: parsing for early vehicle intent');
+      logger.info(
+        {
+          message,
+          isGreeting,
+          messageCount: state.messages.length,
+          exactMatch,
+          hasModel: !!exactMatch?.model,
+          hasYear: !!exactMatch?.year,
+          isTradeInContext,
+        },
+        'processGreeting: parsing for early vehicle intent'
+      );
 
       if (exactMatch.model) {
         if (isTradeInContext) {
@@ -389,19 +430,25 @@ export class LangGraphConversation {
           earlyProfileUpdate.tradeInModel = exactMatch.model.toLowerCase();
           if (exactMatch.year) earlyProfileUpdate.tradeInYear = exactMatch.year;
 
-          logger.info({
-            tradeInModel: earlyProfileUpdate.tradeInModel,
-            tradeInYear: earlyProfileUpdate.tradeInYear,
-          }, 'processGreeting: detected TRADE-IN vehicle, NOT desired vehicle!');
+          logger.info(
+            {
+              tradeInModel: earlyProfileUpdate.tradeInModel,
+              tradeInYear: earlyProfileUpdate.tradeInYear,
+            },
+            'processGreeting: detected TRADE-IN vehicle, NOT desired vehicle!'
+          );
         } else {
           // DESEJO: O veículo mencionado é o que o usuário QUER comprar
           earlyProfileUpdate.model = exactMatch.model;
           if (exactMatch.year) earlyProfileUpdate.minYear = exactMatch.year;
 
-          logger.info({
-            model: earlyProfileUpdate.model,
-            year: earlyProfileUpdate.minYear,
-          }, 'processGreeting: early vehicle intent detected!');
+          logger.info(
+            {
+              model: earlyProfileUpdate.model,
+              year: earlyProfileUpdate.minYear,
+            },
+            'processGreeting: early vehicle intent detected!'
+          );
         }
       }
 
@@ -409,11 +456,14 @@ export class LangGraphConversation {
       // Ex: "oi, me chamo Rafael, você tem Civic 2017?"
       const possibleName = extractName(message);
 
-      logger.debug({
-        possibleName,
-        isGreeting,
-        hasModel: !!earlyProfileUpdate.model,
-      }, 'processGreeting: name extraction attempt');
+      logger.debug(
+        {
+          possibleName,
+          isGreeting,
+          hasModel: !!earlyProfileUpdate.model,
+        },
+        'processGreeting: name extraction attempt'
+      );
 
       // Se encontrou NOME E CARRO na mesma mensagem, fazer busca IMEDIATAMENTE
       // Isso funciona mesmo para saudações como "oi, me chamo Rafael, quero Civic 2017"
@@ -423,16 +473,19 @@ export class LangGraphConversation {
           ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
           : earlyProfileUpdate.model;
 
-        logger.info({
-          name: possibleName,
-          model: earlyProfileUpdate.model,
-          year: earlyProfileUpdate.minYear,
-        }, 'processGreeting: captured both name AND vehicle - initiating immediate search!');
+        logger.info(
+          {
+            name: possibleName,
+            model: earlyProfileUpdate.model,
+            year: earlyProfileUpdate.minYear,
+          },
+          'processGreeting: captured both name AND vehicle - initiating immediate search!'
+        );
 
         // Construir perfil para busca
         const searchProfile: Partial<CustomerProfile> = {
           customerName: possibleName,
-          ...earlyProfileUpdate
+          ...earlyProfileUpdate,
         };
 
         // Construir contexto para o VehicleExpert fazer a busca
@@ -488,11 +541,14 @@ export class LangGraphConversation {
           ? `${earlyProfileUpdate.tradeInModel.toUpperCase()} ${earlyProfileUpdate.tradeInYear}`
           : earlyProfileUpdate.tradeInModel.toUpperCase();
 
-        logger.info({
-          name: possibleName,
-          tradeInModel: earlyProfileUpdate.tradeInModel,
-          tradeInYear: earlyProfileUpdate.tradeInYear,
-        }, 'processGreeting: captured name AND trade-in vehicle - asking what user wants!');
+        logger.info(
+          {
+            name: possibleName,
+            tradeInModel: earlyProfileUpdate.tradeInModel,
+            tradeInYear: earlyProfileUpdate.tradeInYear,
+          },
+          'processGreeting: captured name AND trade-in vehicle - asking what user wants!'
+        );
 
         return {
           nextState: 'DISCOVERY',
@@ -561,8 +617,8 @@ export class LangGraphConversation {
 
     // Usar modelo da mensagem atual OU do profile já existente (capturado anteriormente)
     // MAS: Se é trade-in, NÃO usar como modelo desejado!
-    const model = isTradeInContext ? null : (exactMatch.model || state.profile?.model);
-    const year = isTradeInContext ? null : (exactMatch.year || state.profile?.minYear);
+    const model = isTradeInContext ? null : exactMatch.model || state.profile?.model;
+    const year = isTradeInContext ? null : exactMatch.year || state.profile?.minYear;
 
     // Se é trade-in, salvar como tradeIn ao invés de modelo desejado
     if (isTradeInContext && exactMatch.model) {
@@ -570,10 +626,13 @@ export class LangGraphConversation {
       earlyProfileUpdate.tradeInModel = exactMatch.model.toLowerCase();
       if (exactMatch.year) earlyProfileUpdate.tradeInYear = exactMatch.year;
 
-      logger.info({
-        tradeInModel: earlyProfileUpdate.tradeInModel,
-        tradeInYear: earlyProfileUpdate.tradeInYear,
-      }, 'processGreeting: detected TRADE-IN vehicle in name response');
+      logger.info(
+        {
+          tradeInModel: earlyProfileUpdate.tradeInModel,
+          tradeInYear: earlyProfileUpdate.tradeInYear,
+        },
+        'processGreeting: detected TRADE-IN vehicle in name response'
+      );
     } else if (model) {
       earlyProfileUpdate.model = model;
       if (year) earlyProfileUpdate.minYear = year;
@@ -589,11 +648,14 @@ export class LangGraphConversation {
           ? `${earlyProfileUpdate.tradeInModel.toUpperCase()} ${earlyProfileUpdate.tradeInYear}`
           : earlyProfileUpdate.tradeInModel.toUpperCase();
 
-        logger.info({
-          name,
-          tradeInModel: earlyProfileUpdate.tradeInModel,
-          tradeInYear: earlyProfileUpdate.tradeInYear,
-        }, 'processGreeting: user provided name with trade-in vehicle - asking what they want!');
+        logger.info(
+          {
+            name,
+            tradeInModel: earlyProfileUpdate.tradeInModel,
+            tradeInYear: earlyProfileUpdate.tradeInYear,
+          },
+          'processGreeting: user provided name with trade-in vehicle - asking what they want!'
+        );
 
         return {
           nextState: 'DISCOVERY',
@@ -611,16 +673,19 @@ export class LangGraphConversation {
           ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
           : earlyProfileUpdate.model;
 
-        logger.info({
-          name,
-          model: earlyProfileUpdate.model,
-          year: earlyProfileUpdate.minYear,
-        }, 'processGreeting: user provided name, vehicle already in profile - doing immediate search!');
+        logger.info(
+          {
+            name,
+            model: earlyProfileUpdate.model,
+            year: earlyProfileUpdate.minYear,
+          },
+          'processGreeting: user provided name, vehicle already in profile - doing immediate search!'
+        );
 
         // Construir perfil para busca
         const searchProfile: Partial<CustomerProfile> = {
           customerName: name,
-          ...earlyProfileUpdate
+          ...earlyProfileUpdate,
         };
 
         // Construir contexto para o VehicleExpert fazer a busca
@@ -687,7 +752,7 @@ export class LangGraphConversation {
   }
 
   // NOTE: Name extraction is now handled by the imported extractName function from './langgraph/extractors'
-  // The COMMON_BRAZILIAN_NAMES, TRANSCRIPTION_FIXES, ENGLISH_WORDS_NOT_NAMES, and 
+  // The COMMON_BRAZILIAN_NAMES, TRANSCRIPTION_FIXES, ENGLISH_WORDS_NOT_NAMES, and
   // RESERVED_WORDS_NOT_NAMES constants are defined in './langgraph/constants/brazilian-names.ts'
 
   /**
@@ -844,7 +909,7 @@ export class LangGraphConversation {
     const response = await vehicleExpert.chat(message, context);
 
     // Inferir próximo estado
-    let nextState: GraphState = state.graph.currentNode as GraphState || 'DISCOVERY';
+    let nextState: GraphState = (state.graph.currentNode as GraphState) || 'DISCOVERY';
 
     if (response.nextMode) {
       nextState = this.modeToState(response.nextMode);
@@ -873,8 +938,11 @@ export class LangGraphConversation {
         lastMessageAt: state.metadata.lastMessageAt,
         messageCount: state.messages.filter(m => m.role === 'user').length,
         extractionCount: 0,
-        questionsAsked: state.messages.filter(m => m.role === 'assistant' && m.content.includes('?')).length,
-        userQuestions: state.messages.filter(m => m.role === 'user' && m.content.includes('?')).length,
+        questionsAsked: state.messages.filter(
+          m => m.role === 'assistant' && m.content.includes('?')
+        ).length,
+        userQuestions: state.messages.filter(m => m.role === 'user' && m.content.includes('?'))
+          .length,
       },
     };
   }
@@ -884,16 +952,16 @@ export class LangGraphConversation {
    */
   private stateToMode(state: GraphState): ConversationMode {
     const stateToModeMap: Record<GraphState, ConversationMode> = {
-      'START': 'discovery',
-      'GREETING': 'discovery',
-      'DISCOVERY': 'discovery',
-      'CLARIFICATION': 'clarification',
-      'SEARCH': 'ready_to_recommend',
-      'RECOMMENDATION': 'recommendation',
-      'NEGOTIATION': 'negotiation',
-      'FOLLOW_UP': 'refinement', // Mapeado para refinement para o agente saber que é feedback
-      'HANDOFF': 'recommendation',
-      'END': 'recommendation',
+      START: 'discovery',
+      GREETING: 'discovery',
+      DISCOVERY: 'discovery',
+      CLARIFICATION: 'clarification',
+      SEARCH: 'ready_to_recommend',
+      RECOMMENDATION: 'recommendation',
+      NEGOTIATION: 'negotiation',
+      FOLLOW_UP: 'refinement', // Mapeado para refinement para o agente saber que é feedback
+      HANDOFF: 'recommendation',
+      END: 'recommendation',
     };
     return stateToModeMap[state] || 'discovery';
   }
@@ -903,12 +971,12 @@ export class LangGraphConversation {
    */
   private modeToState(mode: ConversationMode): GraphState {
     const modeToStateMap: Record<ConversationMode, GraphState> = {
-      'discovery': 'DISCOVERY',
-      'clarification': 'CLARIFICATION',
-      'ready_to_recommend': 'RECOMMENDATION',
-      'recommendation': 'RECOMMENDATION',
-      'negotiation': 'NEGOTIATION',
-      'refinement': 'FOLLOW_UP',
+      discovery: 'DISCOVERY',
+      clarification: 'CLARIFICATION',
+      ready_to_recommend: 'RECOMMENDATION',
+      recommendation: 'RECOMMENDATION',
+      negotiation: 'NEGOTIATION',
+      refinement: 'FOLLOW_UP',
     };
     return modeToStateMap[mode] || 'DISCOVERY';
   }
@@ -927,4 +995,3 @@ export class LangGraphConversation {
 
 // Singleton export
 export const langGraphConversation = new LangGraphConversation();
-

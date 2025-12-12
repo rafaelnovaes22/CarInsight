@@ -1,6 +1,6 @@
 /**
  * LangGraph Conversation Flow for FaciliAuto
- * 
+ *
  * Simple linear flow:
  * START → Greeting → Quiz → Search → Recommendation → END
  */
@@ -20,7 +20,10 @@ function _routeNext(state: ConversationState): string {
 
   // Prevent infinite loops
   if (state.graph.loopCount > 20) {
-    logger.error({ conversationId: state.conversationId }, 'ConversationGraph: Loop limit exceeded');
+    logger.error(
+      { conversationId: state.conversationId },
+      'ConversationGraph: Loop limit exceeded'
+    );
     return 'END';
   }
 
@@ -41,8 +44,10 @@ function _routeNext(state: ConversationState): string {
     case 'recommendation': {
       // Check if user wants to end conversation
       const lastMessage = state.messages[state.messages.length - 1];
-      if (lastMessage.content.toLowerCase().includes('vendedor') ||
-        lastMessage.content.toLowerCase().includes('agendar')) {
+      if (
+        lastMessage.content.toLowerCase().includes('vendedor') ||
+        lastMessage.content.toLowerCase().includes('agendar')
+      ) {
         return 'END';
       }
       return 'recommendation'; // Stay in recommendation for follow-ups
@@ -64,7 +69,6 @@ export class ConversationGraph {
     message: string;
     currentState?: ConversationState;
   }): Promise<ConversationState> {
-
     // Initialize or use existing state
     let state: ConversationState = input.currentState || {
       conversationId: input.conversationId,
@@ -102,11 +106,14 @@ export class ConversationGraph {
     // Increment loop counter
     state.graph.loopCount = (state.graph.loopCount || 0) + 1;
 
-    logger.info({
-      conversationId: input.conversationId,
-      currentNode: state.graph.currentNode,
-      messageCount: state.messages.length
-    }, 'ConversationGraph: Processing message');
+    logger.info(
+      {
+        conversationId: input.conversationId,
+        currentNode: state.graph.currentNode,
+        messageCount: state.messages.length,
+      },
+      'ConversationGraph: Processing message'
+    );
 
     // Execute current node
     let update;
@@ -135,7 +142,8 @@ export class ConversationGraph {
               ...state.messages,
               {
                 role: 'assistant',
-                content: 'Desculpe, algo deu errado. Digite "vendedor" para falar com nossa equipe.',
+                content:
+                  'Desculpe, algo deu errado. Digite "vendedor" para falar com nossa equipe.',
                 timestamp: new Date(),
               },
             ],
@@ -145,21 +153,27 @@ export class ConversationGraph {
       // Merge update into state
       state = { ...state, ...update };
 
-      logger.info({
-        conversationId: input.conversationId,
-        nextNode: state.graph.currentNode,
-        quizProgress: state.quiz.progress
-      }, 'ConversationGraph: Node executed');
-
+      logger.info(
+        {
+          conversationId: input.conversationId,
+          nextNode: state.graph.currentNode,
+          quizProgress: state.quiz.progress,
+        },
+        'ConversationGraph: Node executed'
+      );
     } catch (error) {
-      logger.error({ error, conversationId: input.conversationId }, 'ConversationGraph: Node execution error');
+      logger.error(
+        { error, conversationId: input.conversationId },
+        'ConversationGraph: Node execution error'
+      );
 
       state.graph.errorCount = (state.graph.errorCount || 0) + 1;
       state.messages = [
         ...state.messages,
         {
           role: 'assistant',
-          content: 'Desculpe, ocorreu um erro. Por favor, tente novamente ou digite "vendedor" para ajuda.',
+          content:
+            'Desculpe, ocorreu um erro. Por favor, tente novamente ou digite "vendedor" para ajuda.',
           timestamp: new Date(),
         },
       ];

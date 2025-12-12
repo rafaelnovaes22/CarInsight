@@ -48,20 +48,14 @@ function buildVehicleDescription(vehicle: any): string {
     parts.push(vehicle.descricao);
   }
 
-  return parts.filter((p) => p).join(' ');
+  return parts.filter(p => p).join(' ');
 }
 
 /**
  * Gera embeddings para todos os veículos no banco
  */
-async function generateAllEmbeddings(
-  options: GenerateEmbeddingsOptions = {}
-): Promise<void> {
-  const {
-    forceRegenerate = false,
-    batchSize = 10,
-    delayMs = 1000,
-  } = options;
+async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): Promise<void> {
+  const { forceRegenerate = false, batchSize = 10, delayMs = 1000 } = options;
 
   try {
     console.log('\n🚀 Iniciando geração de embeddings...\n');
@@ -126,17 +120,12 @@ async function generateAllEmbeddings(
 
           // Delay para evitar rate limit
           if (i + batch.indexOf(vehicle) + 1 < vehicles.length) {
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
+            await new Promise(resolve => setTimeout(resolve, delayMs));
           }
         } catch (error: any) {
           errors++;
-          console.error(
-            `     ❌ Erro ao processar ${vehicle.modelo}: ${error.message}`
-          );
-          logger.error(
-            { vehicleId: vehicle.id, error: error.message },
-            'Erro ao gerar embedding'
-          );
+          console.error(`     ❌ Erro ao processar ${vehicle.modelo}: ${error.message}`);
+          logger.error({ vehicleId: vehicle.id, error: error.message }, 'Erro ao gerar embedding');
         }
       }
     }
@@ -165,9 +154,7 @@ async function generateAllEmbeddings(
     if (totalWithEmbeddings === totalVehicles) {
       console.log('✅ Todos os veículos possuem embeddings!\n');
     } else {
-      console.log(
-        `⚠️  ${totalVehicles - totalWithEmbeddings} veículos ainda sem embeddings\n`
-      );
+      console.log(`⚠️  ${totalVehicles - totalWithEmbeddings} veículos ainda sem embeddings\n`);
     }
   } catch (error: any) {
     console.error('\n❌ Erro fatal:', error.message);
@@ -191,9 +178,7 @@ async function regenerateVehicleEmbedding(vehicleId: string): Promise<void> {
       throw new Error(`Veículo ${vehicleId} não encontrado`);
     }
 
-    console.log(
-      `\n🔄 Regenerando embedding para ${vehicle.marca} ${vehicle.modelo}...`
-    );
+    console.log(`\n🔄 Regenerando embedding para ${vehicle.marca} ${vehicle.modelo}...`);
 
     const description = buildVehicleDescription(vehicle);
     const embedding = await generateEmbedding(description);
@@ -238,10 +223,12 @@ async function showEmbeddingStats(): Promise<void> {
     console.log('\n📊 ESTATÍSTICAS DE EMBEDDINGS');
     console.log('='.repeat(60));
     console.log(`Total de veículos: ${total}`);
-    console.log(`Com embeddings: ${withEmbeddings} (${((withEmbeddings / total) * 100).toFixed(1)}%)`);
+    console.log(
+      `Com embeddings: ${withEmbeddings} (${((withEmbeddings / total) * 100).toFixed(1)}%)`
+    );
     console.log(`Sem embeddings: ${total - withEmbeddings}`);
     console.log('\nModelos de embedding:');
-    byModel.forEach((group) => {
+    byModel.forEach(group => {
       console.log(`  - ${group.embeddingModel || 'null'}: ${group._count} veículos`);
     });
     console.log('='.repeat(60) + '\n');
@@ -281,9 +268,7 @@ if (!command || command === 'help') {
 (async () => {
   try {
     if (!process.env.OPENAI_API_KEY) {
-      console.error(
-        '\n❌ ERRO: OPENAI_API_KEY não configurada no .env\n'
-      );
+      console.error('\n❌ ERRO: OPENAI_API_KEY não configurada no .env\n');
       console.log('💡 Configure sua chave de API:');
       console.log('   1. Obtenha em: https://platform.openai.com/api-keys');
       console.log('   2. Adicione no .env: OPENAI_API_KEY=sk-...\n');
@@ -301,7 +286,9 @@ if (!command || command === 'help') {
 
       case 'regenerate':
         if (!arg) {
-          console.error('\n❌ Uso: tsx src/scripts/generate-embeddings.ts regenerate <vehicleId>\n');
+          console.error(
+            '\n❌ Uso: tsx src/scripts/generate-embeddings.ts regenerate <vehicleId>\n'
+          );
           process.exit(1);
         }
         await regenerateVehicleEmbedding(arg);

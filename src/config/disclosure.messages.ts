@@ -22,11 +22,13 @@ Como posso ajudar você hoje?`,
    */
   DISCLAIMERS: {
     PRICE: '\n\n⚠️ _Valores sujeitos a confirmação. Consulte nossa equipe para cotação exata._',
-    
-    RECOMMENDATION: '\n\n💡 _Estas são sugestões baseadas em IA. Recomendamos avaliação presencial antes da decisão._',
-    
-    TECHNICAL_INFO: '\n\n🔍 _Informação gerada automaticamente. Para detalhes técnicos precisos, consulte nossa equipe._',
-    
+
+    RECOMMENDATION:
+      '\n\n💡 _Estas são sugestões baseadas em IA. Recomendamos avaliação presencial antes da decisão._',
+
+    TECHNICAL_INFO:
+      '\n\n🔍 _Informação gerada automaticamente. Para detalhes técnicos precisos, consulte nossa equipe._',
+
     AVAILABILITY: '\n\n📦 _Disponibilidade sujeita a confirmação em tempo real._',
   },
 
@@ -34,21 +36,25 @@ Como posso ajudar você hoje?`,
    * Mensagens de erro com transparência
    */
   ERRORS: {
-    AI_UNCERTAINTY: 'Desculpe, não tenho certeza sobre isso. Vou transferir você para um especialista que pode ajudar melhor! 👨‍💼',
-    
-    COMPLEX_QUERY: 'Essa é uma ótima pergunta! Para garantir a melhor resposta, vou conectar você com nossa equipe. 🤝',
-    
-    TECHNICAL_ERROR: 'Ops, tive um problema técnico. 🤖⚙️ Vou transferir você para atendimento humano.',
+    AI_UNCERTAINTY:
+      'Desculpe, não tenho certeza sobre isso. Vou transferir você para um especialista que pode ajudar melhor! 👨‍💼',
+
+    COMPLEX_QUERY:
+      'Essa é uma ótima pergunta! Para garantir a melhor resposta, vou conectar você com nossa equipe. 🤝',
+
+    TECHNICAL_ERROR:
+      'Ops, tive um problema técnico. 🤖⚙️ Vou transferir você para atendimento humano.',
   },
 
   /**
    * Opções de privacidade
    */
   PRIVACY: {
-    DATA_DELETION: 'Você pode solicitar a exclusão dos seus dados digitando *"quero deletar meus dados"*.',
-    
+    DATA_DELETION:
+      'Você pode solicitar a exclusão dos seus dados digitando *"quero deletar meus dados"*.',
+
     DATA_EXPORT: 'Para exportar suas conversas, digite *"exportar meus dados"*.',
-    
+
     POLICY_LINK: 'Nossa política de privacidade: [URL_DO_SISTEMA]/privacy-policy.html',
   },
 
@@ -57,10 +63,12 @@ Como posso ajudar você hoje?`,
    */
   HUMAN_HANDOFF: {
     INITIATED: '🤝 Transferindo você para um atendente humano...\n\n_Um momento, por favor._',
-    
-    CONFIRMATION: '✅ Conectado com nossa equipe! A partir de agora, você está falando com uma pessoa real.',
-    
-    UNAVAILABLE: '⏰ No momento nossa equipe está indisponível. Horário de atendimento: Segunda a Sexta, 9h às 18h.\n\nPosso ajudar com algo mais enquanto isso?',
+
+    CONFIRMATION:
+      '✅ Conectado com nossa equipe! A partir de agora, você está falando com uma pessoa real.',
+
+    UNAVAILABLE:
+      '⏰ No momento nossa equipe está indisponível. Horário de atendimento: Segunda a Sexta, 9h às 18h.\n\nPosso ajudar com algo mais enquanto isso?',
   },
 
   /**
@@ -76,7 +84,10 @@ Como posso ajudar você hoje?`,
 /**
  * Helper para adicionar disclaimer baseado no tipo de resposta
  */
-export function addDisclaimer(message: string, type: keyof typeof DISCLOSURE_MESSAGES.DISCLAIMERS): string {
+export function addDisclaimer(
+  message: string,
+  type: keyof typeof DISCLOSURE_MESSAGES.DISCLAIMERS
+): string {
   const disclaimer = DISCLOSURE_MESSAGES.DISCLAIMERS[type];
   return message + disclaimer;
 }
@@ -85,7 +96,16 @@ export function addDisclaimer(message: string, type: keyof typeof DISCLOSURE_MES
  * Verifica se mensagem precisa de disclaimer de preço
  */
 export function needsPriceDisclaimer(message: string): boolean {
-  const priceKeywords = ['preço', 'valor', 'custa', 'custo', 'r$', 'reais', 'parcela', 'financiamento'];
+  const priceKeywords = [
+    'preço',
+    'valor',
+    'custa',
+    'custo',
+    'r$',
+    'reais',
+    'parcela',
+    'financiamento',
+  ];
   return priceKeywords.some(keyword => message.toLowerCase().includes(keyword));
 }
 
@@ -102,14 +122,14 @@ export function needsRecommendationDisclaimer(message: string): boolean {
  */
 export function autoAddDisclaimers(message: string): string {
   let result = message;
-  
+
   if (needsPriceDisclaimer(message)) {
     result = addDisclaimer(result, 'PRICE');
   }
-  
+
   if (needsRecommendationDisclaimer(message)) {
     result = addDisclaimer(result, 'RECOMMENDATION');
   }
-  
+
   return result;
 }

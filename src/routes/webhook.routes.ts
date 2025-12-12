@@ -22,11 +22,7 @@ router.get('/whatsapp', (req: Request, res: Response) => {
       return res.status(400).send('Missing parameters');
     }
 
-    const result = whatsappMeta.verifyWebhook(
-      mode as string,
-      token as string,
-      challenge as string
-    );
+    const result = whatsappMeta.verifyWebhook(mode as string, token as string, challenge as string);
 
     if (result) {
       logger.info('✅ Webhook verified, sending challenge');
@@ -60,7 +56,7 @@ router.post('/whatsapp', async (req: Request, res: Response) => {
     // Process webhook asynchronously
     if (body.object === 'whatsapp_business_account' && body.entry) {
       // Don't await - process in background
-      whatsappMeta.processWebhook(body).catch((error) => {
+      whatsappMeta.processWebhook(body).catch(error => {
         logger.error({ error }, '❌ Error processing webhook');
       });
     } else {

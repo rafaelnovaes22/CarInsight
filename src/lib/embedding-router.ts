@@ -86,7 +86,7 @@ function generateMockEmbedding(dimensions: number): number[] {
   }
   // Normalizar (para simular embeddings reais)
   const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-  return embedding.map((val) => val / magnitude);
+  return embedding.map(val => val / magnitude);
 }
 
 /**
@@ -139,7 +139,9 @@ async function callCohereEmbedding(
   });
 
   // Cohere retorna 1024 dimensões, normalizar para 1536 para compatibilidade
-  const floatEmbeddings = Array.isArray(response.embeddings) ? response.embeddings[0] : response.embeddings.float![0];
+  const floatEmbeddings = Array.isArray(response.embeddings)
+    ? response.embeddings[0]
+    : response.embeddings.float![0];
   const embedding = normalizeEmbeddingDimensions(floatEmbeddings, 1536);
 
   return {
@@ -155,7 +157,7 @@ async function callCohereEmbedding(
 async function callOpenAIEmbeddingBatch(
   texts: string[]
 ): Promise<{ embeddings: number[][]; usage: any; model: string }> {
-  const cleanTexts = texts.map((t) => t.trim()).filter((t) => t.length > 0);
+  const cleanTexts = texts.map(t => t.trim()).filter(t => t.length > 0);
 
   const response = await openai.embeddings.create({
     model: 'text-embedding-3-small',
@@ -164,7 +166,7 @@ async function callOpenAIEmbeddingBatch(
   });
 
   return {
-    embeddings: response.data.map((item) => item.embedding),
+    embeddings: response.data.map(item => item.embedding),
     usage: response.usage,
     model: response.model,
   };
@@ -176,7 +178,7 @@ async function callOpenAIEmbeddingBatch(
 async function callCohereEmbeddingBatch(
   texts: string[]
 ): Promise<{ embeddings: number[][]; usage: any; model: string }> {
-  const cleanTexts = texts.map((t) => t.trim()).filter((t) => t.length > 0);
+  const cleanTexts = texts.map(t => t.trim()).filter(t => t.length > 0);
 
   const response = await cohere.embed({
     texts: cleanTexts,
@@ -186,7 +188,9 @@ async function callCohereEmbeddingBatch(
   });
 
   // Normalizar todos os embeddings para 1536 dimensões
-  const floatEmbeddingsBatch = Array.isArray(response.embeddings) ? response.embeddings : response.embeddings.float!;
+  const floatEmbeddingsBatch = Array.isArray(response.embeddings)
+    ? response.embeddings
+    : response.embeddings.float!;
   const embeddings = floatEmbeddingsBatch.map((emb: number[]) =>
     normalizeEmbeddingDimensions(emb, 1536)
   );
@@ -200,7 +204,7 @@ async function callCohereEmbeddingBatch(
 
 /**
  * Gera embedding com fallback automático e circuit breaker
- * 
+ *
  * Ordem de prioridade:
  * 1. OpenAI text-embedding-3-small - Primário (1536 dim, $0.02/1M)
  * 2. Cohere embed-multilingual-v3.0 - Fallback (1024→1536 dim, $0.01/1M, excelente PT-BR)
@@ -211,7 +215,7 @@ export async function generateEmbedding(
   options: { retries?: number } = {}
 ): Promise<number[]> {
   const maxRetries = options.retries ?? 2;
-  const providers = EMBEDDING_PROVIDERS.filter((p) => p.enabled).sort(
+  const providers = EMBEDDING_PROVIDERS.filter(p => p.enabled).sort(
     (a, b) => a.priority - b.priority
   );
 
@@ -291,7 +295,7 @@ export async function generateEmbedding(
 
         // Se não é a última tentativa, aguardar antes de retry
         if (attempt < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
       }
     }
@@ -310,7 +314,7 @@ export async function generateEmbeddingsBatch(
   options: { retries?: number } = {}
 ): Promise<number[][]> {
   const maxRetries = options.retries ?? 2;
-  const providers = EMBEDDING_PROVIDERS.filter((p) => p.enabled).sort(
+  const providers = EMBEDDING_PROVIDERS.filter(p => p.enabled).sort(
     (a, b) => a.priority - b.priority
   );
 
@@ -325,7 +329,7 @@ export async function generateEmbeddingsBatch(
     return [];
   }
 
-  const cleanTexts = texts.map((t) => t.trim()).filter((t) => t.length > 0);
+  const cleanTexts = texts.map(t => t.trim()).filter(t => t.length > 0);
   if (cleanTexts.length === 0) {
     return [];
   }
@@ -390,7 +394,7 @@ export async function generateEmbeddingsBatch(
         }
 
         if (attempt < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
       }
     }
@@ -433,7 +437,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
  * Obter status dos providers de embedding
  */
 export function getEmbeddingProvidersStatus() {
-  return EMBEDDING_PROVIDERS.map((provider) => ({
+  return EMBEDDING_PROVIDERS.map(provider => ({
     ...provider,
     circuitBreakerOpen: circuitBreaker.isOpen(provider.name),
   }));

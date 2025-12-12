@@ -14,8 +14,9 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Test connection
-prisma.$connect()
+prisma
+  .$connect()
   .then(() => logger.info('✅ Database connected'))
-  .catch((err) => logger.error('❌ Database connection failed:', err));
+  .catch(err => logger.error('❌ Database connection failed:', err));
 
 export default prisma;

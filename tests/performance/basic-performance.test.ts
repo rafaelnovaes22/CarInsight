@@ -1,6 +1,6 @@
 /**
  * Performance Tests - Basic Benchmarks
- * 
+ *
  * Tests response times and throughput for critical operations
  * Uses mocked LLM to ensure consistent performance testing
  */
@@ -18,9 +18,9 @@ vi.mock('../../src/lib/llm-router', () => ({
       extracted: { budget: 50000 },
       confidence: 0.9,
       reasoning: 'Mock extraction',
-      fieldsExtracted: ['budget']
+      fieldsExtracted: ['budget'],
     });
-  })
+  }),
 }));
 
 // Mock logger to prevent console output
@@ -34,7 +34,6 @@ vi.mock('../../src/lib/logger', () => ({
 }));
 
 describe('Performance Tests', () => {
-  
   describe('Preference Extractor Performance', () => {
     let extractor: PreferenceExtractorAgent;
 
@@ -45,7 +44,7 @@ describe('Performance Tests', () => {
 
     it('should extract preferences in less than 3 seconds', async () => {
       const message = 'Quero um SUV até 60 mil para 5 pessoas';
-      
+
       const start = Date.now();
       await extractor.extract(message);
       const duration = Date.now() - start;
@@ -68,11 +67,11 @@ describe('Performance Tests', () => {
       ];
 
       const start = Date.now();
-      
+
       for (const message of messages) {
         await extractor.extract(message);
       }
-      
+
       const duration = Date.now() - start;
 
       expect(duration).toBeLessThan(30000);
@@ -109,7 +108,7 @@ describe('Performance Tests', () => {
 
     it('should validate input in less than 5ms', () => {
       const message = 'Quero comprar um carro até 50 mil';
-      
+
       const start = Date.now();
       const result = guardrails.validateInput('5511999999999', message);
       const duration = Date.now() - start;
@@ -120,7 +119,7 @@ describe('Performance Tests', () => {
 
     it('should validate output in less than 5ms', () => {
       const output = 'Temos vários SUVs disponíveis! O Creta 2023 está por R$ 95.000.';
-      
+
       const start = Date.now();
       const result = guardrails.validateOutput(output);
       const duration = Date.now() - start;
@@ -150,13 +149,13 @@ describe('Performance Tests', () => {
 
     it('should handle 100 validations in less than 500ms', () => {
       const messages = Array(100).fill('Quero um carro até 50 mil para 4 pessoas');
-      
+
       const start = Date.now();
-      
+
       for (let i = 0; i < messages.length; i++) {
         guardrails.validateInput(`551199999${i.toString().padStart(4, '0')}`, messages[i]);
       }
-      
+
       const duration = Date.now() - start;
 
       expect(duration).toBeLessThan(500);
@@ -191,16 +190,14 @@ describe('Performance Tests', () => {
   describe('Concurrent Operations', () => {
     it('should handle 10 concurrent extractions', async () => {
       const extractor = new PreferenceExtractorAgent();
-      const messages = Array(10).fill(0).map((_, i) => 
-        `Quero um ${['SUV', 'sedan', 'hatch'][i % 3]} até ${50000 + i * 5000}`
-      );
+      const messages = Array(10)
+        .fill(0)
+        .map((_, i) => `Quero um ${['SUV', 'sedan', 'hatch'][i % 3]} até ${50000 + i * 5000}`);
 
       const start = Date.now();
-      
-      const results = await Promise.all(
-        messages.map(msg => extractor.extract(msg))
-      );
-      
+
+      const results = await Promise.all(messages.map(msg => extractor.extract(msg)));
+
       const duration = Date.now() - start;
 
       expect(results.length).toBe(10);
@@ -209,19 +206,21 @@ describe('Performance Tests', () => {
     });
 
     it('should handle concurrent guardrail validations', async () => {
-      const messages = Array(50).fill(0).map((_, i) => ({
-        phone: `551199999${i.toString().padStart(4, '0')}`,
-        message: `Mensagem de teste ${i}`,
-      }));
+      const messages = Array(50)
+        .fill(0)
+        .map((_, i) => ({
+          phone: `551199999${i.toString().padStart(4, '0')}`,
+          message: `Mensagem de teste ${i}`,
+        }));
 
       const start = Date.now();
-      
+
       const results = await Promise.all(
-        messages.map(({ phone, message }) => 
+        messages.map(({ phone, message }) =>
           Promise.resolve(guardrails.validateInput(phone, message))
         )
       );
-      
+
       const duration = Date.now() - start;
 
       expect(results.every(r => r.allowed)).toBe(true);

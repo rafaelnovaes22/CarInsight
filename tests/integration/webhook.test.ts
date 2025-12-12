@@ -1,6 +1,6 @@
 /**
  * Integration Tests for WhatsApp Webhook Routes
- * 
+ *
  * Tests webhook verification and message processing endpoints
  */
 
@@ -63,60 +63,50 @@ describe('WhatsApp Webhook Routes - Integration', () => {
 
   describe('GET /webhooks/whatsapp - Webhook Verification', () => {
     it('should verify webhook with valid parameters', async () => {
-      const response = await request(app)
-        .get('/webhooks/whatsapp')
-        .query({
-          'hub.mode': 'subscribe',
-          'hub.verify_token': 'test_verify_token',
-          'hub.challenge': 'test_challenge_string',
-        });
+      const response = await request(app).get('/webhooks/whatsapp').query({
+        'hub.mode': 'subscribe',
+        'hub.verify_token': 'test_verify_token',
+        'hub.challenge': 'test_challenge_string',
+      });
 
       expect(response.status).toBe(200);
       expect(response.text).toBe('test_challenge_string');
     });
 
     it('should reject verification with invalid token', async () => {
-      const response = await request(app)
-        .get('/webhooks/whatsapp')
-        .query({
-          'hub.mode': 'subscribe',
-          'hub.verify_token': 'wrong_token',
-          'hub.challenge': 'test_challenge',
-        });
+      const response = await request(app).get('/webhooks/whatsapp').query({
+        'hub.mode': 'subscribe',
+        'hub.verify_token': 'wrong_token',
+        'hub.challenge': 'test_challenge',
+      });
 
       expect(response.status).toBe(403);
     });
 
     it('should return 400 when mode is missing', async () => {
-      const response = await request(app)
-        .get('/webhooks/whatsapp')
-        .query({
-          'hub.verify_token': 'test_verify_token',
-          'hub.challenge': 'test_challenge',
-        });
+      const response = await request(app).get('/webhooks/whatsapp').query({
+        'hub.verify_token': 'test_verify_token',
+        'hub.challenge': 'test_challenge',
+      });
 
       expect(response.status).toBe(400);
       expect(response.text).toContain('Missing');
     });
 
     it('should return 400 when token is missing', async () => {
-      const response = await request(app)
-        .get('/webhooks/whatsapp')
-        .query({
-          'hub.mode': 'subscribe',
-          'hub.challenge': 'test_challenge',
-        });
+      const response = await request(app).get('/webhooks/whatsapp').query({
+        'hub.mode': 'subscribe',
+        'hub.challenge': 'test_challenge',
+      });
 
       expect(response.status).toBe(400);
     });
 
     it('should handle missing challenge gracefully', async () => {
-      const response = await request(app)
-        .get('/webhooks/whatsapp')
-        .query({
-          'hub.mode': 'subscribe',
-          'hub.verify_token': 'test_verify_token',
-        });
+      const response = await request(app).get('/webhooks/whatsapp').query({
+        'hub.mode': 'subscribe',
+        'hub.verify_token': 'test_verify_token',
+      });
 
       expect(response.status).toBe(200);
     });
@@ -381,7 +371,7 @@ describe('WhatsApp Webhook Routes - Integration', () => {
   describe('Response Time', () => {
     it('should respond within 5 seconds (Meta requirement is 20s)', async () => {
       const start = Date.now();
-      
+
       const payload = createWhatsAppPayload({
         type: 'text',
         text: { body: 'Performance test' },
