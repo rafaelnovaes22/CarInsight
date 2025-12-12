@@ -103,7 +103,8 @@ describe('Embedding Router', () => {
     it('deve calcular similaridade entre vetores idênticos = 1', async () => {
       const text = 'Carro sedan';
       const emb1 = await generateEmbedding(text);
-      const emb2 = await generateEmbedding(text);
+      // Use the same embedding for comparison (mock may return different values each call)
+      const emb2 = [...emb1];
 
       const similarity = cosineSimilarity(emb1, emb2);
 
