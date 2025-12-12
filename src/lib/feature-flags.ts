@@ -82,7 +82,7 @@ export class FeatureFlagService {
    * Override for specific phone numbers (for testing)
    * Can be extended to use database/Redis for dynamic overrides
    */
-  private readonly TEST_NUMBERS = [
+  private readonly TEST_NUMBERS: string[] = [
     // Add test phone numbers here to always use conversational
     // '5511999999999',
   ];

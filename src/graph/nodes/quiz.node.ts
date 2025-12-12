@@ -229,7 +229,7 @@ export async function quizNode(state: ConversationState): Promise<StateUpdate> {
         ...state.messages,
         {
           role: 'assistant',
-          content: validation.error,
+          content: validation.error || 'Por favor, tente novamente.',
           timestamp: new Date(),
         },
       ],

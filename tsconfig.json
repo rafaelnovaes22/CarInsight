@@ -25,6 +25,7 @@
     "dist",
     "**/*.old.ts",
     "src/services/whatsapp.service.ts",
-    "src/services/whatsapp-venom.service.ts"
+    "src/services/whatsapp-venom.service.ts",
+    "src/test-system.ts"
   ]
 }

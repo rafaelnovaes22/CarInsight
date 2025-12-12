@@ -26,8 +26,8 @@ export const handleFinancing = (ctx: PostRecommendationContext): HandlerResult =
   const hasTradeIn = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
   const tradeInInfo = hasTradeIn
     ? updatedProfile.tradeInYear
-      ? `${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear}`
-      : capitalizeWords(updatedProfile.tradeInModel)
+      ? `${capitalizeWords(updatedProfile.tradeInModel || '')} ${updatedProfile.tradeInYear}`
+      : capitalizeWords(updatedProfile.tradeInModel || '')
     : null;
 
   // Se tem troca, o carro É a entrada - vai direto pro vendedor

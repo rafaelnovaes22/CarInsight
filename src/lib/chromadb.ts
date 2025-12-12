@@ -45,7 +45,7 @@ function generateMockEmbedding(text: string): number[] {
   const seed = hashString(text);
   const random = seededRandom(seed);
 
-  const embedding = [];
+  const embedding: number[] = [];
   for (let i = 0; i < dimension; i++) {
     embedding.push(random() * 2 - 1);
   }

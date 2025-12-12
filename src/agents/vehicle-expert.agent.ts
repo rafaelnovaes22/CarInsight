@@ -757,8 +757,8 @@ export class VehicleExpertAgent {
           const hasTradeInInfo = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
           const tradeInText = hasTradeInInfo
             ? updatedProfile.tradeInYear
-              ? `${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear}`
-              : capitalizeWords(updatedProfile.tradeInModel)
+              ? `${capitalizeWords(updatedProfile.tradeInModel || '')} ${updatedProfile.tradeInYear}`
+              : capitalizeWords(updatedProfile.tradeInModel || '')
             : null;
 
           // Se tem troca, o carro É a entrada - vai direto pro vendedor
@@ -1651,7 +1651,7 @@ export class VehicleExpertAgent {
               .trim()
               .split(/\s+/)
               .filter(w => w.length > 2)[0]; // Get first meaningful word
-            searchedItem = wordsFromMessage ? capitalize(wordsFromMessage) : null;
+            searchedItem = wordsFromMessage ? capitalize(wordsFromMessage) : undefined;
           }
 
           const yearText = requestedYear
@@ -1674,9 +1674,9 @@ export class VehicleExpertAgent {
               const yearsText = availableYears.slice(0, 5).join(', ');
               const isPlural = availableYears.length > 1;
 
-              const yearAlternativeResponse = `Não encontramos ${capitalize(searchedItem)}${yearText} disponível. 😕
+              const yearAlternativeResponse = `Não encontramos ${capitalize(searchedItem || '')}${yearText} disponível. 😕
 
-Temos ${capitalize(searchedItem)} ${isPlural ? 'dos anos' : 'do ano'}: ${yearsText}
+Temos ${capitalize(searchedItem || '')} ${isPlural ? 'dos anos' : 'do ano'}: ${yearsText}
 
 Gostaria de ver ${isPlural ? 'algum desses' : 'esse'}?`;
 

@@ -94,8 +94,8 @@ export class ConversationalHandler {
           logger.info(
             {
               conversationId: state.conversationId,
-              hasName: !!updatedState.profile.customerName,
-              hasContext: !!updatedState.profile.usoPrincipal,
+              hasName: !!updatedState.profile?.customerName,
+              hasContext: !!updatedState.profile?.usoPrincipal,
               processingTime: Date.now() - startTime,
             },
             'Conversational: onboarding processed'

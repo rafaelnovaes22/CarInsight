@@ -80,7 +80,7 @@ const circuitBreaker = new EmbeddingCircuitBreaker();
  * Gera embedding mock para desenvolvimento
  */
 function generateMockEmbedding(dimensions: number): number[] {
-  const embedding = [];
+  const embedding: number[] = [];
   for (let i = 0; i < dimensions; i++) {
     embedding.push(Math.random() * 2 - 1); // Valores entre -1 e 1
   }

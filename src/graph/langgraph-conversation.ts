@@ -294,7 +294,7 @@ export class LangGraphConversation {
 
     // Handoff para vendedor
     if (lower.includes('vendedor') || lower.includes('humano') || lower.includes('atendente')) {
-      const waInfo = generateWhatsAppLink(state.profile);
+      const waInfo = generateWhatsAppLink(state.profile ?? undefined);
       const linkMessage = waInfo
         ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
         : '';
@@ -317,7 +317,7 @@ export class LangGraphConversation {
 
     // Agendar visita
     if (lower.includes('agendar') || lower.includes('visita') || lower.includes('test drive')) {
-      const waInfo = generateWhatsAppLink(state.profile);
+      const waInfo = generateWhatsAppLink(state.profile ?? undefined);
       const linkMessage = waInfo
         ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
         : '';

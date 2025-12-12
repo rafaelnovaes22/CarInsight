@@ -214,7 +214,7 @@ export async function searchNode(state: ConversationState): Promise<StateUpdate>
           versao: sv.version,
           ano: sv.year,
           km: sv.mileage,
-          preco: sv.price.toString(),
+          preco: (sv.price ?? 0).toString(),
           combustivel: sv.fuelType,
           cambio: sv.transmission,
           cor: sv.color,

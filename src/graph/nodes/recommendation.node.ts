@@ -108,7 +108,7 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
     lowerMessage.includes('test drive')
   ) {
     logger.info({ conversationId: state.conversationId }, 'RecommendationNode: Visit requested');
-    const waInfo = generateWhatsAppLink(state.profile);
+    const waInfo = generateWhatsAppLink(state.profile ?? undefined);
     const linkMessage = waInfo
       ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
       : '';
@@ -141,7 +141,7 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
       { conversationId: state.conversationId },
       'RecommendationNode: Human handoff requested'
     );
-    const waInfo = generateWhatsAppLink(state.profile);
+    const waInfo = generateWhatsAppLink(state.profile ?? undefined);
     const linkMessage = waInfo
       ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
       : '';

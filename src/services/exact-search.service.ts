@@ -21,7 +21,7 @@ export interface Vehicle {
   ano: number;
   km: number;
   preco: number;
-  cor: string;
+  cor: string | null;
   carroceria: string;
   combustivel: string;
   cambio: string;

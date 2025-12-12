@@ -207,9 +207,9 @@ Me conta: o que você está procurando?`;
     // Extract context using LLM
     const context = await this.extractContext(message);
 
-    const customerName = state.profile.customerName || 'amigo';
-    const currentBudget = state.profile.orcamento || state.profile.budget;
-    const currentUsage = state.profile.usoPrincipal;
+    const customerName = state.profile?.customerName || 'amigo';
+    const currentBudget = state.profile?.orcamento || state.profile?.budget;
+    const currentUsage = state.profile?.usoPrincipal;
 
     // Update profile with extracted values
     const updatedProfile: Partial<CustomerProfile> = {};
