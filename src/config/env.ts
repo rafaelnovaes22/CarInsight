@@ -5,7 +5,7 @@ dotenv.config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().transform(Number).default('3000'),
+  PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string(),
   REDIS_URL: z.string().optional(),
 
@@ -26,16 +26,16 @@ const envSchema = z.object({
   // Feature Flags
   ENABLE_CONVERSATIONAL_MODE: z
     .string()
-    .transform(val => val === 'true')
-    .default('false'),
-  CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.string().transform(Number).default('0'), // 0-100
+    .default('false')
+    .transform((val) => val === 'true'),
+  CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.coerce.number().default(0), // 0-100
 
   // Audio Transcription
   ENABLE_AUDIO_TRANSCRIPTION: z
     .string()
-    .transform(val => val === 'true')
-    .default('true'),
-  AUDIO_MAX_DURATION_SECONDS: z.string().transform(Number).default('120'), // 2 minutes max
+    .default('true')
+    .transform((val) => val === 'true'),
+  AUDIO_MAX_DURATION_SECONDS: z.coerce.number().default(120), // 2 minutes max
 });
 
 export const env = envSchema.parse(process.env);
