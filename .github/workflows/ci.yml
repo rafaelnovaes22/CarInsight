@@ -11,9 +11,28 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: faciliauto_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     strategy:
       matrix:
         node-version: [20.x]
+
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/faciliauto_test
+      NODE_ENV: test
 
     steps:
       - name: Checkout code
@@ -32,27 +51,17 @@ jobs:
         run: npx prisma generate
 
       - name: Setup test database
-        run: |
-          cp .env.test .env
-          npx prisma db push --accept-data-loss
+        run: npx prisma db push --accept-data-loss
 
       - name: Run unit tests
         run: npm run test:unit
-        env:
-          NODE_ENV: test
-          DATABASE_URL: file:./test.db
 
       - name: Run integration tests
         run: npm run test:integration
-        env:
-          NODE_ENV: test
-          DATABASE_URL: file:./test.db
 
       - name: Run E2E tests
         run: npm run test:e2e
         env:
-          NODE_ENV: test
-          DATABASE_URL: file:./test.db
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
