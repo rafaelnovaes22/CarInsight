@@ -27,14 +27,14 @@ const envSchema = z.object({
   ENABLE_CONVERSATIONAL_MODE: z
     .string()
     .default('false')
-    .transform((val) => val === 'true'),
+    .transform(val => val === 'true'),
   CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.coerce.number().default(0), // 0-100
 
   // Audio Transcription
   ENABLE_AUDIO_TRANSCRIPTION: z
     .string()
     .default('true')
-    .transform((val) => val === 'true'),
+    .transform(val => val === 'true'),
   AUDIO_MAX_DURATION_SECONDS: z.coerce.number().default(120), // 2 minutes max
 });
 
