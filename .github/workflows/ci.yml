@@ -33,6 +33,11 @@ jobs:
     env:
       DATABASE_URL: postgresql://test:test@localhost:5432/faciliauto_test
       NODE_ENV: test
+      # Mock API keys to prevent fallback mode in tests
+      GROQ_API_KEY: test-mock-key
+      OPENAI_API_KEY: test-mock-key
+      META_WHATSAPP_TOKEN: test-mock-token
+      META_WHATSAPP_PHONE_NUMBER_ID: "123456789"
 
     steps:
       - name: Checkout code
