@@ -28,11 +28,28 @@ import { extractName } from './langgraph/extractors';
 export { GraphState, StateTransition, TransitionConditions } from './langgraph/types';
 
 /**
- * Gera link wa.me para redirecionamento ao vendedor
+ * Formata número de telefone para exibição
+ * Ex: 5511949105033 -> (11) 94910-5033
  */
-function generateWhatsAppLink(profile?: CustomerProfile): string {
+function formatPhoneNumber(phone: string): string {
+  const withoutCountry = phone.startsWith('55') ? phone.slice(2) : phone;
+
+  if (withoutCountry.length === 11) {
+    const ddd = withoutCountry.slice(0, 2);
+    const firstPart = withoutCountry.slice(2, 7);
+    const secondPart = withoutCountry.slice(7);
+    return `(${ddd}) ${firstPart}-${secondPart}`;
+  }
+
+  return phone;
+}
+
+/**
+ * Gera link wa.me e número formatado para redirecionamento ao vendedor
+ */
+function generateWhatsAppLink(profile?: CustomerProfile): { link: string; formattedPhone: string } | null {
   const salesPhone = process.env.SALES_PHONE_NUMBER;
-  if (!salesPhone) return '';
+  if (!salesPhone) return null;
 
   // Construir texto pré-preenchido
   let prefilledText = 'Olá! Vim do bot da FaciliAuto';
@@ -51,8 +68,12 @@ function generateWhatsAppLink(profile?: CustomerProfile): string {
 
   // Encode para URL
   const encodedText = encodeURIComponent(prefilledText);
-  return `https://wa.me/${salesPhone}?text=${encodedText}`;
+  return {
+    link: `https://wa.me/${salesPhone}?text=${encodedText}`,
+    formattedPhone: formatPhoneNumber(salesPhone)
+  };
 }
+
 /**
  * LangGraph Conversation Manager
  * Gerencia o fluxo de estados da conversa
@@ -237,8 +258,10 @@ export class LangGraphConversation {
 
     // Handoff para vendedor
     if (lower.includes('vendedor') || lower.includes('humano') || lower.includes('atendente')) {
-      const waLink = generateWhatsAppLink(state.profile);
-      const linkMessage = waLink ? `\n\n📱 *Clique para falar com nosso consultor:*\n👉 ${waLink}` : '';
+      const waInfo = generateWhatsAppLink(state.profile);
+      const linkMessage = waInfo
+        ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
+        : '';
 
       return {
         response: `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`,
@@ -258,8 +281,10 @@ export class LangGraphConversation {
 
     // Agendar visita
     if (lower.includes('agendar') || lower.includes('visita') || lower.includes('test drive')) {
-      const waLink = generateWhatsAppLink(state.profile);
-      const linkMessage = waLink ? `\n\n📱 *Clique para falar com nosso consultor:*\n👉 ${waLink}` : '';
+      const waInfo = generateWhatsAppLink(state.profile);
+      const linkMessage = waInfo
+        ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
+        : '';
 
       return {
         response: `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`,
