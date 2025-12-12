@@ -228,7 +228,7 @@ Para começar, qual é o seu nome?`;
           if (currentState) {
             currentState.metadata.startedAt = new Date(currentState.metadata.startedAt);
             currentState.metadata.lastMessageAt = new Date(currentState.metadata.lastMessageAt);
-            currentState.messages = currentState.messages.map((msg) => ({
+            currentState.messages = currentState.messages.map(msg => ({
               ...msg,
               timestamp: new Date(msg.timestamp),
             }));

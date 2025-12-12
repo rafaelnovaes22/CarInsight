@@ -110,10 +110,10 @@ export class VectorSearchService {
           vehicle: v,
         }))
         .filter(v => v.embedding !== null) as Array<{
-          id: string;
-          embedding: number[];
-          vehicle: any;
-        }>;
+        id: string;
+        embedding: number[];
+        vehicle: any;
+      }>;
 
       if (vehiclesWithEmbeddings.length === 0) {
         logger.warn('Nenhum embedding válido encontrado');
