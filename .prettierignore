@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.md
+*.json
+*.log
+.env*
+prisma/migrations/

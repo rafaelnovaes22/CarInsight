@@ -162,7 +162,7 @@ export function extractMoneyValue(text: string): number | null {
     const valueMatch = normalized.match(/r?\$?\s*(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{2})?|\d+)/);
     if (valueMatch) {
         // Remove pontos de milhar e converte vírgula para ponto
-        let value = valueMatch[1].replace(/\./g, '').replace(',', '.');
+        const value = valueMatch[1].replace(/\./g, '').replace(',', '.');
         const parsed = parseFloat(value);
         if (!isNaN(parsed)) {
             return parsed;

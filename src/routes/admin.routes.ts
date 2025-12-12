@@ -10,7 +10,7 @@ const router = Router();
 const SEED_SECRET = process.env.SEED_SECRET || 'dev-secret-change-in-production';
 
 // Middleware para validar secret
-function requireSecret(req: any, res: any, next: Function) {
+function requireSecret(req: any, res: any, next: () => void) {
   const secret = req.query.secret || req.headers['x-admin-secret'];
   if (secret !== SEED_SECRET) {
     logger.warn('Unauthorized admin access attempt');
@@ -476,7 +476,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
     logger.info('🔍 Admin: Validando URLs dos veículos...');
 
     const vehicles = await prisma.vehicle.findMany({
-      where: { 
+      where: {
         disponivel: true,
         url: { not: null }
       },
@@ -519,7 +519,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
               return;
             }
 
-            const isInvalid = 
+            const isInvalid =
               html.includes('página não encontrada') ||
               html.includes('veículo não disponível') ||
               html.includes('anúncio não encontrado') ||
@@ -535,12 +535,12 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
             resolve({ valid: true });
           });
         })
-        .on('error', (err: Error) => {
-          resolve({ valid: false, reason: err.message });
-        })
-        .on('timeout', () => {
-          resolve({ valid: false, reason: 'Timeout' });
-        });
+          .on('error', (err: Error) => {
+            resolve({ valid: false, reason: err.message });
+          })
+          .on('timeout', () => {
+            resolve({ valid: false, reason: 'Timeout' });
+          });
       });
     };
 
@@ -548,7 +548,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
     const batchSize = 5;
     for (let i = 0; i < vehicles.length; i += batchSize) {
       const batch = vehicles.slice(i, i + batchSize);
-      
+
       const results = await Promise.all(
         batch.map(async (vehicle) => {
           const result = await checkUrl(vehicle.url || '');
@@ -619,7 +619,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
 router.post('/scrape-robustcar', requireSecret, async (req, res) => {
   try {
     const useLLM = req.query.useLLM === 'true' || req.body.useLLM === true;
-    
+
     logger.info({ useLLM }, '🚀 Admin: Iniciando scraping da RobustCar...');
 
     const https = await import('https');
@@ -660,7 +660,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     // Função para fazer requisição HTTPS
     const fetchPage = (url: string): Promise<string> => {
       return new Promise((resolve, reject) => {
-        https.get(url, { 
+        https.get(url, {
           headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
           timeout: 15000
         }, (res: any) => {
@@ -688,13 +688,13 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           const listItems = block.match(/<li>([^<]+)<\/li>/g) || [];
           const listData = listItems.map(li => li.replace(/<\/?li>/g, '').trim());
           const priceMatch = block.match(/class="preco"[^>]*>([^<]+)/);
-          
+
           const mvParts = modelVersion.trim().split(/\s+/);
           const model = mvParts[0];
           const version = mvParts.slice(1).join(' ');
 
-          const price = priceMatch ? 
-            parseFloat(priceMatch[1].replace(/R\$|\./g, '').replace(',', '.').trim()) || null 
+          const price = priceMatch ?
+            parseFloat(priceMatch[1].replace(/R\$|\./g, '').replace(',', '.').trim()) || null
             : null;
 
           vehicles.push({
@@ -756,7 +756,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
               combustivel: vehicle.fuel
             });
             llmClassified++;
-            logger.info({ 
+            logger.info({
               vehicle: `${vehicle.brand} ${vehicle.model}`,
               category: classification.category,
               confidence: classification.confidence
@@ -852,7 +852,7 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
 
     // 1. Validar URLs existentes
     logger.info('🔍 Passo 1/2: Validando URLs existentes...');
-    
+
     const vehiclesToValidate = await prisma.vehicle.findMany({
       where: { disponivel: true, url: { not: null } },
       select: { id: true, url: true }
@@ -863,7 +863,7 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
 
     const checkUrlQuick = (url: string): Promise<boolean> => {
       return new Promise((resolve) => {
-        https.get(url, { 
+        https.get(url, {
           headers: { 'User-Agent': 'Mozilla/5.0' },
           timeout: 5000
         }, (res: any) => {
@@ -899,7 +899,7 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
 
     // 2. Scraping básico (primeiras 3 páginas para rapidez)
     logger.info('🚀 Passo 2/2: Scraping rápido...');
-    
+
     const baseUrl = 'https://robustcar.com.br';
     const fetchPage = (url: string): Promise<string> => {
       return new Promise((resolve, reject) => {
@@ -916,7 +916,7 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
       try {
         const html = await fetchPage(`${baseUrl}/busca//pag/${page}/ordem/ano-desc/`);
         const urlMatches = html.matchAll(/href="(\/carros\/[^"]+)"/g);
-        
+
         for (const match of urlMatches) {
           const url = `${baseUrl}${match[1]}`;
           const exists = await prisma.vehicle.findFirst({ where: { url } });
@@ -939,7 +939,7 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
         potentialNewVehicles: newVehicles,
         totalAvailable: finalCount
       },
-      note: newVehicles > 0 
+      note: newVehicles > 0
         ? `Encontrados ${newVehicles} novos veículos. Execute /admin/scrape-robustcar para importá-los.`
         : 'Inventário atualizado, sem novos veículos.'
     });
@@ -963,7 +963,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
     // Total de veículos
     const total = await prisma.vehicle.count();
     const available = await prisma.vehicle.count({ where: { disponivel: true } });
-    
+
     // Agrupar por carroceria
     const byBodyType = await prisma.vehicle.groupBy({
       by: ['carroceria'],
@@ -971,7 +971,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
       where: { disponivel: true },
       orderBy: { _count: { carroceria: 'desc' } }
     });
-    
+
     // Buscar pickups especificamente (case insensitive não funciona no groupBy)
     const pickups = await prisma.vehicle.findMany({
       where: {
@@ -995,14 +995,14 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
         preco: true
       }
     });
-    
+
     // Listar todos os valores únicos de carroceria
     const allBodyTypes = await prisma.vehicle.findMany({
       where: { disponivel: true },
       select: { carroceria: true },
       distinct: ['carroceria']
     });
-    
+
     res.json({
       success: true,
       summary: {
@@ -1020,7 +1020,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
         preco: p.preco
       }))
     });
-    
+
   } catch (error: any) {
     logger.error({ error }, '❌ Admin: Debug vehicles failed');
     res.status(500).json({

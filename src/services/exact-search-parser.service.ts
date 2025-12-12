@@ -96,7 +96,7 @@ const BRAZILIAN_CAR_MODELS = [
 function buildModelPattern(): RegExp {
     // Sort by length descending to match longer names first (e.g., "hb20s" before "hb20")
     const sortedModels = [...BRAZILIAN_CAR_MODELS].sort((a, b) => b.length - a.length);
-    const escapedModels = sortedModels.map(m => m.replace(/[-\/]/g, '[-/]?'));
+    const escapedModels = sortedModels.map(m => m.replace(/[-/]/g, '[-/]?'));
     return new RegExp(`\\b(${escapedModels.join('|')})\\b`, 'i');
 }
 

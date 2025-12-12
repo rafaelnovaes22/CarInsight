@@ -167,7 +167,7 @@ Para começar, qual é o seu nome?`;
       }
 
       // Get or create conversation
-      let conversation = await this.getOrCreateConversation(phoneNumber);
+      const conversation = await this.getOrCreateConversation(phoneNumber);
 
       // Determine message type based on audio options (Requirement 5.4)
       const isAudioMessage = !!audioOptions?.mediaId;

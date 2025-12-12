@@ -26,6 +26,33 @@ import { extractName } from './langgraph/extractors';
 
 // Re-export types for backwards compatibility
 export { GraphState, StateTransition, TransitionConditions } from './langgraph/types';
+
+/**
+ * Gera link wa.me para redirecionamento ao vendedor
+ */
+function generateWhatsAppLink(profile?: CustomerProfile): string {
+  const salesPhone = process.env.SALES_PHONE_NUMBER;
+  if (!salesPhone) return '';
+
+  // Construir texto pré-preenchido
+  let prefilledText = 'Olá! Vim do bot da FaciliAuto';
+
+  if (profile?.customerName) {
+    prefilledText = `Olá! Sou ${profile.customerName}, vim do bot da FaciliAuto`;
+  }
+
+  // Adicionar interesse do veículo se disponível
+  const lastVehicle = profile?._lastShownVehicles?.[0];
+  if (lastVehicle) {
+    prefilledText += ` e tenho interesse no ${lastVehicle.brand} ${lastVehicle.model} ${lastVehicle.year}`;
+  }
+
+  prefilledText += '!';
+
+  // Encode para URL
+  const encodedText = encodeURIComponent(prefilledText);
+  return `https://wa.me/${salesPhone}?text=${encodedText}`;
+}
 /**
  * LangGraph Conversation Manager
  * Gerencia o fluxo de estados da conversa
@@ -210,8 +237,11 @@ export class LangGraphConversation {
 
     // Handoff para vendedor
     if (lower.includes('vendedor') || lower.includes('humano') || lower.includes('atendente')) {
+      const waLink = generateWhatsAppLink(state.profile);
+      const linkMessage = waLink ? `\n\n📱 *Clique para falar com nosso consultor:*\n👉 ${waLink}` : '';
+
       return {
-        response: `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.\n\nUm momento, por favor. ⏳`,
+        response: `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`,
         newState: {
           ...state,
           graph: {
@@ -228,8 +258,11 @@ export class LangGraphConversation {
 
     // Agendar visita
     if (lower.includes('agendar') || lower.includes('visita') || lower.includes('test drive')) {
+      const waLink = generateWhatsAppLink(state.profile);
+      const linkMessage = waLink ? `\n\n📱 *Clique para falar com nosso consultor:*\n👉 ${waLink}` : '';
+
       return {
-        response: `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.\n\nUm vendedor entrará em contato em breve para confirmar dia e horário.\n\nObrigado por escolher a FaciliAuto! 🚗`,
+        response: `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`,
         newState: {
           ...state,
           graph: {

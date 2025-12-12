@@ -906,7 +906,7 @@ export class VehicleExpertAgent {
 
           // Filter results to match same body type and exclude already shown
           const shownVehicleIds = lastShownVehicles.map(v => v.vehicleId);
-          let newResults = similarResults.filter(r => {
+          const newResults = similarResults.filter(r => {
             // Exclude already shown
             if (shownVehicleIds.includes(r.vehicleId)) return false;
 

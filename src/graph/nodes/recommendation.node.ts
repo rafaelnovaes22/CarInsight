@@ -1,5 +1,28 @@
-import { ConversationState, StateUpdate } from '../../types/state.types';
+import { ConversationState, StateUpdate, CustomerProfile } from '../../types/state.types';
 import { logger } from '../../lib/logger';
+
+/**
+ * Gera link wa.me para redirecionamento ao vendedor
+ */
+function generateWhatsAppLink(profile?: CustomerProfile): string {
+  const salesPhone = process.env.SALES_PHONE_NUMBER;
+  if (!salesPhone) return '';
+
+  let prefilledText = 'Olá! Vim do bot da FaciliAuto';
+
+  if (profile?.customerName) {
+    prefilledText = `Olá! Sou ${profile.customerName}, vim do bot da FaciliAuto`;
+  }
+
+  const lastVehicle = profile?._lastShownVehicles?.[0];
+  if (lastVehicle) {
+    prefilledText += ` e tenho interesse no ${lastVehicle.brand} ${lastVehicle.model} ${lastVehicle.year}`;
+  }
+
+  prefilledText += '!';
+  const encodedText = encodeURIComponent(prefilledText);
+  return `https://wa.me/${salesPhone}?text=${encodedText}`;
+}
 
 /**
  * Format recommendations into WhatsApp message
@@ -19,7 +42,7 @@ function formatRecommendations(recommendations: any[]): string {
     message += `📅 Ano: ${vehicle.ano} | 🛣️ ${vehicle.km.toLocaleString('pt-BR')} km\n`;
     message += `💰 R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
     message += `🎨 Cor: ${vehicle.cor}\n`;
-    
+
     if (vehicle.combustivel) {
       message += `⛽ ${vehicle.combustivel}`;
       if (vehicle.cambio) {
@@ -27,7 +50,7 @@ function formatRecommendations(recommendations: any[]): string {
       }
       message += `\n`;
     }
-    
+
     message += `\n💡 ${rec.reasoning}\n\n`;
   });
 
@@ -44,9 +67,9 @@ function formatRecommendations(recommendations: any[]): string {
  * RecommendationNode - Present recommendations to customer
  */
 export async function recommendationNode(state: ConversationState): Promise<StateUpdate> {
-  logger.info({ 
-    conversationId: state.conversationId, 
-    recommendationsCount: state.recommendations.length 
+  logger.info({
+    conversationId: state.conversationId,
+    recommendationsCount: state.recommendations.length
   }, 'RecommendationNode: Formatting recommendations');
 
   // Check if user is asking to schedule or talk to human
@@ -56,13 +79,15 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
   // Handle "agendar" / schedule visit
   if (lowerMessage.includes('agendar') || lowerMessage.includes('visita') || lowerMessage.includes('test drive')) {
     logger.info({ conversationId: state.conversationId }, 'RecommendationNode: Visit requested');
+    const waLink = generateWhatsAppLink(state.profile);
+    const linkMessage = waLink ? `\n\n📱 *Clique para falar com nosso consultor:*\n👉 ${waLink}` : '';
 
     return {
       messages: [
         ...state.messages,
         {
           role: 'assistant',
-          content: `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.\n\nUm vendedor entrará em contato em breve para confirmar dia e horário.\n\nObrigado por escolher a FaciliAuto! 🚗`,
+          content: `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`,
           timestamp: new Date(),
         },
       ],
@@ -78,13 +103,15 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
   // Handle "vendedor" / talk to human
   if (lowerMessage.includes('vendedor') || lowerMessage.includes('humano') || lowerMessage.includes('atendente')) {
     logger.info({ conversationId: state.conversationId }, 'RecommendationNode: Human handoff requested');
+    const waLink = generateWhatsAppLink(state.profile);
+    const linkMessage = waLink ? `\n\n📱 *Clique para falar com nosso consultor:*\n👉 ${waLink}` : '';
 
     return {
       messages: [
         ...state.messages,
         {
           role: 'assistant',
-          content: `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.\n\nUm momento, por favor. ⏳`,
+          content: `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`,
           timestamp: new Date(),
         },
       ],
@@ -109,11 +136,11 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
       detailsMessage += `🛣️ Quilometragem: ${vehicle.km.toLocaleString('pt-BR')} km\n`;
       detailsMessage += `💰 Preço: R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
       detailsMessage += `🎨 Cor: ${vehicle.cor}\n`;
-      
+
       if (vehicle.combustivel) detailsMessage += `⛽ Combustível: ${vehicle.combustivel}\n`;
       if (vehicle.cambio) detailsMessage += `🔧 Câmbio: ${vehicle.cambio}\n`;
       if (vehicle.portas) detailsMessage += `🚪 Portas: ${vehicle.portas}\n`;
-      
+
       if (vehicle.descricao) {
         detailsMessage += `\n📝 ${vehicle.descricao}\n`;
       }

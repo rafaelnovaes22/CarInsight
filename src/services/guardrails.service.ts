@@ -10,10 +10,10 @@ export interface GuardrailResult {
 export class GuardrailsService {
   // Maximum message length
   private readonly MAX_MESSAGE_LENGTH = 1000;
-  
+
   // Maximum messages per minute per user
   private readonly MAX_MESSAGES_PER_MINUTE = 10;
-  
+
   // Rate limiting storage (in production, use Redis)
   private rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
@@ -134,7 +134,6 @@ export class GuardrailsService {
    * Detect prompt injection attempts
    */
   private detectPromptInjection(message: string): GuardrailResult {
-    const lowerMessage = message.toLowerCase();
 
     // Common prompt injection patterns
     const injectionPatterns = [
@@ -142,53 +141,53 @@ export class GuardrailsService {
       /ignore\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
       /forget\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
       /disregard\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
-      
+
       // System prompt manipulation (Portuguese)
       /ignore\s+(as|todas)?\s*(instru[çc][õo]es|regras|prompts)/i,
       /esque[çc]a\s+(as\s+|todas\s+|todas\s+as\s+)?(instru[çc][õo]es|regras)/i,
       /desconsidere\s+(as|todas)?\s*(instru[çc][õo]es|regras)/i,
-      
+
       // Role manipulation (English)
       /you\s+are\s+now/i,
       /you\s+are\s+(now\s+)?(a|an)\s+(admin|administrator|developer|system)/i,
       /from\s+now\s+on/i,
       /new\s+(instructions|role|prompt)/i,
       /act\s+as\s+(a\s+)?(developer|admin|system)/i,
-      
+
       // Role manipulation (Portuguese)
       /voc[êe]\s+(agora\s+)?[ée]\s+(um|uma)\s+(admin|administrador|desenvolvedor|sistema)/i,
       /a\s+partir\s+de\s+agora/i,
       /nova\s+(instru[çc][ãa]o|regra|fun[çc][ãa]o)/i,
-      
+
       // Jailbreak attempts
       /dan\s+mode/i,
       /developer\s+mode/i,
       /god\s+mode/i,
       /jailbreak/i,
-      
+
       // System command attempts
       /system\s*:/i,
       /assistant\s*:/i,
       /\[system\]/i,
       /\[assistant\]/i,
-      
+
       // Encoding/obfuscation attempts
       /base64/i,
       /decode/i,
       /\\x[0-9a-f]{2}/i,
       /%[0-9a-f]{2}/i,
-      
+
       // Prompt extraction (English)
       /show\s+(me\s+)?(your|the)\s+(prompt|instructions|system|rules)/i,
       /what\s+(are|is)\s+(your|the)\s+(prompt|instructions|system|rules)/i,
       /reveal\s+(your|the)\s+(prompt|instructions)/i,
       /(tell|give)\s+me\s+(your|the)\s+(prompt|instructions)/i,
-      
+
       // Prompt extraction (Portuguese)
       /me\s+(diga|mostre|revele)\s+(seu|sua|o|a)\s+(prompt|instru[çc][ãa]o|sistema)/i,
       /qual\s+([ée]|s[ãa]o)\s+(seu|sua|suas|tuas?)\s+(instru[çc][õo]es?|prompt|regras?)/i,
       /sua\s+instru[çc][ãa]o/i,
-      
+
       // SQL injection patterns (extra safety)
       /;\s*(drop|delete|insert|update)\s+/i,
       /union\s+select/i,
@@ -229,7 +228,7 @@ export class GuardrailsService {
    * Sanitize input
    */
   private sanitizeInput(message: string): string {
-    // Remove control characters
+    // eslint-disable-next-line no-control-regex
     let sanitized = message.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
 
     // Normalize whitespace
@@ -274,13 +273,13 @@ export class GuardrailsService {
     const inappropriatePatterns = [
       // Violence
       /\b(kill|murder|attack|hurt|violence)\b/i,
-      
+
       // Illegal activities
       /\b(steal|fraud|scam|hack)\b/i,
-      
+
       // Personal information leaks (CPF pattern: XXX.XXX.XXX-XX)
       /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/,
-      
+
       // Common error messages that shouldn't reach users
       /\b(error|exception|stack trace|undefined|null pointer)\b/i,
     ];

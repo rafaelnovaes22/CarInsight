@@ -15,7 +15,7 @@ import { logger } from '../lib/logger';
 /**
  * Route to next node based on current state
  */
-function routeNext(state: ConversationState): string {
+function _routeNext(state: ConversationState): string {
   const currentNode = state.graph.currentNode;
 
   // Prevent infinite loops
@@ -28,25 +28,26 @@ function routeNext(state: ConversationState): string {
   switch (currentNode) {
     case 'greeting':
       return 'quiz';
-    
+
     case 'quiz':
       if (state.quiz.isComplete) {
         return 'search';
       }
       return 'quiz'; // Stay in quiz until complete
-    
+
     case 'search':
       return 'recommendation';
-    
-    case 'recommendation':
+
+    case 'recommendation': {
       // Check if user wants to end conversation
       const lastMessage = state.messages[state.messages.length - 1];
-      if (lastMessage.content.toLowerCase().includes('vendedor') || 
-          lastMessage.content.toLowerCase().includes('agendar')) {
+      if (lastMessage.content.toLowerCase().includes('vendedor') ||
+        lastMessage.content.toLowerCase().includes('agendar')) {
         return 'END';
       }
       return 'recommendation'; // Stay in recommendation for follow-ups
-    
+    }
+
     default:
       return 'END';
   }
@@ -63,7 +64,7 @@ export class ConversationGraph {
     message: string;
     currentState?: ConversationState;
   }): Promise<ConversationState> {
-    
+
     // Initialize or use existing state
     let state: ConversationState = input.currentState || {
       conversationId: input.conversationId,
@@ -101,10 +102,10 @@ export class ConversationGraph {
     // Increment loop counter
     state.graph.loopCount = (state.graph.loopCount || 0) + 1;
 
-    logger.info({ 
+    logger.info({
       conversationId: input.conversationId,
       currentNode: state.graph.currentNode,
-      messageCount: state.messages.length 
+      messageCount: state.messages.length
     }, 'ConversationGraph: Processing message');
 
     // Execute current node
@@ -114,19 +115,19 @@ export class ConversationGraph {
         case 'greeting':
           update = await greetingNode(state);
           break;
-        
+
         case 'quiz':
           update = await quizNode(state);
           break;
-        
+
         case 'search':
           update = await searchNode(state);
           break;
-        
+
         case 'recommendation':
           update = await recommendationNode(state);
           break;
-        
+
         default:
           logger.warn({ currentNode: state.graph.currentNode }, 'ConversationGraph: Unknown node');
           update = {
@@ -144,15 +145,15 @@ export class ConversationGraph {
       // Merge update into state
       state = { ...state, ...update };
 
-      logger.info({ 
+      logger.info({
         conversationId: input.conversationId,
         nextNode: state.graph.currentNode,
-        quizProgress: state.quiz.progress 
+        quizProgress: state.quiz.progress
       }, 'ConversationGraph: Node executed');
 
     } catch (error) {
       logger.error({ error, conversationId: input.conversationId }, 'ConversationGraph: Node execution error');
-      
+
       state.graph.errorCount = (state.graph.errorCount || 0) + 1;
       state.messages = [
         ...state.messages,

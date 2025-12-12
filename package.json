@@ -46,7 +46,12 @@
     "vehicles:update-uber-llm": "tsx scripts/update-uber-eligibility-llm.ts",
     "heroku-status": "heroku ps --app faciliauto-mvp",
     "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
-    "heroku-open": "heroku open --app faciliauto-mvp"
+    "heroku-open": "heroku open --app faciliauto-mvp",
+    "lint": "eslint src/**/*.ts --max-warnings 0",
+    "lint:warn": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\""
   },
   "keywords": [
     "whatsapp",
@@ -74,21 +79,33 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@faker-js/faker": "^10.1.0",
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.0",
     "@types/qrcode-terminal": "^0.12.2",
     "@types/supertest": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.49.0",
+    "@typescript-eslint/parser": "^8.49.0",
     "@vitest/coverage-v8": "^4.0.10",
     "@vitest/ui": "^4.0.10",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "fast-check": "^4.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
+    "prettier": "^3.7.4",
     "supertest": "^7.1.4",
     "typescript": "^5.3.2",
+    "typescript-eslint": "^8.49.0",
     "vitest": "^4.0.10"
   },
   "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
     "*.{js,ts,md,json,txt}": [
       "bash -c 'if grep -rE \"(gsk_[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})\" --include=*.js --include=*.ts --include=*.md --include=*.json .; then exit 1; fi'"
     ]
