@@ -198,7 +198,7 @@ export class VehicleSearchAdapter {
         versao: v.versao,
         ano: v.ano,
         km: v.km,
-        preco: v.preco,
+        preco: v.preco ?? 0, // Handle null with default
         cor: v.cor,
         carroceria: v.carroceria,
         combustivel: v.combustivel,
@@ -461,7 +461,7 @@ export class VehicleSearchAdapter {
     }
 
     // Features
-    const features = [];
+    const features: string[] = [];
     if (vehicle.arCondicionado) features.push('Ar condicionado');
     if (vehicle.direcaoHidraulica) features.push('Direção hidráulica');
     if (vehicle.airbag) features.push('Airbag');

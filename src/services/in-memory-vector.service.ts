@@ -75,7 +75,7 @@ class InMemoryVectorStore {
           brand: vehicle.marca,
           model: vehicle.modelo,
           year: vehicle.ano,
-          price: vehicle.preco,
+          price: vehicle.preco ?? 0,
           mileage: vehicle.km,
         },
       });
@@ -180,7 +180,7 @@ class InMemoryVectorStore {
       `cor ${vehicle.cor}`,
     ];
 
-    const features = [];
+    const features: string[] = [];
     if (vehicle.arCondicionado) features.push('ar condicionado');
     if (vehicle.direcaoHidraulica) features.push('direção hidráulica');
     if (vehicle.airbag) features.push('airbag');
@@ -196,7 +196,9 @@ class InMemoryVectorStore {
       parts.push(vehicle.descricao);
     }
 
-    parts.push(`preço R$ ${vehicle.preco.toLocaleString('pt-BR')}`);
+    if (vehicle.preco) {
+      parts.push(`preço R$ ${vehicle.preco.toLocaleString('pt-BR')}`);
+    }
 
     return parts.join('. ');
   }

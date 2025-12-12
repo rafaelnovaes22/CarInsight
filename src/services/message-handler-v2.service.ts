@@ -225,12 +225,14 @@ Para começar, qual é o seu nome?`;
         try {
           currentState = JSON.parse(cachedStateJson);
           // Restore Date objects
-          currentState.metadata.startedAt = new Date(currentState.metadata.startedAt);
-          currentState.metadata.lastMessageAt = new Date(currentState.metadata.lastMessageAt);
-          currentState.messages = currentState.messages.map(msg => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-          }));
+          if (currentState) {
+            currentState.metadata.startedAt = new Date(currentState.metadata.startedAt);
+            currentState.metadata.lastMessageAt = new Date(currentState.metadata.lastMessageAt);
+            currentState.messages = currentState.messages.map((msg) => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp),
+            }));
+          }
         } catch (error) {
           logger.error({ error }, 'Error parsing cached state');
           currentState = undefined;
@@ -493,7 +495,7 @@ Para começar, qual é o seu nome?`;
           };
 
           // Include rich details from profile
-          const details = [];
+          const details: string[] = [];
           if (profile?.customerName) details.push(`👤 *Nome:* ${profile.customerName}`);
           if (conversation.phoneNumber) details.push(`📱 *Fone:* ${conversation.phoneNumber}`);
 

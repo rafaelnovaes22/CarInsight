@@ -207,7 +207,7 @@ async function updateUberWithLLM(req: any, res: any) {
         arCondicionado: vehicle.arCondicionado,
         portas: vehicle.portas,
         cambio: vehicle.cambio,
-        cor: vehicle.cor,
+        cor: vehicle.cor ?? undefined,
       });
 
       await prisma.vehicle.update({
@@ -744,11 +744,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-                priceMatch[1]
-                  .replace(/R\$|\./g, '')
-                  .replace(',', '.')
-                  .trim()
-              ) || null
+              priceMatch[1]
+                .replace(/R\$|\./g, '')
+                .replace(',', '.')
+                .trim()
+            ) || null
             : null;
 
           vehicles.push({
@@ -799,7 +799,14 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
         });
 
         // Usar LLM para classificar se habilitado
-        let classification = null;
+        let classification: {
+          category: string;
+          confidence: number;
+          aptoUber?: boolean;
+          aptoUberBlack?: boolean;
+          aptoFamilia?: boolean;
+          aptoTrabalho?: boolean;
+        } | null = null;
         if (useLLM && classifyVehicle) {
           try {
             classification = await classifyVehicle({
@@ -813,8 +820,8 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
             logger.info(
               {
                 vehicle: `${vehicle.brand} ${vehicle.model}`,
-                category: classification.category,
-                confidence: classification.confidence,
+                category: classification?.category,
+                confidence: classification?.confidence,
               },
               'LLM classification'
             );

@@ -22,10 +22,10 @@ export interface ScoredVehicle {
   version: string;
   year: number;
   mileage: number;
-  price: number;
+  price: number | null;
   fuelType: string;
   transmission: string;
-  color: string;
+  color: string | null;
   features: string[];
   photos?: string[];
   matchScore: number;
@@ -110,10 +110,10 @@ export class VectorSearchService {
           vehicle: v,
         }))
         .filter(v => v.embedding !== null) as Array<{
-        id: string;
-        embedding: number[];
-        vehicle: any;
-      }>;
+          id: string;
+          embedding: number[];
+          vehicle: any;
+        }>;
 
       if (vehiclesWithEmbeddings.length === 0) {
         logger.warn('Nenhum embedding válido encontrado');
@@ -168,7 +168,7 @@ export class VectorSearchService {
       // Ordenar por matchScore, com desempate por preço (desc), km (asc), ano (desc)
       scoredVehicles.sort((a, b) => {
         if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-        if (b.price !== a.price) return b.price - a.price;
+        if ((b.price ?? 0) !== (a.price ?? 0)) return (b.price ?? 0) - (a.price ?? 0);
         if (a.mileage !== b.mileage) return a.mileage - b.mileage;
         return b.year - a.year;
       });
@@ -241,7 +241,7 @@ export class VectorSearchService {
       // Ordenar por matchScore, com desempate por preço (desc), km (asc), ano (desc)
       scoredVehicles.sort((a, b) => {
         if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-        if (b.price !== a.price) return b.price - a.price;
+        if ((b.price ?? 0) !== (a.price ?? 0)) return (b.price ?? 0) - (a.price ?? 0);
         if (a.mileage !== b.mileage) return a.mileage - b.mileage;
         return b.year - a.year;
       });
