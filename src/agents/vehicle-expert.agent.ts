@@ -2168,8 +2168,6 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
   // detectAffirmativeResponse, detectNegativeResponse, detectPostRecommendationIntent)
   // have been moved to ./vehicle-expert/intent-detector.ts
 
-
-
   /**
    * Get vehicle recommendations based on profile
    * Returns { recommendations, noPickupsFound, noSevenSeaters } to indicate if category was not found
@@ -2491,8 +2489,6 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       return { recommendations: [] };
     }
   }
-
-
 }
 
 // Singleton export
