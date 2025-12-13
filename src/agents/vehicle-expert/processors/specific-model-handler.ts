@@ -12,10 +12,11 @@ import { logger } from '../../../lib/logger';
 import { vehicleSearchAdapter } from '../../../services/vehicle-search-adapter.service';
 import { exactSearchParser } from '../../../services/exact-search-parser.service';
 import { CustomerProfile, VehicleRecommendation } from '../../../types/state.types';
-import { ConversationResponse } from '../../../types/conversation.types';
 import { formatRecommendations as formatRecommendationsUtil } from '../formatters';
 import { capitalize } from '../constants';
 import type { HandlerResult } from '../handlers/types';
+import { buildResponse } from '../utils/response-builder';
+import { inferBodyType } from '../utils/vehicle-inference';
 
 // ============================================================================
 // TYPES
@@ -35,54 +36,9 @@ export interface SpecificModelContext {
 }
 
 // ============================================================================
-// CONSTANTS - Vehicle model lists for body type inference
-// ============================================================================
-
-const PICKUP_MODELS = [
-    'saveiro', 'strada', 's10', 'montana', 'hilux', 'ranger',
-    'toro', 'amarok', 'l200', 'frontier', 'triton', 'oroch',
-];
-
-const SEDAN_MODELS = [
-    'voyage', 'prisma', 'cronos', 'virtus', 'hb20s', 'city',
-    'civic', 'corolla', 'logan', 'versa', 'sentra', 'cruze', 'focus',
-];
-
-const SUV_MODELS = [
-    'tcross', 't-cross', 'nivus', 'tracker', 'creta', 'hrv', 'hr-v',
-    'kicks', 'duster', 'captur', 'renegade', 'compass', 'ecosport',
-];
-
-const HATCH_MODELS = [
-    'gol', 'polo', 'onix', 'argo', 'mobi', 'uno', 'hb20',
-    'kwid', 'sandero', 'ka', 'celta', 'palio', 'fox', 'up',
-];
-
-// ============================================================================
 // HELPERS
 // ============================================================================
 
-/**
- * Infer body type from model name
- */
-function inferBodyType(model: string): { type: string; name: string } | null {
-    const modelLower = model.toLowerCase();
-
-    if (PICKUP_MODELS.some(m => modelLower.includes(m))) {
-        return { type: 'pickup', name: 'pickups' };
-    }
-    if (SEDAN_MODELS.some(m => modelLower.includes(m))) {
-        return { type: 'sedan', name: 'sedans' };
-    }
-    if (SUV_MODELS.some(m => modelLower.includes(m))) {
-        return { type: 'suv', name: 'SUVs' };
-    }
-    if (HATCH_MODELS.some(m => modelLower.includes(m))) {
-        return { type: 'hatch', name: 'hatches' };
-    }
-
-    return null;
-}
 
 /**
  * Extract searchable item from user message
@@ -107,36 +63,6 @@ function extractSearchedItem(
     }
 
     return searchedItem;
-}
-
-/**
- * Build standard response
- */
-function buildResponse(
-    response: string,
-    preferences: Partial<CustomerProfile>,
-    options: {
-        needsMoreInfo?: string[];
-        canRecommend?: boolean;
-        recommendations?: VehicleRecommendation[];
-        nextMode?: string;
-        startTime: number;
-        confidence?: number;
-    }
-): ConversationResponse {
-    return {
-        response,
-        extractedPreferences: preferences,
-        needsMoreInfo: options.needsMoreInfo || [],
-        canRecommend: options.canRecommend ?? false,
-        recommendations: options.recommendations,
-        nextMode: options.nextMode || 'discovery',
-        metadata: {
-            processingTime: Date.now() - options.startTime,
-            confidence: options.confidence ?? 0.9,
-            llmUsed: 'gpt-4o-mini',
-        },
-    } as ConversationResponse;
 }
 
 // ============================================================================

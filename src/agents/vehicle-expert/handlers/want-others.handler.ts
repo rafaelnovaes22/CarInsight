@@ -14,9 +14,10 @@
 import { logger } from '../../../lib/logger';
 import { vehicleSearchAdapter } from '../../../services/vehicle-search-adapter.service';
 import { CustomerProfile, VehicleRecommendation } from '../../../types/state.types';
-import { ConversationResponse } from '../../../types/conversation.types';
 import { formatRecommendations as formatRecommendationsUtil } from '../formatters';
 import type { ShownVehicle, HandlerResult } from '../handlers/types';
+import { buildResponse } from '../utils/response-builder';
+import { inferBodyType, determineCategory } from '../utils/vehicle-inference';
 
 // ============================================================================
 // TYPES
@@ -34,79 +35,9 @@ export interface WantOthersContext {
 }
 
 // ============================================================================
-// CONSTANTS - Vehicle model lists for body type inference
-// ============================================================================
-
-const SEDAN_MODELS = [
-    'voyage', 'prisma', 'onix plus', 'cronos', 'virtus', 'hb20s',
-    'city', 'civic', 'corolla', 'yaris sedan', 'logan', 'versa', 'sentra',
-];
-
-const HATCH_MODELS = [
-    'gol', 'fox', 'up', 'polo', 'onix', 'argo', 'mobi', 'uno',
-    'hb20', 'kwid', 'sandero', 'march', 'fit', 'ka', 'celta', 'palio',
-];
-
-const SUV_MODELS = [
-    'tcross', 't-cross', 'nivus', 'tracker', 'creta', 'hrv', 'hr-v',
-    'kicks', 'duster', 'captur', 'renegade', 'compass', 'tucson', 'tiggo',
-];
-
-const SEDAN_COMPACT_MODELS = [
-    'voyage', 'prisma', 'logan', 'versa', 'hb20s', 'cronos', 'virtus', 'onix plus',
-];
-
-const SEDAN_MEDIUM_MODELS = [
-    'cruze', 'focus', 'civic', 'corolla', 'sentra', 'jetta', 'city',
-];
-
-// ============================================================================
 // HELPERS
 // ============================================================================
 
-/**
- * Infer body type from vehicle model name
- */
-function inferBodyType(model: string, explicitBodyType?: string): string {
-    // Use explicit body type if available
-    if (explicitBodyType) {
-        const bodyLower = explicitBodyType.toLowerCase();
-        if (bodyLower.includes('sedan')) return 'sedan';
-        if (bodyLower.includes('hatch')) return 'hatch';
-        if (bodyLower.includes('suv')) return 'suv';
-        if (bodyLower.includes('pickup')) return 'pickup';
-    }
-
-    // Infer from model name
-    const modelLower = model.toLowerCase();
-    if (SEDAN_MODELS.some(m => modelLower.includes(m))) return 'sedan';
-    if (HATCH_MODELS.some(m => modelLower.includes(m))) return 'hatch';
-    if (SUV_MODELS.some(m => modelLower.includes(m))) return 'suv';
-
-    return '';
-}
-
-/**
- * Determine vehicle category (compact, medium, etc.)
- */
-function determineCategory(model: string, bodyType: string, price: number): string {
-    const modelLower = model.toLowerCase();
-
-    if (bodyType === 'sedan') {
-        if (SEDAN_COMPACT_MODELS.some(m => modelLower.includes(m)) || price <= 60000) {
-            return 'compacto';
-        }
-        if (SEDAN_MEDIUM_MODELS.some(m => modelLower.includes(m)) || price > 60000) {
-            return 'medio';
-        }
-    }
-
-    if (bodyType === 'hatch') {
-        return price <= 40000 ? 'popular' : 'compacto';
-    }
-
-    return '';
-}
 
 /**
  * Detect price adjustment intent from message
@@ -162,36 +93,6 @@ function buildSearchQuery(bodyType: string, category: string): string {
     return 'carro usado';
 }
 
-/**
- * Build standard response
- */
-function buildResponse(
-    response: string,
-    preferences: Partial<CustomerProfile>,
-    options: {
-        needsMoreInfo?: string[];
-        canRecommend?: boolean;
-        recommendations?: VehicleRecommendation[];
-        nextMode?: string;
-        startTime: number;
-        confidence?: number;
-    }
-): ConversationResponse {
-    return {
-        response,
-        extractedPreferences: preferences,
-        needsMoreInfo: options.needsMoreInfo || [],
-        canRecommend: options.canRecommend ?? false,
-        recommendations: options.recommendations,
-        nextMode: options.nextMode || 'discovery',
-        metadata: {
-            processingTime: Date.now() - options.startTime,
-            confidence: options.confidence ?? 0.9,
-            llmUsed: 'gpt-4o-mini',
-        },
-    } as ConversationResponse;
-}
-
 // ============================================================================
 // MAIN HANDLER
 // ============================================================================
@@ -230,7 +131,8 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
     const priceRange = calculatePriceRange(referencePrice, userBudget, priceIntent);
 
     // 3. Infer body type
-    const bodyType = inferBodyType(firstVehicle.model, firstVehicle.bodyType);
+    const bodyTypeInfo = inferBodyType(firstVehicle.model, firstVehicle.bodyType);
+    const bodyType = bodyTypeInfo ? bodyTypeInfo.type : '';
     const category = determineCategory(firstVehicle.model, bodyType, referencePrice);
 
     // 4. Build search query

@@ -20,6 +20,7 @@ import {
     detectAffirmativeResponse,
     detectNegativeResponse,
 } from '../intent-detector';
+import { buildResponse } from '../utils/response-builder';
 
 /**
  * Context for suggestion response handling
@@ -51,39 +52,7 @@ export interface SuggestionHandlerResult {
     continueProcessing?: boolean;
 }
 
-// ============================================================================
-// HELPER: Build standard response
-// ============================================================================
-
-function buildResponse(
-    response: string,
-    preferences: Partial<CustomerProfile>,
-    options: {
-        needsMoreInfo?: string[];
-        canRecommend?: boolean;
-        recommendations?: any[];
-        nextMode?: string;
-        startTime: number;
-        confidence?: number;
-        llmUsed?: string;
-        extraMetadata?: Record<string, any>;
-    }
-): ConversationResponse {
-    return {
-        response,
-        extractedPreferences: preferences,
-        needsMoreInfo: options.needsMoreInfo || [],
-        canRecommend: options.canRecommend ?? false,
-        recommendations: options.recommendations,
-        nextMode: options.nextMode || 'discovery',
-        metadata: {
-            processingTime: Date.now() - options.startTime,
-            confidence: options.confidence ?? 0.9,
-            llmUsed: options.llmUsed || 'rule-based',
-            ...options.extraMetadata,
-        },
-    } as ConversationResponse;
-}
+// buildResponse imported from utils
 
 // ============================================================================
 // SUB-HANDLERS
