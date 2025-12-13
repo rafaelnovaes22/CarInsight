@@ -116,22 +116,6 @@ export class VehicleExpertAgent {
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
 
   /**
-   * Extract trade-in vehicle info from message
-   * @deprecated Use extractTradeInInfo from './vehicle-expert/extractors' instead
-   */
-  private extractTradeInInfo(message: string) {
-    return extractTradeInInfo(message);
-  }
-
-  /**
-   * Infer brand from model name
-   * @deprecated Use inferBrandFromModel from './vehicle-expert/extractors' instead
-   */
-  private inferBrandFromModel(model: string): string | undefined {
-    return inferBrandFromModel(model);
-  }
-
-  /**
    * Main chat interface - processes user message and generates response
    */
   async chat(userMessage: string, context: ConversationContext): Promise<ConversationResponse> {
@@ -242,7 +226,7 @@ export class VehicleExpertAgent {
           extractedPreferences: {
             ...extracted.extracted,
             hasTradeIn: true,
-            tradeInBrand: this.inferBrandFromModel(exactMatch.model),
+            tradeInBrand: inferBrandFromModel(exactMatch.model),
             tradeInModel: exactMatch.model.toLowerCase(),
             tradeInYear: exactMatch.year,
             // Clear any model/year that might have been extracted as desired vehicle
@@ -267,7 +251,7 @@ export class VehicleExpertAgent {
         const lastShownVehicles = context.profile!._lastShownVehicles!;
         const selectedVehicle = lastShownVehicles[0];
         const selectedVehicleName = `${selectedVehicle.brand} ${selectedVehicle.model} ${selectedVehicle.year}`;
-        const tradeInBrand = this.inferBrandFromModel(exactMatch.model);
+        const tradeInBrand = inferBrandFromModel(exactMatch.model);
         const tradeInText = `${tradeInBrand ? capitalize(tradeInBrand) + ' ' : ''}${capitalize(exactMatch.model)} ${exactMatch.year}`;
 
         logger.info(
@@ -381,10 +365,9 @@ export class VehicleExpertAgent {
               (a, b) => b - a
             );
 
-            const formattedResponse = await this.formatRecommendations(
+            const formattedResponse = await formatRecommendationsUtil(
               exactResults,
               updatedProfile,
-              context,
               'specific'
             );
 
@@ -519,10 +502,9 @@ export class VehicleExpertAgent {
         if (isYes) {
           const pending = context.profile._pendingSimilarResults || [];
           if (pending.length > 0) {
-            const formattedResponse = await this.formatRecommendations(
+            const formattedResponse = await formatRecommendationsUtil(
               pending,
               updatedProfile,
-              context,
               'similar'
             );
 
@@ -589,7 +571,7 @@ export class VehicleExpertAgent {
 
       if (awaitingTradeInDetails && lastShownVehicles && lastShownVehicles.length > 0) {
         // Extract trade-in vehicle info (model, year, km)
-        const tradeInInfo = this.extractTradeInInfo(userMessage);
+        const tradeInInfo = extractTradeInInfo(userMessage);
 
         if (tradeInInfo.model || tradeInInfo.km) {
           logger.info({ userMessage, tradeInInfo }, 'Processing trade-in vehicle details');
@@ -1063,10 +1045,9 @@ export class VehicleExpertAgent {
 
           if (newResults.length > 0) {
             // Found similar vehicles - show them directly
-            const formattedResponse = await this.formatRecommendations(
+            const formattedResponse = await formatRecommendationsUtil(
               newResults.slice(0, 5),
               updatedProfile,
-              context,
               'similar' // Tipo 'similar' não mostra % match
             );
 
@@ -1191,7 +1172,7 @@ export class VehicleExpertAgent {
             const matchingResults = results.filter(r => r.vehicle.year === selectedYear);
 
             if (matchingResults.length > 0) {
-              const formattedResponse = await this.formatRecommendations(
+              const formattedResponse = await formatRecommendationsUtil(
                 matchingResults,
                 {
                   ...updatedProfile,
@@ -1199,7 +1180,6 @@ export class VehicleExpertAgent {
                   _waitingForSuggestionResponse: false,
                   _searchedItem: undefined,
                 },
-                context,
                 'specific' // Usuário escolheu um ano alternativo - busca específica
               );
 
@@ -1262,10 +1242,9 @@ export class VehicleExpertAgent {
           });
 
           if (uberXVehicles.length > 0) {
-            const formattedResponse = await this.formatRecommendations(
+            const formattedResponse = await formatRecommendationsUtil(
               uberXVehicles,
               updatedProfile,
-              context,
               'recommendation'
             );
 
@@ -1368,7 +1347,7 @@ export class VehicleExpertAgent {
             const matchingResults = results.filter(r => r.vehicle.year === firstAvailableYear);
 
             if (matchingResults.length > 0) {
-              const formattedResponse = await this.formatRecommendations(
+              const formattedResponse = await formatRecommendationsUtil(
                 matchingResults,
                 {
                   ...updatedProfile,
@@ -1376,7 +1355,6 @@ export class VehicleExpertAgent {
                   _waitingForSuggestionResponse: false,
                   _searchedItem: undefined,
                 },
-                context,
                 'specific' // Busca específica do ano alternativo
               );
 
@@ -1435,10 +1413,9 @@ export class VehicleExpertAgent {
               });
 
               if (results.length > 0) {
-                const formattedResponse = await this.formatRecommendations(
+                const formattedResponse = await formatRecommendationsUtil(
                   results,
                   altProfile,
-                  context,
                   'recommendation'
                 );
                 return {
@@ -1605,10 +1582,9 @@ export class VehicleExpertAgent {
         );
 
         if (matchingResults.length > 0) {
-          const formattedResponse = await this.formatRecommendations(
+          const formattedResponse = await formatRecommendationsUtil(
             matchingResults,
             updatedProfile,
-            context,
             'specific' // Usuário pediu modelo/ano específico
           );
 
@@ -1980,12 +1956,12 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
         }
 
         // Regular question - Answer using RAG
-        const answer = await this.answerQuestion(userMessage, context, updatedProfile);
+        const answer = await answerQuestionUtil(userMessage, context, updatedProfile);
 
         return {
           response: answer,
           extractedPreferences: extracted.extracted,
-          needsMoreInfo: this.identifyMissingInfo(updatedProfile),
+          needsMoreInfo: identifyMissingInfoUtil(updatedProfile),
           canRecommend: false,
           nextMode: context.mode, // Stay in current mode
           metadata: {
@@ -1997,7 +1973,7 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
       }
 
       // 6. Assess if we're ready to recommend
-      const readiness = this.assessReadiness(updatedProfile, context);
+      const readiness = assessReadinessUtil(updatedProfile, context);
 
       if (readiness.canRecommend) {
         // Check recent USER messages for pickup keywords before recommendations
@@ -2119,10 +2095,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           );
         }
 
-        const formattedResponse = await this.formatRecommendations(
+        const formattedResponse = await formatRecommendationsUtil(
           filteredRecommendations,
           updatedProfile,
-          context,
           'recommendation' // Fluxo de recomendação personalizada
         );
 
@@ -2154,10 +2129,10 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       }
 
       // 7. Continue conversation - ask next contextual question
-      const nextQuestion = await this.generateNextQuestion({
+      const nextQuestion = await generateNextQuestionUtil({
         profile: updatedProfile,
         missingFields: readiness.missingRequired,
-        context: this.summarizeContext(context),
+        context: summarizeContextUtil(context),
       });
 
       return {
@@ -2193,25 +2168,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
   // detectAffirmativeResponse, detectNegativeResponse, detectPostRecommendationIntent)
   // have been moved to ./vehicle-expert/intent-detector.ts
 
-  /**
-   * Answer user's question using RAG
-   * @deprecated Use answerQuestion from './vehicle-expert/processors' instead
-   */
-  private async answerQuestion(
-    question: string,
-    context: ConversationContext,
-    profile: Partial<CustomerProfile>
-  ): Promise<string> {
-    return answerQuestionUtil(question, context, profile);
-  }
 
-  /**
-   * Generate next contextual question to ask the user
-   * @deprecated Use generateNextQuestion from './vehicle-expert/processors' instead
-   */
-  private async generateNextQuestion(options: QuestionGenerationOptions): Promise<string> {
-    return generateNextQuestionUtil(options);
-  }
 
   /**
    * Get vehicle recommendations based on profile
@@ -2226,7 +2183,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
   }> {
     try {
       // Build search query
-      const query = this.buildSearchQuery(profile);
+      const query = buildSearchQueryUtil(profile);
 
       // Detect Uber requirements from profile
       const isUberBlack =
@@ -2535,66 +2492,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
     }
   }
 
-  /**
-   * Format recommendations into natural language message
-   * @deprecated Use formatRecommendations from './vehicle-expert/formatters' instead
-   */
-  private async formatRecommendations(
-    recommendations: VehicleRecommendation[],
-    profile: Partial<CustomerProfile>,
-    context: ConversationContext,
-    searchType: 'specific' | 'similar' | 'recommendation' = 'recommendation'
-  ): Promise<string> {
-    return formatRecommendationsUtil(recommendations, profile, searchType);
-  }
 
-  /**
-   * Generate intro for recommendations based on profile and search type
-   * @deprecated Use generateRecommendationIntro from './vehicle-expert/formatters' instead
-   */
-  private generateRecommendationIntro(
-    profile: Partial<CustomerProfile>,
-    count: number,
-    searchType: 'specific' | 'similar' | 'recommendation' = 'recommendation',
-    firstVehicle?: { brand: string; model: string; year: number }
-  ): string {
-    return generateRecommendationIntroUtil(profile, count, searchType, firstVehicle);
-  }
-
-  /**
-   * Build search query from profile
-   * @deprecated Use buildSearchQuery from './vehicle-expert/builders' instead
-   */
-  private buildSearchQuery(profile: Partial<CustomerProfile>): VehicleSearchQuery {
-    return buildSearchQueryUtil(profile);
-  }
-
-  /**
-   * Assess if we have enough information to recommend vehicles
-   * @deprecated Use assessReadiness from './vehicle-expert/assessors' instead
-   */
-  private assessReadiness(
-    profile: Partial<CustomerProfile>,
-    context: ConversationContext
-  ): ReadinessAssessment {
-    return assessReadinessUtil(profile, context);
-  }
-
-  /**
-   * Identify what information is still missing
-   * @deprecated Use identifyMissingInfo from './vehicle-expert/assessors' instead
-   */
-  private identifyMissingInfo(profile: Partial<CustomerProfile>): string[] {
-    return identifyMissingInfoUtil(profile);
-  }
-
-  /**
-   * Summarize conversation context for LLM
-   * @deprecated Use summarizeContext from './vehicle-expert/assessors' instead
-   */
-  private summarizeContext(context: ConversationContext): string {
-    return summarizeContextUtil(context);
-  }
 }
 
 // Singleton export
