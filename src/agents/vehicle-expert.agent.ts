@@ -82,8 +82,10 @@ import {
   routePostRecommendationIntent,
   isFinancingResponse,
   handleFinancingResponse,
+  handleWantOthers,
   type PostRecommendationContext,
   type ShownVehicle,
+  type WantOthersContext,
 } from './vehicle-expert/handlers';
 
 /**
@@ -755,276 +757,19 @@ export class VehicleExpertAgent {
             )
           )
         ) {
-          // User wants to see other options - search for similar vehicles directly
-          logger.info(
-            { userMessage, lastShownVehicles, extractedBudget: extracted.extracted.budget },
-            'User wants other options after seeing recommendation'
-          );
+          // Delegate to want-others handler
+          const wantOthersCtx: WantOthersContext = {
+            userMessage,
+            lastShownVehicles: lastShownVehicles as ShownVehicle[],
+            lastSearchType,
+            extracted,
+            updatedProfile,
+            startTime,
+          };
 
-          const firstVehicle = lastShownVehicles[0];
-          const wasSpecificSearch = lastSearchType === 'specific';
-
-          // Get vehicle characteristics
-          const referencePrice = firstVehicle.price;
-          const userBudget = extracted.extracted.budget || extracted.extracted.budgetMax;
-          // Use user budget if provided, otherwise stay within 30% of original price
-          let searchMaxPrice = userBudget || Math.round(referencePrice * 1.3);
-          let searchMinPrice = Math.round(referencePrice * 0.7); // At least 30% cheaper
-
-          // Check for price adjustment intent
-          const msgLower = userMessage.toLowerCase();
-          const isCheaper =
-            /barato|em conta|menos|menor|acess[íi]vel|abaixo/i.test(msgLower) &&
-            !msgLower.includes('menos caro de manter'); // avoid false positives
-          const isExpensive =
-            /caro|alto|melhor|maior|acima|top|premium/i.test(msgLower) &&
-            !msgLower.includes('muito caro'); // avoid "achei muito caro" interpreted as wanting expensive
-
-          if (isCheaper) {
-            logger.info('User specifically asked for CHEAPER options');
-            searchMaxPrice = Math.min(referencePrice, userBudget || referencePrice); // Cap at current price
-            searchMinPrice = Math.round(referencePrice * 0.5); // Allow much lower
-          } else if (isExpensive) {
-            logger.info('User specifically asked for BETTER/MORE EXPENSIVE options');
-            searchMinPrice = referencePrice; // Start at current price
-            searchMaxPrice = userBudget || Math.round(referencePrice * 1.8); // Allow higher
-          }
-
-          const referenceBrand = firstVehicle.brand;
-          const referenceModel = firstVehicle.model;
-          const referenceYear = firstVehicle.year;
-          const referenceBodyType = (firstVehicle as any).bodyType?.toLowerCase() || '';
-
-          // Determine body type for search based on vehicle type or infer from model
-          let bodyTypeKeyword = '';
-          let vehicleCategory = ''; // compacto, medio, etc.
-
-          if (referenceBodyType.includes('sedan')) {
-            bodyTypeKeyword = 'sedan';
-          } else if (referenceBodyType.includes('hatch')) {
-            bodyTypeKeyword = 'hatch';
-          } else if (referenceBodyType.includes('suv')) {
-            bodyTypeKeyword = 'suv';
-          } else if (referenceBodyType.includes('pickup')) {
-            bodyTypeKeyword = 'pickup';
-          } else {
-            // Infer from known models
-            const sedanModels = [
-              'voyage',
-              'prisma',
-              'onix plus',
-              'cronos',
-              'virtus',
-              'hb20s',
-              'city',
-              'civic',
-              'corolla',
-              'yaris sedan',
-              'logan',
-              'versa',
-              'sentra',
-            ];
-            const hatchModels = [
-              'gol',
-              'fox',
-              'up',
-              'polo',
-              'onix',
-              'argo',
-              'mobi',
-              'uno',
-              'hb20',
-              'kwid',
-              'sandero',
-              'march',
-              'fit',
-              'ka',
-              'celta',
-              'palio',
-            ];
-            const suvModels = [
-              'tcross',
-              't-cross',
-              'nivus',
-              'tracker',
-              'creta',
-              'hrv',
-              'hr-v',
-              'kicks',
-              'duster',
-              'captur',
-              'renegade',
-              'compass',
-              'tucson',
-              'tiggo',
-            ];
-
-            const modelLower = referenceModel.toLowerCase();
-            if (sedanModels.some(m => modelLower.includes(m))) {
-              bodyTypeKeyword = 'sedan';
-            } else if (hatchModels.some(m => modelLower.includes(m))) {
-              bodyTypeKeyword = 'hatch';
-            } else if (suvModels.some(m => modelLower.includes(m))) {
-              bodyTypeKeyword = 'suv';
-            }
-          }
-
-          // Determine vehicle category based on price range for more specific search
-          // Sedans compactos: Voyage, Prisma, Logan, Versa, HB20S (~35-55k)
-          // Sedans médios: Cruze, Focus, Civic, Corolla, Sentra (~55-90k)
-          const sedanCompactModels = [
-            'voyage',
-            'prisma',
-            'logan',
-            'versa',
-            'hb20s',
-            'cronos',
-            'virtus',
-            'onix plus',
-          ];
-          const sedanMediumModels = [
-            'cruze',
-            'focus',
-            'civic',
-            'corolla',
-            'sentra',
-            'jetta',
-            'city',
-          ];
-          const modelLower = referenceModel.toLowerCase();
-
-          if (bodyTypeKeyword === 'sedan') {
-            if (sedanCompactModels.some(m => modelLower.includes(m)) || referencePrice <= 60000) {
-              vehicleCategory = 'compacto';
-            } else if (
-              sedanMediumModels.some(m => modelLower.includes(m)) ||
-              referencePrice > 60000
-            ) {
-              vehicleCategory = 'medio';
-            }
-          } else if (bodyTypeKeyword === 'hatch') {
-            if (referencePrice <= 40000) {
-              vehicleCategory = 'popular';
-            } else {
-              vehicleCategory = 'compacto';
-            }
-          }
-
-          // Build search query focused on same TYPE and CATEGORY of vehicle
-          let searchQuery = '';
-          if (bodyTypeKeyword && vehicleCategory) {
-            searchQuery = `${bodyTypeKeyword} ${vehicleCategory} usado`;
-          } else if (bodyTypeKeyword) {
-            searchQuery = `${bodyTypeKeyword} usado`;
-          } else {
-            searchQuery = `carro usado`;
-          }
-
-          logger.info(
-            {
-              searchQuery,
-              searchMaxPrice,
-              searchMinPrice,
-              userBudget,
-              referencePrice,
-              bodyTypeKeyword,
-              referenceBodyType,
-            },
-            'Searching for similar vehicles by type'
-          );
-
-          // Search for similar vehicles with same body type
-          const similarResults = await vehicleSearchAdapter.search(searchQuery, {
-            maxPrice: searchMaxPrice,
-            minYear: referenceYear - 5,
-            bodyType: bodyTypeKeyword || undefined,
-            limit: 20,
-          });
-
-          // Filter results to match same body type and exclude already shown
-          const shownVehicleIds = lastShownVehicles.map(v => v.vehicleId);
-          const newResults = similarResults.filter(r => {
-            // Exclude already shown
-            if (shownVehicleIds.includes(r.vehicleId)) return false;
-
-            // If we know the body type, filter by it
-            if (bodyTypeKeyword && r.vehicle.bodyType) {
-              const resultBodyType = r.vehicle.bodyType.toLowerCase();
-              if (!resultBodyType.includes(bodyTypeKeyword)) return false;
-            }
-
-            return true;
-          });
-
-          // Sort by price (most expensive first - benefits dealership)
-          newResults.sort((a, b) => b.vehicle.price - a.vehicle.price);
-
-          if (newResults.length > 0) {
-            // Found similar vehicles - show them directly
-            const formattedResponse = await formatRecommendationsUtil(
-              newResults.slice(0, 5),
-              updatedProfile,
-              'similar' // Tipo 'similar' não mostra % match
-            );
-
-            const intro = wasSpecificSearch
-              ? `Entendi! Aqui estão outras opções similares ao ${referenceBrand} ${referenceModel}:\n\n`
-              : `Sem problemas! Encontrei outras opções para você:\n\n`;
-
-            return {
-              response: intro + formattedResponse.replace(/^.*?\n\n/, ''), // Remove intro duplicada
-              extractedPreferences: {
-                ...extracted.extracted,
-                _showedRecommendation: true,
-                _lastSearchType: 'recommendation' as const,
-                _lastShownVehicles: newResults.slice(0, 5).map(r => ({
-                  vehicleId: r.vehicleId,
-                  brand: r.vehicle.brand,
-                  model: r.vehicle.model,
-                  year: r.vehicle.year,
-                  price: r.vehicle.price,
-                })),
-              },
-              needsMoreInfo: [],
-              canRecommend: true,
-              recommendations: newResults.slice(0, 5),
-              nextMode: 'recommendation',
-              metadata: {
-                processingTime: Date.now() - startTime,
-                confidence: 0.9,
-                llmUsed: 'gpt-4o-mini',
-              },
-            };
-          } else {
-            // No similar vehicles found - ask for preferences but KEEP lastShownVehicles to exclude later
-            const hasBudget = !!(updatedProfile.budget || updatedProfile.budgetMax);
-            const nextQuestion = hasBudget
-              ? `Prefere algum tipo específico (SUV, sedan, hatch) ou tem outra marca em mente?`
-              : `Qual seu orçamento máximo?`;
-
-            const missingInfo = hasBudget ? ['bodyType', 'brand'] : ['budget', 'bodyType'];
-
-            const noSimilarResponse = `Não encontrei mais opções similares ao ${referenceBrand} ${referenceModel} com esses critérios. 🤔\n\n📋 Me conta: ${nextQuestion}`;
-
-            return {
-              response: noSimilarResponse,
-              extractedPreferences: {
-                ...extracted.extracted,
-                _showedRecommendation: false,
-                _lastShownVehicles: lastShownVehicles, // MANTER para excluir depois
-                _lastSearchType: undefined,
-                _waitingForSuggestionResponse: true,
-                _excludeVehicleIds: lastShownVehicles.map(v => v.vehicleId), // IDs a excluir
-              },
-              needsMoreInfo: missingInfo,
-              canRecommend: false,
-              nextMode: 'discovery',
-              metadata: {
-                processingTime: Date.now() - startTime,
-                confidence: 0.8,
-                llmUsed: 'gpt-4o-mini',
-              },
-            };
+          const wantOthersResult = await handleWantOthers(wantOthersCtx);
+          if (wantOthersResult.handled && wantOthersResult.response) {
+            return wantOthersResult.response;
           }
         }
 

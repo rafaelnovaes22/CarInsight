@@ -16,6 +16,7 @@ export { handleSchedule } from './schedule.handler';
 export { handleDetails } from './details.handler';
 export { handleAcknowledgment } from './acknowledgment.handler';
 export { handleInterest } from './interest.handler';
+export { handleWantOthers, type WantOthersContext } from './want-others.handler';
 
 // Import for router
 import { detectPostRecommendationIntent, PostRecommendationIntent } from '../intent-detector';
