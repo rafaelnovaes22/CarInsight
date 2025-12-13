@@ -16,3 +16,7 @@ export {
   type SuggestionResponseContext,
   type SuggestionHandlerResult,
 } from './suggestion-response-handler';
+export {
+  handleSpecificModel,
+  type SpecificModelContext,
+} from './specific-model-handler';
