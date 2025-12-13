@@ -6,3 +6,8 @@
 
 export { answerQuestion, generateNextQuestion } from './question-handler';
 export { handleUberBlackQuestion, type UberHandlerResult } from './uber-handler';
+export {
+  handleTradeInInitial,
+  handleTradeInAfterSelection,
+  type TradeInHandlerResult,
+} from './trade-in-initial-handler';

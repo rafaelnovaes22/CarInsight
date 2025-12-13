@@ -59,6 +59,8 @@ import {
   answerQuestion as answerQuestionUtil,
   generateNextQuestion as generateNextQuestionUtil,
   handleUberBlackQuestion,
+  handleTradeInInitial,
+  handleTradeInAfterSelection,
 } from './vehicle-expert/processors';
 
 // Import intent detection functions
@@ -175,82 +177,29 @@ export class VehicleExpertAgent {
         context.profile?._lastShownVehicles &&
         context.profile._lastShownVehicles.length > 0;
 
-      if (isTradeInContext && exactMatch.model && exactMatch.year && !alreadyHasSelectedVehicle) {
-        // User mentioned a vehicle they OWN - extract as trade-in and ask what they want
-        // ONLY if they haven't already selected a vehicle to buy
-        logger.info(
-          {
-            tradeInModel: exactMatch.model,
-            tradeInYear: exactMatch.year,
-          },
-          'VehicleExpert: Detected trade-in vehicle from initial message'
-        );
-
-        return {
-          response: `Entendi! Você tem um ${exactMatch.model} ${exactMatch.year} para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`,
-          extractedPreferences: {
-            ...extracted.extracted,
-            hasTradeIn: true,
-            tradeInBrand: inferBrandFromModel(exactMatch.model),
-            tradeInModel: exactMatch.model.toLowerCase(),
-            tradeInYear: exactMatch.year,
-            // Clear any model/year that might have been extracted as desired vehicle
-            model: undefined,
-            minYear: undefined,
-          },
-          needsMoreInfo: ['bodyType', 'budget'],
-          canRecommend: false,
-          nextMode: 'discovery',
-          metadata: {
-            processingTime: Date.now() - startTime,
-            confidence: 0.95,
-            llmUsed: 'rule-based',
-            tradeInDetected: true,
-          } as any,
-        };
+      // 2.2. Handle trade-in from initial message (delegated to handler)
+      const tradeInInitialResult = handleTradeInInitial(
+        exactMatch,
+        isTradeInContext,
+        !!alreadyHasSelectedVehicle,
+        extracted,
+        startTime
+      );
+      if (tradeInInitialResult.handled && tradeInInitialResult.response) {
+        return tradeInInitialResult.response;
       }
 
-      // Se o cliente JÁ SELECIONOU um veículo e está mencionando trade-in com modelo+ano,
-      // precisamos redirecionar para o fluxo de trade-in pós-recomendação
-      if (isTradeInContext && exactMatch.model && exactMatch.year && alreadyHasSelectedVehicle) {
-        const lastShownVehicles = context.profile!._lastShownVehicles!;
-        const selectedVehicle = lastShownVehicles[0];
-        const selectedVehicleName = `${selectedVehicle.brand} ${selectedVehicle.model} ${selectedVehicle.year}`;
-        const tradeInBrand = inferBrandFromModel(exactMatch.model);
-        const tradeInText = `${tradeInBrand ? capitalize(tradeInBrand) + ' ' : ''}${capitalize(exactMatch.model)} ${exactMatch.year}`;
-
-        logger.info(
-          {
-            tradeInModel: exactMatch.model,
-            tradeInYear: exactMatch.year,
-            selectedVehicle: selectedVehicleName,
-          },
-          'VehicleExpert: Detected trade-in vehicle AFTER vehicle selection - maintaining context'
-        );
-
-        return {
-          response: `Perfeito! O ${tradeInText} pode entrar na negociação do ${selectedVehicleName}! 🚗🔄\n\n⚠️ O valor do seu carro na troca depende de uma avaliação presencial pela nossa equipe.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInText}\n• Apresentar a proposta final para o ${selectedVehicleName}\n• Tirar todas as suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
-          extractedPreferences: {
-            ...extracted.extracted,
-            hasTradeIn: true,
-            tradeInBrand: tradeInBrand,
-            tradeInModel: exactMatch.model.toLowerCase(),
-            tradeInYear: exactMatch.year,
-            _awaitingTradeInDetails: false,
-            _showedRecommendation: true,
-            _lastShownVehicles: lastShownVehicles,
-          },
-          needsMoreInfo: [],
-          canRecommend: false,
-          nextMode: 'negotiation',
-          metadata: {
-            processingTime: Date.now() - startTime,
-            confidence: 0.95,
-            llmUsed: 'rule-based',
-            tradeInDetected: true,
-            maintainedContext: true,
-          } as any,
-        };
+      // 2.3. Handle trade-in after vehicle selection (delegated to handler)
+      const tradeInAfterResult = handleTradeInAfterSelection(
+        exactMatch,
+        isTradeInContext,
+        !!alreadyHasSelectedVehicle,
+        context.profile?._lastShownVehicles || [],
+        extracted,
+        startTime
+      );
+      if (tradeInAfterResult.handled && tradeInAfterResult.response) {
+        return tradeInAfterResult.response;
       }
 
       if (targetModel && targetYear) {
