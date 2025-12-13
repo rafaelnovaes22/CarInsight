@@ -11,3 +11,8 @@ export {
   handleTradeInAfterSelection,
   type TradeInHandlerResult,
 } from './trade-in-initial-handler';
+export {
+  handleSuggestionResponse,
+  type SuggestionResponseContext,
+  type SuggestionHandlerResult,
+} from './suggestion-response-handler';

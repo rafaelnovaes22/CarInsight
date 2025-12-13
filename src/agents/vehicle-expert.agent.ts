@@ -61,6 +61,8 @@ import {
   handleUberBlackQuestion,
   handleTradeInInitial,
   handleTradeInAfterSelection,
+  handleSuggestionResponse,
+  type SuggestionResponseContext,
 } from './vehicle-expert/processors';
 
 // Import intent detection functions
@@ -1130,292 +1132,32 @@ export class VehicleExpertAgent {
         }
       }
 
-      if (wasWaitingForSuggestionResponse) {
-        // First, check if user is asking a NEW question or making a new request
-        const isNewQuestion = detectUserQuestion(userMessage);
-        const hasNewPreferences =
-          Object.keys(extracted.extracted).length > 0 &&
-          (extracted.extracted.bodyType ||
-            extracted.extracted.brand ||
-            extracted.extracted.model ||
-            extracted.extracted.budget);
+      // 2.6. Handle suggestion response (delegated to handler)
+      const suggestionCtx: SuggestionResponseContext = {
+        userMessage,
+        wasWaitingForSuggestionResponse: !!wasWaitingForSuggestionResponse,
+        waitingForUberXAlternatives: !!context.profile?._waitingForUberXAlternatives,
+        availableYears,
+        searchedItem: context.profile?._searchedItem,
+        extracted,
+        updatedProfile,
+        context,
+        startTime,
+        getAppCategoryName,
+      };
 
-        // Check if user is responding to Uber X/99Pop alternative offer
-        const waitingForUberXAlternatives = context.profile?._waitingForUberXAlternatives;
-        const userAccepts = detectAffirmativeResponse(userMessage);
-        const userDeclines = detectNegativeResponse(userMessage);
+      const suggestionResult = await handleSuggestionResponse(suggestionCtx);
 
-        if (waitingForUberXAlternatives && userAccepts) {
-          // User accepted app alternatives - search for eligible vehicles
-          const appCategory = getAppCategoryName(updatedProfile, 'x');
-          logger.info(`User accepted ${appCategory} alternatives - searching eligible vehicles`);
-
-          const uberXVehicles = await vehicleSearchAdapter.search('', {
-            aptoUber: true,
-            limit: 10,
-          });
-
-          if (uberXVehicles.length > 0) {
-            const formattedResponse = await formatRecommendationsUtil(
-              uberXVehicles,
-              updatedProfile,
-              'recommendation'
-            );
-
-            const intro = `Perfeito! Encontrei ${uberXVehicles.length} veículos aptos para ${appCategory}:\n\n`;
-
-            return {
-              response: intro + formattedResponse,
-              extractedPreferences: {
-                ...extracted.extracted,
-                _waitingForUberXAlternatives: false,
-                _showedRecommendation: true,
-                _lastSearchType: 'recommendation' as const,
-                _lastShownVehicles: uberXVehicles.map(r => ({
-                  vehicleId: r.vehicleId,
-                  brand: r.vehicle.brand,
-                  model: r.vehicle.model,
-                  year: r.vehicle.year,
-                  price: r.vehicle.price,
-                  bodyType: r.vehicle.bodyType,
-                })),
-              },
-              needsMoreInfo: [],
-              canRecommend: true,
-              recommendations: uberXVehicles,
-              nextMode: 'recommendation',
-              metadata: {
-                processingTime: Date.now() - startTime,
-                confidence: 0.9,
-                llmUsed: 'rule-based',
-              },
-            };
-          } else {
-            return {
-              response: `Desculpe, no momento também não temos veículos aptos para ${appCategory} disponíveis. 😕\n\nPosso te ajudar a encontrar outro tipo de veículo?`,
-              extractedPreferences: { ...extracted.extracted, _waitingForUberXAlternatives: false },
-              needsMoreInfo: ['budget', 'usage'],
-              canRecommend: false,
-              nextMode: 'discovery',
-              metadata: {
-                processingTime: Date.now() - startTime,
-                confidence: 0.9,
-                llmUsed: 'gpt-4o-mini',
-              },
-            };
-          }
+      if (suggestionResult.handled) {
+        // If handler returned a response, return it
+        if (suggestionResult.response) {
+          return suggestionResult.response;
         }
 
-        // If user is asking a question or has new preferences, process normally (don't treat as yes/no)
-        if (isNewQuestion || hasNewPreferences) {
-          logger.info(
-            {
-              userMessage,
-              isNewQuestion,
-              hasNewPreferences,
-              extracted: extracted.extracted,
-            },
-            'User asked new question while waiting for suggestion response, processing normally'
-          );
-
-          // Clear the waiting flag and continue to normal processing
-          updatedProfile._waitingForSuggestionResponse = false;
-          updatedProfile._searchedItem = undefined;
-          updatedProfile._availableYears = undefined;
-          updatedProfile._waitingForUberXAlternatives = false;
-          // Don't return here - let the flow continue to handle the new question/request
-        } else if (userAccepts) {
-          const searchedItem = context.profile?._searchedItem;
-          const wasLookingForSevenSeater =
-            searchedItem?.includes('lugares') || context.profile?.minSeats;
-          const hasAvailableYears = availableYears && availableYears.length > 0;
-
-          logger.info(
-            {
-              userMessage,
-              searchedItem,
-              wasLookingForSevenSeater,
-              hasAvailableYears,
-              availableYears,
-            },
-            'User accepted suggestion'
-          );
-
-          // Se temos anos alternativos disponíveis, mostrar o carro do primeiro ano diretamente
-          if (hasAvailableYears && searchedItem) {
-            const firstAvailableYear = availableYears[0]; // Ano mais recente
-
-            logger.info(
-              { searchedItem, firstAvailableYear },
-              'User accepted to see alternative year - showing vehicle directly'
-            );
-
-            // Buscar o veículo do ano alternativo
-            const results = await vehicleSearchAdapter.search(searchedItem, {
-              model: searchedItem,
-              minYear: firstAvailableYear,
-              limit: 5,
-            });
-
-            // Filtrar para o ano específico
-            const matchingResults = results.filter(r => r.vehicle.year === firstAvailableYear);
-
-            if (matchingResults.length > 0) {
-              const formattedResponse = await formatRecommendationsUtil(
-                matchingResults,
-                {
-                  ...updatedProfile,
-                  _availableYears: undefined,
-                  _waitingForSuggestionResponse: false,
-                  _searchedItem: undefined,
-                },
-                'specific' // Busca específica do ano alternativo
-              );
-
-              return {
-                response: formattedResponse,
-                extractedPreferences: {
-                  ...updatedProfile,
-                  minYear: firstAvailableYear,
-                  _availableYears: undefined,
-                  _waitingForSuggestionResponse: false,
-                  _searchedItem: undefined,
-                  _showedRecommendation: true,
-                  _lastSearchType: 'specific' as const,
-                  _lastShownVehicles: matchingResults.map(r => ({
-                    vehicleId: r.vehicleId,
-                    brand: r.vehicle.brand,
-                    model: r.vehicle.model,
-                    year: r.vehicle.year,
-                    price: r.vehicle.price,
-                  })),
-                },
-                needsMoreInfo: [],
-                canRecommend: true,
-                recommendations: matchingResults,
-                nextMode: 'recommendation',
-                metadata: {
-                  processingTime: Date.now() - startTime,
-                  confidence: 0.95,
-                  llmUsed: 'gpt-4o-mini',
-                },
-              };
-            }
-          }
-
-          // Se estava procurando 7 lugares, oferecer alternativas espaçosas
-          if (wasLookingForSevenSeater) {
-            const existingBudget = extracted.extracted.budget || context.profile?.budget;
-
-            // Se já temos orçamento, realizar a busca imediatamente
-            if (existingBudget) {
-              const altProfile = {
-                ...extracted.extracted,
-                budget: existingBudget,
-                _waitingForSuggestionResponse: false,
-                _searchedItem: undefined,
-                minSeats: undefined, // Remover requisito de 7 lugares
-                people: undefined, // Remover referência a 7 pessoas (agora são 5 lugares)
-                _acceptedFiveSeaterAlternative: true, // Flag para não mostrar "X pessoas" na recomendação
-                bodyType: 'suv' as const,
-              };
-
-              const results = await vehicleSearchAdapter.search('suv espaçoso', {
-                bodyType: 'suv',
-                limit: 5,
-                maxPrice: existingBudget,
-              });
-
-              if (results.length > 0) {
-                const formattedResponse = await formatRecommendationsUtil(
-                  results,
-                  altProfile,
-                  'recommendation'
-                );
-                return {
-                  response:
-                    `Entendido! Considerando seu orçamento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opções de SUVs espaçosos:\n\n` +
-                    formattedResponse,
-                  extractedPreferences: altProfile,
-                  needsMoreInfo: [],
-                  canRecommend: true,
-                  recommendations: results,
-                  nextMode: 'recommendation',
-                  metadata: {
-                    processingTime: Date.now() - startTime,
-                    confidence: 0.9,
-                    llmUsed: 'rule-based',
-                  },
-                };
-              }
-            }
-
-            // Caso contrário, pede orçamento
-            const altProfile = {
-              ...extracted.extracted,
-              _waitingForSuggestionResponse: false,
-              _searchedItem: undefined,
-              minSeats: undefined, // Remover requisito de 7 lugares
-              people: undefined, // Remover referência a 7 pessoas (agora são 5 lugares)
-              _acceptedFiveSeaterAlternative: true, // Flag para não mostrar "X pessoas" na recomendação
-              bodyType: 'suv' as const, // Mostrar SUVs espaçosos como alternativa
-              priorities: [...(extracted.extracted.priorities || []), 'espaco'],
-            };
-
-            return {
-              response: `Ótimo! Vou te mostrar SUVs e opções espaçosas que temos disponíveis! 🚗\n\n💰 Até quanto você pretende investir?`,
-              extractedPreferences: altProfile,
-              needsMoreInfo: ['budget'],
-              canRecommend: false,
-              nextMode: 'clarification',
-              metadata: {
-                processingTime: Date.now() - startTime,
-                confidence: 0.9,
-                llmUsed: 'gpt-4o-mini',
-              },
-            };
-          }
-
-          // Start asking questions to build profile for suggestions
-          return {
-            response: `Ótimo! Vou te fazer algumas perguntas rápidas para encontrar o carro ideal pra você. 🚗\n\n💰 Até quanto você pretende investir no carro?`,
-            extractedPreferences: {
-              ...extracted.extracted,
-              _waitingForSuggestionResponse: false,
-              _searchedItem: undefined,
-            },
-            needsMoreInfo: ['budget', 'usage'],
-            canRecommend: false,
-            nextMode: 'discovery',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.9,
-              llmUsed: 'gpt-4o-mini',
-            },
-          };
-        } else if (userDeclines) {
-          // User explicitly declined
-          return {
-            response: `Sem problemas! 🙂 Se mudar de ideia ou quiser ver outros veículos, é só me chamar!`,
-            extractedPreferences: {
-              ...extracted.extracted,
-              _waitingForSuggestionResponse: false,
-              _searchedItem: undefined,
-            },
-            needsMoreInfo: [],
-            canRecommend: false,
-            nextMode: 'discovery',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.8,
-              llmUsed: 'gpt-4o-mini',
-            },
-          };
+        // If handler says to continue processing, apply profile updates
+        if (suggestionResult.continueProcessing && suggestionResult.profileUpdates) {
+          Object.assign(updatedProfile, suggestionResult.profileUpdates);
         }
-        // If neither yes nor no, continue processing normally
-        updatedProfile._waitingForSuggestionResponse = false;
-        updatedProfile._searchedItem = undefined;
-        updatedProfile._waitingForUberXAlternatives = false;
       }
 
       // 3. Check if user mentioned specific model (e.g., "Spin", "Civic") or brand (e.g., "Jeep")
