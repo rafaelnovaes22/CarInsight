@@ -83,6 +83,8 @@ export class LangGraphConversation {
         },
         'LangGraph: Error processing message'
       );
+      console.error('CRITICAL LANGGRAPH ERROR:', error);
+      if (error.stack) console.error(error.stack);
 
       return {
         response: 'Desculpe, tive um problema ao processar sua mensagem. Pode reformular? 🤔',
