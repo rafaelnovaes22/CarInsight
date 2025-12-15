@@ -1,4 +1,5 @@
-BaseCheckpointSaver,
+import {
+    BaseCheckpointSaver,
     Checkpoint,
     CheckpointTuple,
     CheckpointListOptions,
