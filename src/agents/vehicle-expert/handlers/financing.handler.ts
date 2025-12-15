@@ -65,6 +65,33 @@ _Digite "vendedor" para falar com nossa equipe!_`,
     };
   }
 
+  // Se tem intenção de troca mas não temos os dados ainda
+  if (updatedProfile.hasTradeIn || extracted.extracted.hasTradeIn) {
+    return {
+      handled: true,
+      response: {
+        response: `Ótimo! Financiamento do ${modelName}! 🏦\n\nComo você tem um carro na troca, ele entra como entrada! 🚗🔄\n\nMe conta:\n• *Qual é o modelo e ano do seu carro?*\n• *Qual a quilometragem aproximada?*`,
+        extractedPreferences: {
+          ...extracted.extracted,
+          wantsFinancing: true,
+          hasTradeIn: true,
+          _showedRecommendation: true,
+          _lastShownVehicles: lastShownVehicles,
+          _awaitingTradeInDetails: true, // Switch to waiting for trade-in details
+          _awaitingFinancingDetails: false,
+        },
+        needsMoreInfo: ['tradeInModel', 'tradeInYear'],
+        canRecommend: false,
+        nextMode: 'negotiation',
+        metadata: {
+          processingTime: Date.now() - startTime,
+          confidence: 0.95,
+          llmUsed: 'rule-based',
+        },
+      },
+    };
+  }
+
   // Se não tem troca, perguntar sobre entrada em dinheiro ou troca
   return {
     handled: true,
