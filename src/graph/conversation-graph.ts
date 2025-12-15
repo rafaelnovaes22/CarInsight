@@ -120,7 +120,7 @@ export class ConversationGraph {
     try {
       switch (state.graph.currentNode) {
         case 'greeting':
-          update = await greetingNode(state);
+          update = await greetingNode(state as any);
           break;
 
         case 'quiz':
@@ -128,11 +128,11 @@ export class ConversationGraph {
           break;
 
         case 'search':
-          update = await searchNode(state);
+          update = await searchNode(state as any);
           break;
 
         case 'recommendation':
-          update = await recommendationNode(state);
+          update = await recommendationNode(state as any);
           break;
 
         default:

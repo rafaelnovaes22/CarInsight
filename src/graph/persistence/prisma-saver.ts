@@ -5,7 +5,7 @@ import {
     SerializerProtocol,
     CheckpointListOptions,
     PendingWrite
-} from "@langchain/langgraph";
+} from "@langchain/langgraph-checkpoint";
 import { RunnableConfig } from "@langchain/core/runnables";
 import { prisma } from "../../lib/prisma";
 import { logger } from "../../lib/logger";
@@ -19,46 +19,79 @@ export class PrismaCheckpointer extends BaseCheckpointSaver {
         const thread_id = config.configurable?.thread_id;
         const checkpoint_ns = config.configurable?.checkpoint_ns || ""; // Default namespace
 
-        if (!thread_id) return undefined;
+        if (!thread_id) {
+            return undefined;
+        }
+
+        const dbCheckpoint = await prisma.langGraphCheckpoint.findFirst({
+            where: {
+                thread_id: thread_id,
+                checkpoint_ns: checkpoint_ns,
+            },
+            orderBy: {
+                checkpoint_id: 'desc' // Uses string sort, might need better versioning logic if strictly required by langgraph
+            }
+        });
+
+        if (!dbCheckpoint) {
+            return undefined;
+        }
 
         try {
-            // Find the latest checkpoint for this thread
-            const record = await prisma.langGraphCheckpoint.findFirst({
-                where: {
-                    thread_id,
-                    checkpoint_ns
-                },
-                orderBy: { updatedAt: 'desc' } // Get latest
-            });
-
-            if (!record) return undefined;
-
-            // Extract checkpoint data
-            const checkpoint: Checkpoint = record.checkpoint as any;
-            const metadata = record.metadata as any;
-            const parentConfig = record.parent_checkpoint_id ? {
-                configurable: {
-                    thread_id,
-                    checkpoint_ns,
-                    checkpoint_id: record.parent_checkpoint_id
-                }
-            } : undefined;
-
             return {
-                config: {
+                config,
+                checkpoint: dbCheckpoint.checkpoint as any,
+                metadata: dbCheckpoint.metadata ? (dbCheckpoint.metadata as any) : undefined,
+                parentConfig: dbCheckpoint.parent_checkpoint_id ? {
                     configurable: {
                         thread_id,
                         checkpoint_ns,
-                        checkpoint_id: record.checkpoint_id,
+                        checkpoint_id: dbCheckpoint.parent_checkpoint_id
                     }
-                },
-                checkpoint,
-                metadata,
-                parentConfig
+                } : undefined
             };
-        } catch (err) {
-            logger.error({ err }, "Error getting checkpoint tuple");
+        } catch (error) {
+            logger.error({ error, thread_id }, 'Error parsing checkpoint from DB');
             return undefined;
+        }
+    }
+
+    async *list(config: RunnableConfig, options?: CheckpointListOptions): AsyncGenerator<CheckpointTuple> {
+        const thread_id = config.configurable?.thread_id;
+        const checkpoint_ns = config.configurable?.checkpoint_ns || "";
+
+        if (!thread_id) {
+            return;
+        }
+
+        const checkpoints = await prisma.langGraphCheckpoint.findMany({
+            where: {
+                thread_id: thread_id,
+                checkpoint_ns: checkpoint_ns,
+            },
+            orderBy: {
+                checkpoint_id: 'desc'
+            },
+            take: options?.limit
+        });
+
+        for (const cp of checkpoints) {
+            try {
+                yield {
+                    config: { configurable: { thread_id, checkpoint_ns, checkpoint_id: cp.checkpoint_id } },
+                    checkpoint: cp.checkpoint as any,
+                    metadata: cp.metadata ? (cp.metadata as any) : undefined,
+                    parentConfig: cp.parent_checkpoint_id ? {
+                        configurable: {
+                            thread_id,
+                            checkpoint_ns,
+                            checkpoint_id: cp.parent_checkpoint_id
+                        }
+                    } : undefined
+                };
+            } catch (error) {
+                logger.error({ error, thread_id }, 'Error iterating checkpoints');
+            }
         }
     }
 
@@ -66,53 +99,60 @@ export class PrismaCheckpointer extends BaseCheckpointSaver {
         config: RunnableConfig,
         checkpoint: Checkpoint,
         metadata: Record<string, any>,
-        newVersions: Record<string, any>
+        newVersions: Record<string, string | number>
     ): Promise<RunnableConfig> {
         const thread_id = config.configurable?.thread_id;
         const checkpoint_ns = config.configurable?.checkpoint_ns || "";
+        const checkpoint_id = checkpoint.id;
+        const parent_checkpoint_id = config.configurable?.checkpoint_id;
 
-        if (!thread_id) return config;
-
-        try {
-            await prisma.langGraphCheckpoint.create({
-                data: {
-                    thread_id,
-                    checkpoint_ns,
-                    checkpoint_id: checkpoint.id,
-                    parent_checkpoint_id: config.configurable?.checkpoint_id,
-                    type: 'checkpoint',
-                    checkpoint: checkpoint as any,
-                    metadata: metadata || {}
-                }
-            });
-        } catch (err) {
-            logger.error({ err }, "Error saving checkpoint");
+        if (!thread_id) {
+            throw new Error("Missing thread_id in config");
         }
 
-        return {
-            configurable: {
-                thread_id,
-                checkpoint_ns,
-                checkpoint_id: checkpoint.id,
-            },
-        };
+        try {
+            // Save to Prisma
+            await prisma.langGraphCheckpoint.create({
+                data: {
+                    thread_id: thread_id,
+                    checkpoint_ns: checkpoint_ns,
+                    checkpoint_id: checkpoint_id,
+                    parent_checkpoint_id: parent_checkpoint_id,
+                    checkpoint: checkpoint as any,
+                    metadata: metadata as any,
+                    type: 'checkpoint'
+                }
+            });
+
+            return {
+                configurable: {
+                    thread_id,
+                    checkpoint_ns,
+                    checkpoint_id
+                }
+            };
+        } catch (error) {
+            logger.error({ error, thread_id }, 'Error saving checkpoint');
+            throw error;
+        }
     }
 
+    // Use 'any' to bypass strict signature mismatch if necessary, or match the exact signature expected by BaseCheckpointSaver
     async putWrites(
         config: RunnableConfig,
         writes: PendingWrite[],
         taskId: string
     ): Promise<void> {
-        // TODO: Implement writes persistence (blobs) if needed for advanced features.
-        // For basic conversational persistence, main checkpoint is usually enough.
+        // Not strictly implemented for MVP
     }
 
-    async *list(
-        config: RunnableConfig,
-        options?: CheckpointListOptions
-    ): AsyncGenerator<CheckpointTuple> {
-        // Basic implementation - returning empty for now as listing history isn't critical for MVP flow
-        // A full implementation would query prisma.langGraphCheckpoint.findMany
-        yield* [];
+    // Required by BaseCheckpointSaver in newer @langchain/langgraph versions
+    // Signature might vary slightly by version, using 'any' for config to be safe
+    async deleteThread(threadId: string): Promise<void> {
+        if (threadId) {
+            await prisma.langGraphCheckpoint.deleteMany({
+                where: { thread_id: threadId }
+            });
+        }
     }
 }

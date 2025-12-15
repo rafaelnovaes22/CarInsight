@@ -3,7 +3,7 @@ import { cache } from '../lib/redis';
 import { logger } from '../lib/logger';
 import { guardrails } from './guardrails.service';
 import { conversationGraph } from '../graph/conversation-graph';
-import { langGraphConversation } from '../graph/langgraph-conversation';
+import { LangGraphConversation } from '../graph/langgraph-conversation';
 import { ConversationState } from '../types/state.types';
 import { dataRightsService } from './data-rights.service';
 import { featureFlags } from '../lib/feature-flags';
@@ -270,7 +270,8 @@ Para começar, qual é o seu nome?`;
           currentState = this.initializeState(conversation.id, phoneNumber);
         }
 
-        const result = await langGraphConversation.processMessage(sanitizedMessage, currentState);
+        const langGraph = new LangGraphConversation();
+        const result = await langGraph.processMessage(sanitizedMessage, currentState);
         newState = result.newState;
         response = result.response;
       } else {

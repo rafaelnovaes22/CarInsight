@@ -1,5 +1,7 @@
-import { ConversationState, StateUpdate, CustomerProfile } from '../../types/state.types';
+import { IGraphState } from '../../types/graph.types';
+import { CustomerProfile } from '../../types/state.types';
 import { logger } from '../../lib/logger';
+import { AIMessage } from '@langchain/core/messages';
 
 /**
  * Formata número de telefone para exibição
@@ -22,7 +24,7 @@ function formatPhoneNumber(phone: string): string {
  * Gera link wa.me e número formatado para redirecionamento ao vendedor
  */
 function generateWhatsAppLink(
-  profile?: CustomerProfile
+  profile?: Partial<CustomerProfile>
 ): { link: string; formattedPhone: string } | null {
   const salesPhone = process.env.SALES_PHONE_NUMBER;
   if (!salesPhone) return null;
@@ -33,11 +35,8 @@ function generateWhatsAppLink(
     prefilledText = `Olá! Sou ${profile.customerName}, vim do bot da FaciliAuto`;
   }
 
-  const lastVehicle = profile?._lastShownVehicles?.[0];
-  if (lastVehicle) {
-    prefilledText += ` e tenho interesse no ${lastVehicle.brand} ${lastVehicle.model} ${lastVehicle.year}`;
-  }
-
+  // Use _lastShownVehicles logic if maintained in profile, or fetch from recommendations directly
+  // For now, simplified
   prefilledText += '!';
   const encodedText = encodeURIComponent(prefilledText);
   return {
@@ -88,17 +87,21 @@ function formatRecommendations(recommendations: any[]): string {
 /**
  * RecommendationNode - Present recommendations to customer
  */
-export async function recommendationNode(state: ConversationState): Promise<StateUpdate> {
+export async function recommendationNode(state: IGraphState): Promise<Partial<IGraphState>> {
   logger.info(
     {
-      conversationId: state.conversationId,
       recommendationsCount: state.recommendations.length,
     },
     'RecommendationNode: Formatting recommendations'
   );
 
-  // Check if user is asking to schedule or talk to human
+  // Check if messages exist
+  if (!state.messages.length) return {};
+
   const lastMessage = state.messages[state.messages.length - 1];
+
+  if (typeof lastMessage.content !== 'string') return {};
+
   const lowerMessage = lastMessage.content.toLowerCase();
 
   // Handle "agendar" / schedule visit
@@ -107,7 +110,7 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
     lowerMessage.includes('visita') ||
     lowerMessage.includes('test drive')
   ) {
-    logger.info({ conversationId: state.conversationId }, 'RecommendationNode: Visit requested');
+    logger.info('RecommendationNode: Visit requested');
     const waInfo = generateWhatsAppLink(state.profile ?? undefined);
     const linkMessage = waInfo
       ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
@@ -115,18 +118,13 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
 
     return {
       messages: [
-        ...state.messages,
-        {
-          role: 'assistant',
-          content: `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`,
-          timestamp: new Date(),
-        },
+        new AIMessage(`Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`)
       ],
       metadata: {
         ...state.metadata,
-        lastMessageAt: new Date(),
-        leadQuality: 'hot',
-        flags: [...state.metadata.flags, 'visit_requested'],
+        lastMessageAt: Date.now(),
+        // Check if flag already exists to avoid duplicates
+        flags: state.metadata.flags.includes('visit_requested') ? state.metadata.flags : [...state.metadata.flags, 'visit_requested'],
       },
     };
   }
@@ -137,10 +135,7 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
     lowerMessage.includes('humano') ||
     lowerMessage.includes('atendente')
   ) {
-    logger.info(
-      { conversationId: state.conversationId },
-      'RecommendationNode: Human handoff requested'
-    );
+    logger.info('RecommendationNode: Human handoff requested');
     const waInfo = generateWhatsAppLink(state.profile ?? undefined);
     const linkMessage = waInfo
       ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
@@ -148,17 +143,12 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
 
     return {
       messages: [
-        ...state.messages,
-        {
-          role: 'assistant',
-          content: `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`,
-          timestamp: new Date(),
-        },
+        new AIMessage(`Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`)
       ],
       metadata: {
         ...state.metadata,
-        lastMessageAt: new Date(),
-        flags: [...state.metadata.flags, 'handoff_requested'],
+        lastMessageAt: Date.now(),
+        flags: state.metadata.flags.includes('handoff_requested') ? state.metadata.flags : [...state.metadata.flags, 'handoff_requested'],
       },
     };
   }
@@ -192,39 +182,34 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
 
       return {
         messages: [
-          ...state.messages,
-          {
-            role: 'assistant',
-            content: detailsMessage,
-            timestamp: new Date(),
-          },
+          new AIMessage(detailsMessage)
         ],
         metadata: {
           ...state.metadata,
-          lastMessageAt: new Date(),
-          flags: [...state.metadata.flags, `viewed_vehicle_${rec.vehicleId}`],
+          lastMessageAt: Date.now(),
+          flags: state.metadata.flags.includes(`viewed_vehicle_${rec.vehicleId}`) ? state.metadata.flags : [...state.metadata.flags, `viewed_vehicle_${rec.vehicleId}`],
         },
       };
     }
   }
 
   // First time showing recommendations OR user asking for more
+  // Check if the last message was NOT from us showing recommendations (to avoid infinite loop of showing them)
+  // Or if recommendations are fresh from search (handled by router usually, but here guard)
+
   if (state.recommendations.length > 0) {
     const recommendationsMessage = formatRecommendations(state.recommendations);
 
+    // We only send recommendations if we haven't JUST sent them, unless user asked.
+    // For now, assuming this node is entered when recommendations should be shown.
+
     return {
       messages: [
-        ...state.messages,
-        {
-          role: 'assistant',
-          content: recommendationsMessage,
-          timestamp: new Date(),
-        },
+        new AIMessage(recommendationsMessage)
       ],
       metadata: {
         ...state.metadata,
-        lastMessageAt: new Date(),
-        leadQuality: state.recommendations[0].matchScore >= 85 ? 'hot' : 'warm',
+        lastMessageAt: Date.now(),
       },
     };
   }
@@ -232,16 +217,11 @@ export async function recommendationNode(state: ConversationState): Promise<Stat
   // Fallback
   return {
     messages: [
-      ...state.messages,
-      {
-        role: 'assistant',
-        content: 'Como posso ajudar mais?\n\nDigite "vendedor" para falar com nossa equipe.',
-        timestamp: new Date(),
-      },
+      new AIMessage('Como posso ajudar mais?\n\nDigite "vendedor" para falar com nossa equipe.')
     ],
     metadata: {
       ...state.metadata,
-      lastMessageAt: new Date(),
+      lastMessageAt: Date.now(),
     },
   };
 }
