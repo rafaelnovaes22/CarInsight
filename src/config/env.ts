@@ -26,9 +26,9 @@ const envSchema = z.object({
   // Feature Flags
   ENABLE_CONVERSATIONAL_MODE: z
     .string()
-    .default('false')
+    .default('true') // Enabled by default after migration
     .transform(val => val === 'true'),
-  CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.coerce.number().default(0), // 0-100
+  CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.coerce.number().default(100), // 100% rollout
 
   // Audio Transcription
   ENABLE_AUDIO_TRANSCRIPTION: z

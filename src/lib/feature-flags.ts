@@ -97,7 +97,7 @@ export class FeatureFlagService {
   isEnabled(flagName: string, phoneNumber?: string): boolean {
     // Environment variable based flags
     const envFlags: Record<string, boolean> = {
-      USE_LANGGRAPH: env.ENABLE_CONVERSATIONAL_MODE, // LangGraph is tied to conversational mode
+      USE_LANGGRAPH: true, // Enabled after successful migration (Phase 3)
       ENABLE_CONVERSATIONAL_MODE: env.ENABLE_CONVERSATIONAL_MODE,
     };
 
