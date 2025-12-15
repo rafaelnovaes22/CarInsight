@@ -13,7 +13,9 @@ export type ConversationMode =
   | 'clarification' // Asking contextual questions (messages 3-6)
   | 'ready_to_recommend' // Ready to show vehicles
   | 'recommendation' // Showing vehicle recommendations
-  | 'negotiation' // Discussing trade-in and financing
+  | 'negotiation' // Discussing trade-in and financing (LEGACY)
+  | 'financing' // Dedicated financing flow
+  | 'trade_in' // Dedicated trade-in flow
   | 'refinement'; // Adjusting based on feedback
 
 /**

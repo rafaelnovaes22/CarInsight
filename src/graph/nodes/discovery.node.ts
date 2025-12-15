@@ -39,7 +39,7 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
 
     const context: ConversationContext = {
         conversationId: 'graph-execution', // TODO: Get from config/state if available
-        phoneNumber: 'unknown', // TODO: Get from config
+        phoneNumber: state.phoneNumber || 'unknown',
         mode: 'discovery',
         profile: state.profile || {},
         messages: mappedMessages as any, // Cast to satisfy interface if needed
@@ -68,16 +68,13 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
     // Determine Next Node
     let next = 'discovery'; // Default: stay in discovery/loop
 
-    if (response.canRecommend && response.recommendations && response.recommendations.length > 0) {
+    if (response.nextMode) {
+        // Respect agent's decision (e.g., financing, trade_in, recommendation)
+        next = response.nextMode;
+    } else if (response.canRecommend && response.recommendations && response.recommendations.length > 0) {
         next = 'recommendation';
     } else if (updatedProfile.budget || updatedProfile.usage || updatedProfile.bodyType) {
         // If we have some info but no recs yet, maybe clarify or just loop
-        // In legacy code, it went to 'CLARIFICATION'
-        // For now, let's map 'clarification' to a separate node if we decide to have it, 
-        // or keep in discovery if the expert asks a question back.
-        // The expert response usually contains a question if it needs more info.
-
-        // If the expert response indicates it is asking a question, we effectively loop in discovery/clarification
         next = 'discovery';
     }
 

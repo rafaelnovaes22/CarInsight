@@ -9,6 +9,9 @@ export interface IGraphState {
     // Messages history (standard LangChain messages)
     messages: BaseMessage[];
 
+    // Identification
+    phoneNumber: string;
+
     // Custom domains
     profile: Partial<CustomerProfile>;
     recommendations: VehicleRecommendation[];
@@ -35,6 +38,7 @@ export interface IGraphState {
 export function createInitialState(): IGraphState {
     return {
         messages: [],
+        phoneNumber: '',
         profile: {},
         recommendations: [],
         next: 'greeting',

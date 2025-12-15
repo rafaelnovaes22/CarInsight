@@ -184,6 +184,8 @@ export class VehicleExpertAgent {
         context.profile._lastShownVehicles.length > 0;
 
       // 2.2. Handle trade-in from initial message (delegated to handler)
+      // 2.2. Handle trade-in from initial message (delegated to handler)
+      /* 
       const tradeInInitialResult = handleTradeInInitial(
         exactMatch,
         isTradeInContext,
@@ -194,8 +196,23 @@ export class VehicleExpertAgent {
       if (tradeInInitialResult.handled && tradeInInitialResult.response) {
         return tradeInInitialResult.response;
       }
+      */
+      // DELEGATION: Check for trade-in in initial message -> Delegate to trade_in node
+      if (isTradeInContext && exactMatch.model && exactMatch.year && !alreadyHasSelectedVehicle) {
+        logger.info('VehicleExpert: Delegating initial trade-in to trade_in node');
+        return {
+          response: '',
+          extractedPreferences: extracted.extracted,
+          needsMoreInfo: [],
+          canRecommend: false,
+          nextMode: 'trade_in', // New mode
+          metadata: { delegated: true } as any
+        };
+      }
 
       // 2.3. Handle trade-in after vehicle selection (delegated to handler)
+      // 2.3. Handle trade-in after vehicle selection (delegated to handler)
+      /*
       const tradeInAfterResult = handleTradeInAfterSelection(
         exactMatch,
         isTradeInContext,
@@ -206,6 +223,19 @@ export class VehicleExpertAgent {
       );
       if (tradeInAfterResult.handled && tradeInAfterResult.response) {
         return tradeInAfterResult.response;
+      }
+      */
+      // DELEGATION: Check for trade-in after selection -> Delegate to trade_in node
+      if (isTradeInContext && exactMatch.model && exactMatch.year && alreadyHasSelectedVehicle) {
+        logger.info('VehicleExpert: Delegating post-selection trade-in to trade_in node');
+        return {
+          response: '',
+          extractedPreferences: extracted.extracted,
+          needsMoreInfo: [],
+          canRecommend: false,
+          nextMode: 'trade_in',
+          metadata: { delegated: true } as any
+        };
       }
 
       if (targetModel && targetYear) {
@@ -510,27 +540,21 @@ export class VehicleExpertAgent {
             .filter(Boolean)
             .join(' ');
 
+          // DELEGATION: Delegate detailed trade-in response to trade_in node
+          logger.info('VehicleExpert: Delegating trade-in details to trade_in node');
           return {
-            response: `Perfeito! Anotei o ${tradeInText} como carro de troca. 🚗🔄\n\n⚠️ O valor do seu carro depende de uma avaliação presencial.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInText}\n• Apresentar a proposta final para o ${vehicleName}\n• Tirar suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
+            response: '',
             extractedPreferences: {
               ...extracted.extracted,
-              hasTradeIn: true,
-              tradeInBrand: tradeInInfo.brand,
-              tradeInModel: tradeInInfo.model,
-              tradeInYear: tradeInInfo.year,
-              tradeInKm: tradeInInfo.km,
-              _awaitingTradeInDetails: false,
-              _showedRecommendation: true,
-              _lastShownVehicles: lastShownVehicles,
+              _awaitingTradeInDetails: false // Clear flag so next node handles it? Or keep it? 
+              // Actually the node will re-check or we pass raw data? 
+              // The tradeInNode uses extractTradeInInfo so we should let it handle it.
+              // But we need to ensure the message is processed by tradeInNode.
             },
             needsMoreInfo: [],
             canRecommend: false,
-            nextMode: 'negotiation',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.95,
-              llmUsed: 'rule-based',
-            },
+            nextMode: 'trade_in',
+            metadata: { delegated: true } as any
           };
         }
       }
@@ -552,20 +576,26 @@ export class VehicleExpertAgent {
             'Processing financing response with entry value'
           );
 
-          const handlerContext: PostRecommendationContext = {
-            userMessage,
-            lastShownVehicles: lastShownVehicles as ShownVehicle[],
-            lastSearchType,
-            extracted,
-            updatedProfile,
-            context,
-            startTime,
-          };
+          // DELEGATION: Financing logic moved to 'financing' node
+          logger.info('VehicleExpert: Delegating financing processing to financing node');
 
-          const result = handleFinancingResponse(handlerContext);
-          if (result.handled && result.response) {
-            return result.response;
-          }
+          return {
+            response: '', // Empty response to let the next node handle it
+            extractedPreferences: {
+              ...extracted.extracted,
+              wantsFinancing: true,
+              _awaitingFinancingDetails: false, // Clear flag so next node handles it fresh
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'financing',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 1.0,
+              llmUsed: 'rule-based',
+              delegated: true
+            } as any,
+          };
         }
       }
 
@@ -580,23 +610,21 @@ export class VehicleExpertAgent {
           if (!hasTradeInDetails) {
             logger.info('User mentioned trade-in but no car details - asking which car');
 
+            // DELEGATION: User wants trade-in but no details -> Send to trade_in node to ASK
+            logger.info('VehicleExpert: Delegating trade-in request to trade_in node');
             return {
-              response: `Show! Ter um carro na troca ajuda muito na negociação do ${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}! 🚗🔄\n\nMe conta sobre o seu veículo:\n\n• *Qual carro é?* (ex: Fiat Argo 2019, VW Polo 2020)\n• *Km aproximado*\n\n_Exemplo: "Gol 2018 com 80 mil km"_`,
+              response: '',
               extractedPreferences: {
                 ...extracted.extracted,
                 hasTradeIn: true,
-                _awaitingTradeInDetails: true, // Flag to capture trade-in car details
+                _awaitingTradeInDetails: true,
                 _showedRecommendation: true,
                 _lastShownVehicles: lastShownVehicles,
               },
               needsMoreInfo: ['tradeInModel', 'tradeInYear'],
               canRecommend: false,
-              nextMode: 'negotiation',
-              metadata: {
-                processingTime: Date.now() - startTime,
-                confidence: 0.95,
-                llmUsed: 'rule-based',
-              },
+              nextMode: 'trade_in',
+              metadata: { delegated: true } as any
             };
           }
 
@@ -608,8 +636,10 @@ export class VehicleExpertAgent {
 
           logger.info({ tradeInCar }, 'User provided trade-in car details - routing to seller');
 
+          // DELEGATION: User provided trade-in details -> Send to trade_in node
+          logger.info('VehicleExpert: Delegating trade-in details to trade_in node');
           return {
-            response: `Perfeito! O ${tradeInCar} pode entrar na negociação do ${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}! 🚗🔄\n\n⚠️ O valor do seu carro na troca depende de uma avaliação presencial pela nossa equipe.\n\nVou conectar você com um consultor para:\n• Avaliar o ${tradeInCar}\n• Apresentar a proposta final\n• Tirar todas as suas dúvidas\n\n_Digite "vendedor" para falar com nossa equipe!_`,
+            response: '',
             extractedPreferences: {
               ...extracted.extracted,
               hasTradeIn: true,
@@ -619,12 +649,8 @@ export class VehicleExpertAgent {
             },
             needsMoreInfo: [],
             canRecommend: false,
-            nextMode: 'negotiation',
-            metadata: {
-              processingTime: Date.now() - startTime,
-              confidence: 0.95,
-              llmUsed: 'rule-based',
-            },
+            nextMode: 'trade_in',
+            metadata: { delegated: true } as any
           };
         }
 

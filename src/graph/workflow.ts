@@ -1,6 +1,6 @@
 import { StateGraph, END } from '@langchain/langgraph';
 import { IGraphState, createInitialState } from '../types/graph.types';
-import { greetingNode, discoveryNode, searchNode, recommendationNode } from './nodes';
+import { greetingNode, discoveryNode, searchNode, recommendationNode, financingNode, tradeInNode, negotiationNode } from './nodes';
 import { PrismaCheckpointer } from './persistence/prisma-saver';
 import { logger } from '../lib/logger';
 import { RunnableConfig } from '@langchain/core/runnables';
@@ -42,6 +42,12 @@ const routeNode = (state: IGraphState) => {
             return 'search';
         case 'recommendation':
             return 'recommendation';
+        case 'financing':
+            return 'financing';
+        case 'trade_in':
+            return 'trade_in';
+        case 'negotiation':
+            return 'negotiation';
         case 'end':
         case 'handoff':
             return END;
@@ -54,13 +60,17 @@ const routeNode = (state: IGraphState) => {
 /**
  * Create the persistent conversation graph
  */
-export const createConversationGraph = () => {
+export const createConversationGraph = (config?: { checkpointer?: any }) => {
     // Explicitly define node names for TypeScript if needed, or rely on string literals
     const workflow = new StateGraph<IGraphState>({
         channels: {
             messages: {
                 value: (x: any[], y: any[]) => x.concat(y),
                 default: () => [],
+            },
+            phoneNumber: {
+                value: (x: string, y: string) => y, // Always take latest
+                default: () => '',
             },
             profile: {
                 value: (x: any, y: any) => ({ ...x, ...y }),
@@ -101,6 +111,9 @@ export const createConversationGraph = () => {
     workflow.addNode('discovery', discoveryNode);
     workflow.addNode('search', searchNode);
     workflow.addNode('recommendation', recommendationNode);
+    workflow.addNode('financing', financingNode);
+    workflow.addNode('trade_in', tradeInNode);
+    workflow.addNode('negotiation', negotiationNode);
 
     // Set Entry Point - Cast to any if strict typing fails inappropriately due to version mismatch
     workflow.setEntryPoint('greeting' as any);
@@ -111,9 +124,13 @@ export const createConversationGraph = () => {
     workflow.addConditionalEdges('discovery' as any, routeNode);
     workflow.addConditionalEdges('search' as any, routeNode);
     workflow.addConditionalEdges('recommendation' as any, routeNode);
+    workflow.addConditionalEdges('financing' as any, routeNode);
+    workflow.addConditionalEdges('trade_in' as any, routeNode);
+    workflow.addConditionalEdges('negotiation' as any, routeNode);
 
     // Compile with Checkpointer
-    const checkpointer = new PrismaCheckpointer();
+    // Use provided checkpointer or default to PrismaCheckpointer
+    const checkpointer = config?.checkpointer ?? new PrismaCheckpointer();
 
     return workflow.compile({
         checkpointer,
