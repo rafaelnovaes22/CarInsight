@@ -30,12 +30,11 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   );
 
   // 1. If we already have a name, we shouldn't be here ideally, but if we are, move to discovery
+  // 1. If we already have a name, we shouldn't be here ideally, but if we are, move to discovery
   if (state.profile?.customerName) {
+    logger.info('GreetingNode: Name exists, passing to discovery');
     return {
-      next: 'discovery',
-      messages: [
-        new AIMessage(`${state.profile.customerName}, o que você está procurando hoje? 🚗\n\nPode me contar:\n• Tipo de carro (SUV, sedan, hatch, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico que tem em mente`)
-      ]
+      next: 'discovery'
     };
   }
 

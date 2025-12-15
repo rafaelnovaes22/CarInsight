@@ -9,6 +9,12 @@ import { RunnableConfig } from '@langchain/core/runnables';
  * Route function that determines the next node based on the 'next' state property
  */
 const routeNode = (state: IGraphState) => {
+    // Stop execution if the last message was from the AI (waiting for user input)
+    const lastMessage = state.messages[state.messages.length - 1];
+    if (lastMessage && lastMessage._getType() === 'ai') {
+        return END;
+    }
+
     const nextNode = state.next;
     logger.info({ nextNode }, 'Router: Validating transition');
 

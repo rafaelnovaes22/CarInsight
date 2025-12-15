@@ -57,12 +57,27 @@ function formatRecommendations(recommendations: any[]): string {
 
   recommendations.forEach((rec, index) => {
     const vehicle = rec.vehicle;
+    if (!vehicle) return;
+
     message += `━━━━━━━━━━━━━━━━━━━━━\n`;
     message += `${index + 1}️⃣ Match Score: ${rec.matchScore}/100 ⭐\n\n`;
-    message += `🚗 ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}\n`;
-    message += `📅 Ano: ${vehicle.ano} | 🛣️ ${vehicle.km.toLocaleString('pt-BR')} km\n`;
-    message += `💰 R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
-    message += `🎨 Cor: ${vehicle.cor}\n`;
+    message += `🚗 ${vehicle.marca || ''} ${vehicle.modelo || ''} ${vehicle.versao || ''}\n`;
+
+    const ano = vehicle.ano || 'N/D';
+    const km = vehicle.km !== undefined && vehicle.km !== null ? vehicle.km.toLocaleString('pt-BR') : 'N/D';
+    message += `📅 Ano: ${ano} | 🛣️ ${km} km\n`;
+
+    let priceFormatted = 'Consulte';
+    if (vehicle.preco) {
+      try {
+        priceFormatted = `R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      } catch (e) {
+        priceFormatted = 'R$ ' + vehicle.preco; // Fallback
+      }
+    }
+
+    message += `💰 ${priceFormatted}\n`;
+    message += `🎨 Cor: ${vehicle.cor || 'Não informada'}\n`;
 
     if (vehicle.combustivel) {
       message += `⛽ ${vehicle.combustivel}`;
@@ -72,7 +87,7 @@ function formatRecommendations(recommendations: any[]): string {
       message += `\n`;
     }
 
-    message += `\n💡 ${rec.reasoning}\n\n`;
+    message += `\n💡 ${rec.reasoning || 'Recomendado para você.'}\n\n`;
   });
 
   message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
