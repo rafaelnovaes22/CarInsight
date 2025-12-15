@@ -136,9 +136,10 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
 
     let responseText = '';
     if (alreadyGreeted) {
-      responseText = `Prazer, ${firstName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
+      responseText = `👋 Olá, ${firstName}! Me conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
     } else {
-      responseText = `👋 Olá, ${firstName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
+      // Even if not "already greeted" deep in history, if they gave a name, treat it as a continuation
+      responseText = `👋 Olá, ${firstName}! Me conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
     }
 
     return {
