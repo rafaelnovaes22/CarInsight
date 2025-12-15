@@ -46,7 +46,10 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
         metadata: {
             startedAt: new Date(state.metadata.startedAt),
             lastMessageAt: new Date(state.metadata.lastMessageAt),
-            messageCount: state.messages.filter(m => m._getType() === 'human').length,
+            messageCount: state.messages.filter(m => {
+                if (typeof m._getType === 'function') return m._getType() === 'human';
+                return (m as any).type === 'human' || (m as any).id?.includes('HumanMessage');
+            }).length,
             extractionCount: 0,
             questionsAsked: 0,
             userQuestions: 0
