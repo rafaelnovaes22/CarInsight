@@ -17,23 +17,25 @@ import {
  */
 const NAME_PATTERNS: RegExp[] = [
   // Direct patterns: "me chamo [Name]", "meu nome é [Name]"
-  /(?:me chamo|meu nome é|meu nome e)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+  /(?:me chamo|meu nome é|meu nome e)\s+([A-ZÀ-Úa-zà-ú]+(?:[\s]+(?:de|da|do|dos|das|e)\s+[A-ZÀ-Úa-zà-ú]+|[\s]+[A-ZÀ-Úa-zà-ú]+)*)/i,
   // "sou o/a [Name]"
-  /(?:sou o|sou a|sou)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+  /(?:sou o|sou a|sou)\s+([A-ZÀ-Úa-zà-ú]+(?:[\s]+(?:de|da|do|dos|das|e)\s+[A-ZÀ-Úa-zà-ú]+|[\s]+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  // "so o/a [Name]" (common typo)
+  /(?:so o|so a|so)\s+([A-ZÀ-Úa-zà-ú]+(?:[\s]+(?:de|da|do|dos|das|e)\s+[A-ZÀ-Úa-zà-ú]+|[\s]+[A-ZÀ-Úa-zà-ú]+)*)/i,
   // "pode me chamar de [Name]"
-  /(?:pode me chamar de)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+  /(?:pode me chamar de)\s+([A-ZÀ-Úa-zà-ú]+(?:[\s]+(?:de|da|do|dos|das|e)\s+[A-ZÀ-Úa-zà-ú]+|[\s]+[A-ZÀ-Úa-zà-ú]+)*)/i,
   // "é o/a [Name]"
-  /(?:é o|é a)\s+([A-ZÀ-Úa-zà-ú]+)/i,
+  /(?:é o|é a)\s+([A-ZÀ-Úa-zà-ú]+(?:[\s]+(?:de|da|do|dos|das|e)\s+[A-ZÀ-Úa-zà-ú]+|[\s]+[A-ZÀ-Úa-zà-ú]+)*)/i,
   // "[Name] aqui" - ex: "Rafael aqui", "oi, João aqui"
-  /\b([A-ZÀ-Ú][a-zà-ú]+)\s+aqui\b/i,
+  /\b([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)*)\s+aqui\b/i,
   // "aqui é [Name]" - ex: "aqui é o Rafael"
-  /aqui\s+(?:é|é o|é a)?\s*([A-ZÀ-Úa-zà-ú]+)/i,
+  /aqui\s+(?:é|é o|é a)?\s*([A-ZÀ-Úa-zà-ú]+(?:[\s]+(?:de|da|do|dos|das|e)\s+[A-ZÀ-Úa-zà-ú]+|[\s]+[A-ZÀ-Úa-zà-ú]+)*)/i,
 ];
 
 /**
  * Prefixes to remove when extracting name
  */
-const NAME_PREFIXES = ['meu nome é', 'me chamo', 'sou o', 'sou a', 'pode me chamar de', 'é', 'sou'];
+const NAME_PREFIXES = ['meu nome é', 'me chamo', 'sou o', 'sou a', 'pode me chamar de', 'é', 'sou', 'so'];
 
 /**
  * Check if name is a transcription fix
@@ -61,14 +63,32 @@ function isEnglishWord(word: string): boolean {
  * Check if name is a common Brazilian name
  */
 function isCommonName(name: string): boolean {
-  return COMMON_BRAZILIAN_NAMES.has(name.toLowerCase());
+  // Check the whole name first
+  if (COMMON_BRAZILIAN_NAMES.has(name.toLowerCase())) return true;
+
+  // If compound name, check the first part
+  const parts = name.split(/\s+/);
+  if (parts.length > 1) {
+    return COMMON_BRAZILIAN_NAMES.has(parts[0].toLowerCase());
+  }
+
+  return false;
 }
 
 /**
  * Capitalize name properly
  */
 function capitalizeName(name: string): string {
-  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  // Handle compound names
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map(part => {
+      // Lowercase prepositions
+      if (['de', 'da', 'do', 'dos', 'das', 'e'].includes(part)) return part;
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join(' ');
 }
 
 /**
@@ -108,8 +128,42 @@ export function extractName(message: string): string | null {
     return null;
   }
 
+  // PRE-PROCESSING: Remove leading greetings/reserved words
+  // Ex: "Oi Rafael" -> "Rafael", "Bom dia, sou o João" -> "sou o João"
+  const firstWord = cleaned.split(/[\s,]+/)[0].toLowerCase();
+
+  // Debug log
+  logger.info({ cleaned, firstWord, reserved: isReservedWord(firstWord) }, 'extractName: check leading greeting');
+
+  if (isReservedWord(firstWord) || ['oi', 'ola', 'olá', 'bom', 'boa'].includes(firstWord)) {
+    // If starts with reserved word, try to remove it and process the rest
+    // Be careful not to infinite loop or remove too much
+    const match = cleaned.match(/^([\wÀ-ÿ]+)(.*)$/s); // Simplified regex to just capture first word and rest
+
+    if (match && match[1]) {
+      // match[1] is the first word, match[2] is the rest
+      const remaining = (match[2] || '').replace(/^[\s,.]+/, '').trim();
+
+      logger.info({ firstWord, remaining }, 'extractName: split greeting');
+
+      if (remaining.length > 0) {
+        logger.debug({ original: cleaned, remaining }, 'extractName: stripped leading greeting');
+        const resultFromRemaining = extractName(remaining);
+        if (resultFromRemaining) return resultFromRemaining;
+
+        // If remainder is not a name, and start was reserved, the whole thing is likely not a name
+        return null;
+      } else {
+        // If nothing remaining, and it was a reserved word/greeting, it's NOT a name
+        logger.debug({ original: cleaned }, 'extractName: rejected purely reserved word/greeting');
+        return null;
+      }
+    }
+  }
+
   // THIRD: If message contains comma or spaces, try checking first word
-  if (cleaned.includes(',') || cleaned.includes(' ')) {
+  // Only if the message length > 60 chars (likely a sentence, not just a name)
+  if ((cleaned.includes(',') || cleaned.length > 60) && !cleaned.toLowerCase().startsWith('meu nome')) {
     const firstPart = cleaned.split(/[,\s]+/)[0].toLowerCase();
     const firstFix = getTranscriptionFix(firstPart);
     if (firstFix) {
@@ -151,11 +205,11 @@ export function extractName(message: string): string | null {
       // Normalize for comparison (remove accents for matching)
       const normalizedForCheck = lowerName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-      if (
-        isCommonName(lowerName) ||
-        isCommonName(normalizedForCheck) ||
-        /^[A-ZÀ-ÿa-zà-ÿ][a-zà-ÿ]+$/u.test(extractedName)
-      ) {
+      // Validation logic for extraction via regex
+      const isValidFormat = /^[A-ZÀ-ÿa-zà-ÿ]+(?:[\s][A-ZÀ-ÿa-zà-ÿ]+)*$/u.test(extractedName);
+      const isKnownName = isCommonName(lowerName) || isCommonName(normalizedForCheck);
+
+      if (isKnownName || isValidFormat) {
         const result = capitalizeName(extractedName);
         logger.info({ result, pattern: pattern.source }, 'extractName: found via pattern match');
         return result;
@@ -204,7 +258,8 @@ export function extractName(message: string): string | null {
   }
 
   // Final validation: is it a valid name format?
-  if (name.length >= 2 && name.length <= 30) {
+  // Increase max length to support full names like "Nicolas Leonardo Nepomuceno de Souza Santos"
+  if (name.length >= 2 && name.length <= 100) {
     // Check if it's a common name or has valid format
     // Normalize for comparison (remove accents for matching)
     const normalizedName = name
@@ -213,10 +268,11 @@ export function extractName(message: string): string | null {
       .replace(/[\u0300-\u036f]/g, ''); // Remove diacritics for comparison
 
     // Check both with and without accents
+    // Update format regex to allow spaces
     if (
       isCommonName(name.toLowerCase()) ||
       isCommonName(normalizedName) ||
-      /^[A-ZÀ-ÿa-zà-ÿ][a-zà-ÿ]+$/u.test(name)
+      /^[A-ZÀ-ÿa-zà-ÿ]+(?:[\s][A-ZÀ-ÿa-zà-ÿ]+)*$/u.test(name)
     ) {
       const result = capitalizeName(name);
       logger.info({ result }, 'extractName: found via fallback');

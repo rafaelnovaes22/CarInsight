@@ -560,8 +560,12 @@ export class LangGraphConversation {
         };
       }
 
-      // Se só encontrou nome (sem carro) e NÃO é saudação simples
-      if (possibleName && !isGreeting) {
+      // Se só encontrou nome (sem carro)
+      // Removemos !isGreeting para permitir que "Oi, sou Rafael" funcione
+      if (possibleName) {
+        // Use only first name for greeting
+        const firstName = possibleName.split(' ')[0];
+
         // Se já fizemos a apresentação (tem mensagens anteriores), usar resposta curta
         const alreadyGreeted = state.messages.length > 2;
 
@@ -569,7 +573,7 @@ export class LangGraphConversation {
           // Resposta curta pois já fizemos a apresentação
           return {
             nextState: 'DISCOVERY',
-            response: `Prazer, ${possibleName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`,
+            response: `Prazer, ${firstName}! 😊\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`,
             profile: { customerName: possibleName },
           };
         }
@@ -577,7 +581,7 @@ export class LangGraphConversation {
         // Primeira interação - apresentação completa
         return {
           nextState: 'DISCOVERY',
-          response: `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`,
+          response: `👋 Olá, ${firstName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`,
           profile: { customerName: possibleName },
         };
       }

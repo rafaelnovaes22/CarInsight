@@ -82,6 +82,16 @@ REGRAS ESPECIAIS:
 - IMPORTANTE: Se mencionar "X lugares" (ex: "7 lugares", "5 lugares") → minSeats: X (número inteiro)
 - Modelos conhecidos de 7 lugares: Spin, SW4, Pajero, Outlander, Commander, Taos, Tiggo 8, Captiva → minSeats: 7
 - Modelos conhecidos de 5 lugares são a maioria dos carros, não precisa especificar minSeats
+- Se usuário pedir "carro versátil", "econômico", "dia a dia" e "viagem" (sem mencionar carga/trabalho) → preferir bodyType: "hatch" ou "sedan" (evite pickup para uso pessoal puramente econômico) (PRIORIDADE ALTA, não sugerir PICKUP se não for para carga)
+- Se mencionar características físicas como "sou grande", "sou alto", "tenho 1,80", "1.90" ou similar:
+  - Adicionar "espaco_interno" e "conforto" em priorities
+  - Adicionar "hatch_pequeno" ou "compacto" em dealBreakers (evitar carros apertados)
+- CORREÇÃO DE MODELOS EM DEAL BREAKERS:
+  - "Cwid", "Quid", "Kiwd" → interpretar como "Kwid" (Renault)
+  - "estrada", "a estrada", "na estrada" (em contexto de modelo) → interpretar como "Strada" (Fiat)
+  - "Marcas", "Marcos" (em contexto de carro pequeno) → interpretar como "March" (Nissan) ou ignorar se ambíguo
+  - "Mobi" → Fiat Mobi
+  - Se o usuário disser "não servem" ou "não gosto", adicionar esses modelos em dealBreakers
 
 CONTEXTO DE CONVERSA (IMPORTANTE):
 - Se a ÚLTIMA MENSAGEM do assistente foi perguntando sobre "carro na troca", "troca", "seu carro atual":

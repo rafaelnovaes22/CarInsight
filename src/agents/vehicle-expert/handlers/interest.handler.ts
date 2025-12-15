@@ -47,12 +47,25 @@ export const handleInterest = (ctx: PostRecommendationContext): HandlerResult =>
     }
   }
 
-  // Use the selected vehicle if available
   const selectedVehicle = lastShownVehicles[selectedIndex] || firstVehicle;
   const selectedName = `${selectedVehicle.brand} ${selectedVehicle.model} ${selectedVehicle.year}`;
   const selectedPrice = selectedVehicle.price.toLocaleString('pt-BR');
 
-  const interestResponse = `Ótima escolha! 🎉 O ${selectedName} é um excelente carro!
+  // Check if user previously mentioned financing needs
+  const wantsFinancing = ctx.updatedProfile?.wantsFinancing || extracted.extracted.wantsFinancing;
+
+  let interestResponse = '';
+
+  if (wantsFinancing) {
+    interestResponse = `Ótima escolha! 🎉 O ${selectedName} é um excelente carro!
+    
+💰 Valor: R$ ${selectedPrice}
+
+Como você mencionou o interesse em financiar 🏦, me conta:
+• Tem algum valor de *entrada*?
+• Ou tem algum *carro na troca*?`;
+  } else {
+    interestResponse = `Ótima escolha! 🎉 O ${selectedName} é um excelente carro!
 
 💰 Valor: R$ ${selectedPrice}
 
@@ -60,6 +73,7 @@ Me conta como pretende pagar:
 • À vista
 • Financiamento
 • Tem carro na troca?`;
+  }
 
   return {
     handled: true,

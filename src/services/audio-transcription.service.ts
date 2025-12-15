@@ -13,11 +13,11 @@ export interface TranscriptionResult {
   language?: string;
   error?: string;
   errorCode?:
-    | 'DOWNLOAD_FAILED'
-    | 'TRANSCRIPTION_FAILED'
-    | 'DURATION_EXCEEDED'
-    | 'LOW_QUALITY'
-    | 'DISABLED';
+  | 'DOWNLOAD_FAILED'
+  | 'TRANSCRIPTION_FAILED'
+  | 'DURATION_EXCEEDED'
+  | 'LOW_QUALITY'
+  | 'DISABLED';
 }
 
 /**
@@ -122,7 +122,7 @@ export class AudioTranscriptionService {
 
     // Prompt reduzido - limite do Groq Whisper é 896 caracteres (~850 usado)
     // Mantém contexto essencial, modelos populares e clássicos brasileiros
-    const automotivePrompt = `Conversa sobre compra de carros usados em português brasileiro. Nomes: Rafael, João, Maria, Ana, Pedro, Paulo, Lucas, Fernanda, Camila, Gabriel, Carlos, Bruno, Marcos, Eduardo. Marcas: Honda, Toyota, Chevrolet, Volkswagen, Hyundai, Fiat, Jeep, Ford, Renault, Nissan, Mitsubishi. Modelos modernos: Civic, Corolla, Onix, HB20, Creta, Kicks, T-Cross, Tracker, Compass, HR-V, Fit, City, Polo, Virtus, Gol, Kwid, Argo, Cronos, Toro, Strada, Hilux, Duster, SW4, Pajero, Tucson, Sentra, Yaris, Jetta, Golf, Tiguan. Clássicos: Fusca, Variant, Brasília, Opala, Chevette, Kombi, Monza, Corcel, Escort, Santana, Parati, Saveiro, Uno, Palio, Tempra. Anos: 1970-2025.`;
+    const automotivePrompt = `Conversa sobre compra de carros usados em português brasileiro. Nomes: Rafael, João, Maria, Ana, Pedro, Paulo, Lucas, Fernanda, Camila, Gabriel, Carlos, Bruno, Marcos, Eduardo, Nicolas, Leonardo, Valteriz, Matheus, Guilherme, Felipe. Marcas: Honda, Toyota, Chevrolet, Volkswagen, Hyundai, Fiat, Jeep, Ford, Renault, Nissan, Mitsubishi. Modelos: Civic, Corolla, Onix, HB20, Creta, Kicks, T-Cross, Tracker, Compass, HR-V, Renegade, Fit, City, Polo, Virtus, Gol, Kwid, Argo, Cronos, Toro, Strada, Hilux, Duster, SW4, Pajero, Tucson, Sentra, Yaris, Jetta, Golf, Tiguan. Clássicos: Fusca, Variant, Brasília, Opala, Chevette, Kombi, Monza, Corcel, Escort, Santana, Parati, Saveiro, Uno, Palio, Tempra.`;
 
     try {
       logger.info({ bufferSize: audioBuffer.length }, '🎤 Calling Groq Whisper API...');

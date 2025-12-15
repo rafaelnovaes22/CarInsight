@@ -230,12 +230,14 @@ export class VehicleExpertAgent {
 
         // Verifica se o modelo mencionado está entre os veículos já mostrados
         // Se sim, é interesse no veículo, não nova busca
+        // FIX: Checar se ALGUMA parte importante do nome do modelo está na mensagem
         const msgLower = userMessage.toLowerCase();
         const mentionedShownVehicleModel = lastShownVehicles.some(
           (v: { model: string; brand: string }) => {
-            const modelLower = v.model.toLowerCase();
+            const modelParts = v.model.toLowerCase().split(' ');
             const brandLower = v.brand.toLowerCase();
-            return msgLower.includes(modelLower) || msgLower.includes(brandLower);
+            const hasModelPart = modelParts.some(part => part.length >= 3 && msgLower.includes(part));
+            return hasModelPart || msgLower.includes(brandLower);
           }
         );
 
@@ -253,7 +255,9 @@ export class VehicleExpertAgent {
             /gostei|interessei|curti|quero esse|esse (mesmo|a[íi])/i.test(userMessage) ||
             mentionedShownVehicleModel ||
             // Perguntas sobre o veículo mostrado
-            /mais (info|detalhe)|quilometr|km|opcional|documento/i.test(userMessage));
+            /mais (info|detalhe)|quilometr|km|opcional|documento|vers[ãa]o|motor|diesel|turbo|combust[íi]vel|cor|ano|c[âa]mbio/i.test(
+              userMessage
+            ));
 
         if (
           !isTradeInMention &&
