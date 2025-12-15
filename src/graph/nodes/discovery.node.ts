@@ -18,13 +18,24 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
     const messageContent = lastMessage.content;
     logger.info({ messageLength: messageContent.length }, 'DiscoveryNode: Processing message');
 
-    // Build Context for Vehicle Expert
+    // 2. Build Context for Vehicle Expert
     // We need to map LangChain messages to the format expected by VehicleExpert (Role/Content)
     // or update VehicleExpert to accept BaseMessage[]. For now, mapping is safer.
-    const mappedMessages = state.messages.map(m => ({
-        role: m._getType() === 'human' ? 'user' : 'assistant',
-        content: m.content as string
-    }));
+    const mappedMessages = state.messages.map(m => {
+        let role = 'assistant';
+
+        // Robust type checking handling both class instances and serialized JSON objects
+        if (typeof m._getType === 'function') {
+            role = m._getType() === 'human' ? 'user' : 'assistant';
+        } else if ((m as any).type === 'human' || (m as any).id?.includes('HumanMessage')) {
+            role = 'user';
+        }
+
+        return {
+            role,
+            content: m.content ? m.content.toString() : ''
+        };
+    });
 
     const context: ConversationContext = {
         conversationId: 'graph-execution', // TODO: Get from config/state if available
