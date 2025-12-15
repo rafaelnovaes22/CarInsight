@@ -31,6 +31,8 @@ interface SearchFilters {
   aptoFamilia?: boolean;
   // Work filter
   aptoTrabalho?: boolean;
+  // Exclude specific IDs
+  excludeIds?: string[];
 }
 
 export class VehicleSearchAdapter {
@@ -89,7 +91,10 @@ export class VehicleSearchAdapter {
       // Fetch full vehicle data
       const vehicles = await prisma.vehicle.findMany({
         where: {
-          id: { in: vehicleIds },
+          id: {
+            in: vehicleIds,
+            notIn: filters.excludeIds || []
+          },
           disponivel: true,
           // Apply filters
           ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
@@ -303,6 +308,7 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
+        id: { notIn: filters.excludeIds || [] },
         // Filtro de marca (se especificado)
         ...(filters.brand && { marca: { contains: filters.brand, mode: 'insensitive' } }),
         // Filtro de modelo (se especificado)
@@ -393,6 +399,7 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
+        id: { notIn: filters.excludeIds || [] },
         ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
         ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
