@@ -1,8 +1,6 @@
-import {
-    BaseCheckpointSaver,
+BaseCheckpointSaver,
     Checkpoint,
     CheckpointTuple,
-    SerializerProtocol,
     CheckpointListOptions,
     PendingWrite
 } from "@langchain/langgraph-checkpoint";
