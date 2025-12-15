@@ -74,9 +74,13 @@ export class LangGraphConversation {
         newState,
       };
 
-    } catch (error) {
+    } catch (error: any) {
       logger.error(
-        { error, conversationId },
+        {
+          error: error.message,
+          stack: error.stack,
+          conversationId
+        },
         'LangGraph: Error processing message'
       );
 
