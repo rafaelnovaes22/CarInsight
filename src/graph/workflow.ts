@@ -10,8 +10,22 @@ import { RunnableConfig } from '@langchain/core/runnables';
  */
 const routeNode = (state: IGraphState) => {
     // Stop execution if the last message was from the AI (waiting for user input)
+    // Stop execution if the last message was from the AI (waiting for user input)
     const lastMessage = state.messages[state.messages.length - 1];
-    if (lastMessage && lastMessage._getType() === 'ai') {
+
+    // Robust check for AI message (handles serialized objects)
+    let isAi = false;
+    if (lastMessage) {
+        if (typeof lastMessage._getType === 'function') {
+            isAi = lastMessage._getType() === 'ai';
+        } else {
+            // Serialized check
+            const msg = lastMessage as any;
+            isAi = msg.type === 'ai' || msg.id?.includes('AIMessage');
+        }
+    }
+
+    if (isAi) {
         return END;
     }
 
