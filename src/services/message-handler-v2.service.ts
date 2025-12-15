@@ -110,7 +110,7 @@ Para começar, qual é o seu nome?`;
         // If there's an active conversation
         if (existingConversation) {
           // Check if it's stale (inactive for > 10 minutes)
-          const timeDiff = Date.now() - existingConversation.updatedAt.getTime();
+          const timeDiff = Date.now() - existingConversation.lastMessageAt.getTime();
           const SESSION_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
           if (timeDiff < SESSION_TIMEOUT) {

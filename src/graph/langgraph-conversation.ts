@@ -99,7 +99,17 @@ export class LangGraphConversation {
   private mapToLegacyState(graphState: IGraphState, originalState: ConversationState): ConversationState {
     // Convert BaseMessage[] to BotMessage[]
     const mappedMessages: BotMessage[] = graphState.messages.map(msg => {
-      const role = msg instanceof HumanMessage ? 'user' : 'assistant';
+      let role: 'user' | 'assistant' = 'assistant';
+
+      // Robust check for human message (handles instances and serialized objects)
+      if (msg instanceof HumanMessage) {
+        role = 'user';
+      } else if (typeof msg._getType === 'function' && msg._getType() === 'human') {
+        role = 'user';
+      } else if ((msg as any).type === 'human' || (msg as any).id?.includes('HumanMessage')) {
+        role = 'user';
+      }
+
       return {
         role,
         content: msg.content ? msg.content.toString() : '',
