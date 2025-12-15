@@ -102,7 +102,7 @@ export class LangGraphConversation {
       const role = msg instanceof HumanMessage ? 'user' : 'assistant';
       return {
         role,
-        content: msg.content.toString(),
+        content: msg.content ? msg.content.toString() : '',
         timestamp: new Date(), // We might lose exact timestamp in BaseMessage unless stored in additional_kwargs
       };
     });
