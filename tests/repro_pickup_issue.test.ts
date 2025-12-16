@@ -16,6 +16,6 @@ describe('Preference Extractor - Pickup Issue Repro', () => {
     console.log('Extracted:', JSON.stringify(result, null, 2));
 
     expect(result.extracted.bodyType).not.toBe('pickup');
-    expect(result.extracted.priorities).not.toContain('pickup');
+    expect(result.extracted.priorities || []).not.toContain('pickup');
   });
 });
