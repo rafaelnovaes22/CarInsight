@@ -247,7 +247,9 @@ export class ConversationalHandler {
       clarification: 'quiz',
       ready_to_recommend: 'search',
       recommendation: 'recommendation',
-      negotiation: 'recommendation',
+      negotiation: 'recommendation', // LEGACY
+      financing: 'financing',
+      trade_in: 'trade_in',
       refinement: 'recommendation',
     };
 
