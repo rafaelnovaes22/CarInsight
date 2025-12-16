@@ -777,6 +777,30 @@ export class VehicleExpertAgent {
           };
         }
 
+        // PRIORIDADE: depois de mostrar recomendações, QUALQUER PERGUNTA do usuário é uma dúvida.
+        // Devemos consultar e responder, sem assumir "escolha" nem entrar no fluxo de negociação.
+        if (detectUserQuestion(userMessage)) {
+          const answer = await answerQuestionUtil(userMessage, context, updatedProfile);
+
+          return {
+            response: answer,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _showedRecommendation: true,
+              _lastShownVehicles: lastShownVehicles,
+              _lastSearchType: lastSearchType,
+            },
+            needsMoreInfo: identifyMissingInfoUtil(updatedProfile),
+            canRecommend: false,
+            nextMode: context.mode,
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.9,
+              llmUsed: 'gpt-4o-mini',
+            },
+          };
+        }
+
         const postRecommendationIntent = detectPostRecommendationIntent(
           userMessage,
           lastShownVehicles

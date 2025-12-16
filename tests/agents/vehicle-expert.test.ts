@@ -209,6 +209,29 @@ describe('VehicleExpertAgent', () => {
     });
   });
 
+  describe('Questions after recommendation', () => {
+    it('should treat any question after showing recommendations as a doubt (answer) and not negotiation', async () => {
+      const context = createContext({
+        mode: 'recommendation',
+        profile: {
+          _showedRecommendation: true,
+          _lastSearchType: 'recommendation',
+          _lastShownVehicles: [
+            { vehicleId: 'v1', brand: 'FORD', model: 'FOCUS', year: 2015, price: 56990 },
+          ],
+        } as any,
+      });
+
+      const response = await expert.chat('Como funciona o financiamento?', context);
+
+      // Should answer the question (LLM mock), not ask payment method for a selected vehicle
+      expect(response.response.toLowerCase()).toContain('financiamento');
+      expect(response.response.toLowerCase()).toContain('entrada');
+      expect(response.nextMode).toBe('recommendation');
+      expect(response.canRecommend).toBe(false);
+    });
+  });
+
   describe('Preference extraction during chat', () => {
     it('should extract budget from natural response', async () => {
       const context = createContext();
