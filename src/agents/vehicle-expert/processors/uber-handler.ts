@@ -156,7 +156,10 @@ export async function handleUberEligibilityQuestion(
 
   const lower = userMessage.toLowerCase();
   const is99 =
-    /\b99\b/.test(lower) || lower.includes('99pop') || lower.includes('99 pop') || lower.includes('99top');
+    /\b99\b/.test(lower) ||
+    lower.includes('99pop') ||
+    lower.includes('99 pop') ||
+    lower.includes('99top');
 
   // Try to resolve the target vehicle: (1) from last shown vehicles, (2) from exact model/year in text
   const lastShown = context.profile?._lastShownVehicles || [];
@@ -164,16 +167,14 @@ export async function handleUberEligibilityQuestion(
     v => lower.includes(v.model.toLowerCase()) || lower.includes(v.brand.toLowerCase())
   );
 
-  let dbVehicle:
-    | {
-        marca: string;
-        modelo: string;
-        ano: number;
-        carroceria: string;
-        portas: number;
-        arCondicionado: boolean;
-      }
-    | null = null;
+  let dbVehicle: {
+    marca: string;
+    modelo: string;
+    ano: number;
+    carroceria: string;
+    portas: number;
+    arCondicionado: boolean;
+  } | null = null;
 
   if (mentionedShown?.vehicleId) {
     const prisma = await getPrisma();
@@ -221,7 +222,10 @@ export async function handleUberEligibilityQuestion(
   }
 
   if (!dbVehicle) {
-    const askedModel = exactSearchParser.parse(userMessage).model || extracted.extracted.model || updatedProfile.model;
+    const askedModel =
+      exactSearchParser.parse(userMessage).model ||
+      extracted.extracted.model ||
+      updatedProfile.model;
     const modelText = askedModel ? ` do ${askedModel}` : '';
     const appName = is99 ? '99' : 'Uber';
 

@@ -64,7 +64,8 @@ function formatRecommendations(recommendations: any[]): string {
     message += `🚗 ${vehicle.marca || ''} ${vehicle.modelo || ''} ${vehicle.versao || ''}\n`;
 
     const ano = vehicle.ano || 'N/D';
-    const km = vehicle.km !== undefined && vehicle.km !== null ? vehicle.km.toLocaleString('pt-BR') : 'N/D';
+    const km =
+      vehicle.km !== undefined && vehicle.km !== null ? vehicle.km.toLocaleString('pt-BR') : 'N/D';
     message += `📅 Ano: ${ano} | 🛣️ ${km} km\n`;
 
     let priceFormatted = 'Consulte';
@@ -133,13 +134,17 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
 
     return {
       messages: [
-        new AIMessage(`Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`)
+        new AIMessage(
+          `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`
+        ),
       ],
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),
         // Check if flag already exists to avoid duplicates
-        flags: state.metadata.flags.includes('visit_requested') ? state.metadata.flags : [...state.metadata.flags, 'visit_requested'],
+        flags: state.metadata.flags.includes('visit_requested')
+          ? state.metadata.flags
+          : [...state.metadata.flags, 'visit_requested'],
       },
     };
   }
@@ -158,12 +163,16 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
 
     return {
       messages: [
-        new AIMessage(`Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`)
+        new AIMessage(
+          `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`
+        ),
       ],
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),
-        flags: state.metadata.flags.includes('handoff_requested') ? state.metadata.flags : [...state.metadata.flags, 'handoff_requested'],
+        flags: state.metadata.flags.includes('handoff_requested')
+          ? state.metadata.flags
+          : [...state.metadata.flags, 'handoff_requested'],
       },
     };
   }
@@ -196,13 +205,13 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
       detailsMessage += `• "vendedor" para tirar dúvidas`;
 
       return {
-        messages: [
-          new AIMessage(detailsMessage)
-        ],
+        messages: [new AIMessage(detailsMessage)],
         metadata: {
           ...state.metadata,
           lastMessageAt: Date.now(),
-          flags: state.metadata.flags.includes(`viewed_vehicle_${rec.vehicleId}`) ? state.metadata.flags : [...state.metadata.flags, `viewed_vehicle_${rec.vehicleId}`],
+          flags: state.metadata.flags.includes(`viewed_vehicle_${rec.vehicleId}`)
+            ? state.metadata.flags
+            : [...state.metadata.flags, `viewed_vehicle_${rec.vehicleId}`],
         },
       };
     }
@@ -219,9 +228,7 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     // For now, assuming this node is entered when recommendations should be shown.
 
     return {
-      messages: [
-        new AIMessage(recommendationsMessage)
-      ],
+      messages: [new AIMessage(recommendationsMessage)],
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),
@@ -232,7 +239,7 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
   // Fallback
   return {
     messages: [
-      new AIMessage('Como posso ajudar mais?\n\nDigite "vendedor" para falar com nossa equipe.')
+      new AIMessage('Como posso ajudar mais?\n\nDigite "vendedor" para falar com nossa equipe.'),
     ],
     metadata: {
       ...state.metadata,

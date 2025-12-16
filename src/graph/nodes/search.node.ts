@@ -9,23 +9,18 @@ const vectorSearchService = new VectorSearchService();
  * SearchNode - Find vehicles matching customer profile using vector search
  */
 export async function searchNode(state: IGraphState): Promise<Partial<IGraphState>> {
-  logger.info(
-    { profile: state.profile },
-    'SearchNode: Searching vehicles'
-  );
+  logger.info({ profile: state.profile }, 'SearchNode: Searching vehicles');
 
   if (!state.profile) {
     logger.error('SearchNode: No profile available');
     return {
-      messages: [
-        new AIMessage('Ops! Algo deu errado. Vamos recomeçar?')
-      ],
+      messages: [new AIMessage('Ops! Algo deu errado. Vamos recomeçar?')],
       metadata: {
         ...state.metadata,
         errorCount: state.metadata.errorCount + 1,
-        lastMessageAt: Date.now()
+        lastMessageAt: Date.now(),
       },
-      next: 'greeting'
+      next: 'greeting',
     };
   }
 
@@ -54,14 +49,16 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
     if (scoredVehicles.length === 0) {
       return {
         messages: [
-          new AIMessage(`Desculpe, não encontrei veículos que atendam exatamente suas necessidades no momento. 😔\n\nMas nossa equipe pode ajudar!\n\nDigite "vendedor" para falar com um especialista que pode buscar opções especiais para você.`)
+          new AIMessage(
+            `Desculpe, não encontrei veículos que atendam exatamente suas necessidades no momento. 😔\n\nMas nossa equipe pode ajudar!\n\nDigite "vendedor" para falar com um especialista que pode buscar opções especiais para você.`
+          ),
         ],
         recommendations: [],
         next: 'recommendation', // State transition
         metadata: {
           ...state.metadata,
-          lastMessageAt: Date.now()
-        }
+          lastMessageAt: Date.now(),
+        },
       };
     }
 
@@ -98,21 +95,18 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
       },
     };
   } catch (error) {
-    logger.error(
-      { error },
-      'SearchNode: Error searching vehicles'
-    );
+    logger.error({ error }, 'SearchNode: Error searching vehicles');
 
     return {
       messages: [
-        new AIMessage('Desculpe, houve um erro ao buscar veículos. Por favor, tente novamente.')
+        new AIMessage('Desculpe, houve um erro ao buscar veículos. Por favor, tente novamente.'),
       ],
       metadata: {
         ...state.metadata,
         errorCount: state.metadata.errorCount + 1,
-        lastMessageAt: Date.now()
+        lastMessageAt: Date.now(),
       },
-      next: 'greeting' // Reset on error
+      next: 'greeting', // Reset on error
     };
   }
 }

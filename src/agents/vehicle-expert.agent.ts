@@ -247,7 +247,7 @@ export class VehicleExpertAgent {
           needsMoreInfo: [],
           canRecommend: false,
           nextMode: 'trade_in', // New mode
-          metadata: { delegated: true } as any
+          metadata: { delegated: true } as any,
         };
       }
 
@@ -275,7 +275,7 @@ export class VehicleExpertAgent {
           needsMoreInfo: [],
           canRecommend: false,
           nextMode: 'trade_in',
-          metadata: { delegated: true } as any
+          metadata: { delegated: true } as any,
         };
       }
 
@@ -307,7 +307,9 @@ export class VehicleExpertAgent {
           (v: { model: string; brand: string }) => {
             const modelParts = v.model.toLowerCase().split(' ');
             const brandLower = v.brand.toLowerCase();
-            const hasModelPart = modelParts.some(part => part.length >= 3 && msgLower.includes(part));
+            const hasModelPart = modelParts.some(
+              part => part.length >= 3 && msgLower.includes(part)
+            );
             return hasModelPart || msgLower.includes(brandLower);
           }
         );
@@ -587,15 +589,15 @@ export class VehicleExpertAgent {
             response: '',
             extractedPreferences: {
               ...extracted.extracted,
-              _awaitingTradeInDetails: false // Clear flag so next node handles it? Or keep it? 
-              // Actually the node will re-check or we pass raw data? 
+              _awaitingTradeInDetails: false, // Clear flag so next node handles it? Or keep it?
+              // Actually the node will re-check or we pass raw data?
               // The tradeInNode uses extractTradeInInfo so we should let it handle it.
               // But we need to ensure the message is processed by tradeInNode.
             },
             needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'trade_in',
-            metadata: { delegated: true } as any
+            metadata: { delegated: true } as any,
           };
         }
       }
@@ -634,7 +636,7 @@ export class VehicleExpertAgent {
               processingTime: Date.now() - startTime,
               confidence: 1.0,
               llmUsed: 'rule-based',
-              delegated: true
+              delegated: true,
             } as any,
           };
         }
@@ -665,7 +667,7 @@ export class VehicleExpertAgent {
               needsMoreInfo: ['tradeInModel', 'tradeInYear'],
               canRecommend: false,
               nextMode: 'trade_in',
-              metadata: { delegated: true } as any
+              metadata: { delegated: true } as any,
             };
           }
 
@@ -691,7 +693,7 @@ export class VehicleExpertAgent {
             needsMoreInfo: [],
             canRecommend: false,
             nextMode: 'trade_in',
-            metadata: { delegated: true } as any
+            metadata: { delegated: true } as any,
           };
         }
 

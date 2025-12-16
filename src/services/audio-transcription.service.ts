@@ -13,11 +13,11 @@ export interface TranscriptionResult {
   language?: string;
   error?: string;
   errorCode?:
-  | 'DOWNLOAD_FAILED'
-  | 'TRANSCRIPTION_FAILED'
-  | 'DURATION_EXCEEDED'
-  | 'LOW_QUALITY'
-  | 'DISABLED';
+    | 'DOWNLOAD_FAILED'
+    | 'TRANSCRIPTION_FAILED'
+    | 'DURATION_EXCEEDED'
+    | 'LOW_QUALITY'
+    | 'DISABLED';
 }
 
 /**

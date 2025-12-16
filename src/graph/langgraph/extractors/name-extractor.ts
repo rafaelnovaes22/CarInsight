@@ -35,7 +35,16 @@ const NAME_PATTERNS: RegExp[] = [
 /**
  * Prefixes to remove when extracting name
  */
-const NAME_PREFIXES = ['meu nome é', 'me chamo', 'sou o', 'sou a', 'pode me chamar de', 'é', 'sou', 'so'];
+const NAME_PREFIXES = [
+  'meu nome é',
+  'me chamo',
+  'sou o',
+  'sou a',
+  'pode me chamar de',
+  'é',
+  'sou',
+  'so',
+];
 
 /**
  * Check if name is a transcription fix
@@ -133,7 +142,10 @@ export function extractName(message: string): string | null {
   const firstWord = cleaned.split(/[\s,]+/)[0].toLowerCase();
 
   // Debug log
-  logger.info({ cleaned, firstWord, reserved: isReservedWord(firstWord) }, 'extractName: check leading greeting');
+  logger.info(
+    { cleaned, firstWord, reserved: isReservedWord(firstWord) },
+    'extractName: check leading greeting'
+  );
 
   if (isReservedWord(firstWord) || ['oi', 'ola', 'olá', 'bom', 'boa'].includes(firstWord)) {
     // If starts with reserved word, try to remove it and process the rest
@@ -163,7 +175,10 @@ export function extractName(message: string): string | null {
 
   // THIRD: If message contains comma or spaces, try checking first word
   // Only if the message length > 60 chars (likely a sentence, not just a name)
-  if ((cleaned.includes(',') || cleaned.length > 60) && !cleaned.toLowerCase().startsWith('meu nome')) {
+  if (
+    (cleaned.includes(',') || cleaned.length > 60) &&
+    !cleaned.toLowerCase().startsWith('meu nome')
+  ) {
     const firstPart = cleaned.split(/[,\s]+/)[0].toLowerCase();
     const firstFix = getTranscriptionFix(firstPart);
     if (firstFix) {

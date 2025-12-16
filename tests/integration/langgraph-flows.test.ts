@@ -7,187 +7,192 @@ import { vehicleSearchAdapter } from '../../src/services/vehicle-search-adapter.
 
 // Mock dependencies
 vi.mock('../../src/agents/vehicle-expert.agent', () => ({
-    vehicleExpert: {
-        chat: vi.fn(),
-    },
+  vehicleExpert: {
+    chat: vi.fn(),
+  },
 }));
 
 // Mock Logger to silence output during tests
 vi.mock('../../src/lib/logger', () => ({
-    logger: {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-    },
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
 }));
 
 describe('LangGraph Flows Integration', () => {
-    let app: any;
-    let memory: MemorySaver;
+  let app: any;
+  let memory: MemorySaver;
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        memory = new MemorySaver();
-        app = createConversationGraph({ checkpointer: memory });
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    memory = new MemorySaver();
+    app = createConversationGraph({ checkpointer: memory });
+  });
 
-    const runGraph = async (threadId: string, message: string) => {
-        const config = { configurable: { thread_id: threadId } };
-        const result = await app.invoke(
-            { messages: [new HumanMessage(message)] },
-            config
-        );
-        const lastMessage = result.messages[result.messages.length - 1];
-        return {
-            content: lastMessage.content,
-            next: result.next,
-            state: result
-        };
+  const runGraph = async (threadId: string, message: string) => {
+    const config = { configurable: { thread_id: threadId } };
+    const result = await app.invoke({ messages: [new HumanMessage(message)] }, config);
+    const lastMessage = result.messages[result.messages.length - 1];
+    return {
+      content: lastMessage.content,
+      next: result.next,
+      state: result,
     };
+  };
 
-    it('Scenario 1: Happy Path - Greeting -> Name -> Discovery -> Recommendation', async () => {
-        const threadId = 'test-happy-path-1';
+  it('Scenario 1: Happy Path - Greeting -> Name -> Discovery -> Recommendation', async () => {
+    const threadId = 'test-happy-path-1';
 
-        // 1. Initial Greeting
-        const res1 = await runGraph(threadId, 'Olá');
-        expect(res1.content).toContain('qual é o seu nome?');
-        expect(res1.state.profile.customerName).toBeUndefined();
+    // 1. Initial Greeting
+    const res1 = await runGraph(threadId, 'Olá');
+    expect(res1.content).toContain('qual é o seu nome?');
+    expect(res1.state.profile.customerName).toBeUndefined();
 
-        // 2. Provide Name
-        const res2 = await runGraph(threadId, 'Meu nome é Rafael');
-        expect(res2.content).toContain('Rafael');
-        expect(res2.content).toContain('o que você está procurando?');
-        expect(res2.state.profile.customerName).toBe('Rafael');
-        expect(res2.next).toBe('discovery');
+    // 2. Provide Name
+    const res2 = await runGraph(threadId, 'Meu nome é Rafael');
+    expect(res2.content).toContain('Rafael');
+    expect(res2.content).toContain('o que você está procurando?');
+    expect(res2.state.profile.customerName).toBe('Rafael');
+    expect(res2.next).toBe('discovery');
 
-        // 3. Discovery -> Search (Mocked)
-        // Mock VehicleExpert to return a recommendation
-        vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
-            response: 'Encontrei um Corolla 2020 para você.',
-            canRecommend: true,
-            extractedPreferences: { model: 'Corolla', minYear: 2020 },
-            recommendations: [{
-                vehicleId: '123',
-                matchScore: 90,
-                vehicle: {
-                    id: '123',
-                    marca: 'Toyota',
-                    modelo: 'Corolla',
-                    ano: 2020,
-                    preco: 100000,
-                    km: 50000,
-                    cor: 'Preto',
-                }
-            }] as any,
-            needsMoreInfo: [],
-            nextMode: 'recommendation'
-        });
-
-        const res3 = await runGraph(threadId, 'Quero um Corolla 2020');
-        expect(res3.state.recommendations).toHaveLength(1);
-        // The discovery node outputs the response from VehicleExpert directly. 
-        // usage of formatRecommendations happens inside the expert or inside recommendationNode
-        // depending on flow. In this mocked case, we returned a string.
-        expect(res3.content).toContain('Encontrei um Corolla 2020');
-        expect(res3.next).toBe('recommendation');
+    // 3. Discovery -> Search (Mocked)
+    // Mock VehicleExpert to return a recommendation
+    vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
+      response: 'Encontrei um Corolla 2020 para você.',
+      canRecommend: true,
+      extractedPreferences: { model: 'Corolla', minYear: 2020 },
+      recommendations: [
+        {
+          vehicleId: '123',
+          matchScore: 90,
+          vehicle: {
+            id: '123',
+            marca: 'Toyota',
+            modelo: 'Corolla',
+            ano: 2020,
+            preco: 100000,
+            km: 50000,
+            cor: 'Preto',
+          },
+        },
+      ] as any,
+      needsMoreInfo: [],
+      nextMode: 'recommendation',
     });
 
-    it('Scenario 2: Financing Flow', async () => {
-        const threadId = 'test-financing-1';
+    const res3 = await runGraph(threadId, 'Quero um Corolla 2020');
+    expect(res3.state.recommendations).toHaveLength(1);
+    // The discovery node outputs the response from VehicleExpert directly.
+    // usage of formatRecommendations happens inside the expert or inside recommendationNode
+    // depending on flow. In this mocked case, we returned a string.
+    expect(res3.content).toContain('Encontrei um Corolla 2020');
+    expect(res3.next).toBe('recommendation');
+  });
 
-        // 1. Greeting
-        await runGraph(threadId, 'Oi');
-        // 2. Name
-        const resName = await runGraph(threadId, 'Rafael');
+  it('Scenario 2: Financing Flow', async () => {
+    const threadId = 'test-financing-1';
 
-        // 3. Search (Mocked)
-        vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
-            response: 'Aqui está um Civic.',
-            canRecommend: true,
-            extractedPreferences: { model: 'Civic', _showedRecommendation: true, _lastShownVehicles: [{ model: 'Civic', brand: 'Honda', year: 2021, price: 120000 }] as any },
-            recommendations: [{
-                vehicleId: 'civic-1',
-                matchScore: 95,
-                vehicle: { marca: 'Honda', modelo: 'Civic', ano: 2021, preco: 120000, km: 30000 }
-            }] as any,
-            needsMoreInfo: [],
-            nextMode: 'recommendation' // Discovery node sets next=recommendation
-        });
+    // 1. Greeting
+    await runGraph(threadId, 'Oi');
+    // 2. Name
+    const resName = await runGraph(threadId, 'Rafael');
 
-        await runGraph(threadId, 'Quero um Civic');
-
-        // 4. User asks for financing
-        vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
-            response: 'Show, qual o valor da entrada?',
-            canRecommend: false,
-            extractedPreferences: { wantsFinancing: true, _awaitingFinancingDetails: true },
-            recommendations: [],
-            needsMoreInfo: ['financingDownPayment'],
-            nextMode: 'negotiation'
-        });
-
-        const resFin = await runGraph(threadId, 'Quero financiar');
-        expect(resFin.content).toContain('entrada');
+    // 3. Search (Mocked)
+    vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
+      response: 'Aqui está um Civic.',
+      canRecommend: true,
+      extractedPreferences: {
+        model: 'Civic',
+        _showedRecommendation: true,
+        _lastShownVehicles: [{ model: 'Civic', brand: 'Honda', year: 2021, price: 120000 }] as any,
+      },
+      recommendations: [
+        {
+          vehicleId: 'civic-1',
+          matchScore: 95,
+          vehicle: { marca: 'Honda', modelo: 'Civic', ano: 2021, preco: 120000, km: 30000 },
+        },
+      ] as any,
+      needsMoreInfo: [],
+      nextMode: 'recommendation', // Discovery node sets next=recommendation
     });
 
-    it('Scenario 3: Trade-in Flow', async () => {
-        const threadId = 'test-tradein-1';
+    await runGraph(threadId, 'Quero um Civic');
 
-        // 1. Greeting with Trade-in intent directly
-        const res1 = await runGraph(threadId, 'Oi, tenho um Gol 2015 para troca. Meu nome é João.');
-
-        // GreetingNode logic: 
-        // exactSearchParser detects Gol 2015. isTradeInContext = true. 
-        // extractName detects João.
-        // SCENARIO B: Name AND Trade-in -> returns message "Entendi! Você tem um GOL 2015..."
-
-        expect(res1.content).toMatch(/gol/i); // Case insensitive check
-        expect(res1.content).toMatch(/troca/i);
-        expect(res1.content).toContain('João');
-        expect(res1.state.profile.tradeInModel).toBe('gol');
-        expect(res1.state.profile.tradeInYear).toBe(2015);
+    // 4. User asks for financing
+    vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
+      response: 'Show, qual o valor da entrada?',
+      canRecommend: false,
+      extractedPreferences: { wantsFinancing: true, _awaitingFinancingDetails: true },
+      recommendations: [],
+      needsMoreInfo: ['financingDownPayment'],
+      nextMode: 'negotiation',
     });
 
-    it('Scenario 4: Handoff', async () => {
-        const threadId = 'test-handoff-1';
+    const resFin = await runGraph(threadId, 'Quero financiar');
+    expect(resFin.content).toContain('entrada');
+  });
 
-        // 1. Initial interaction
-        await runGraph(threadId, 'Oi, sou Maria');
+  it('Scenario 3: Trade-in Flow', async () => {
+    const threadId = 'test-tradein-1';
 
-        // 2. Request human
-        // Passes through Greeting -> Discovery
-        // DiscoveryNode calls VehicleExpert? 
-        // Actually, let's see if GreetingNode handles "falar com vendedor"? 
-        // No, it handles names and cars.
-        // So it goes to DiscoveryNode.
+    // 1. Greeting with Trade-in intent directly
+    const res1 = await runGraph(threadId, 'Oi, tenho um Gol 2015 para troca. Meu nome é João.');
 
-        // Mock Vehicle Expert to return "handoff" response or we rely on recommendation node?
-        // Wait, `recommendationNode` has "Handle 'vendedor'".
-        // But `discoveryNode`? 
-        // Let's check if there's a global handoff/vendedor check.
-        // Usually handled by VehicleExpert or specific nodes.
+    // GreetingNode logic:
+    // exactSearchParser detects Gol 2015. isTradeInContext = true.
+    // extractName detects João.
+    // SCENARIO B: Name AND Trade-in -> returns message "Entendi! Você tem um GOL 2015..."
 
-        // If I say "falar com vendedor" in discovery:
-        // VehicleExpert.chat is called.
-        // We should mock VehicleExpert to return a response that leads to handoff? 
-        // OR does VehicleExpert return a specific flag?
+    expect(res1.content).toMatch(/gol/i); // Case insensitive check
+    expect(res1.content).toMatch(/troca/i);
+    expect(res1.content).toContain('João');
+    expect(res1.state.profile.tradeInModel).toBe('gol');
+    expect(res1.state.profile.tradeInYear).toBe(2015);
+  });
 
-        // Let's assume VehicleExpert handles generic "vendedor" by returning text.
-        // BUT `recommendationNode` EXPLICITLY handles it. 
-        // `discoveryNode` does NOT seem to explicitly handle it in `nodes/index.ts` (need to check).
+  it('Scenario 4: Handoff', async () => {
+    const threadId = 'test-handoff-1';
 
-        // Mocking VehicleExpert to simulate typical agent response for "vendedor"
-        vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
-            response: 'Claro, vou chamar o vendedor.',
-            canRecommend: false,
-            extractedPreferences: {},
-            recommendations: [],
-            needsMoreInfo: [],
-            nextMode: 'handoff' // ?? Context mode.
-        });
+    // 1. Initial interaction
+    await runGraph(threadId, 'Oi, sou Maria');
 
-        const res = await runGraph(threadId, 'falar com vendedor');
-        expect(res.content).toBeDefined();
+    // 2. Request human
+    // Passes through Greeting -> Discovery
+    // DiscoveryNode calls VehicleExpert?
+    // Actually, let's see if GreetingNode handles "falar com vendedor"?
+    // No, it handles names and cars.
+    // So it goes to DiscoveryNode.
+
+    // Mock Vehicle Expert to return "handoff" response or we rely on recommendation node?
+    // Wait, `recommendationNode` has "Handle 'vendedor'".
+    // But `discoveryNode`?
+    // Let's check if there's a global handoff/vendedor check.
+    // Usually handled by VehicleExpert or specific nodes.
+
+    // If I say "falar com vendedor" in discovery:
+    // VehicleExpert.chat is called.
+    // We should mock VehicleExpert to return a response that leads to handoff?
+    // OR does VehicleExpert return a specific flag?
+
+    // Let's assume VehicleExpert handles generic "vendedor" by returning text.
+    // BUT `recommendationNode` EXPLICITLY handles it.
+    // `discoveryNode` does NOT seem to explicitly handle it in `nodes/index.ts` (need to check).
+
+    // Mocking VehicleExpert to simulate typical agent response for "vendedor"
+    vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
+      response: 'Claro, vou chamar o vendedor.',
+      canRecommend: false,
+      extractedPreferences: {},
+      recommendations: [],
+      needsMoreInfo: [],
+      nextMode: 'handoff', // ?? Context mode.
     });
+
+    const res = await runGraph(threadId, 'falar com vendedor');
+    expect(res.content).toBeDefined();
+  });
 });

@@ -32,17 +32,14 @@ export class LangGraphConversation {
     const conversationId = state.conversationId;
 
     try {
-      logger.info(
-        { conversationId, message },
-        'LangGraph: Processing message via Graph'
-      );
+      logger.info({ conversationId, message }, 'LangGraph: Processing message via Graph');
 
       // Invoke the graph
       // The graph handles persistence via PrismaCheckpointer using thread_id
       const config = { configurable: { thread_id: conversationId } };
 
       // We pass the new user message. The graph loads history from persistence.
-      // Note: If this is the VERY first message and nothing is in persistence, 
+      // Note: If this is the VERY first message and nothing is in persistence,
       // the graph will initialize with default state + this message.
       const result = await this.app.invoke(
         {
@@ -73,13 +70,12 @@ export class LangGraphConversation {
         response: responseContent,
         newState,
       };
-
     } catch (error: any) {
       logger.error(
         {
           error: error.message,
           stack: error.stack,
-          conversationId
+          conversationId,
         },
         'LangGraph: Error processing message'
       );
@@ -96,7 +92,10 @@ export class LangGraphConversation {
   /**
    * Maps IGraphState back to ConversationState for backward compatibility
    */
-  private mapToLegacyState(graphState: IGraphState, originalState: ConversationState): ConversationState {
+  private mapToLegacyState(
+    graphState: IGraphState,
+    originalState: ConversationState
+  ): ConversationState {
     // Convert BaseMessage[] to BotMessage[]
     const mappedMessages: BotMessage[] = graphState.messages.map(msg => {
       let role: 'user' | 'assistant' = 'assistant';
@@ -136,7 +135,7 @@ export class LangGraphConversation {
         startedAt: new Date(graphState.metadata.startedAt),
         lastMessageAt: new Date(graphState.metadata.lastMessageAt),
         flags: graphState.metadata.flags,
-      }
+      },
     };
   }
 }

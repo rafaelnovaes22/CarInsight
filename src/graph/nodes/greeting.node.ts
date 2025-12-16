@@ -34,7 +34,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   if (state.profile?.customerName) {
     logger.info('GreetingNode: Name exists, passing to discovery');
     return {
-      next: 'discovery'
+      next: 'discovery',
     };
   }
 
@@ -65,7 +65,10 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
       : earlyProfileUpdate.model;
 
-    logger.info({ name: possibleName, model: earlyProfileUpdate.model }, 'GreetingNode: Immediate search');
+    logger.info(
+      { name: possibleName, model: earlyProfileUpdate.model },
+      'GreetingNode: Immediate search'
+    );
 
     // Build temp profile for search
     const searchProfile: Partial<CustomerProfile> = {
@@ -87,7 +90,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         messageCount: 1,
         extractionCount: 0,
         questionsAsked: 0,
-        userQuestions: 0
+        userQuestions: 0,
       },
     };
 
@@ -104,9 +107,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         ...searchResult.extractedPreferences,
       },
       recommendations: searchResult.recommendations || [],
-      messages: [
-        new AIMessage(greetingPart + searchResult.response)
-      ]
+      messages: [new AIMessage(greetingPart + searchResult.response)],
     };
   }
 
@@ -124,8 +125,10 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         ...earlyProfileUpdate,
       },
       messages: [
-        new AIMessage(`Prazer, ${possibleName}! 😊\n\nEntendi! Você tem um *${tradeInText}* para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`)
-      ]
+        new AIMessage(
+          `Prazer, ${possibleName}! 😊\n\nEntendi! Você tem um *${tradeInText}* para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`
+        ),
+      ],
     };
   }
 
@@ -146,11 +149,9 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       next: 'discovery',
       profile: {
         ...state.profile,
-        customerName: possibleName
+        customerName: possibleName,
       },
-      messages: [
-        new AIMessage(responseText)
-      ]
+      messages: [new AIMessage(responseText)],
     };
   }
 
@@ -164,11 +165,13 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       next: 'greeting', // Loop back to get name
       profile: {
         ...state.profile,
-        ...earlyProfileUpdate
+        ...earlyProfileUpdate,
       },
       messages: [
-        new AIMessage(`👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nVi que você busca um *${carText}*. Ótima escolha! 🚗\n\nQual é o seu nome?`)
-      ]
+        new AIMessage(
+          `👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nVi que você busca um *${carText}*. Ótima escolha! 🚗\n\nQual é o seu nome?`
+        ),
+      ],
     };
   }
 
@@ -176,7 +179,9 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   return {
     next: 'greeting',
     messages: [
-      new AIMessage(`👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`)
-    ]
+      new AIMessage(
+        `👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`
+      ),
+    ],
   };
 }

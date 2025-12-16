@@ -115,11 +115,17 @@ Para começar, qual é o seu nome?`;
 
           if (timeDiff < SESSION_TIMEOUT) {
             // Session is fresh, let the graph handle the "Oi" (e.g. "Yes, how can I help?")
-            logger.info({ phoneNumber }, 'User sent greeting in active session (<10m), passing to graph');
+            logger.info(
+              { phoneNumber },
+              'User sent greeting in active session (<10m), passing to graph'
+            );
           } else {
             // Session is stale, restart
             await this.resetConversation(phoneNumber);
-            logger.info({ phoneNumber, timeDiff }, 'User sent greeting in stale session (>10m), restarting');
+            logger.info(
+              { phoneNumber, timeDiff },
+              'User sent greeting in stale session (>10m), restarting'
+            );
 
             // Continue to create new conversation logic...
             const newConversation = await prisma.conversation.create({

@@ -6,54 +6,54 @@ import { CustomerProfile, VehicleRecommendation, QuizState } from './state.types
  * This matches the interface required by LangGraph
  */
 export interface IGraphState {
-    // Messages history (standard LangChain messages)
-    messages: BaseMessage[];
+  // Messages history (standard LangChain messages)
+  messages: BaseMessage[];
 
-    // Identification
-    phoneNumber: string;
+  // Identification
+  phoneNumber: string;
 
-    // Custom domains
-    profile: Partial<CustomerProfile>;
-    recommendations: VehicleRecommendation[];
+  // Custom domains
+  profile: Partial<CustomerProfile>;
+  recommendations: VehicleRecommendation[];
 
-    // Control flow
-    next: string;
+  // Control flow
+  next: string;
 
-    // Metadata & Metrics
-    metadata: {
-        startedAt: number;
-        lastMessageAt: number;
-        loopCount: number;
-        errorCount: number;
-        flags: string[];
-    };
+  // Metadata & Metrics
+  metadata: {
+    startedAt: number;
+    lastMessageAt: number;
+    loopCount: number;
+    errorCount: number;
+    flags: string[];
+  };
 
-    // Legacy Quiz State (for backward compatibility during migration)
-    quiz: QuizState;
+  // Legacy Quiz State (for backward compatibility during migration)
+  quiz: QuizState;
 }
 
 /**
  * Default initial state factory
  */
 export function createInitialState(): IGraphState {
-    return {
-        messages: [],
-        phoneNumber: '',
-        profile: {},
-        recommendations: [],
-        next: 'greeting',
-        metadata: {
-            startedAt: Date.now(),
-            lastMessageAt: Date.now(),
-            loopCount: 0,
-            errorCount: 0,
-            flags: [],
-        },
-        quiz: {
-            currentQuestion: 1,
-            progress: 0,
-            answers: {},
-            isComplete: false,
-        }
-    };
+  return {
+    messages: [],
+    phoneNumber: '',
+    profile: {},
+    recommendations: [],
+    next: 'greeting',
+    metadata: {
+      startedAt: Date.now(),
+      lastMessageAt: Date.now(),
+      loopCount: 0,
+      errorCount: 0,
+      flags: [],
+    },
+    quiz: {
+      currentQuestion: 1,
+      progress: 0,
+      answers: {},
+      isComplete: false,
+    },
+  };
 }

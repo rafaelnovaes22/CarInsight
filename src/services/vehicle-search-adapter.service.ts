@@ -93,7 +93,7 @@ export class VehicleSearchAdapter {
         where: {
           id: {
             in: vehicleIds,
-            notIn: filters.excludeIds || []
+            notIn: filters.excludeIds || [],
           },
           disponivel: true,
           // Apply filters
