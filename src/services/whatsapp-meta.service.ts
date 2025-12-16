@@ -317,8 +317,21 @@ export class WhatsAppMetaService {
    */
   async sendMessage(to: string, text: string): Promise<void> {
     try {
+      const originalText = (text ?? '').toString();
+      const safeText =
+        originalText.trim().length > 0
+          ? originalText
+          : 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
+
+      if (originalText.trim().length === 0) {
+        logger.warn(
+          { to, apiUrl: this.apiUrl },
+          'Attempted to send empty message, using fallback text'
+        );
+      }
+
       console.log('🔄 SENDING TO:', to);
-      console.log('📝 MESSAGE:', text.substring(0, 150));
+      console.log('📝 MESSAGE:', safeText.substring(0, 150));
       console.log('🌐 API URL:', this.apiUrl);
 
       logger.info('🔄 Calling Meta API...', {
@@ -326,8 +339,8 @@ export class WhatsAppMetaService {
         toLength: to.length,
         toPreview: to.substring(0, 20),
         apiUrl: this.apiUrl,
-        textLength: text.length,
-        textPreview: text.substring(0, 100),
+        textLength: safeText.length,
+        textPreview: safeText.substring(0, 100),
       });
 
       const response = await axios.post(
@@ -339,7 +352,7 @@ export class WhatsAppMetaService {
           type: 'text',
           text: {
             preview_url: false,
-            body: text,
+            body: safeText,
           },
         },
         {

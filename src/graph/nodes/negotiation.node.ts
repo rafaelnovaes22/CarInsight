@@ -69,11 +69,21 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
   // But usually we stay here to answer questions.
   // If nextMode is 'financing' or 'trade_in', the router will handle it.
 
+  const responseText = (response.response ?? '').toString();
+  const responseTextTrimmed = responseText.trim();
+
+  // Same delegation guard as discoveryNode:
+  // if we append an empty AIMessage while delegating, the router will end execution early.
+  const shouldDelegateWithoutMessage =
+    responseTextTrimmed.length === 0 && (next === 'financing' || next === 'trade_in');
+
   return {
     next,
     profile: updatedProfile,
     // Update recommendations if changed? Usually they persist unless filtered
     recommendations: response.recommendations || state.recommendations,
-    messages: [new AIMessage(response.response)],
+    messages: shouldDelegateWithoutMessage
+      ? []
+      : [new AIMessage(responseTextTrimmed.length > 0 ? responseText : 'Desculpe, pode reformular?')],
   };
 }
