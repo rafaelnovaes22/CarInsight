@@ -59,6 +59,7 @@ import {
   answerQuestion as answerQuestionUtil,
   generateNextQuestion as generateNextQuestionUtil,
   handleUberBlackQuestion,
+  handleUberEligibilityQuestion,
   handleTradeInInitial,
   handleTradeInAfterSelection,
   handleSuggestionResponse,
@@ -162,6 +163,46 @@ export class VehicleExpertAgent {
       );
       if (uberResult.handled && uberResult.response) {
         return uberResult.response;
+      }
+
+      // 2.0.1. Check for Uber/99 eligibility question ("serve pra Uber?") WITHOUT assuming choice
+      const uberEligibilityResult = await handleUberEligibilityQuestion(
+        userMessage,
+        context,
+        updatedProfile,
+        extracted,
+        startTime
+      );
+      if (uberEligibilityResult.handled && uberEligibilityResult.response) {
+        return uberEligibilityResult.response;
+      }
+
+      // 2.0.2. If user corrects us ("não escolhi"), acknowledge and reset the assumption
+      // This avoids keeping the conversation stuck in negotiation when it was only a doubt.
+      const correctionLower = userMessage.toLowerCase();
+      const isNotChosenCorrection =
+        /\b(não|nao)\s+escolhi\b/.test(correctionLower) ||
+        /\bs[óo]\s+uma\s+d[úu]vida\b/.test(correctionLower) ||
+        /\bquis\s+t(i|í)rar\s+uma\s+d[úu]vida\b/.test(correctionLower);
+
+      if (isNotChosenCorrection) {
+        return {
+          response:
+            `Sem problemas — entendi que você *não escolheu* um carro ainda, era só uma dúvida.\n\n` +
+            `Qual é a dúvida exatamente? Se for sobre *Uber/99*, me diga sua *cidade/UF* e a *categoria* (X/Comfort/Black) que eu te ajudo a confirmar.`,
+          extractedPreferences: {
+            ...extracted.extracted,
+            _showedRecommendation: false,
+          },
+          needsMoreInfo: [],
+          canRecommend: false,
+          nextMode: context.mode,
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 0.95,
+            llmUsed: 'rule-based',
+          },
+        };
       }
 
       // 2.1. Intercept Specific Model + Year Search (Exact Intent)

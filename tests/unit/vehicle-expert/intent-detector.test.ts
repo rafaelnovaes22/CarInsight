@@ -215,6 +215,19 @@ describe('Intent Detector', () => {
       });
     });
 
+    describe('uber/99 eligibility questions', () => {
+      const shownVehicles = [{ brand: 'FORD', model: 'FOCUS', year: 2015, price: 56990 }];
+
+      it('should NOT treat "serve pra Uber?" as want_interest even if model is shown', () => {
+        expect(detectPostRecommendationIntent('O Focus serve pra Uber?', shownVehicles)).toBe(
+          'none'
+        );
+        expect(detectPostRecommendationIntent('Esse Focus é apto pra Uber X?', shownVehicles)).toBe(
+          'none'
+        );
+      });
+    });
+
     describe('acknowledgment', () => {
       it('should detect acknowledgments', () => {
         expect(detectPostRecommendationIntent('ok')).toBe('acknowledgment');

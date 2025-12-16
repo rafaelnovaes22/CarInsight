@@ -471,6 +471,31 @@ export const detectPostRecommendationIntent = (
 ): PostRecommendationIntent => {
   const normalized = message.toLowerCase().trim();
 
+  // Guard: questions about Uber/99 eligibility should NOT be treated as "interest/choice"
+  // Example: "O Focus serve pra Uber?" (mentions a shown model but is a question)
+  const mentionsApp =
+    /\buber\b/.test(normalized) ||
+    /\b99\b/.test(normalized) ||
+    normalized.includes('99pop') ||
+    normalized.includes('99 pop') ||
+    normalized.includes('99top') ||
+    normalized.includes('99 top');
+  const looksLikeEligibility =
+    mentionsApp &&
+    (/\bserve\b/.test(normalized) ||
+      /\bapto\b/.test(normalized) ||
+      /\broda(r)?\b/.test(normalized) ||
+      /\bentra\b/.test(normalized) ||
+      /\baceita\b/.test(normalized) ||
+      /\bcategoria\b/.test(normalized) ||
+      /\b(uber\s*)?x\b/.test(normalized) ||
+      normalized.includes('comfort') ||
+      normalized.includes('black'));
+
+  if (looksLikeEligibility) {
+    return 'none';
+  }
+
   // Check patterns in order of priority - financing and tradein BEFORE schedule
   if (WANT_FINANCING_PATTERNS.some(p => p.test(normalized))) {
     return 'want_financing';

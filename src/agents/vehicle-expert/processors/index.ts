@@ -5,7 +5,11 @@
  */
 
 export { answerQuestion, generateNextQuestion } from './question-handler';
-export { handleUberBlackQuestion, type UberHandlerResult } from './uber-handler';
+export {
+  handleUberBlackQuestion,
+  handleUberEligibilityQuestion,
+  type UberHandlerResult,
+} from './uber-handler';
 export {
   handleTradeInInitial,
   handleTradeInAfterSelection,

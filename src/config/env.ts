@@ -6,7 +6,8 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
-  DATABASE_URL: z.string(),
+  // DATABASE_URL is required in dev/prod, but unit tests run without a database.
+  DATABASE_URL: z.string().optional(),
   REDIS_URL: z.string().optional(),
 
   // LLM Providers (com fallback automático)
@@ -38,7 +39,21 @@ const envSchema = z.object({
   AUDIO_MAX_DURATION_SECONDS: z.coerce.number().default(120), // 2 minutes max
 });
 
-export const env = envSchema.parse(process.env);
+const parsed = envSchema.parse(process.env);
+
+// Ensure DATABASE_URL exists outside of tests
+if (!parsed.DATABASE_URL) {
+  if (parsed.NODE_ENV === 'test') {
+    parsed.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+  } else {
+    throw new Error('DATABASE_URL is required');
+  }
+}
+
+// Keep process.env consistent for libraries (e.g., Prisma) that read from it
+process.env.DATABASE_URL = parsed.DATABASE_URL;
+
+export const env = parsed as z.infer<typeof envSchema> & { DATABASE_URL: string };
 
 export const isDev = env.NODE_ENV === 'development';
 export const isProd = env.NODE_ENV === 'production';

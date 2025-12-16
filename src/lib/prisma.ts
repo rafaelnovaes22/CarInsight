@@ -13,10 +13,12 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-// Test connection
-prisma
-  .$connect()
-  .then(() => logger.info('✅ Database connected'))
-  .catch(err => logger.error('❌ Database connection failed:', err));
+// Test connection (skip in unit tests)
+if (process.env.NODE_ENV !== 'test') {
+  prisma
+    .$connect()
+    .then(() => logger.info('✅ Database connected'))
+    .catch(err => logger.error('❌ Database connection failed:', err));
+}
 
 export default prisma;
