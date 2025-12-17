@@ -4,11 +4,18 @@ import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { MemorySaver } from '@langchain/langgraph';
 import { vehicleExpert } from '../../src/agents/vehicle-expert.agent';
 import { vehicleSearchAdapter } from '../../src/services/vehicle-search-adapter.service';
+import { tradeInAgent } from '../../src/agents/trade-in.agent';
 
 // Mock dependencies
 vi.mock('../../src/agents/vehicle-expert.agent', () => ({
   vehicleExpert: {
     chat: vi.fn(),
+  },
+}));
+
+vi.mock('../../src/agents/trade-in.agent', () => ({
+  tradeInAgent: {
+    processTradeIn: vi.fn(),
   },
 }));
 
@@ -152,6 +159,44 @@ describe('LangGraph Flows Integration', () => {
     expect(res1.content).toContain('João');
     expect(res1.state.profile.tradeInModel).toBe('gol');
     expect(res1.state.profile.tradeInYear).toBe(2015);
+  });
+
+  it('Scenario 3b: Trade-in delegation should not send empty message', async () => {
+    const threadId = 'test-tradein-delegation-1';
+
+    // 1) Greeting
+    await runGraph(threadId, 'Oi');
+    // 2) Name
+    await runGraph(threadId, 'Rafael');
+
+    // 3) Discovery: vehicle expert delegates to trade_in with empty response
+    vi.mocked(vehicleExpert.chat).mockResolvedValueOnce({
+      response: '',
+      canRecommend: false,
+      extractedPreferences: {
+        _showedRecommendation: true,
+        _lastShownVehicles: [{ model: 'Creta', brand: 'Hyundai', year: 2024, price: 98990 }] as any,
+        hasTradeIn: true,
+      } as any,
+      recommendations: [],
+      needsMoreInfo: ['tradeInModel', 'tradeInYear'],
+      nextMode: 'trade_in',
+    });
+
+    // 4) Trade-in node should run and ask for details (mock tradeInAgent)
+    vi.mocked(tradeInAgent.processTradeIn).mockResolvedValueOnce({
+      response:
+        'Show! Me conta sobre o seu veículo:\n\n• Qual carro é?\n• Km aproximado\n\nEx: "Gol 2018 com 80 mil km"',
+      extractedPreferences: { hasTradeIn: true, _awaitingTradeInDetails: true } as any,
+      needsMoreInfo: ['tradeInModel', 'tradeInYear'],
+      canRecommend: false,
+      nextMode: 'negotiation',
+    });
+
+    const res = await runGraph(threadId, 'Quero financiar o Creta e tenho um carro para troca');
+
+    expect(res.content).toMatch(/me conta|qual carro|km/i);
+    expect((res.content as string).trim().length).toBeGreaterThan(0);
   });
 
   it('Scenario 4: Handoff', async () => {

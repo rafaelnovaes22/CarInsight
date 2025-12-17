@@ -51,8 +51,20 @@ export class LangGraphConversation {
       );
 
       const finalState = result as IGraphState;
-      const lastMessage = finalState.messages[finalState.messages.length - 1];
-      const responseContent = lastMessage?.content?.toString() || '';
+      // Prefer the last AI message (not just the last message).
+      // If we ever end with a user message (e.g., due to a delegation hop), we must not echo it back.
+      const reversed = [...(finalState.messages || [])].reverse();
+      const lastAiMessage = reversed.find(m => {
+        if (!m) return false;
+        if (m instanceof AIMessage) return true;
+        if (typeof (m as any)?._getType === 'function') return (m as any)._getType() === 'ai';
+        const mm = m as any;
+        return mm.type === 'ai' || mm.id?.includes('AIMessage');
+      }) as BaseMessage | undefined;
+
+      const responseContent = (lastAiMessage?.content?.toString?.() ?? '').trim()
+        ? lastAiMessage!.content.toString()
+        : 'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?';
 
       logger.info(
         {

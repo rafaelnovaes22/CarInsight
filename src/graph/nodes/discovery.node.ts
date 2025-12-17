@@ -65,6 +65,9 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
     ...response.extractedPreferences,
   };
 
+  const responseText = (response.response ?? '').toString();
+  const responseTextTrimmed = responseText.trim();
+
   // Determine Next Node
   let next = 'discovery'; // Default: stay in discovery/loop
 
@@ -82,10 +85,20 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
     next = 'discovery';
   }
 
+  // IMPORTANT:
+  // Some flows intentionally "delegate" to another node (e.g., financing/trade_in)
+  // by returning an empty response and setting nextMode accordingly.
+  // If we append an empty AIMessage here, the router will stop the graph (last message is AI),
+  // and the delegated node will never execute.
+  const shouldDelegateWithoutMessage =
+    responseTextTrimmed.length === 0 && (next === 'financing' || next === 'trade_in');
+
   return {
     next,
     profile: updatedProfile,
     recommendations: response.recommendations || [],
-    messages: [new AIMessage(response.response)],
+    messages: shouldDelegateWithoutMessage
+      ? []
+      : [new AIMessage(responseTextTrimmed.length > 0 ? responseText : 'Desculpe, pode reformular?')],
   };
 }
