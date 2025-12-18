@@ -122,6 +122,60 @@ export const SUV_MEDIUM_MODELS = [
 export const SUV_MODELS = [...SUV_COMPACT_MODELS, ...SUV_MEDIUM_MODELS] as const;
 
 // ============================================
+// MOTO MODELS
+// ============================================
+
+/**
+ * Common motorcycle models
+ */
+export const MOTO_MODELS = [
+  'titan',
+  'fan',
+  'bros',
+  'start',
+  'biz',
+  'pcx',
+  'elite',
+  'cb',
+  'xre',
+  'fazer',
+  'factor',
+  'crosser',
+  'lander',
+  'nmax',
+  'neo',
+  'fluo',
+  'mt',
+  'r3',
+  'r15',
+  'ninja',
+  'z400',
+  'z900',
+  'versys',
+  'vulcan',
+  'cg',
+  'nc',
+  'adv',
+  'pop',
+  'lead',
+  'burgman',
+  'intruder',
+  'chopper',
+  'gs',
+  'tiger',
+  'bonneville',
+  'scrambler',
+  'diavel',
+  'monster',
+  'multistrada',
+  'panigale',
+  'streetfighter',
+  'hypermotard',
+  'desertx',
+  'scooter',
+] as const;
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
@@ -131,8 +185,12 @@ export const SUV_MODELS = [...SUV_COMPACT_MODELS, ...SUV_MEDIUM_MODELS] as const
  * @param model - The vehicle model name
  * @returns The detected body type or undefined if unknown
  */
-export const detectBodyTypeFromModel = (model: string): 'sedan' | 'hatch' | 'suv' | undefined => {
+export const detectBodyTypeFromModel = (model: string): 'sedan' | 'hatch' | 'suv' | 'moto' | undefined => {
   const modelLower = model.toLowerCase();
+
+  if (MOTO_MODELS.some(m => modelLower.includes(m))) {
+    return 'moto';
+  }
 
   if (SEDAN_MODELS.some(m => modelLower.includes(m))) {
     return 'sedan';
@@ -160,10 +218,20 @@ export const detectBodyTypeFromModel = (model: string): 'sedan' | 'hatch' | 'suv
 export const detectVehicleCategory = (
   model: string,
   price: number,
-  bodyType?: 'sedan' | 'hatch' | 'suv'
+  bodyType?: 'sedan' | 'hatch' | 'suv' | 'moto'
 ): 'popular' | 'compacto' | 'medio' => {
   const modelLower = model.toLowerCase();
   const type = bodyType || detectBodyTypeFromModel(model);
+
+  if (type === 'moto') {
+    if (price <= 15000) {
+      return 'popular';
+    }
+    if (price <= 30000) {
+      return 'compacto';
+    }
+    return 'medio';
+  }
 
   if (type === 'sedan') {
     if (SEDAN_COMPACT_MODELS.some(m => modelLower.includes(m)) || price <= 60000) {
