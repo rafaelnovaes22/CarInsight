@@ -57,7 +57,7 @@ IMPORTANTE - VALORES POR EXTENSO E ERROS DE TRANSCRIÇÃO:
 - usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "outro"
 - tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
 - appMencionado: "99" | "uber" | "app" (IMPORTANTE: preserve EXATAMENTE o nome do app que o usuário mencionou - se disse "99", use "99", se disse "Uber", use "uber")
-- bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan"
+- bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan" | "moto"
 - minYear: number (ano mínimo aceito)
 - maxKm: number (quilometragem máxima)
 - transmission: "manual" | "automatico"
@@ -78,6 +78,7 @@ REGRAS ESPECIAIS:
 - Se mencionar "cadeirinha", "bebê conforto", "criança", "filho", "filhos" → usoPrincipal: "familia", priorities: ["cadeirinha", "espaco_traseiro"]
 - Para família com crianças, NUNCA recomendar hatch pequeno (Mobi, Kwid, Up, Uno)
 - Se mencionar "picape", "pickup", "caminhonete", "caçamba", "carga pesada", "obra", "material" → bodyType: "pickup", priorities incluir "pickup"
+- Se mencionar "moto", "motocicleta", "scooter", "biz", "titan", "fan", "bros" → bodyType: "moto", priorities incluir "moto"
 - Modelos de pickup conhecidos: Strada, S10, Hilux, Ranger, Saveiro, Toro, L200, Amarok → bodyType: "pickup"
 - IMPORTANTE: Se mencionar "X lugares" (ex: "7 lugares", "5 lugares") → minSeats: X (número inteiro)
 - Modelos conhecidos de 7 lugares: Spin, SW4, Pajero, Outlander, Commander, Taos, Tiggo 8, Captiva → minSeats: 7
@@ -509,7 +510,7 @@ Saída: {
     }
 
     // Body type validation
-    const validBodyTypes = ['sedan', 'suv', 'hatch', 'pickup', 'minivan'];
+    const validBodyTypes = ['sedan', 'suv', 'hatch', 'pickup', 'minivan', 'moto'];
     if (extracted.bodyType && validBodyTypes.includes(extracted.bodyType)) {
       sanitized.bodyType = extracted.bodyType;
     }
