@@ -82,10 +82,18 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
     next = 'discovery';
   }
 
-  return {
+  const result: Partial<IGraphState> = {
     next,
     profile: updatedProfile,
     recommendations: response.recommendations || [],
-    messages: [new AIMessage(response.response)],
   };
+
+  // Only add message if there is actual content
+  // If response is empty (delegation), we don't add AIMessage so the Router
+  // sees the User message as the last one and continues execution.
+  if (response.response && response.response.trim() !== '') {
+    result.messages = [new AIMessage(response.response)];
+  }
+
+  return result;
 }
