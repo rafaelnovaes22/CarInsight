@@ -45,9 +45,10 @@ router.post('/whatsapp', async (req: Request, res: Response) => {
   try {
     const body = req.body;
 
-    logger.debug('📩 Webhook received', {
+    logger.info('📩 Webhook received', {
       object: body.object,
       entries: body.entry?.length || 0,
+      body: JSON.stringify(body, null, 2), // Log full body for debugging
     });
 
     // Respond immediately (Meta requires response within 20s)
@@ -60,7 +61,7 @@ router.post('/whatsapp', async (req: Request, res: Response) => {
         logger.error({ error }, '❌ Error processing webhook');
       });
     } else {
-      logger.debug('Ignoring non-whatsapp webhook', { object: body.object });
+      logger.info('⚠️ Ignoring non-whatsapp webhook', { object: body.object });
     }
   } catch (error) {
     logger.error({ error }, '❌ Error receiving webhook');

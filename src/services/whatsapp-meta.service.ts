@@ -146,7 +146,7 @@ export class WhatsAppMetaService {
 
       // Only process text messages
       if (message.type !== 'text' || !message.text) {
-        logger.debug('Ignoring non-text message', { type: message.type });
+        logger.info('⚠️ Ignoring non-text message', { type: message.type, id: message.id });
         return;
       }
 

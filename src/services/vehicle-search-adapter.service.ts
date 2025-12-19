@@ -379,7 +379,18 @@ export class VehicleSearchAdapter {
       ['coupe', 'cupe', 'cupê', 'esportivo', 'sport', 'roadster', 'conversivel', 'cabriolet'],
 
       // Motos / Motocicletas
-      ['moto', 'motocicleta', 'scooter', 'biz', 'cub', 'street', 'trail', 'custom', 'naked', 'sport'],
+      [
+        'moto',
+        'motocicleta',
+        'scooter',
+        'biz',
+        'cub',
+        'street',
+        'trail',
+        'custom',
+        'naked',
+        'sport',
+      ],
     ];
 
     // Encontrar o grupo que contém a variação buscada

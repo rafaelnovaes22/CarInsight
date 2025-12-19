@@ -185,7 +185,9 @@ export const MOTO_MODELS = [
  * @param model - The vehicle model name
  * @returns The detected body type or undefined if unknown
  */
-export const detectBodyTypeFromModel = (model: string): 'sedan' | 'hatch' | 'suv' | 'moto' | undefined => {
+export const detectBodyTypeFromModel = (
+  model: string
+): 'sedan' | 'hatch' | 'suv' | 'moto' | undefined => {
   const modelLower = model.toLowerCase();
 
   if (MOTO_MODELS.some(m => modelLower.includes(m))) {

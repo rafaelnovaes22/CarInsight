@@ -154,7 +154,7 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
     // Fallback to basic question based on missing fields
     const { profile, missingFields } = options;
-    
+
     const isMoto = profile.bodyType === 'moto' || profile.priorities?.includes('moto');
     const vehicleTerm = isMoto ? 'na moto' : 'no carro';
     const vehicleEmoji = isMoto ? '🏍️' : '🚗';

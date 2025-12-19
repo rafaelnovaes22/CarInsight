@@ -299,7 +299,6 @@ export class VehicleExpertAgent {
         const alreadyShowedRecommendation = context.profile?._showedRecommendation;
         const lastShownVehicles = context.profile?._lastShownVehicles || [];
 
-
         // Verifica se o modelo mencionado está entre os veículos já mostrados
         // Se sim, é interesse no veículo, não nova busca
         // FIX: Checar se ALGUMA parte importante do nome do modelo está na mensagem
@@ -1087,8 +1086,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                askedBodyType === 'motocicleta' ||
-                askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1109,8 +1108,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                    askedBodyType === 'motocicleta' ||
+                    askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
@@ -1234,15 +1233,7 @@ export class VehicleExpertAgent {
           'carregar',
           'entulho',
         ];
-        const motoKeywords = [
-          'moto',
-          'motocicleta',
-          'scooter',
-          'biz',
-          'titan',
-          'fan',
-          'bros',
-        ];
+        const motoKeywords = ['moto', 'motocicleta', 'scooter', 'biz', 'titan', 'fan', 'bros'];
         const recentUserMessages = context.messages
           .filter(m => m.role === 'user')
           .slice(-5)
@@ -1541,8 +1532,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const hasMotoInText = motoKeywords.some(kw => searchTextLower.includes(kw));
       const hasMotoInPriorities = motoKeywords.some(kw => prioritiesText.includes(kw));
 
-      const wantsMoto =
-        profile.bodyType === 'moto' || hasMotoInText || hasMotoInPriorities;
+      const wantsMoto = profile.bodyType === 'moto' || hasMotoInText || hasMotoInPriorities;
 
       logger.info(
         {
@@ -1567,11 +1557,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const results = await vehicleSearchAdapter.search(query.searchText, {
         maxPrice: query.filters.maxPrice,
         minYear: query.filters.minYear,
-        bodyType: wantsMoto
-          ? 'moto'
-          : wantsPickup
-            ? 'pickup'
-            : query.filters.bodyType?.[0],
+        bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
         brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
         model: query.filters.model?.[0], // Filtrar por modelo quando especificado
         limit: 10, // Get more to filter
