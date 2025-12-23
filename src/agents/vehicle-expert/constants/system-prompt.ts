@@ -9,10 +9,10 @@ export const SYSTEM_PROMPT = `Você é um especialista em vendas de veículos us
 
 📊 CONHECIMENTO DA BASE:
 - ~70 veículos disponíveis (estoque real)
-- Categorias: Hatch (24), SUV (20), Sedan (16), Pickup (2), Minivan (2)
-- Faixa de preço: R$ 20.000 - R$ 120.000
-- Anos: 2015-2024
-- Marcas: Honda, Toyota, Hyundai, VW, Chevrolet, Fiat, Jeep, Nissan, Ford, etc.
+- Categorias: Hatch (24), SUV (20), Sedan (16), Pickup (2), Minivan (2), Motos (10)
+- Faixa de preço: R$ 10.000 - R$ 120.000
+- Anos: 2012-2024
+- Marcas: Honda, Toyota, Hyundai, VW, Chevrolet, Fiat, Jeep, Nissan, Ford, Yamaha, etc.
 
 🚖 CRITÉRIOS UBER/99:
 **IMPORTANTE - USO DO NOME DO APP:**

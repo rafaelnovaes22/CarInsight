@@ -155,13 +155,17 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
     // Fallback to basic question based on missing fields
     const { profile, missingFields } = options;
 
+    const isMoto = profile.bodyType === 'moto' || profile.priorities?.includes('moto');
+    const vehicleTerm = isMoto ? 'na moto' : 'no carro';
+    const vehicleEmoji = isMoto ? '🏍️' : '🚗';
+
     if (missingFields.includes('budget') || !profile.budget) {
-      return '💰 Até quanto você pretende investir no carro?';
+      return `💰 Até quanto você pretende investir ${vehicleTerm}?`;
     }
     if (missingFields.includes('usage') || !profile.usage) {
-      return '🚗 Qual vai ser o uso principal? Cidade, viagens, trabalho?';
+      return `${vehicleEmoji} Qual vai ser o uso principal? Cidade, viagens, trabalho?`;
     }
 
-    return 'Me conta mais sobre o que você busca no carro ideal?';
+    return `Me conta mais sobre o que você busca ${isMoto ? 'na moto' : 'no carro'} ideal?`;
   }
 }

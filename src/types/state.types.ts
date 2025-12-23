@@ -9,7 +9,7 @@ export interface QuizAnswers {
   hasTradeIn?: boolean;
   minYear?: number;
   maxKm?: number;
-  vehicleType?: 'sedan' | 'hatch' | 'suv' | 'pickup' | 'qualquer';
+  vehicleType?: 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | 'qualquer';
   urgency?: 'imediato' | '1mes' | '3meses' | 'flexivel';
 }
 
@@ -36,7 +36,7 @@ export interface CustomerProfile {
   familySize?: number; // legacy support
 
   // Vehicle preferences
-  bodyType?: 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan';
+  bodyType?: 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto';
   vehicleType?: string; // legacy support
   transmission?: 'manual' | 'automatico';
   fuelType?: 'gasolina' | 'flex' | 'diesel' | 'hibrido' | 'eletrico';

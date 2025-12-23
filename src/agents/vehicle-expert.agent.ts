@@ -447,6 +447,35 @@ export class VehicleExpertAgent {
         }
       }
 
+      // 2.2. Intercept Hard Constraints (FAIL FAST) - Moto
+      if (
+        (updatedProfile.bodyType === 'moto' ||
+          userMessage.toLowerCase().includes('moto') ||
+          updatedProfile.priorities?.includes('moto')) &&
+        !context.profile?._waitingForSuggestionResponse
+      ) {
+        logger.info('Intercepting flow: Moto request');
+
+        return {
+          response: `No momento trabalhamos apenas com carros (sedans, hatches, SUVs e picapes). 🚗\n\nAinda não temos motos no estoque, mas se estiver procurando um carro econômico para o dia a dia, posso te mostrar algumas opções! O que acha?`,
+          extractedPreferences: {
+            ...extracted.extracted,
+            _waitingForSuggestionResponse: true,
+            bodyType: 'moto',
+            _searchedItem: 'moto',
+          },
+          needsMoreInfo: [],
+          canRecommend: false,
+          nextMode: 'clarification',
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 1.0,
+            llmUsed: 'rule-based',
+            noMotosFound: true,
+          } as any,
+        };
+      }
+
       // 2.2. Intercept Hard Constraints (FAIL FAST) - 7 seats
       if (
         updatedProfile.minSeats &&
@@ -1033,7 +1062,17 @@ export class VehicleExpertAgent {
           'vocês',
           'voces',
         ];
-        const vehicleTypeKeywords = ['pickup', 'picape', 'suv', 'sedan', 'hatch', 'caminhonete'];
+        const vehicleTypeKeywords = [
+          'pickup',
+          'picape',
+          'suv',
+          'sedan',
+          'hatch',
+          'caminhonete',
+          'moto',
+          'motocicleta',
+          'scooter',
+        ];
         const messageLower = userMessage.toLowerCase();
 
         const isAvailabilityQuestion =
@@ -1044,8 +1083,14 @@ export class VehicleExpertAgent {
           // Detect which vehicle type user is asking about
           const askedBodyType = vehicleTypeKeywords.find(kw => messageLower.includes(kw));
           const normalizedBodyType = (
-            askedBodyType === 'picape' || askedBodyType === 'caminhonete' ? 'pickup' : askedBodyType
-          ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | undefined;
+            askedBodyType === 'picape' || askedBodyType === 'caminhonete'
+              ? 'pickup'
+              : askedBodyType === 'moto' ||
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
+                ? 'moto'
+                : askedBodyType
+          ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
 
           logger.info(
             { userMessage, askedBodyType: normalizedBodyType },
@@ -1062,13 +1107,17 @@ export class VehicleExpertAgent {
             const categoryName =
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
-                : askedBodyType === 'suv'
-                  ? 'SUVs'
-                  : askedBodyType === 'sedan'
-                    ? 'sedans'
-                    : askedBodyType === 'hatch'
-                      ? 'hatches'
-                      : `${askedBodyType}s`;
+                : askedBodyType === 'moto' ||
+                    askedBodyType === 'motocicleta' ||
+                    askedBodyType === 'scooter'
+                  ? 'motos'
+                  : askedBodyType === 'suv'
+                    ? 'SUVs'
+                    : askedBodyType === 'sedan'
+                      ? 'sedans'
+                      : askedBodyType === 'hatch'
+                        ? 'hatches'
+                        : `${askedBodyType}s`;
 
             return {
               response: `No momento não temos ${categoryName} disponíveis no estoque. 😕\n\nQuer que eu busque outras opções para você?`,
@@ -1184,12 +1233,14 @@ export class VehicleExpertAgent {
           'carregar',
           'entulho',
         ];
+        const motoKeywords = ['moto', 'motocicleta', 'scooter', 'biz', 'titan', 'fan', 'bros'];
         const recentUserMessages = context.messages
           .filter(m => m.role === 'user')
           .slice(-5)
           .map(m => m.content.toLowerCase())
           .join(' ');
         const hasPickupInMessages = pickupKeywords.some(kw => recentUserMessages.includes(kw));
+        const hasMotoInMessages = motoKeywords.some(kw => recentUserMessages.includes(kw));
 
         // If pickup detected in messages but not in profile, add it
         if (hasPickupInMessages && !updatedProfile.bodyType) {
@@ -1205,8 +1256,45 @@ export class VehicleExpertAgent {
           }
         }
 
+        // If moto detected in messages but not in profile, add it
+        if (hasMotoInMessages && !updatedProfile.bodyType) {
+          logger.info(
+            { recentMessages: recentUserMessages.substring(0, 100) },
+            'Moto detected in recent user messages, adding to profile'
+          );
+          updatedProfile.bodyType = 'moto';
+          if (!updatedProfile.priorities) {
+            updatedProfile.priorities = ['moto'];
+          } else if (!updatedProfile.priorities.includes('moto')) {
+            updatedProfile.priorities.push('moto');
+          }
+        }
+
         // Generate recommendations
         const result = await this.getRecommendations(updatedProfile);
+
+        // Se não encontrou motos, oferecer sugestões alternativas
+        if (result.noMotosFound) {
+          const noMotoResponse = `No momento não temos motos disponíveis no estoque. 🏍️\n\nQuer responder algumas perguntas rápidas para eu te dar sugestões de carros?`;
+
+          return {
+            response: noMotoResponse,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: true,
+              _searchedItem: 'moto',
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'clarification',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.9,
+              llmUsed: 'gpt-4o-mini',
+              noMotosFound: true,
+            },
+          };
+        }
 
         // Se não encontrou pickups, oferecer sugestões alternativas
         if (result.noPickupsFound) {
@@ -1368,6 +1456,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
     recommendations: VehicleRecommendation[];
     noPickupsFound?: boolean;
     wantsPickup?: boolean;
+    noMotosFound?: boolean;
+    wantsMoto?: boolean;
     noSevenSeaters?: boolean;
     requiredSeats?: number;
   }> {
@@ -1423,16 +1513,39 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         hasPickupInPriorities ||
         (hasWorkUsage && pickupKeywords.some(kw => usageText.includes(kw)));
 
+      // Detect moto requirements
+      const motoKeywords = [
+        'moto',
+        'motocicleta',
+        'scooter',
+        'biz',
+        'titan',
+        'fan',
+        'bros',
+        'pcx',
+        'fazer',
+        'cb',
+        'xre',
+        'yamaha',
+        'honda',
+      ];
+      const hasMotoInText = motoKeywords.some(kw => searchTextLower.includes(kw));
+      const hasMotoInPriorities = motoKeywords.some(kw => prioritiesText.includes(kw));
+
+      const wantsMoto = profile.bodyType === 'moto' || hasMotoInText || hasMotoInPriorities;
+
       logger.info(
         {
           wantsPickup,
+          wantsMoto,
           bodyType: profile.bodyType,
           searchTextLower,
           hasPickupInText,
+          hasMotoInText,
           usageText,
           hasWorkUsage,
         },
-        'Pickup detection check'
+        'Vehicle type detection check'
       );
 
       const isWork =
@@ -1444,18 +1557,24 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const results = await vehicleSearchAdapter.search(query.searchText, {
         maxPrice: query.filters.maxPrice,
         minYear: query.filters.minYear,
-        bodyType: wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
+        bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
         brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
         model: query.filters.model?.[0], // Filtrar por modelo quando especificado
         limit: 10, // Get more to filter
         // Apply Uber filters
         aptoUber: isUberX || undefined,
         aptoUberBlack: isUberBlack || undefined,
-        // Apply family filter (only if family, not for pickup/work)
-        aptoFamilia: (isFamily && !wantsPickup) || undefined,
+        // Apply family filter (only if family, not for pickup/work/moto)
+        aptoFamilia: (isFamily && !wantsPickup && !wantsMoto) || undefined,
         // Apply work filter
         aptoTrabalho: isWork || undefined,
       });
+
+      // Se não encontrou motos e o usuário quer moto, informar
+      if (wantsMoto && results.length === 0) {
+        logger.info({ profile }, 'No motos found in inventory');
+        return { recommendations: [], noMotosFound: true, wantsMoto: true };
+      }
 
       // Se não encontrou pickups e o usuário quer pickup, informar
       if (wantsPickup && results.length === 0) {
