@@ -29,10 +29,10 @@ function generateWhatsAppLink(
   const salesPhone = process.env.SALES_PHONE_NUMBER;
   if (!salesPhone) return null;
 
-  let prefilledText = 'Olá! Vim do bot da FaciliAuto';
+  let prefilledText = 'Olá! Vim do bot do CarInsight';
 
   if (profile?.customerName) {
-    prefilledText = `Olá! Sou ${profile.customerName}, vim do bot da FaciliAuto`;
+    prefilledText = `Olá! Sou ${profile.customerName}, vim do bot do CarInsight`;
   }
 
   // Use _lastShownVehicles logic if maintained in profile, or fetch from recommendations directly
@@ -135,7 +135,7 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     return {
       messages: [
         new AIMessage(
-          `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher a FaciliAuto! 🚗`
+          `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher o CarInsight! 🚗`
         ),
       ],
       metadata: {

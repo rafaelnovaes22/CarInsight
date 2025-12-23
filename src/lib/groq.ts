@@ -44,7 +44,7 @@ export async function salesChatCompletion(
     temperature?: number;
   }
 ): Promise<string> {
-  const systemPrompt = `Você é um assistente virtual especializado em vendas de veículos usados da FaciliAuto.
+  const systemPrompt = `Você é um assistente virtual especializado em vendas de veículos usados do CarInsight.
 
 DIRETRIZES:
 - Seja amigável, profissional e objetivo

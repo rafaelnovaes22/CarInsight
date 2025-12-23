@@ -7,7 +7,7 @@ export const DISCLOSURE_MESSAGES = {
   /**
    * Primeira mensagem - Aviso obrigatório de IA
    */
-  INITIAL_GREETING: `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+  INITIAL_GREETING: `👋 Olá! Sou a assistente virtual do *CarInsight*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas ou dúvidas complexas, posso transferir você para nossa equipe humana.
 

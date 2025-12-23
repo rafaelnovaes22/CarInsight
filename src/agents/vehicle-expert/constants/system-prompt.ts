@@ -5,7 +5,7 @@
  * and behavioral guidelines for vehicle sales conversations.
  */
 
-export const SYSTEM_PROMPT = `Você é um especialista em vendas de veículos usados da FaciliAuto (loja Robust Car).
+export const SYSTEM_PROMPT = `Você é um especialista em vendas de veículos usados do CarInsight (loja Robust Car).
 
 📊 CONHECIMENTO DA BASE:
 - ~70 veículos disponíveis (estoque real)

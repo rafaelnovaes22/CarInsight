@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CarInsight - Connect WhatsApp</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #1c1e21;
+            margin-bottom: 1.5rem;
+        }
+
+        p {
+            color: #606770;
+            margin-bottom: 2rem;
+        }
+
+        #status {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        #status.success {
+            color: #2e7d32;
+            font-weight: bold;
+            background-color: #e8f5e9;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid #c8e6c9;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Connect WhatsApp</h1>
+        <p>Login with your Facebook account to connect your WhatsApp Business number to CarInsight.</p>
+
+        <div id="fb-root"></div>
+        <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+
+        <div id="fb-btn-container" class="fb-login-button" data-width="" data-size="large"
+            data-button-type="continue_with" data-layout="default" data-auto-logout-link="true"
+            data-use-continue-as="true" data-scope="whatsapp_business_management,whatsapp_business_messaging"
+            onlogin="checkLoginState();">
+        </div>
+
+        <div id="status"></div>
+
+        <!-- Botão auxiliar para reiniciar a gravação -->
+        <div style="margin-top: 20px;">
+            <a href="#" onclick="resetDemo(); return false;"
+                style="font-size: 12px; color: #999; text-decoration: none;">Restart Demo (Logout)</a>
+        </div>
+    </div>
+
+    <script>
+        function statusChangeCallback(response) {
+            console.log('statusChangeCallback');
+            console.log(response);
+            if (response.status === 'connected') {
+                console.log('Logado e autenticado');
+
+                // Ocultar botão para não mostrar iframe quebrado/redundante
+                document.getElementById('fb-btn-container').style.display = 'none';
+
+                const statusDiv = document.getElementById('status');
+                statusDiv.className = 'success';
+                statusDiv.innerHTML = '✅ Connected successfully! <br><span style="font-size:0.8em; font-weight:normal">Permissions granted. Token generated.</span>';
+            } else {
+                document.getElementById('status').innerHTML = '';
+                document.getElementById('fb-btn-container').style.display = 'block';
+            }
+        }
+
+        function checkLoginState() {
+            FB.getLoginStatus(function (response) {
+                statusChangeCallback(response);
+            });
+        }
+
+        function resetDemo() {
+            FB.getLoginStatus(function (response) {
+                if (response.status === 'connected') {
+                    FB.logout(function (response) {
+                        location.reload();
+                    });
+                } else {
+                    location.reload();
+                }
+            });
+        }
+
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: '853489967151672', // SEU APP ID
+                cookie: true,
+                xfbml: true,
+                version: 'v18.0'
+            });
+
+            FB.getLoginStatus(function (response) {
+                statusChangeCallback(response);
+            });
+        };
+    </script>
+</body>
+
+</html>

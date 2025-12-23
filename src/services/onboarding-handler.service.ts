@@ -137,7 +137,7 @@ Me conta: o que você está procurando?`;
     }
 
     // Standard greeting (no name provided)
-    const response = `Olá! 😊 Bem-vindo à *FaciliAuto*!
+    const response = `Olá! 😊 Bem-vindo ao *CarInsight*!
 
 Sou especialista em veículos usados e vou te ajudar a encontrar o carro ideal.
 

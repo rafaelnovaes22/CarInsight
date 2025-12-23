@@ -15,7 +15,7 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().optional().default('gsk-mock-key-for-development'), // Fallback para LLM
   COHERE_API_KEY: z.string().optional(), // Fallback para Embeddings
 
-  WHATSAPP_NAME: z.string().default('FaciliAuto'),
+  WHATSAPP_NAME: z.string().default('CarInsight'),
   CRM_WEBHOOK_URL: z.string().optional(),
 
   // Meta Cloud API (WhatsApp Business API Oficial)

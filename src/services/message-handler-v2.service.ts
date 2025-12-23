@@ -64,7 +64,7 @@ export class MessageHandlerV2 {
       if (exitCommands.some(cmd => lowerMessage.includes(cmd))) {
         await this.resetConversation(phoneNumber);
         logger.info({ phoneNumber }, 'User requested exit');
-        return `Obrigado por usar a FaciliAuto! 👋
+        return `Obrigado por usar o CarInsight! 👋
 
 Foi um prazer ajudar você.
 
@@ -78,7 +78,7 @@ Até logo! 🚗`;
         logger.info({ phoneNumber }, 'User requested restart');
         return `🔄 Conversa reiniciada!
 
-👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+👋 Olá! Sou a assistente virtual do *CarInsight*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
 
@@ -138,7 +138,7 @@ Para começar, qual é o seu nome?`;
 
             // Initialize state with greeting messages (user + bot response)
             const initialState = this.initializeState(newConversation.id, phoneNumber);
-            const greetingResponse = `👋 Olá! Sou a assistente virtual da *FaciliAuto*.
+            const greetingResponse = `👋 Olá! Sou a assistente virtual do *CarInsight*.
 
 🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
 
@@ -637,7 +637,7 @@ Para começar, qual é o seu nome?`;
           const success = await dataRightsService.deleteUserData(phoneNumber);
 
           if (success) {
-            return '✅ Seus dados foram excluídos com sucesso!\n\nObrigado por usar a FaciliAuto. Se precisar de algo no futuro, estaremos aqui! 👋';
+            return '✅ Seus dados foram excluídos com sucesso!\n\nObrigado por usar o CarInsight. Se precisar de algo no futuro, estaremos aqui! 👋';
           } else {
             return '❌ Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: suporte@faciliauto.com.br';
           }

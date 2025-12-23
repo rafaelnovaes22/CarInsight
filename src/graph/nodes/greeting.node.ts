@@ -97,7 +97,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
     const searchResult = await vehicleExpert.chat(message, searchContext);
 
     // Greeting + AI Disclosure
-    const greetingPart = `👋 Olá, ${possibleName}! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n`;
+    const greetingPart = `👋 Olá, ${possibleName}! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n`;
 
     return {
       next: searchResult.canRecommend ? 'recommendation' : 'discovery', // Route based on result
@@ -169,7 +169,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       },
       messages: [
         new AIMessage(
-          `👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nVi que você busca um *${carText}*. Ótima escolha! 🚗\n\nQual é o seu nome?`
+          `👋 Olá! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nVi que você busca um *${carText}*. Ótima escolha! 🚗\n\nQual é o seu nome?`
         ),
       ],
     };
@@ -180,7 +180,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
     next: 'greeting',
     messages: [
       new AIMessage(
-        `👋 Olá! Sou a assistente virtual da *FaciliAuto*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`
+        `👋 Olá! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`
       ),
     ],
   };
