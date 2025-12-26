@@ -107,7 +107,7 @@ Me diz o que prefere!`;
     return (
       `Encontrei ${recommendations.length} veículos para você!\n\n` +
       recommendations
-        .slice(0, 3)
+        .slice(0, 5)
         .map(
           (r, i) =>
             `${i + 1}. ${r.vehicle.brand} ${r.vehicle.model} - R$ ${r.vehicle.price.toLocaleString('pt-BR')}`

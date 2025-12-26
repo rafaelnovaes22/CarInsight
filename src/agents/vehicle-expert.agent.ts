@@ -76,6 +76,7 @@ import {
   detectSearchIntent,
   detectPostRecommendationIntent,
   isPostRecommendationResponse,
+  isRecommendationRequest,
   type SearchIntent,
   type PostRecommendationIntent,
 } from './vehicle-expert/intent-detector';
@@ -1051,7 +1052,12 @@ export class VehicleExpertAgent {
       const isUserQuestion = detectUserQuestion(userMessage);
 
       // 5. Route based on question detection
-      if (isUserQuestion) {
+      // IMPORTANT: Don't treat "recommendation" intents as generic questions, even if they have question marks.
+      // e.g. "Pode me indicar um carro?" should go to recommendation flow (to check readiness/budget), not Q&A.
+      // But: "Como funciona o financiamento?" IS a generic question and SHOULD be answered here.
+      const isRecommendation = isRecommendationRequest(userMessage);
+
+      if (isUserQuestion && !isRecommendation) {
         // Check if it's a question about vehicle availability (e.g., "qual pickup você tem?")
         const availabilityKeywords = [
           'tem',
@@ -1086,8 +1092,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                askedBodyType === 'motocicleta' ||
+                askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1108,8 +1114,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                    askedBodyType === 'motocicleta' ||
-                    askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'

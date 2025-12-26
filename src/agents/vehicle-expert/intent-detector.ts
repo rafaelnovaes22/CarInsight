@@ -581,3 +581,30 @@ export const isPostRecommendationResponse = (
     patterns.details.test(message)
   );
 };
+
+/**
+ * Detect if the message is an explicit request for a recommendation/suggestion
+ * e.g. "Pode me indicar um carro?", "Tem alguma sugestão?", "Me ajuda a escolher"
+ *
+ * @param message - User message
+ * @returns true if it's a recommendation request
+ */
+export const isRecommendationRequest = (message: string): boolean => {
+  const normalized = normalize(message);
+  const keywords = [
+    /indic[ao]/i,
+    /recomenda/i,
+    /suger[ie]/i,
+    /sugest[ãa]o/i,
+    /ajuda.*escolher/i,
+    /ajuda.*comprar/i,
+    /qual.*escolher/i,
+    /qual.*comprar/i,
+    /qual.*melhor/i,
+    /mostra.*opç/i,
+    /ver.*opç/i,
+    /tem.*algum/i, // "Tem algum..." usually implies search
+  ];
+
+  return keywords.some(p => p.test(normalized));
+};
