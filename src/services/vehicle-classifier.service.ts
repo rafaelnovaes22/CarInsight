@@ -86,24 +86,28 @@ export class VehicleClassifierService {
 
   static detectWorkEligibility(vehicle: VehicleClassificationInput): boolean {
     // Critérios para Trabalho:
-    // Econômico (Hatch/Sedan) ou Utilitário (Pickup)
+    // Econômico (Hatch/Sedan), Utilitário (Pickup) ou Entregas (Moto)
     const categoryUpper = vehicle.category.toUpperCase();
-    const workCategories = ['HATCH', 'SEDAN', 'PICKUP', 'PICAPE'];
+    const workCategories = ['HATCH', 'SEDAN', 'PICKUP', 'PICAPE', 'MOTO'];
 
-    return workCategories.includes(categoryUpper) && vehicle.year >= 2012;
+    return workCategories.includes(categoryUpper) && vehicle.year >= 2010; // Relaxado para 2010 para incluir motos de entrega
   }
 
   static async detectEligibilityWithLLM(vehicle: VehicleClassificationInput): Promise<import('./uber-eligibility-validator.service').UberEligibilityResult> {
     const { uberEligibilityValidator } = await import('./uber-eligibility-validator.service');
 
-    // 🚨 REGRA HARDCODED: Ano Mínimo SP (2014)
-    // Isso economiza tokens e garante exclusão absoluta de carros 2008-2013
-    if (vehicle.year < 2014) {
+    // 🚨 REGRA HARDCODED: Ano Mínimo SP
+    // Carros: 2014 (Regra Uber X)
+    // Motos: 2010 (Regra Entregas/Flexível)
+    const isMoto = vehicle.category.toUpperCase() === 'MOTO';
+    const minYear = isMoto ? 2010 : 2014;
+
+    if (vehicle.year < minYear) {
       return {
         uberX: false,
         uberComfort: false,
         uberBlack: false,
-        reasoning: 'Reprovado automaticamente: Ano inferior a 2014 (SP Restrito).',
+        reasoning: `Reprovado automaticamente: Ano inferior a ${minYear} (Restrição SP).`,
         confidence: 1.0
       };
     }

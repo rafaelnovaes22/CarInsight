@@ -79,7 +79,30 @@ const CATEGORY_MAP: Record<string, string> = {
 
   // Outros
   'SOUL': 'HATCH',
+
+  // Motos
+  'CG': 'MOTO',
+  'TITAN': 'MOTO',
+  'FAN': 'MOTO',
+  'BROS': 'MOTO',
+  'START': 'MOTO',
+  'BIZ': 'MOTO',
+  'PCX': 'MOTO',
+  'ELITE': 'MOTO',
+  'CB': 'MOTO',
+  'XRE': 'MOTO',
+  'NMAX': 'MOTO',
+  'FAZER': 'MOTO',
+  'FACTOR': 'MOTO',
+  'LANDER': 'MOTO',
   'NEO': 'MOTO',
+  'SCOOTER': 'MOTO',
+  'YAMAHA': 'MOTO',
+  'HONDA': 'MOTO',
+  'BMW': 'MOTO', // Cuidado, BMW tem carros, mas no contexto RobustCar pode ser moto. Melhor deixar específico se possível, mas vamos assumir que BMW aqui pode pegar motos. Se RobustCar vende carros BMW também, isso pode dar falso positivo. Vou evitar marcas genéricas que tem carros.
+  'KAWASAKI': 'MOTO',
+  'TRIUMPH': 'MOTO',
+  'HARLEY': 'MOTO',
 };
 
 function detectCategory(model: string): string {

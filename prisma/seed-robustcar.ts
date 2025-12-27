@@ -35,24 +35,28 @@ function detectTransmission(version: string): string {
   return 'Manual';
 }
 
-function detectFeatures(version: string) {
+function detectFeatures(version: string, category?: string) {
   const versionUpper = version.toUpperCase();
 
   let portas = 4;
-  if (versionUpper.includes('2P') || versionUpper.includes('2 PORTAS')) {
+  if (category === 'MOTO') {
+    portas = 0;
+  } else if (versionUpper.includes('2P') || versionUpper.includes('2 PORTAS')) {
     portas = 2;
   }
 
+  const isMoto = category === 'MOTO';
+
   const features = {
-    arCondicionado: !versionUpper.includes('BASE'),
-    direcaoHidraulica: true,
-    airbag: true,
-    abs: true,
-    vidroEletrico: !versionUpper.includes('BASE'),
-    travaEletrica: !versionUpper.includes('BASE'),
+    arCondicionado: !isMoto && !versionUpper.includes('BASE'),
+    direcaoHidraulica: !isMoto, // Assumindo carros tem, motos não (simplificação)
+    airbag: !isMoto,
+    abs: !isMoto, // Motos tem ABS mas vamos deixar false por padrao seed antigo ou true se quiser
+    vidroEletrico: !isMoto && !versionUpper.includes('BASE'),
+    travaEletrica: !isMoto && !versionUpper.includes('BASE'),
     alarme: true,
     rodaLigaLeve: versionUpper.includes('LTZ') || versionUpper.includes('EX') || versionUpper.includes('LIMITED'),
-    som: true,
+    som: !isMoto,
     portas: portas
   };
 
@@ -151,14 +155,10 @@ async function main() {
       continue;
     }
 
-    if (vehicle.category === 'MOTO') {
-      console.log(`⏭️  Pulando ${vehicle.brand} ${vehicle.model} (categoria MOTO)`);
-      skipCount++;
-      continue;
-    }
+    // MOTO check removed to allow insertion
 
     try {
-      const features = detectFeatures(vehicle.version);
+      const features = detectFeatures(vehicle.version, vehicle.category);
       const transmission = detectTransmission(vehicle.version);
 
       const vehicleInput = {

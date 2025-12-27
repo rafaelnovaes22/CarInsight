@@ -69,14 +69,25 @@ CRITÉRIOS POR CATEGORIA (FOCO SÃO PAULO - SP):
    - **SUVs SELECIONADOS**: Compass, Kicks, Creta, HR-V, T-Cross, Renegade.
    - **JAMAIS**: Carros populares, compactos ou "sedans de entrada" (ver lista de exclusão acima).
 
+4. **MOTOS** (Caso a categoria seja MOTO):
+   - **UBER MOTO** (Passageiro - Retornar true em uberX):
+     - Ano 2014+ (SP).
+     - Não pode ser "Cinquentinha" (50cc).
+   - **ENTREGAS** (Trabalho - Retornar sugestão no reasoning, mas flags Uber focam em passageiro).
+   - **BLACKLIST**: Motos < 2014 para Uber Moto.
+
 ---
 
 TAREFA:
 Analise o veículo abaixo. Primeiro verifique se ele está na LISTA DE EXCLUSÃO do Black.
+Se for MOTO, avalie para Uber Moto (use campo uberX).
 Retorne JSON estrito.
 
 Exemplo de Raciocínio Esperado para HB20S:
 "HB20S é um sedan compacto popular. Está na lista de exclusão do Black. Aceito no X e Comfort (se novo)." -> uberBlack: false.
+
+Exemplo para Moto:
+"CG 160 Fan 2020. É moto, ano ok para Uber Moto." -> uberX: true, uberBlack: false.
 
 Formato de resposta:
 {
