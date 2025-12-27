@@ -28,71 +28,64 @@ export interface VehicleInfo {
 }
 
 export class UberEligibilityValidator {
-  private readonly UBER_CRITERIA_PROMPT = `Você é um especialista em requisitos do Uber e 99 no Brasil.
+  private readonly UBER_CRITERIA_PROMPT = `ATENÇÃO MÁXIMA: Você é um validador RIGOROSO de veículos para Uber Black/Comfort no Brasil (2025).
 
-CRITÉRIOS OFICIAIS UBER/99 (2024):
+🚨 REGRA DE OURO (EXCLUSÕES IMEDIATAS):
+Se o veículo estiver nesta lista, ele **NUNCA** pode ser Uber Black, não importa o ano ou preço:
+- **HB20 / HB20S** (Qualquer versão) -> JAMAIS BLACK.
+- **Onix / Onix Plus / Prisma** -> JAMAIS BLACK.
+- **Fiat Cronos / Grand Siena / Siena** -> JAMAIS BLACK.
+- **VW Voyage / Virtus (exceto Exclusive/GTS)** -> JAMAIS BLACK.
+- **Ford Ka / Ka Sedan** -> JAMAIS BLACK.
+- **Toyota Yaris / Etios** -> JAMAIS BLACK.
+- **Nissan Versa / V-Drive** -> JAMAIS BLACK.
+- **Honda City** -> JAMAIS BLACK.
+- **Renault Logan / Sandero** -> JAMAIS BLACK.
 
-**UBER X / 99Pop:**
-- Ano: 2012 ou mais recente
-- Tipo: APENAS Sedan compacto/médio OU Hatch
-- Portas: 4
-- Ar-condicionado: Obrigatório
-- NUNCA ACEITO: SUV, Picape, Minivan, Van
+Se o carro for um desses, **uberBlack DEVE SER FALSE**. Não hesite.
 
-**UBER COMFORT / 99TOP / 99XL:**
-- Ano: 2015 ou mais recente  
-- Tipo: Sedan médio/grande, Minivan (ex: Spin), SUV médio
-- Portas: 4
-- Espaço: Amplo (bagageiro)
-- Ar-condicionado: Obrigatório
-- ACEITA: Minivans como Spin, Zafira
+---
 
-**UBER BLACK / 99BLACK:**
-- Ano: 2018 ou mais recente
-- Tipo: APENAS Sedan PREMIUM
-- Portas: 4
-- Ar-condicionado: Obrigatório
-- Interior: Couro (preferencial)
-- Cor: Preto (preferencial)
-- NUNCA ACEITO: SUV, Minivan, Hatch
+CRITÉRIOS POR CATEGORIA (FOCO SÃO PAULO - SP):
 
-**99TAXI (equivalente a Uber Comfort):**
-- Mesmos critérios do Uber Comfort
-- Foco em sedans médios/grandes e minivans
+1. **UBER X** (Entrada):
+   - **Ano: 2014 ou mais recente** (Regra SÃO PAULO).
+   - Aceita quase tudo 2014+ com 4 portas e Ar.
+   - Hatchs compactos (Mobi, Kwid, HB20) são aceitos.
+   - Sedans compactos (HB20S, Cronos) são aceitos.
+   - **PROIBIDO**: Carros 2 Portas (Jamais aceito). 
+   - **PROIBIDO**: Ano < 2014 (Celtas/Palios 2010-2013 não entram em SP).
 
-**NUNCA ACEITO EM NENHUMA CATEGORIA UBER/99:**
-- Picapes (Hilux, Ranger, S10, L200, etc)
-- Vans grandes (Master, Sprinter)
-- SUVs grandes (Pajero, SW4, Grand Cherokee)
-- Veículos 2 portas
-- Veículos rebaixados
-- Placa vermelha
-- Adesivados
+2. **UBER COMFORT** (Intermediário):
+   - Max 6 anos (2019+).
+   - Espaço interno decente.
+   - **NÃO ACEITA HATCHS PEQUENOS** (Mobi, Kwid, Gol, HB20 Hatch, Onix Hatch).
+   - **ACEITA** Sedans compactos modernos (HB20S, Onix Plus, Cronos, Virtus) e SUVs.
 
-IMPORTANTE:
-- Spin (Chevrolet) É MINIVAN → ✅ Comfort/XL/Bag/99TOP | ❌ X/99Pop | ❌ Black/99Black
-- Compass (Jeep) É SUV → ✅ Comfort/99TOP | ❌ X/99Pop | ❌ Black/99Black
-- Civic/Corolla (Sedan médio) → ✅ X/99Pop | ✅ Comfort/99TOP | ✅ Black/99Black (se 2018+)
-- Gol/Onix (Hatch) → ✅ X/99Pop | ❌ Comfort/99TOP | ❌ Black/99Black
+3. **UBER BLACK** (Premium - Apenas Sedans Médios/Grandes e SUVs):
+   - Max 6 anos (2019+).
+   - Cores sóbrias (Preto, Prata, Cinza, Branco, Azul-marinho).
+   - **SOMENTE SEDANS MÉDIOS+**: Corolla, Civic, Sentra, Cerato, Cruze, Jetta.
+   - **SUVs SELECIONADOS**: Compass, Kicks, Creta, HR-V, T-Cross, Renegade.
+   - **JAMAIS**: Carros populares, compactos ou "sedans de entrada" (ver lista de exclusão acima).
 
-EQUIVALÊNCIAS:
-- Uber X = 99Pop
-- Uber Comfort = 99TOP = 99XL = 99Taxi
-- Uber Black = 99Black
+---
 
 TAREFA:
-Analise o veículo e retorne JSON com elegibilidade para cada categoria.
+Analise o veículo abaixo. Primeiro verifique se ele está na LISTA DE EXCLUSÃO do Black.
+Retorne JSON estrito.
+
+Exemplo de Raciocínio Esperado para HB20S:
+"HB20S é um sedan compacto popular. Está na lista de exclusão do Black. Aceito no X e Comfort (se novo)." -> uberBlack: false.
 
 Formato de resposta:
 {
-  "uberX": true/false,          // Inclui 99Pop
-  "uberComfort": true/false,    // Inclui 99TOP, 99XL, 99Taxi
-  "uberBlack": true/false,      // Inclui 99Black
-  "reasoning": "Explicação clara do por quê",
-  "confidence": 0.0-1.0
-}
-
-Seja RIGOROSO. Em caso de dúvida, marque false.`;
+  "uberX": true/false,
+  "uberComfort": true/false,
+  "uberBlack": true/false,
+  "reasoning": "Seja direto. Mencione a exclusão se houver.",
+  "confidence": 1.0
+}`;
 
   /**
    * Validate Uber eligibility using LLM

@@ -1,38 +1,38 @@
 [
   {
-    "brand": "RENAULT",
-    "model": "KWID",
-    "version": "ZEN 2",
+    "brand": "HYUNDAI",
+    "model": "HB20",
+    "version": "10M COMFORT",
     "year": 2025,
-    "mileage": 51985,
+    "mileage": 57120,
     "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 62990,
-    "detailUrl": "https://robustcar.com.br/carros/Renault/Kwid/Zen-2/Renault-Kwid-Zen-2-2025-São-Paulo-Sao-Paulo-7279276.html",
-    "category": "HATCH"
-  },
-  {
-    "brand": "FIAT",
-    "model": "MOBI",
-    "version": "TREKKING 1.0 MT",
-    "year": 2025,
-    "mileage": 28749,
-    "fuel": "FLEX",
-    "color": "BRANCO",
+    "color": "AZUL",
     "price": 75990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Mobi/Trekking-10-Mt/Fiat-Mobi-Trekking-10-Mt-2025-São-Paulo-Sao-Paulo-7413057.html",
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20/10m-Comfort/Hyundai-Hb20-10m-Comfort-2025-S�o-Paulo-Sao-Paulo-7603120.html",
     "category": "HATCH"
   },
   {
-    "brand": "CAOA CHERY",
+    "brand": "HYUNDAI",
+    "model": "HB20S",
+    "version": "1.0 M COMFORT",
+    "year": 2025,
+    "mileage": 61421,
+    "fuel": "FLEX",
+    "color": "PRATA",
+    "price": 82990,
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20s/10-M-Comfort/Hyundai-Hb20s-10-M-Comfort-2025-S�o-Paulo-Sao-Paulo-7606169.html",
+    "category": "SEDAN"
+  },
+  {
+    "brand": "CAOA-CHERY",
     "model": "TIGGO",
-    "version": "5X PRO 1.5 TURBO FLEX AUT",
+    "version": "CAOA CHERY  5X PRO 1.5 TURBO FLEX AUT",
     "year": 2025,
     "mileage": 1,
-    "fuel": "HÍBRIDO",
+    "fuel": "H�BRIDO",
     "color": "PRETO",
     "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Caoa-Chery/Tiggo/5x-Pro-15-Turbo-Flex-Aut/Caoa-Chery-Tiggo-5x-Pro-15-Turbo-Flex-Aut-2025-São-Paulo-Sao-Paulo-6927275.html",
+    "detailUrl": "https://robustcar.com.br/carros/Caoa-Chery/Tiggo/5x-Pro-15-Turbo-Flex-Aut/Caoa-Chery-Tiggo-5x-Pro-15-Turbo-Flex-Aut-2025-S�o-Paulo-Sao-Paulo-6927275.html",
     "category": "SUV"
   },
   {
@@ -44,32 +44,8 @@
     "fuel": "FLEX",
     "color": "PRETO",
     "price": 95990,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/Hatch-Prem-10-12v-Tb-Flex-5p-Aut/Chevrolet-Onix-Hatch-Prem-10-12v-Tb-Flex-5p-Aut-2024-São-Paulo-Sao-Paulo-7320201.html",
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/Hatch-Prem-10-12v-Tb-Flex-5p-Aut/Chevrolet-Onix-Hatch-Prem-10-12v-Tb-Flex-5p-Aut-2024-S�o-Paulo-Sao-Paulo-7320201.html",
     "category": "HATCH"
-  },
-  {
-    "brand": "TOYOTA",
-    "model": "RAV4",
-    "version": "H 25L SX4WD",
-    "year": 2024,
-    "mileage": 34277,
-    "fuel": "ELÉTRICO",
-    "color": "BRANCO",
-    "price": 270990,
-    "detailUrl": "https://robustcar.com.br/carros/Toyota/Rav4h/25l-Sx4wd/Toyota-Rav4h-25l-Sx4wd-2024-São-Paulo-Sao-Paulo-7470524.html",
-    "category": "SUV"
-  },
-  {
-    "brand": "HYUNDAI",
-    "model": "HB20S",
-    "version": "COMFORT PLUS 1.0 TB FLEX 12V AUT",
-    "year": 2024,
-    "mileage": 1,
-    "fuel": "FLEX",
-    "color": "PRATA",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20s/Comfort-Plus-10-Tb-Flex-12v-Aut/Hyundai-Hb20s-Comfort-Plus-10-Tb-Flex-12v-Aut-2024-São-Paulo-Sao-Paulo-7541362.html",
-    "category": "SEDAN"
   },
   {
     "brand": "HYUNDAI",
@@ -80,7 +56,7 @@
     "fuel": "FLEX",
     "color": "CINZA",
     "price": 98990,
-    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Creta/Comfort-10-Tb-12v-Flex-Aut/Hyundai-Creta-Comfort-10-Tb-12v-Flex-Aut-2024-São-Paulo-Sao-Paulo-6907905.html",
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Creta/Comfort-10-Tb-12v-Flex-Aut/Hyundai-Creta-Comfort-10-Tb-12v-Flex-Aut-2024-S�o-Paulo-Sao-Paulo-6907905.html",
     "category": "SUV"
   },
   {
@@ -92,7 +68,7 @@
     "fuel": "FLEX",
     "color": "PRATA",
     "price": 81990,
-    "detailUrl": "https://robustcar.com.br/carros/Toyota/Yaris/Sa-Xl15live/Toyota-Yaris-Sa-Xl15live-2024-São-Paulo-Sao-Paulo-7462768.html",
+    "detailUrl": "https://robustcar.com.br/carros/Toyota/Yaris/Sa-Xl15live/Toyota-Yaris-Sa-Xl15live-2024-S�o-Paulo-Sao-Paulo-7462768.html",
     "category": "HATCH"
   },
   {
@@ -104,8 +80,32 @@
     "fuel": "FLEX",
     "color": "CINZA",
     "price": 113990,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Tracker/Premier-12-Turbo-12v-Flex-Aut/Chevrolet-Tracker-Premier-12-Turbo-12v-Flex-Aut-2024-São-Paulo-Sao-Paulo-6812958.html",
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Tracker/Premier-12-Turbo-12v-Flex-Aut/Chevrolet-Tracker-Premier-12-Turbo-12v-Flex-Aut-2024-S�o-Paulo-Sao-Paulo-6812958.html",
     "category": "SUV"
+  },
+  {
+    "brand": "HYUNDAI",
+    "model": "HB20S",
+    "version": "COMFORT PLUS 1.0 TB FLEX 12V AUT",
+    "year": 2024,
+    "mileage": 68237,
+    "fuel": "FLEX",
+    "color": "PRATA",
+    "price": 88990,
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20s/Comfort-Plus-10-Tb-Flex-12v-Aut/Hyundai-Hb20s-Comfort-Plus-10-Tb-Flex-12v-Aut-2024-S�o-Paulo-Sao-Paulo-7541362.html",
+    "category": "SEDAN"
+  },
+  {
+    "brand": "VOLKSWAGEN",
+    "model": "NIVUS",
+    "version": "1.0 200 TSI HIGHLINE",
+    "year": 2024,
+    "mileage": 12517,
+    "fuel": "FLEX",
+    "color": "CINZA",
+    "price": 126990,
+    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Nivus/10-200-Tsi-Highline/Volkswagen-Nivus-10-200-Tsi-Highline-2024-S�o-Paulo-Sao-Paulo-7665104.html",
+    "category": "HATCH"
   },
   {
     "brand": "JEEP",
@@ -116,20 +116,20 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 98990,
-    "detailUrl": "https://robustcar.com.br/carros/Jeep/Renegade/Lgtd-T270/Jeep-Renegade-Lgtd-T270-2024-São-Paulo-Sao-Paulo-7389966.html",
+    "detailUrl": "https://robustcar.com.br/carros/Jeep/Renegade/Lgtd-T270/Jeep-Renegade-Lgtd-T270-2024-S�o-Paulo-Sao-Paulo-7389966.html",
     "category": "SUV"
   },
   {
-    "brand": "HYUNDAI",
-    "model": "CRETA",
-    "version": "1.0 TGDI AT6 PLATINUM",
-    "year": 2023,
-    "mileage": 24821,
+    "brand": "RENAULT",
+    "model": "KWID",
+    "version": "ZEN 2",
+    "year": 2024,
+    "mileage": 49503,
     "fuel": "FLEX",
-    "color": "AZUL",
-    "price": 114990,
-    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Creta/10-Tgdi-At6-Platinum/Hyundai-Creta-10-Tgdi-At6-Platinum-2023-São-Paulo-Sao-Paulo-6830760.html",
-    "category": "SUV"
+    "color": "PRATA",
+    "price": 53990,
+    "detailUrl": "https://robustcar.com.br/carros/Renault/Kwid/Zen-2/Renault-Kwid-Zen-2-2024-S�o-Paulo-Sao-Paulo-7593376.html",
+    "category": "HATCH"
   },
   {
     "brand": "RENAULT",
@@ -139,32 +139,20 @@
     "mileage": 105444,
     "fuel": "FLEX",
     "color": "MARROM",
-    "price": 81990,
-    "detailUrl": "https://robustcar.com.br/carros/Renault/Duster/Zen-16-Cvt/Renault-Duster-Zen-16-Cvt-2022-São-Paulo-Sao-Paulo-7547218.html",
+    "price": 80990,
+    "detailUrl": "https://robustcar.com.br/carros/Renault/Duster/Zen-16-Cvt/Renault-Duster-Zen-16-Cvt-2022-S�o-Paulo-Sao-Paulo-7547218.html",
     "category": "SUV"
-  },
-  {
-    "brand": "FIAT",
-    "model": "STRADA",
-    "version": "FREEDOM 13CS",
-    "year": 2022,
-    "mileage": 74775,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 76990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Strada/Freedom-13cs/Fiat-Strada-Freedom-13cs-2022-São-Paulo-Sao-Paulo-7415855.html",
-    "category": "PICKUP"
   },
   {
     "brand": "KIA",
     "model": "STONIC",
-    "version": "SX 1.0 TB AUT. (HÍBRIDO)",
+    "version": "SX 1.0 TB AUT. (H�BRIDO)",
     "year": 2022,
     "mileage": 30134,
-    "fuel": "HÍBRIDO",
+    "fuel": "H�BRIDO",
     "color": "AZUL",
     "price": 88990,
-    "detailUrl": "https://robustcar.com.br/carros/Kia/Stonic/Sx-10-Tb-Aut-(hibrido)/Kia-Stonic-Sx-10-Tb-Aut-(hibrido)-2022-São-Paulo-Sao-Paulo-6908089.html",
+    "detailUrl": "https://robustcar.com.br/carros/Kia/Stonic/Sx-10-Tb-Aut-(hibrido)/Kia-Stonic-Sx-10-Tb-Aut-(hibrido)-2022-S�o-Paulo-Sao-Paulo-6908089.html",
     "category": "SUV"
   },
   {
@@ -176,20 +164,8 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 96990,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Tracker/Lt-10-Turbo-12v-Flex-Aut/Chevrolet-Tracker-Lt-10-Turbo-12v-Flex-Aut-2021-São-Paulo-Sao-Paulo-6748597.html",
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Tracker/Lt-10-Turbo-12v-Flex-Aut/Chevrolet-Tracker-Lt-10-Turbo-12v-Flex-Aut-2021-S�o-Paulo-Sao-Paulo-6748597.html",
     "category": "SUV"
-  },
-  {
-    "brand": "CAOA CHERY",
-    "model": "ARRIZO",
-    "version": "6 GSX 1.5 TURBO FLEX AUT.",
-    "year": 2021,
-    "mileage": 1,
-    "fuel": "FLEX",
-    "color": "PRETO",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Caoa-Chery/Arrizo/6-Gsx-15-Turbo-Flex-Aut/Caoa-Chery-Arrizo-6-Gsx-15-Turbo-Flex-Aut-2021-São-Paulo-Sao-Paulo-7112812.html",
-    "category": "SEDAN"
   },
   {
     "brand": "YAMAHA",
@@ -200,20 +176,8 @@
     "fuel": "GASOLINA",
     "color": "PRETO",
     "price": 13990,
-    "detailUrl": "https://robustcar.com.br/motos/Yamaha/Neo/Automatic-125cc/Yamaha-Neo-Automatic-125cc-2021-São-Paulo-Sao-Paulo-6936084.html",
+    "detailUrl": "https://robustcar.com.br/motos/Yamaha/Neo/Automatic-125cc/Yamaha-Neo-Automatic-125cc-2021-S�o-Paulo-Sao-Paulo-6936084.html",
     "category": "MOTO"
-  },
-  {
-    "brand": "CHEVROLET",
-    "model": "ONIX",
-    "version": "1.0 MT",
-    "year": 2021,
-    "mileage": 0,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/10-Mt/Chevrolet-Onix-10-Mt-2021-São-Paulo-Sao-Paulo-7522247.html",
-    "category": "HATCH"
   },
   {
     "brand": "FIAT",
@@ -224,20 +188,20 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 51990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Uno/10-Evo-Attractive-8v-Flex-4p-Manual/Fiat-Uno-10-Evo-Attractive-8v-Flex-4p-Manual-2021-São-Paulo-Sao-Paulo-7510141.html",
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Uno/10-Evo-Attractive-8v-Flex-4p-Manual/Fiat-Uno-10-Evo-Attractive-8v-Flex-4p-Manual-2021-S�o-Paulo-Sao-Paulo-7510141.html",
     "category": "HATCH"
   },
   {
-    "brand": "FIAT",
-    "model": "TORO",
-    "version": "VOLCANO AT9 D4",
+    "brand": "CHEVROLET",
+    "model": "ONIX",
+    "version": "1.0 MT",
     "year": 2021,
-    "mileage": 162133,
-    "fuel": "DIESEL",
-    "color": "PRETO",
-    "price": 105990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Toro/Volcano-At9-D4/Fiat-Toro-Volcano-At9-D4-2021-São-Paulo-Sao-Paulo-7451524.html",
-    "category": "PICKUP"
+    "mileage": 237017,
+    "fuel": "FLEX",
+    "color": "BRANCO",
+    "price": 52990,
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/10-Mt/Chevrolet-Onix-10-Mt-2021-S�o-Paulo-Sao-Paulo-7522247.html",
+    "category": "HATCH"
   },
   {
     "brand": "FIAT",
@@ -248,44 +212,92 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 52990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Uno/Attractive-10/Fiat-Uno-Attractive-10-2021-São-Paulo-Sao-Paulo-7439016.html",
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Uno/Attractive-10/Fiat-Uno-Attractive-10-2021-S�o-Paulo-Sao-Paulo-7439016.html",
     "category": "HATCH"
+  },
+  {
+    "brand": "CAOA-CHERY",
+    "model": "ARRIZO",
+    "version": "CAOA CHERY  6 GSX 1.5 TURBO FLEX AUT.",
+    "year": 2021,
+    "mileage": 1,
+    "fuel": "FLEX",
+    "color": "PRETO",
+    "price": null,
+    "detailUrl": "https://robustcar.com.br/carros/Caoa-Chery/Arrizo/6-Gsx-15-Turbo-Flex-Aut/Caoa-Chery-Arrizo-6-Gsx-15-Turbo-Flex-Aut-2021-S�o-Paulo-Sao-Paulo-7112812.html",
+    "category": "SEDAN"
   },
   {
     "brand": "JEEP",
     "model": "RENEGADE",
-    "version": "LIMITED AT",
+    "version": "1.8 4X2 FLEX 16V AUT.",
     "year": 2020,
-    "mileage": 59352,
+    "mileage": 58360,
     "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 82990,
-    "detailUrl": "https://robustcar.com.br/carros/Jeep/Renegade/Limited-At/Jeep-Renegade-Limited-At-2020-São-Paulo-Sao-Paulo-7555522.html",
+    "color": "PRETO",
+    "price": 78990,
+    "detailUrl": "https://robustcar.com.br/carros/Jeep/Renegade/18-4x2-Flex-16v-Aut/Jeep-Renegade-18-4x2-Flex-16v-Aut-2020-S�o-Paulo-Sao-Paulo-7303999.html",
     "category": "SUV"
+  },
+  {
+    "brand": "FORD",
+    "model": "KA-SE",
+    "version": "KA SE PLUS AT1.5SDC",
+    "year": 2020,
+    "mileage": 60658,
+    "fuel": "FLEX",
+    "color": "PRATA",
+    "price": 57990,
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Ka-Se/Plus-At15sdc/Ford-Ka-Se-Plus-At15sdc-2020-S�o-Paulo-Sao-Paulo-7579738.html",
+    "category": "HATCH"
   },
   {
     "brand": "VOLKSWAGEN",
     "model": "T-CROSS",
-    "version": "SENSE TSI AD",
+    "version": "T CROSS SENSE TSI AD",
     "year": 2020,
-    "mileage": 25000,
+    "mileage": 26084,
     "fuel": "FLEX",
     "color": "PRATA",
     "price": 93990,
-    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/T-Cross/Sense-Tsi-Ad/Volkswagen-T-Cross-Sense-Tsi-Ad-2020-São-Paulo-Sao-Paulo-7557278.html",
+    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/T-Cross/Sense-Tsi-Ad/Volkswagen-T-Cross-Sense-Tsi-Ad-2020-S�o-Paulo-Sao-Paulo-7557278.html",
     "category": "SUV"
   },
   {
-    "brand": "HYUNDAI",
-    "model": "HB20S",
-    "version": "1.0 M COMFORT",
+    "brand": "CHEVROLET",
+    "model": "ONIX",
+    "version": "10MT JOYE",
     "year": 2019,
-    "mileage": 129096,
+    "mileage": 114743,
     "fuel": "FLEX",
-    "color": "PRATA",
-    "price": 62990,
-    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20s/10-M-Comfort/Hyundai-Hb20s-10-M-Comfort-2019-São-Paulo-Sao-Paulo-7189697.html",
-    "category": "SEDAN"
+    "color": "BRANCO",
+    "price": 55990,
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/10mt-Joye/Chevrolet-Onix-10mt-Joye-2019-S�o-Paulo-Sao-Paulo-7603448.html",
+    "category": "HATCH"
+  },
+  {
+    "brand": "CHEVROLET",
+    "model": "ONIX",
+    "version": "1.4AT LT",
+    "year": 2019,
+    "mileage": 152962,
+    "fuel": "FLEX",
+    "color": "PRETO",
+    "price": 65990,
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/14at-Lt/Chevrolet-Onix-14at-Lt-2019-S�o-Paulo-Sao-Paulo-7656215.html",
+    "category": "HATCH"
+  },
+  {
+    "brand": "KIA",
+    "model": "SPORTAGE",
+    "version": "EX2 FFG3",
+    "year": 2019,
+    "mileage": 118817,
+    "fuel": "FLEX",
+    "color": "BRANCO",
+    "price": 102990,
+    "detailUrl": "https://robustcar.com.br/carros/Kia/Sportage/Ex2-Ffg3/Kia-Sportage-Ex2-Ffg3-2019-S�o-Paulo-Sao-Paulo-7460314.html",
+    "category": "SUV"
   },
   {
     "brand": "HYUNDAI",
@@ -296,44 +308,20 @@
     "fuel": "FLEX",
     "color": "PRETO",
     "price": 67990,
-    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20/16a-Comf/Hyundai-Hb20-16a-Comf-2019-São-Paulo-Sao-Paulo-7090325.html",
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20/16a-Comf/Hyundai-Hb20-16a-Comf-2019-S�o-Paulo-Sao-Paulo-7090325.html",
     "category": "HATCH"
   },
   {
-    "brand": "KIA",
-    "model": "SPORTAGE",
-    "version": "EX2 FFG3",
+    "brand": "HYUNDAI",
+    "model": "IX35",
+    "version": "GL",
     "year": 2019,
-    "mileage": 1,
+    "mileage": 145768,
     "fuel": "FLEX",
-    "color": "BRANCO",
+    "color": "PRETO",
     "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Kia/Sportage/Ex2-Ffg3/Kia-Sportage-Ex2-Ffg3-2019-São-Paulo-Sao-Paulo-7460314.html",
-    "category": "SUV"
-  },
-  {
-    "brand": "VOLKSWAGEN",
-    "model": "VOYAGE",
-    "version": "1.6 MSI FLEX 8V 4P",
-    "year": 2018,
-    "mileage": 175547,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 50990,
-    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Voyage/16-Msi-Flex-8v-4p/Volkswagen-Voyage-16-Msi-Flex-8v-4p-2018-São-Paulo-Sao-Paulo-7390216.html",
-    "category": "SEDAN"
-  },
-  {
-    "brand": "RENAULT",
-    "model": "LOGAN",
-    "version": "EXPR 1016V",
-    "year": 2018,
-    "mileage": 232141,
-    "fuel": "FLEX",
-    "color": "PRATA",
-    "price": 40990,
-    "detailUrl": "https://robustcar.com.br/carros/Renault/Logan/Expr-1016v/Renault-Logan-Expr-1016v-2018-São-Paulo-Sao-Paulo-7472135.html",
-    "category": "SEDAN"
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Ix35/Gl/Hyundai-Ix35-Gl-2019-S�o-Paulo-Sao-Paulo-7588544.html",
+    "category": "HATCH"
   },
   {
     "brand": "TOYOTA",
@@ -344,20 +332,8 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 108990,
-    "detailUrl": "https://robustcar.com.br/carros/Toyota/Corolla/Xei-20flex/Toyota-Corolla-Xei-20flex-2018-São-Paulo-Sao-Paulo-7391590.html",
+    "detailUrl": "https://robustcar.com.br/carros/Toyota/Corolla/Xei-20flex/Toyota-Corolla-Xei-20flex-2018-S�o-Paulo-Sao-Paulo-7391590.html",
     "category": "SEDAN"
-  },
-  {
-    "brand": "RENAULT",
-    "model": "KWID",
-    "version": "INTENSE 1.0 MT",
-    "year": 2018,
-    "mileage": 35427,
-    "fuel": "FLEX",
-    "color": "PRATA",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Renault/Kwid/Intense-10-Mt/Renault-Kwid-Intense-10-Mt-2018-São-Paulo-Sao-Paulo-7524715.html",
-    "category": "HATCH"
   },
   {
     "brand": "SSANGYONG",
@@ -368,7 +344,7 @@
     "fuel": "DIESEL",
     "color": "BRANCO",
     "price": 70990,
-    "detailUrl": "https://robustcar.com.br/carros/Ssangyong/Korando/C-At/Ssangyong-Korando-C-At-2018-São-Paulo-Sao-Paulo-6830859.html",
+    "detailUrl": "https://robustcar.com.br/carros/Ssangyong/Korando/C-At/Ssangyong-Korando-C-At-2018-S�o-Paulo-Sao-Paulo-6830859.html",
     "category": "SUV"
   },
   {
@@ -377,35 +353,11 @@
     "version": "HYBRID 1.8 16V 5P AUT",
     "year": 2018,
     "mileage": 90401,
-    "fuel": "HÍBRIDO",
+    "fuel": "H�BRIDO",
     "color": "PRATA",
     "price": 86990,
-    "detailUrl": "https://robustcar.com.br/carros/Toyota/Prius/Hybrid-18-16v-5p-Aut/Toyota-Prius-Hybrid-18-16v-5p-Aut-2018-São-Paulo-Sao-Paulo-6887185.html",
+    "detailUrl": "https://robustcar.com.br/carros/Toyota/Prius/Hybrid-18-16v-5p-Aut/Toyota-Prius-Hybrid-18-16v-5p-Aut-2018-S�o-Paulo-Sao-Paulo-6887185.html",
     "category": "SEDAN"
-  },
-  {
-    "brand": "FORD",
-    "model": "FIESTA",
-    "version": "16SE",
-    "year": 2018,
-    "mileage": 145323,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 52990,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/16se/Ford-Fiesta-16se-2018-São-Paulo-Sao-Paulo-7286784.html",
-    "category": "HATCH"
-  },
-  {
-    "brand": "JEEP",
-    "model": "COMPASS",
-    "version": "LONGITUDE F",
-    "year": 2018,
-    "mileage": 109600,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 89990,
-    "detailUrl": "https://robustcar.com.br/carros/Jeep/Compass/Longitude-F/Jeep-Compass-Longitude-F-2018-São-Paulo-Sao-Paulo-7506446.html",
-    "category": "SUV"
   },
   {
     "brand": "FORD",
@@ -416,20 +368,32 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 65990,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Ecosport/15-Se-Aut/Ford-Ecosport-15-Se-Aut-2018-São-Paulo-Sao-Paulo-7411489.html",
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Ecosport/15-Se-Aut/Ford-Ecosport-15-Se-Aut-2018-S�o-Paulo-Sao-Paulo-7411489.html",
     "category": "SUV"
   },
   {
     "brand": "HYUNDAI",
     "model": "HB20S",
-    "version": "1.0M COMF",
-    "year": 2017,
-    "mileage": 137290,
+    "version": "1.6A PREM",
+    "year": 2018,
+    "mileage": 82930,
     "fuel": "FLEX",
-    "color": "PRETO",
-    "price": 58990,
-    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20s/10m-Comf/Hyundai-Hb20s-10m-Comf-2017-São-Paulo-Sao-Paulo-7483908.html",
+    "color": "PRATA",
+    "price": 73990,
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Hb20s/16a-Prem/Hyundai-Hb20s-16a-Prem-2018-S�o-Paulo-Sao-Paulo-7617198.html",
     "category": "SEDAN"
+  },
+  {
+    "brand": "FIAT",
+    "model": "TORO",
+    "version": "FREEDOM AT",
+    "year": 2018,
+    "mileage": 135344,
+    "fuel": "FLEX",
+    "color": "MARROM",
+    "price": 87990,
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Toro/Freedom-At/Fiat-Toro-Freedom-At-2018-S�o-Paulo-Sao-Paulo-7625338.html",
+    "category": "PICKUP"
   },
   {
     "brand": "CITROEN",
@@ -440,7 +404,7 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 54990,
-    "detailUrl": "https://robustcar.com.br/carros/Citroen/Aircross/A-Feel/Citroen-Aircross-A-Feel-2017-São-Paulo-Sao-Paulo-6248716.html",
+    "detailUrl": "https://robustcar.com.br/carros/Citroen/Aircross/A-Feel/Citroen-Aircross-A-Feel-2017-S�o-Paulo-Sao-Paulo-6248716.html",
     "category": "SUV"
   },
   {
@@ -448,11 +412,35 @@
     "model": "FOX",
     "version": "TL MCV",
     "year": 2017,
-    "mileage": 898581,
+    "mileage": 89881,
     "fuel": "FLEX",
     "color": "PRETO",
     "price": 53990,
-    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Fox/Tl-Mcv/Volkswagen-Fox-Tl-Mcv-2017-São-Paulo-Sao-Paulo-7565690.html",
+    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Fox/Tl-Mcv/Volkswagen-Fox-Tl-Mcv-2017-S�o-Paulo-Sao-Paulo-7565690.html",
+    "category": "HATCH"
+  },
+  {
+    "brand": "VOLKSWAGEN",
+    "model": "UP-MOVE",
+    "version": "UP MOVE SA 1.0",
+    "year": 2016,
+    "mileage": 87673,
+    "fuel": "FLEX",
+    "color": "BRANCO",
+    "price": null,
+    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Up-Move/Sa-10/Volkswagen-Up-Move-Sa-10-2016-S�o-Paulo-Sao-Paulo-7603242.html",
+    "category": "HATCH"
+  },
+  {
+    "brand": "CHEVROLET",
+    "model": "ONIX",
+    "version": "1.4 MPFI LTZ 8V FLEX 4P MEC",
+    "year": 2016,
+    "mileage": 160344,
+    "fuel": "FLEX",
+    "color": "CINZA",
+    "price": 55990,
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/14-Mpfi-Ltz-8v-Flex-4p-Mec/Chevrolet-Onix-14-Mpfi-Ltz-8v-Flex-4p-Mec-2016-S�o-Paulo-Sao-Paulo-7465584.html",
     "category": "HATCH"
   },
   {
@@ -464,44 +452,20 @@
     "fuel": "FLEX",
     "color": "PRATA",
     "price": 40990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Uno/Attractive-10/Fiat-Uno-Attractive-10-2016-São-Paulo-Sao-Paulo-7412248.html",
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Uno/Attractive-10/Fiat-Uno-Attractive-10-2016-S�o-Paulo-Sao-Paulo-7412248.html",
     "category": "HATCH"
   },
   {
-    "brand": "HONDA",
-    "model": "CIVIC",
-    "version": "EXR",
+    "brand": "HYUNDAI",
+    "model": "IX35",
+    "version": "2.0",
     "year": 2016,
-    "mileage": 123345,
-    "fuel": "FLEX",
-    "color": "CINZA",
-    "price": 89990,
-    "detailUrl": "https://robustcar.com.br/carros/Honda/Civic/Exr/Honda-Civic-Exr-2016-São-Paulo-Sao-Paulo-7412964.html",
-    "category": "SEDAN"
-  },
-  {
-    "brand": "CHEVROLET",
-    "model": "ONIX",
-    "version": "1.4 MPFI LTZ 8V FLEX 4P MEC",
-    "year": 2016,
-    "mileage": 160344,
-    "fuel": "FLEX",
-    "color": "CINZA",
-    "price": 55990,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Onix/14-Mpfi-Ltz-8v-Flex-4p-Mec/Chevrolet-Onix-14-Mpfi-Ltz-8v-Flex-4p-Mec-2016-São-Paulo-Sao-Paulo-7465584.html",
-    "category": "HATCH"
-  },
-  {
-    "brand": "HONDA",
-    "model": "HR-V",
-    "version": "EX CVT",
-    "year": 2016,
-    "mileage": 117071,
+    "mileage": 199000,
     "fuel": "FLEX",
     "color": "BRANCO",
-    "price": 85990,
-    "detailUrl": "https://robustcar.com.br/carros/Honda/Hr-v/Ex-Cvt/Honda-Hr-v-Ex-Cvt-2016-São-Paulo-Sao-Paulo-7470466.html",
-    "category": "SUV"
+    "price": null,
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Ix35/20/Hyundai-Ix35-20-2016-S�o-Paulo-Sao-Paulo-7592785.html",
+    "category": "HATCH"
   },
   {
     "brand": "FORD",
@@ -512,7 +476,7 @@
     "fuel": "FLEX",
     "color": "PRATA",
     "price": 56990,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Focus/Sedan-20-Se-Plus-16v-Flex-4p-Powershift/Ford-Focus-Sedan-20-Se-Plus-16v-Flex-4p-Powershift-2015-São-Paulo-Sao-Paulo-6195382.html",
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Focus/Sedan-20-Se-Plus-16v-Flex-4p-Powershift/Ford-Focus-Sedan-20-Se-Plus-16v-Flex-4p-Powershift-2015-S�o-Paulo-Sao-Paulo-6195382.html",
     "category": "SEDAN"
   },
   {
@@ -520,24 +484,24 @@
     "model": "CITY",
     "version": "1.5 LX 16V FLEX 4P AUT",
     "year": 2015,
-    "mileage": 133829,
+    "mileage": 134219,
     "fuel": "FLEX",
     "color": "MARROM",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Honda/City/15-Lx-16v-Flex-4p-Aut/Honda-City-15-Lx-16v-Flex-4p-Aut-2015-São-Paulo-Sao-Paulo-7462795.html",
+    "price": 60990,
+    "detailUrl": "https://robustcar.com.br/carros/Honda/City/15-Lx-16v-Flex-4p-Aut/Honda-City-15-Lx-16v-Flex-4p-Aut-2015-S�o-Paulo-Sao-Paulo-7462795.html",
     "category": "SEDAN"
   },
   {
-    "brand": "CHEVROLET",
-    "model": "CRUZE",
-    "version": "LTZ NB AT",
+    "brand": "KIA",
+    "model": "SOUL",
+    "version": "EX 1.6 FF AT",
     "year": 2015,
-    "mileage": 163310,
+    "mileage": 134442,
     "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 64990,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Cruze/Ltz-Nb-At/Chevrolet-Cruze-Ltz-Nb-At-2015-São-Paulo-Sao-Paulo-6905766.html",
-    "category": "SEDAN"
+    "color": "PRETO",
+    "price": null,
+    "detailUrl": "https://robustcar.com.br/carros/Kia/Soul/Ex-16-Ff-At/Kia-Soul-Ex-16-Ff-At-2015-S�o-Paulo-Sao-Paulo-7649197.html",
+    "category": "HATCH"
   },
   {
     "brand": "FIAT",
@@ -548,32 +512,8 @@
     "fuel": "FLEX",
     "color": "BEGE",
     "price": 40990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Idea/Attractive-14/Fiat-Idea-Attractive-14-2014-São-Paulo-Sao-Paulo-7249294.html",
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Idea/Attractive-14/Fiat-Idea-Attractive-14-2014-S�o-Paulo-Sao-Paulo-7249294.html",
     "category": "MINIVAN"
-  },
-  {
-    "brand": "FORD",
-    "model": "FIESTA",
-    "version": "1.6 SE POWER SHIFT",
-    "year": 2014,
-    "mileage": 0,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/16-Se-Power-Shift/Ford-Fiesta-16-Se-Power-Shift-2014-São-Paulo-Sao-Paulo-6757513.html",
-    "category": "HATCH"
-  },
-  {
-    "brand": "CITROEN",
-    "model": "C3",
-    "version": "90M ORIGINE",
-    "year": 2014,
-    "mileage": 103919,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 34990,
-    "detailUrl": "https://robustcar.com.br/carros/Citroen/C3-90m/Origine/Citroen-C3-90m-Origine-2014-São-Paulo-Sao-Paulo-6474259.html",
-    "category": "HATCH"
   },
   {
     "brand": "FORD",
@@ -584,20 +524,8 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 37990,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/Flex/Ford-Fiesta-Flex-2014-São-Paulo-Sao-Paulo-7346992.html",
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/Flex/Ford-Fiesta-Flex-2014-S�o-Paulo-Sao-Paulo-7346992.html",
     "category": "HATCH"
-  },
-  {
-    "brand": "TOYOTA",
-    "model": "COROLLA",
-    "version": "XEI 20FLEX",
-    "year": 2014,
-    "mileage": 97327,
-    "fuel": "FLEX",
-    "color": "PRETO",
-    "price": 70990,
-    "detailUrl": "https://robustcar.com.br/carros/Toyota/Corolla/Xei-20flex/Toyota-Corolla-Xei-20flex-2014-São-Paulo-Sao-Paulo-7464889.html",
-    "category": "SEDAN"
   },
   {
     "brand": "CHEVROLET",
@@ -608,7 +536,7 @@
     "fuel": "FLEX",
     "color": "PRETO",
     "price": 62990,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Cruze/Lt-Nb/Chevrolet-Cruze-Lt-Nb-2014-São-Paulo-Sao-Paulo-7416063.html",
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Cruze/Lt-Nb/Chevrolet-Cruze-Lt-Nb-2014-S�o-Paulo-Sao-Paulo-7416063.html",
     "category": "SEDAN"
   },
   {
@@ -620,7 +548,7 @@
     "fuel": "GASOLINA",
     "color": "PRATA",
     "price": 52990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Freemont/Prec-At6/Fiat-Freemont-Prec-At6-2014-São-Paulo-Sao-Paulo-7452053.html",
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Freemont/Prec-At6/Fiat-Freemont-Prec-At6-2014-S�o-Paulo-Sao-Paulo-7452053.html",
     "category": "SUV"
   },
   {
@@ -632,32 +560,20 @@
     "fuel": "FLEX",
     "color": "PRETO",
     "price": 36990,
-    "detailUrl": "https://robustcar.com.br/carros/Toyota/Etios/13-Hbx-16v-Flex-4p-Manual/Toyota-Etios-13-Hbx-16v-Flex-4p-Manual-2014-São-Paulo-Sao-Paulo-7482783.html",
+    "detailUrl": "https://robustcar.com.br/carros/Toyota/Etios/13-Hbx-16v-Flex-4p-Manual/Toyota-Etios-13-Hbx-16v-Flex-4p-Manual-2014-S�o-Paulo-Sao-Paulo-7482783.html",
     "category": "HATCH"
   },
   {
-    "brand": "NISSAN",
-    "model": "SENTRA",
-    "version": "20SL CVT",
+    "brand": "FORD",
+    "model": "FIESTA",
+    "version": "1.6 SE POWER SHIFT",
     "year": 2014,
-    "mileage": 1,
+    "mileage": 0,
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Nissan/Sentra/20sl-Cvt/Nissan-Sentra-20sl-Cvt-2014-São-Paulo-Sao-Paulo-7570541.html",
-    "category": "SEDAN"
-  },
-  {
-    "brand": "HYUNDAI",
-    "model": "TUCSON",
-    "version": "GLS 2.0",
-    "year": 2013,
-    "mileage": 143476,
-    "fuel": "FLEX",
-    "color": "PRETO",
-    "price": 51990,
-    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Tucson/Gls-20/Hyundai-Tucson-Gls-20-2013-São-Paulo-Sao-Paulo-7457363.html",
-    "category": "SUV"
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/16-Se-Power-Shift/Ford-Fiesta-16-Se-Power-Shift-2014-S�o-Paulo-Sao-Paulo-6757513.html",
+    "category": "HATCH"
   },
   {
     "brand": "VOLKSWAGEN",
@@ -668,7 +584,7 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 44990,
-    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Fox/16-Gii/Volkswagen-Fox-16-Gii-2013-São-Paulo-Sao-Paulo-7542734.html",
+    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Fox/16-Gii/Volkswagen-Fox-16-Gii-2013-S�o-Paulo-Sao-Paulo-7542734.html",
     "category": "HATCH"
   },
   {
@@ -680,8 +596,20 @@
     "fuel": "FLEX",
     "color": "PRATA",
     "price": 32990,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/10-Mpi-Class-Hatch-8v-Flex-4p-Manual/Ford-Fiesta-10-Mpi-Class-Hatch-8v-Flex-4p-Manual-2013-São-Paulo-Sao-Paulo-7523011.html",
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/10-Mpi-Class-Hatch-8v-Flex-4p-Manual/Ford-Fiesta-10-Mpi-Class-Hatch-8v-Flex-4p-Manual-2013-S�o-Paulo-Sao-Paulo-7523011.html",
     "category": "HATCH"
+  },
+  {
+    "brand": "HYUNDAI",
+    "model": "TUCSON",
+    "version": "GLSB",
+    "year": 2013,
+    "mileage": 110999,
+    "fuel": "FLEX",
+    "color": "PRATA",
+    "price": 54990,
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Tucson/Glsb/Hyundai-Tucson-Glsb-2013-S�o-Paulo-Sao-Paulo-7634823.html",
+    "category": "SUV"
   },
   {
     "brand": "FIAT",
@@ -692,19 +620,31 @@
     "fuel": "FLEX",
     "color": "CINZA",
     "price": 40990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Punto/Essence-16/Fiat-Punto-Essence-16-2013-São-Paulo-Sao-Paulo-7570615.html",
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Punto/Essence-16/Fiat-Punto-Essence-16-2013-S�o-Paulo-Sao-Paulo-7570615.html",
+    "category": "HATCH"
+  },
+  {
+    "brand": "CHEVROLET",
+    "model": "CLASSIC",
+    "version": "LS",
+    "year": 2012,
+    "mileage": 73441,
+    "fuel": "FLEX",
+    "color": "PRETO",
+    "price": 33990,
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Classic/Ls/Chevrolet-Classic-Ls-2012-S�o-Paulo-Sao-Paulo-7654937.html",
     "category": "HATCH"
   },
   {
     "brand": "KIA",
-    "model": "SOUL",
-    "version": "EX 1.6 FF MT",
+    "model": "KIA",
+    "version": "SOUL EX 1.6 FF MT",
     "year": 2012,
     "mileage": 168479,
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": 43990,
-    "detailUrl": "https://robustcar.com.br/carros/Kia/Kia/Soul-Ex-16-Ff-Mt/Kia-Kia-Soul-Ex-16-Ff-Mt-2012-São-Paulo-Sao-Paulo-7555076.html",
+    "detailUrl": "https://robustcar.com.br/carros/Kia/Kia/Soul-Ex-16-Ff-Mt/Kia-Kia-Soul-Ex-16-Ff-Mt-2012-S�o-Paulo-Sao-Paulo-7555076.html",
     "category": "HATCH"
   },
   {
@@ -716,56 +656,8 @@
     "fuel": "FLEX",
     "color": "BRANCO",
     "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Celta/10l-Ls/Chevrolet-Celta-10l-Ls-2012-São-Paulo-Sao-Paulo-7514332.html",
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Celta/10l-Ls/Chevrolet-Celta-10l-Ls-2012-S�o-Paulo-Sao-Paulo-7514332.html",
     "category": "HATCH"
-  },
-  {
-    "brand": "NISSAN",
-    "model": "GRAND LIVINA",
-    "version": "18SL",
-    "year": 2012,
-    "mileage": 165619,
-    "fuel": "FLEX",
-    "color": "PRETO",
-    "price": 43990,
-    "detailUrl": "https://robustcar.com.br/carros/Nissan/Grand/Livina-18sl/Nissan-Grand-Livina-18sl-2012-São-Paulo-Sao-Paulo-7537188.html",
-    "category": "SUV"
-  },
-  {
-    "brand": "CHEVROLET",
-    "model": "MERIVA",
-    "version": "MAXX 1.4 8V 4P",
-    "year": 2012,
-    "mileage": 0,
-    "fuel": "FLEX",
-    "color": "PRETO",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Meriva/Maxx-14-8v-4p/Chevrolet-Meriva-Maxx-14-8v-4p-2012-São-Paulo-Sao-Paulo-7544134.html",
-    "category": "MINIVAN"
-  },
-  {
-    "brand": "MITSUBISHI",
-    "model": "PAJERO",
-    "version": "TR4 FL 2WD HP",
-    "year": 2012,
-    "mileage": 143815,
-    "fuel": "FLEX",
-    "color": "BRANCO",
-    "price": 59990,
-    "detailUrl": "https://robustcar.com.br/carros/Mitsubishi/Pajero/Tr4-Fl-2wd-Hp/Mitsubishi-Pajero-Tr4-Fl-2wd-Hp-2012-São-Paulo-Sao-Paulo-7399245.html",
-    "category": "SUV"
-  },
-  {
-    "brand": "NISSAN",
-    "model": "GRAND LIVINA",
-    "version": "18SL",
-    "year": 2012,
-    "mileage": 170391,
-    "fuel": "FLEX",
-    "color": "CINZA",
-    "price": 46990,
-    "detailUrl": "https://robustcar.com.br/carros/Nissan/Grand/Livina-18sl/Nissan-Grand-Livina-18sl-2012-São-Paulo-Sao-Paulo-7389913.html",
-    "category": "SUV"
   },
   {
     "brand": "FORD",
@@ -776,8 +668,68 @@
     "fuel": "FLEX",
     "color": "VERMELHO",
     "price": 35990,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/10-8v-Flex-5p/Ford-Fiesta-10-8v-Flex-5p-2012-São-Paulo-Sao-Paulo-7456164.html",
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Fiesta/10-8v-Flex-5p/Ford-Fiesta-10-8v-Flex-5p-2012-S�o-Paulo-Sao-Paulo-7456164.html",
     "category": "HATCH"
+  },
+  {
+    "brand": "NISSAN",
+    "model": "GRAND",
+    "version": "LIVINA 18SL",
+    "year": 2012,
+    "mileage": 165619,
+    "fuel": "FLEX",
+    "color": "PRETO",
+    "price": 43990,
+    "detailUrl": "https://robustcar.com.br/carros/Nissan/Grand/Livina-18sl/Nissan-Grand-Livina-18sl-2012-S�o-Paulo-Sao-Paulo-7537188.html",
+    "category": "HATCH"
+  },
+  {
+    "brand": "MITSUBISHI",
+    "model": "PAJERO",
+    "version": "TR4 FL 2WD HP",
+    "year": 2012,
+    "mileage": 143815,
+    "fuel": "FLEX",
+    "color": "BRANCO",
+    "price": 59990,
+    "detailUrl": "https://robustcar.com.br/carros/Mitsubishi/Pajero/Tr4-Fl-2wd-Hp/Mitsubishi-Pajero-Tr4-Fl-2wd-Hp-2012-S�o-Paulo-Sao-Paulo-7399245.html",
+    "category": "SUV"
+  },
+  {
+    "brand": "CHEVROLET",
+    "model": "MERIVA",
+    "version": "MAXX 1.4 8V 4P",
+    "year": 2012,
+    "mileage": 227861,
+    "fuel": "FLEX",
+    "color": "PRETO",
+    "price": 34990,
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Meriva/Maxx-14-8v-4p/Chevrolet-Meriva-Maxx-14-8v-4p-2012-S�o-Paulo-Sao-Paulo-7544134.html",
+    "category": "MINIVAN"
+  },
+  {
+    "brand": "FORD",
+    "model": "ECOSPORT",
+    "version": "XLT2 FLEX",
+    "year": 2011,
+    "mileage": 129396,
+    "fuel": "FLEX",
+    "color": "CINZA",
+    "price": 41990,
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Ecosport/Xlt2-Flex/Ford-Ecosport-Xlt2-Flex-2011-S�o-Paulo-Sao-Paulo-7603639.html",
+    "category": "SUV"
+  },
+  {
+    "brand": "HYUNDAI",
+    "model": "TUCSON",
+    "version": "",
+    "year": 2011,
+    "mileage": 173968,
+    "fuel": "GASOLINA",
+    "color": "PRETO",
+    "price": null,
+    "detailUrl": "https://robustcar.com.br/carros/Hyundai/Tucson//Hyundai-Tucson-2011-S�o-Paulo-Sao-Paulo-7653676.html",
+    "category": "SUV"
   },
   {
     "brand": "FORD",
@@ -788,80 +740,68 @@
     "fuel": "FLEX",
     "color": "PRETO",
     "price": 39990,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Ecosport/20-Xlt-16v-Flex-4p-Automatico/Ford-Ecosport-20-Xlt-16v-Flex-4p-Automatico-2011-São-Paulo-Sao-Paulo-7316640.html",
+    "detailUrl": "https://robustcar.com.br/carros/Ford/Ecosport/20-Xlt-16v-Flex-4p-Automatico/Ford-Ecosport-20-Xlt-16v-Flex-4p-Automatico-2011-S�o-Paulo-Sao-Paulo-7316640.html",
     "category": "SUV"
-  },
-  {
-    "brand": "FORD",
-    "model": "KA",
-    "version": "1.0",
-    "year": 2011,
-    "mileage": 144046,
-    "fuel": "FLEX",
-    "color": "PRATA",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Ford/Ka-10//Ford-Ka-10-2011-São-Paulo-Sao-Paulo-7392531.html",
-    "category": "HATCH"
   },
   {
     "brand": "CHEVROLET",
     "model": "CELTA",
     "version": "4P SPIRIT",
     "year": 2011,
-    "mileage": 0,
+    "mileage": 182093,
     "fuel": "FLEX",
     "color": "PRATA",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Celta/4p-Spirit/Chevrolet-Celta-4p-Spirit-2011-São-Paulo-Sao-Paulo-7457362.html",
-    "category": "HATCH"
-  },
-  {
-    "brand": "PEUGEOT",
-    "model": "207",
-    "version": "1.4 XR 8V FLEX 4P MANUAL",
-    "year": 2011,
-    "mileage": 1,
-    "fuel": "FLEX",
-    "color": "PRETO",
-    "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Peugeot/207/14-Xr-8v-Flex-4p-Manual/Peugeot-207-14-Xr-8v-Flex-4p-Manual-2011-São-Paulo-Sao-Paulo-7504355.html",
+    "price": 30990,
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Celta/4p-Spirit/Chevrolet-Celta-4p-Spirit-2011-S�o-Paulo-Sao-Paulo-7457362.html",
     "category": "HATCH"
   },
   {
     "brand": "VOLKSWAGEN",
-    "model": "VOYAGE",
-    "version": "NOVO 1.0",
+    "model": "NOVO",
+    "version": "VOYAGE 1.0",
     "year": 2011,
     "mileage": 147000,
     "fuel": "FLEX",
     "color": "PRATA",
     "price": null,
-    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Novo/Voyage-10/Volkswagen-Novo-Voyage-10-2011-São-Paulo-Sao-Paulo-7491434.html",
-    "category": "SEDAN"
+    "detailUrl": "https://robustcar.com.br/carros/Volkswagen/Novo/Voyage-10/Volkswagen-Novo-Voyage-10-2011-S�o-Paulo-Sao-Paulo-7491434.html",
+    "category": "HATCH"
   },
   {
     "brand": "FIAT",
-    "model": "PALIO",
-    "version": "FIRE ECONOMY",
+    "model": "FIAT",
+    "version": "PALIO FIRE ECONOMY",
     "year": 2010,
     "mileage": 210018,
     "fuel": "FLEX",
     "color": "VERDE",
     "price": 29990,
-    "detailUrl": "https://robustcar.com.br/carros/Fiat/Fiat/Palio-Fire-Economy/Fiat-Fiat-Palio-Fire-Economy-2010-São-Paulo-Sao-Paulo-7371857.html",
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Fiat/Palio-Fire-Economy/Fiat-Fiat-Palio-Fire-Economy-2010-S�o-Paulo-Sao-Paulo-7371857.html",
     "category": "HATCH"
   },
   {
-    "brand": "TOYOTA",
-    "model": "COROLLA",
-    "version": "XEI18FLEX",
+    "brand": "FIAT",
+    "model": "IDEA",
+    "version": "ELX FLEX",
+    "year": 2010,
+    "mileage": 117000,
+    "fuel": "FLEX",
+    "color": "PRATA",
+    "price": 34990,
+    "detailUrl": "https://robustcar.com.br/carros/Fiat/Idea/Elx-Flex/Fiat-Idea-Elx-Flex-2010-S�o-Paulo-Sao-Paulo-7623991.html",
+    "category": "MINIVAN"
+  },
+  {
+    "brand": "HONDA",
+    "model": "FIT",
+    "version": "1.5 EX 16V FLEX 4P AUTOMATICO",
     "year": 2009,
-    "mileage": 125393,
+    "mileage": 180249,
     "fuel": "FLEX",
     "color": "CINZA",
-    "price": 49990,
-    "detailUrl": "https://robustcar.com.br/carros/Toyota/Corolla/Xei18flex/Toyota-Corolla-Xei18flex-2009-São-Paulo-Sao-Paulo-6939688.html",
-    "category": "SEDAN"
+    "price": 46990,
+    "detailUrl": "https://robustcar.com.br/carros/Honda/Fit/15-Ex-16v-Flex-4p-Automatico/Honda-Fit-15-Ex-16v-Flex-4p-Automatico-2009-S�o-Paulo-Sao-Paulo-7664170.html",
+    "category": "HATCH"
   },
   {
     "brand": "CHEVROLET",
@@ -872,7 +812,7 @@
     "fuel": "FLEX",
     "color": "PRATA",
     "price": 23990,
-    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Celta/10-Vhc-2p/Chevrolet-Celta-10-Vhc-2p-2008-São-Paulo-Sao-Paulo-7536936.html",
+    "detailUrl": "https://robustcar.com.br/carros/Chevrolet/Celta/10-Vhc-2p/Chevrolet-Celta-10-Vhc-2p-2008-S�o-Paulo-Sao-Paulo-7536946.html",
     "category": "HATCH"
   }
 ]

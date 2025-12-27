@@ -37,7 +37,12 @@ function detectTransmission(version: string): string {
 
 function detectFeatures(version: string) {
   const versionUpper = version.toUpperCase();
-  
+
+  let portas = 4;
+  if (versionUpper.includes('2P') || versionUpper.includes('2 PORTAS')) {
+    portas = 2;
+  }
+
   const features = {
     arCondicionado: !versionUpper.includes('BASE'),
     direcaoHidraulica: true,
@@ -48,9 +53,9 @@ function detectFeatures(version: string) {
     alarme: true,
     rodaLigaLeve: versionUpper.includes('LTZ') || versionUpper.includes('EX') || versionUpper.includes('LIMITED'),
     som: true,
-    portas: 4
+    portas: portas
   };
-  
+
   return features;
 }
 
@@ -62,39 +67,20 @@ function normalizeFuel(fuel: string): string {
     'ELÉTRICO': 'Elétrico',
     'GASOLINA': 'Gasolina'
   };
-  
+
   return fuelMap[fuel] || 'Flex';
 }
 
-function detectUberEligibility(vehicle: RobustCarVehicle, price: number): boolean {
-  // Uber normal: veículo em bom estado, ano recente, preço acessível
-  const yearValid = vehicle.year >= 2010;
-  const priceValid = price >= 20000 && price <= 100000;
-  const categoryValid = vehicle.category !== 'MOTO' && vehicle.category !== 'OUTROS';
-  const fuelValid = vehicle.fuel === 'FLEX' || vehicle.fuel === 'GASOLINA' || vehicle.fuel === 'DIESEL';
-  
-  return yearValid && priceValid && categoryValid && fuelValid;
-}
-
-function detectUberBlackEligibility(vehicle: RobustCarVehicle, price: number, features: any): boolean {
-  // Uber Black: veículos premium, completos, ano mais recente
-  const yearValid = vehicle.year >= 2018;
-  const priceValid = price >= 40000 && price <= 200000;
-  const categoryValid = vehicle.category === 'SEDAN' || vehicle.category === 'SUV';
-  const fuelValid = vehicle.fuel === 'FLEX' || vehicle.fuel === 'GASOLINA';
-  const featuresValid = features.arCondicionado && features.direcaoHidraulica && features.airbag && features.abs;
-  
-  return yearValid && priceValid && categoryValid && fuelValid && featuresValid;
-}
+import { VehicleClassifierService } from '../src/services/vehicle-classifier.service';
 
 function generateDescription(vehicle: RobustCarVehicle): string {
   const features = detectFeatures(vehicle.version);
   const transmission = detectTransmission(vehicle.version);
-  
+
   let desc = `${vehicle.brand} ${vehicle.model} ${vehicle.version} ${vehicle.year}. `;
   desc += `${vehicle.fuel}, ${transmission}, ${vehicle.color.toLowerCase()}. `;
   desc += `${vehicle.mileage.toLocaleString('pt-BR')} km rodados. `;
-  
+
   const featuresList: string[] = [];
   if (features.arCondicionado) featuresList.push('Ar-condicionado');
   if (features.direcaoHidraulica) featuresList.push('Direção hidráulica');
@@ -102,26 +88,26 @@ function generateDescription(vehicle: RobustCarVehicle): string {
   if (features.abs) featuresList.push('Freios ABS');
   if (features.vidroEletrico) featuresList.push('Vidros elétricos');
   if (features.travaEletrica) featuresList.push('Travas elétricas');
-  
+
   if (featuresList.length > 0) {
     desc += `Equipado com: ${featuresList.join(', ')}. `;
   }
-  
+
   desc += `Veículo em ótimo estado de conservação.`;
-  
+
   return desc;
 }
 
 async function main() {
   console.log('🚀 Iniciando seed da Robust Car...\n');
-  
+
   // Tentar múltiplos caminhos possíveis
   const possiblePaths = [
     join(process.cwd(), 'scripts', 'robustcar-vehicles.json'),
     join(__dirname, '..', 'scripts', 'robustcar-vehicles.json'),
     join(process.cwd(), '..', 'scripts', 'robustcar-vehicles.json'),
   ];
-  
+
   let jsonPath: string | null = null;
   for (const path of possiblePaths) {
     try {
@@ -134,47 +120,61 @@ async function main() {
       console.log(`⏭️  Tentando: ${path} - não encontrado`);
     }
   }
-  
+
   if (!jsonPath) {
     throw new Error('❌ Arquivo robustcar-vehicles.json não encontrado em nenhum caminho possível');
   }
-  
+
   const vehiclesData: RobustCarVehicle[] = JSON.parse(readFileSync(jsonPath, 'utf-8'));
-  
+
   console.log(`📦 Carregados ${vehiclesData.length} veículos do JSON\n`);
-  
+
   console.log('🗑️  Limpando base de dados atual...');
-  
+
   // Deletar recomendações primeiro (foreign key)
   await prisma.recommendation.deleteMany();
   console.log('✅ Recomendações deletadas');
-  
+
   // Agora deletar veículos
   await prisma.vehicle.deleteMany();
   console.log('✅ Veículos deletados!\n');
-  
+
   console.log('📝 Inserindo veículos da Robust Car...\n');
-  
+
   let successCount = 0;
   let skipCount = 0;
-  
+
   for (const vehicle of vehiclesData) {
     if (vehicle.price === null) {
       console.log(`⏭️  Pulando ${vehicle.brand} ${vehicle.model} (preço não disponível)`);
       skipCount++;
       continue;
     }
-    
+
     if (vehicle.category === 'MOTO') {
       console.log(`⏭️  Pulando ${vehicle.brand} ${vehicle.model} (categoria MOTO)`);
       skipCount++;
       continue;
     }
-    
+
     try {
       const features = detectFeatures(vehicle.version);
       const transmission = detectTransmission(vehicle.version);
-      
+
+      const vehicleInput = {
+        model: vehicle.model,
+        brand: vehicle.brand,
+        year: vehicle.year,
+        price: vehicle.price!,
+        category: CATEGORY_TO_CARROCERIA[vehicle.category] || 'Outros',
+        fuel: normalizeFuel(vehicle.fuel),
+        transmission: transmission,
+        features
+      };
+
+      // Validação via LLM (Assíncrona - pode demorar um pouco)
+      const eligibility = await VehicleClassifierService.detectEligibilityWithLLM(vehicleInput);
+
       // Elegibilidade será definida via LLM posteriormente
       // Para evitar erros, inicializamos como false
       await prisma.vehicle.create({
@@ -186,10 +186,10 @@ async function main() {
           km: vehicle.mileage,
           preco: vehicle.price,
           cor: vehicle.color,
-          carroceria: CATEGORY_TO_CARROCERIA[vehicle.category] || 'Outros',
-          combustivel: normalizeFuel(vehicle.fuel),
+          carroceria: vehicleInput.category,
+          combustivel: vehicleInput.fuel,
           cambio: transmission,
-          
+
           arCondicionado: features.arCondicionado,
           direcaoHidraulica: features.direcaoHidraulica,
           airbag: features.airbag,
@@ -200,43 +200,43 @@ async function main() {
           rodaLigaLeve: features.rodaLigaLeve,
           som: features.som,
           portas: features.portas,
-          
+
           url: vehicle.detailUrl,
           fotoUrl: vehicle.detailUrl,
           fotosUrls: JSON.stringify([vehicle.detailUrl]),
-          
+
           descricao: generateDescription(vehicle),
-          
+
           disponivel: true,
-          aptoUber: false, // Será atualizado via LLM
-          aptoUberBlack: false, // Será atualizado via LLM
-          aptoFamilia: true,
-          aptoTrabalho: true
+          aptoUber: eligibility.uberX || eligibility.uberComfort, // Se for X ou Comfort, marca como aptoUber (genérico)
+          aptoUberBlack: eligibility.uberBlack,
+          aptoFamilia: VehicleClassifierService.detectFamilyEligibility(vehicleInput),
+          aptoTrabalho: VehicleClassifierService.detectWorkEligibility(vehicleInput)
         }
       });
-      
+
       successCount++;
       console.log(`✅ ${successCount}. ${vehicle.brand} ${vehicle.model} ${vehicle.year} - R$ ${vehicle.price.toLocaleString('pt-BR')}`);
     } catch (error) {
       console.error(`❌ Erro ao inserir ${vehicle.brand} ${vehicle.model}:`, error);
     }
   }
-  
+
   console.log('\n📊 Resumo:');
   console.log(`   ✅ Inseridos: ${successCount}`);
   console.log(`   ⏭️  Pulados: ${skipCount}`);
   console.log(`   📦 Total: ${vehiclesData.length}`);
-  
+
   const categoryCounts = await prisma.vehicle.groupBy({
     by: ['carroceria'],
     _count: true
   });
-  
+
   console.log('\n🚗 Veículos por categoria:');
   categoryCounts.forEach(({ carroceria, _count }) => {
     console.log(`   ${carroceria}: ${_count}`);
   });
-  
+
   console.log('\n✅ Seed concluído com sucesso!');
 }
 

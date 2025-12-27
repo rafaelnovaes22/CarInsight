@@ -1,258 +1,122 @@
-/**
- * Serviço para classificar veículos usando LLM
- * Categoriza automaticamente: SUV, Sedan, Hatch, Pickup, Minivan
- * E determina aptidões: Uber, família, trabalho
- */
 
-import { chatCompletion } from '../lib/llm-router';
-import { logger } from '../lib/logger';
-
-export interface VehicleClassification {
-  category: 'SUV' | 'SEDAN' | 'HATCH' | 'PICKUP' | 'MINIVAN' | 'COUPE' | 'WAGON';
-  aptoUber: boolean;
-  aptoUberBlack: boolean;
-  aptoFamilia: boolean;
-  aptoTrabalho: boolean;
-  confidence: number;
-  reasoning: string;
-}
-
-export interface VehicleToClassify {
-  marca: string;
-  modelo: string;
-  ano: number;
-  carroceria?: string;
-  portas?: number;
-  combustivel?: string;
-}
-
-const CLASSIFICATION_PROMPT = `Você é um especialista em veículos brasileiros. Classifique o veículo abaixo.
-
-VEÍCULO:
-Marca: {marca}
-Modelo: {modelo}
-Ano: {ano}
-Carroceria informada: {carroceria}
-Portas: {portas}
-Combustível: {combustivel}
-
-REGRAS DE CLASSIFICAÇÃO:
-
-CATEGORIA (escolha UMA):
-- SUV: veículos utilitários esportivos (Creta, Tracker, Compass, HR-V, T-Cross, Kicks, Renegade, Tiggo, RAV4, etc)
-- SEDAN: 4 portas com porta-malas separado (Corolla, Civic, HB20S, Onix Plus, Virtus, Cruze, City, etc)
-- HATCH: compactos com porta traseira integrada (HB20, Onix, Polo, Gol, Argo, Mobi, Kwid, Ka, etc)
-- PICKUP: caminhonetes e picapes (Strada, Toro, Saveiro, Hilux, S10, Ranger, Montana, etc)
-- MINIVAN: monovolumes (Spin, Zafira, Livina, etc)
-- COUPE: esportivos 2 portas
-- WAGON: peruas/station wagon
-
-UBER X (apto para trabalhar como motorista de app):
-- Sim se: sedan ou hatch, ano >= 2015, 4 portas, ar condicionado presumido
-- Não se: SUV, pickup, minivan, ano < 2015, ou modelo muito básico
-
-UBER BLACK:
-- Sim se: sedan executivo (Corolla, Civic, Cruze, Jetta, Fusion, etc), ano >= 2019
-- Não se: hatch, SUV, pickup, ou sedan básico
-
-FAMÍLIA (bom para família):
-- Sim se: 5+ lugares, espaço interno, SUV, sedan médio/grande, minivan
-- Não se: hatch compacto, 2 portas, pickup
-
-TRABALHO (bom para trabalho/carga):
-- Sim se: pickup, utilitário, ou veículo econômico
-- Não se: esportivo, luxo, ou muito caro para manutenção
-
-Responda APENAS com JSON válido:
-{
-  "category": "SUV|SEDAN|HATCH|PICKUP|MINIVAN|COUPE|WAGON",
-  "aptoUber": true/false,
-  "aptoUberBlack": true/false,
-  "aptoFamilia": true/false,
-  "aptoTrabalho": true/false,
-  "confidence": 0.0-1.0,
-  "reasoning": "breve explicação"
-}`;
-
-/**
- * Classifica um veículo usando LLM
- */
-export async function classifyVehicle(vehicle: VehicleToClassify): Promise<VehicleClassification> {
-  try {
-    const prompt = CLASSIFICATION_PROMPT.replace('{marca}', vehicle.marca || 'N/I')
-      .replace('{modelo}', vehicle.modelo || 'N/I')
-      .replace('{ano}', String(vehicle.ano || 'N/I'))
-      .replace('{carroceria}', vehicle.carroceria || 'N/I')
-      .replace('{portas}', String(vehicle.portas || 'N/I'))
-      .replace('{combustivel}', vehicle.combustivel || 'N/I');
-
-    const response = await chatCompletion(
-      [
-        {
-          role: 'system',
-          content: 'Você é um classificador de veículos. Responda APENAS com JSON válido.',
-        },
-        { role: 'user', content: prompt },
-      ],
-      {
-        temperature: 0.1,
-        maxTokens: 300,
-      }
-    );
-
-    // Extrair JSON da resposta
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Resposta não contém JSON válido');
-    }
-
-    const classification = JSON.parse(jsonMatch[0]) as VehicleClassification;
-
-    // Validar categoria
-    const validCategories = ['SUV', 'SEDAN', 'HATCH', 'PICKUP', 'MINIVAN', 'COUPE', 'WAGON'];
-    if (!validCategories.includes(classification.category)) {
-      classification.category = 'HATCH'; // Default
-    }
-
-    logger.debug(
-      {
-        vehicle: `${vehicle.marca} ${vehicle.modelo}`,
-        classification,
-      },
-      'Vehicle classified by LLM'
-    );
-
-    return classification;
-  } catch (error) {
-    logger.error({ error, vehicle }, 'Failed to classify vehicle with LLM');
-
-    // Fallback: classificação básica por palavras-chave
-    return fallbackClassification(vehicle);
-  }
-}
-
-/**
- * Classificação de fallback quando LLM falha
- */
-function fallbackClassification(vehicle: VehicleToClassify): VehicleClassification {
-  const modelo = (vehicle.modelo || '').toUpperCase();
-  const carroceria = (vehicle.carroceria || '').toUpperCase();
-
-  // Detectar categoria por palavras-chave
-  let category: VehicleClassification['category'] = 'HATCH';
-
-  const suvKeywords = [
-    'CRETA',
-    'TRACKER',
-    'COMPASS',
-    'RENEGADE',
-    'HR-V',
-    'HRV',
-    'KICKS',
-    'T-CROSS',
-    'TCROSS',
-    'TIGGO',
-    'RAV4',
-    'TUCSON',
-    'SPORTAGE',
-    'DUSTER',
-    'CAPTUR',
-    'ECOSPORT',
-  ];
-  const sedanKeywords = [
-    'COROLLA',
-    'CIVIC',
-    'CRUZE',
-    'HB20S',
-    'ONIX PLUS',
-    'VIRTUS',
-    'CITY',
-    'SENTRA',
-    'VERSA',
-    'LOGAN',
-    'VOYAGE',
-    'PRISMA',
-    'CRONOS',
-  ];
-  const pickupKeywords = [
-    'STRADA',
-    'TORO',
-    'SAVEIRO',
-    'MONTANA',
-    'HILUX',
-    'S10',
-    'RANGER',
-    'AMAROK',
-    'FRONTIER',
-    'OROCH',
-  ];
-  const minivanKeywords = ['SPIN', 'LIVINA', 'ZAFIRA', 'MERIVA', 'IDEA'];
-
-  if (suvKeywords.some(k => modelo.includes(k)) || carroceria.includes('SUV')) {
-    category = 'SUV';
-  } else if (sedanKeywords.some(k => modelo.includes(k)) || carroceria.includes('SEDAN')) {
-    category = 'SEDAN';
-  } else if (
-    pickupKeywords.some(k => modelo.includes(k)) ||
-    carroceria.includes('PICKUP') ||
-    carroceria.includes('PICAPE')
-  ) {
-    category = 'PICKUP';
-  } else if (minivanKeywords.some(k => modelo.includes(k)) || carroceria.includes('MINIVAN')) {
-    category = 'MINIVAN';
-  }
-
-  const isSedan = category === 'SEDAN';
-  const isHatch = category === 'HATCH';
-  const ano = vehicle.ano || 0;
-
-  return {
-    category,
-    aptoUber: (isSedan || isHatch) && ano >= 2015,
-    aptoUberBlack: isSedan && ano >= 2019,
-    aptoFamilia: ['SUV', 'SEDAN', 'MINIVAN'].includes(category),
-    aptoTrabalho: category === 'PICKUP' || (isHatch && ano >= 2018),
-    confidence: 0.6,
-    reasoning: 'Classificação por fallback (LLM indisponível)',
+export interface VehicleClassificationInput {
+  model: string;
+  brand: string; // Adicionado para validação LLM
+  year: number;
+  price: number;
+  category: string;
+  fuel: string;
+  transmission: string; // Adicionado para validação LLM
+  features: {
+    arCondicionado: boolean;
+    direcaoHidraulica: boolean;
+    airbag: boolean;
+    abs: boolean;
+    portas: number;
   };
 }
 
-/**
- * Classifica múltiplos veículos em batch (com rate limiting)
- */
-export async function classifyVehiclesBatch(
-  vehicles: VehicleToClassify[],
-  onProgress?: (current: number, total: number) => void
-): Promise<Map<string, VehicleClassification>> {
-  const results = new Map<string, VehicleClassification>();
+export class VehicleClassifierService {
 
-  for (let i = 0; i < vehicles.length; i++) {
-    const vehicle = vehicles[i];
-    const key = `${vehicle.marca}-${vehicle.modelo}-${vehicle.ano}`;
+  static detectUberEligibility(vehicle: VehicleClassificationInput): boolean {
+    // Uber normal: veículo em bom estado, ano recente, preço acessível
+    const yearValid = vehicle.year >= 2010;
+    // Ampliando range de preço para realidade atual
+    const priceValid = vehicle.price >= 20000 && vehicle.price <= 100000;
 
-    // Evitar classificar duplicatas
-    if (results.has(key)) {
-      continue;
-    }
+    const categoryUpper = vehicle.category.toUpperCase();
+    const categoryValid = categoryUpper !== 'MOTO' && categoryUpper !== 'OUTROS';
 
-    const classification = await classifyVehicle(vehicle);
-    results.set(key, classification);
+    const fuelUpper = vehicle.fuel.toUpperCase();
+    const fuelValid = fuelUpper === 'FLEX' || fuelUpper === 'GASOLINA' || fuelUpper === 'DIESEL';
 
-    if (onProgress) {
-      onProgress(i + 1, vehicles.length);
-    }
-
-    // Rate limiting: 200ms entre chamadas
-    if (i < vehicles.length - 1) {
-      await new Promise(r => setTimeout(r, 200));
-    }
+    return yearValid && priceValid && categoryValid && fuelValid;
   }
 
-  return results;
-}
+  static detectUberBlackEligibility(vehicle: VehicleClassificationInput): boolean {
+    // Uber Black: veículos premium, completos, ano mais recente
 
-export const vehicleClassifier = {
-  classifyVehicle,
-  classifyVehiclesBatch,
-  fallbackClassification,
-};
+    // EXCLUSÃO: Sedans compactos não entram
+    const COMPACT_SEDANS = [
+      'HB20S', 'HB20', 'ONIX', 'PRISMA', 'CRONOS', 'VOYAGE', 'LOGAN',
+      'KA', 'YARIS', 'CITY', 'VERSA', 'VIRTUS', 'COBALT', 'SIENA', 'GRAND SIENA'
+    ];
+
+    const modelUpper = vehicle.model.toUpperCase();
+    const isCompact = COMPACT_SEDANS.some(c => modelUpper.includes(c));
+
+    if (isCompact) return false;
+
+    // Regra oficial ~6 anos, mantemos 2018 como margem de segurança/qualidade
+    const yearValidStrict = vehicle.year >= 2018;
+
+    // Preço mínimo para filtrar "falsos positivos" de sedans médios muito desvalorizados
+    const priceValid = vehicle.price >= 50000;
+
+    // Apenas SEDAN (SUV vai para Black Bag, mas aqui simplificamos como False para Black puro)
+    const categoryUpper = vehicle.category.toUpperCase();
+    const categoryValid = categoryUpper === 'SEDAN';
+
+    const fuelUpper = vehicle.fuel.toUpperCase();
+    const fuelValid = fuelUpper === 'FLEX' || fuelUpper === 'GASOLINA';
+
+    const { features } = vehicle;
+    const featuresValid = features.arCondicionado && features.direcaoHidraulica && features.airbag && features.abs;
+
+    return yearValidStrict && priceValid && categoryValid && !isCompact && fuelValid && featuresValid;
+  }
+
+  static detectFamilyEligibility(vehicle: VehicleClassificationInput): boolean {
+    // Critérios para Família:
+    // 1. Categoria: SUV, Sedan ou Minivan
+    const categoryUpper = vehicle.category.toUpperCase();
+    const targetCategories = ['SUV', 'SEDAN', 'MINIVAN'];
+    const hasSpace = targetCategories.includes(categoryUpper);
+
+    // 2. Segurança/Conforto obrigatórios
+    const { features } = vehicle;
+    const isSafeAndComfortable = features.arCondicionado &&
+      features.direcaoHidraulica &&
+      features.airbag &&
+      features.abs &&
+      features.portas === 4;
+
+    return hasSpace && isSafeAndComfortable;
+  }
+
+  static detectWorkEligibility(vehicle: VehicleClassificationInput): boolean {
+    // Critérios para Trabalho:
+    // Econômico (Hatch/Sedan) ou Utilitário (Pickup)
+    const categoryUpper = vehicle.category.toUpperCase();
+    const workCategories = ['HATCH', 'SEDAN', 'PICKUP', 'PICAPE'];
+
+    return workCategories.includes(categoryUpper) && vehicle.year >= 2012;
+  }
+
+  static async detectEligibilityWithLLM(vehicle: VehicleClassificationInput): Promise<import('./uber-eligibility-validator.service').UberEligibilityResult> {
+    const { uberEligibilityValidator } = await import('./uber-eligibility-validator.service');
+
+    // 🚨 REGRA HARDCODED: Ano Mínimo SP (2014)
+    // Isso economiza tokens e garante exclusão absoluta de carros 2008-2013
+    if (vehicle.year < 2014) {
+      return {
+        uberX: false,
+        uberComfort: false,
+        uberBlack: false,
+        reasoning: 'Reprovado automaticamente: Ano inferior a 2014 (SP Restrito).',
+        confidence: 1.0
+      };
+    }
+
+    return uberEligibilityValidator.validateEligibility({
+      marca: vehicle.brand,
+      modelo: vehicle.model,
+      ano: vehicle.year,
+      carroceria: vehicle.category,
+      arCondicionado: vehicle.features.arCondicionado,
+      portas: vehicle.features.portas,
+      cambio: vehicle.transmission,
+      cor: '' // Cor não é crítica para X/Comfort, e Black assume ok se não informada no seed
+    });
+  }
+}
