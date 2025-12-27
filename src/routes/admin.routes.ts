@@ -641,8 +641,8 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     // Importar classificador LLM se necessário
     let classifyVehicle: any = null;
     if (useLLM) {
-      const { vehicleClassifier } = await import('../services/vehicle-classifier.service');
-      classifyVehicle = vehicleClassifier.classifyVehicle;
+      const { VehicleClassifierService } = await import('../services/vehicle-classifier.service');
+      classifyVehicle = VehicleClassifierService.classifyVehicle.bind(VehicleClassifierService);
     }
 
     // Fallback: Mapeamento estático de categorias
@@ -744,11 +744,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-                priceMatch[1]
-                  .replace(/R\$|\./g, '')
-                  .replace(',', '.')
-                  .trim()
-              ) || null
+              priceMatch[1]
+                .replace(/R\$|\./g, '')
+                .replace(',', '.')
+                .trim()
+            ) || null
             : null;
 
           vehicles.push({

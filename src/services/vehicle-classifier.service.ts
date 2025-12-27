@@ -140,4 +140,49 @@ export class VehicleClassifierService {
       cor: '', // Cor não é crítica para X/Comfort, e Black assume ok se não informada no seed
     });
   }
+  static async classifyVehicle(data: {
+    marca: string;
+    modelo: string;
+    ano: number;
+    carroceria: string;
+    combustivel: string;
+  }): Promise<{
+    category: string;
+    confidence: number;
+    aptoUber: boolean;
+    aptoUberBlack: boolean;
+    aptoFamilia: boolean;
+    aptoTrabalho: boolean;
+  }> {
+    // Adapter para chamar o validador com dados parciais
+    const input: VehicleClassificationInput = {
+      brand: data.marca,
+      model: data.modelo,
+      year: data.ano,
+      category: data.carroceria,
+      fuel: data.combustivel,
+      price: 0, // Não usado pelo LLM de eligibilidade
+      transmission: 'Manual', // Padrão se não informado
+      features: {
+        arCondicionado: true, // Assumir true para não prejudicar avaliação por falta de dados
+        direcaoHidraulica: true,
+        airbag: true,
+        abs: true,
+        portas: data.carroceria.toUpperCase() === 'MOTO' ? 0 : 4, // 0 para moto, 4 para carro
+      }
+    };
+
+    const eligibility = await this.detectEligibilityWithLLM(input);
+    const aptoFamilia = this.detectFamilyEligibility(input);
+    const aptoTrabalho = this.detectWorkEligibility(input);
+
+    return {
+      category: data.carroceria, // Mantém a categoria original por enquanto
+      confidence: eligibility.confidence || 0.8,
+      aptoUber: eligibility.uberX || eligibility.uberComfort,
+      aptoUberBlack: eligibility.uberBlack,
+      aptoFamilia,
+      aptoTrabalho
+    };
+  }
 }
