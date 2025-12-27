@@ -744,11 +744,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-              priceMatch[1]
-                .replace(/R\$|\./g, '')
-                .replace(',', '.')
-                .trim()
-            ) || null
+                priceMatch[1]
+                  .replace(/R\$|\./g, '')
+                  .replace(',', '.')
+                  .trim()
+              ) || null
             : null;
 
           vehicles.push({

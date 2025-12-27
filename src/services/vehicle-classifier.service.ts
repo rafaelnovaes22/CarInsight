@@ -169,7 +169,7 @@ export class VehicleClassifierService {
         airbag: true,
         abs: true,
         portas: data.carroceria.toUpperCase() === 'MOTO' ? 0 : 4, // 0 para moto, 4 para carro
-      }
+      },
     };
 
     const eligibility = await this.detectEligibilityWithLLM(input);
@@ -182,7 +182,7 @@ export class VehicleClassifierService {
       aptoUber: eligibility.uberX || eligibility.uberComfort,
       aptoUberBlack: eligibility.uberBlack,
       aptoFamilia,
-      aptoTrabalho
+      aptoTrabalho,
     };
   }
 }
