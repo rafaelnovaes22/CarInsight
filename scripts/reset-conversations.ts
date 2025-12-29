@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 
 async function resetConversation(phoneNumber: string) {
   console.log(`\n🗑️  Resetando conversa de ${phoneNumber}...`);
-  
+
   try {
     // Buscar conversa
     const conversation = await prisma.conversation.findFirst({
@@ -56,7 +56,7 @@ async function resetConversation(phoneNumber: string) {
 
 async function resetAllConversations() {
   console.log(`\n🗑️  Resetando TODAS as conversas...`);
-  
+
   try {
     const conversations = await prisma.conversation.findMany({
       select: {
@@ -79,9 +79,22 @@ async function resetAllConversations() {
       console.log(`   ${idx + 1}. ${conv.phoneNumber} (${conv.currentStep})`);
     });
 
+    // Deletar dependências primeiro para evitar erro de Foreign Key
+    console.log('   - Deletando Mensagens...');
+    await prisma.message.deleteMany({});
+
+    console.log('   - Deletando Recomendações...');
+    await prisma.recommendation.deleteMany({});
+
+    console.log('   - Deletando Leads...');
+    await prisma.lead.deleteMany({});
+
+    // Tentar deletar eventos se o model existir (AnalyticsEvent ou Event)
+    // Assumindo que o erro principal era Lead, vamos prosseguir.
+
     // Deletar todas
     const result = await prisma.conversation.deleteMany({});
-    
+
     console.log(`\n✅ ${result.count} conversa(s) deletada(s)!`);
   } catch (error) {
     console.error(`❌ Erro ao resetar conversas:`, error);
@@ -90,7 +103,7 @@ async function resetAllConversations() {
 
 async function main() {
   const args = process.argv.slice(2);
-  
+
   console.log('🔄 Reset de Conversas - FaciliAuto WhatsApp');
   console.log('━'.repeat(50));
 

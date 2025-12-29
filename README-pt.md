@@ -1,6 +1,6 @@
 # 🚗 FaciliAuto WhatsApp AI Assistant
 
-> Automotive Sales AI Assistant via WhatsApp with Generative AI, RAG, and Multi-LLM Routing.
+> Assistente inteligente de vendas automotivas via WhatsApp com IA Generativa, RAG e Multi-LLM Routing
 
 [![CI/CD](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
@@ -8,81 +8,78 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> [!NOTE]
-> 🇧🇷 **Para a versão em Português deste documento, veja [README-pt.md](README-pt.md).**
+## 📋 Sobre o Projeto
 
-## 📋 About the Project
+Sistema MVP de assistente de vendas para concessionárias via WhatsApp, utilizando **IA Generativa** com sistema de **Multi-LLM Routing**, **RAG** (Retrieval-Augmented Generation), **Embeddings Vetoriais** e **NLP** para recomendações personalizadas de veículos.
 
-MVP sales assistant system for car dealerships via WhatsApp, utilizing **Generative AI** with a **Multi-LLM Routing** system, **RAG** (Retrieval-Augmented Generation), **Vector Embeddings**, and **NLP** for personalized vehicle recommendations.
+### ✨ Features Principais
 
-### ✨ Key Features
+- 🤖 **IA Conversacional** - Atendimento via WhatsApp com Multi-LLM Routing
+- 🎯 **Sistema de Recomendação Inteligente** - LLM avalia adequação ao contexto do usuário
+- 🔍 **Busca Vetorial** - OpenAI Embeddings com fallback Cohere (1536 dim)
+- 📱 **Meta WhatsApp Business API** - Integração oficial
+- 🔒 **ISO42001 Compliant** - AI Management System + Guardrails Anti-Injection
+- 🔄 **Circuit Breaker** - Alta disponibilidade com fallback automático
+- ✅ **Testes E2E** - Suite completa com Vitest
 
-- 🤖 **Conversational AI** - WhatsApp support with Multi-LLM Routing
-- 🎯 **Intelligent Recommendation System** - LLM evaluates suitability to user context
-- 🔍 **Vector Search** - OpenAI Embeddings with Cohere fallback (1536 dim)
-- 📱 **Meta WhatsApp Business API** - Official integration
-- 🔒 **ISO42001 Compliant** - AI Management System + Anti-Injection Guardrails
-- 🔄 **Circuit Breaker** - High availability with automatic fallback
-- ✅ **E2E Tests** - Complete suite with Vitest
-
-## 🤖 LLM Architecture
+## 🤖 Arquitetura de LLMs
 
 ### LLM Router (Chat Completion)
 
-The system uses an **intelligent router** with automatic fallback and circuit breaker:
+O sistema utiliza um **router inteligente** com fallback automático e circuit breaker:
 
-| Priority | Provider | Model | Cost/1M tokens |
+| Prioridade | Provider | Modelo | Custo/1M tokens |
 |------------|----------|--------|-----------------|
-| 1️⃣ Primary | OpenAI | `gpt-4o-mini` | $0.15 input / $0.60 output |
+| 1️⃣ Primário | OpenAI | `gpt-4o-mini` | $0.15 input / $0.60 output |
 | 2️⃣ Fallback | Groq | `llama-3.1-8b-instant` | $0.05 input / $0.08 output |
-| 3️⃣ Last Resort | Mock | - | Development |
+| 3️⃣ Último recurso | Mock | - | Desenvolvimento |
 
-### Embedding Router (Vector Search)
+### Embedding Router (Busca Vetorial)
 
-| Priority | Provider | Model | Dimensions | Cost/1M tokens |
+| Prioridade | Provider | Modelo | Dimensões | Custo/1M tokens |
 |------------|----------|--------|-----------|-----------------|
-| 1️⃣ Primary | OpenAI | `text-embedding-3-small` | 1536 | $0.02 |
+| 1️⃣ Primário | OpenAI | `text-embedding-3-small` | 1536 | $0.02 |
 | 2️⃣ Fallback | Cohere | `embed-multilingual-v3.0` | 1024→1536 | $0.01 |
 
-**Router Features:**
-- ✅ **Circuit Breaker** - Prevents repeated calls to failing services (3 failures = 1 min timeout)
-- ✅ **Automatic Retry** - 2 attempts per provider with exponential backoff
-- ✅ **Cascading Fallback** - If primary fails, tries the next in the list
-- ✅ **Mock Mode** - For development without API keys
+**Features do Router:**
+- ✅ **Circuit Breaker** - Previne chamadas repetidas a serviços falhando (3 falhas = 1 min timeout)
+- ✅ **Retry automático** - 2 tentativas por provider com backoff exponencial
+- ✅ **Fallback em cascata** - Se primário falhar, tenta próximo da lista
+- ✅ **Mock mode** - Para desenvolvimento sem API keys
 
-## 🛠️ Tech Stack
+## 🛠️ Stack Tecnológico
 
-### Backend & AI
-- **Node.js 20+** with TypeScript 5.3
-- **Express.js** - REST API
-- **State Machine** - Conversation orchestration in pure TypeScript
-- **OpenAI SDK** - GPT-4o-mini (Primary LLM) + Embeddings
-- **Groq SDK** - LLaMA 3.1 8B Instant (Fallback LLM)
-- **Cohere SDK** - Multilingual embeddings (Fallback)
+### Backend & IA
+- **Node.js 20+** com TypeScript 5.3
+- **Express.js** - API REST
+- **State Machine** - Orquestração de conversas em TypeScript puro
+- **OpenAI SDK** - GPT-4o-mini (LLM primário) + Embeddings
+- **Groq SDK** - LLaMA 3.1 8B Instant (LLM fallback)
+- **Cohere SDK** - Embeddings multilingual (fallback)
 - **Prisma ORM** - Type-safe database client
 - **Zod** - Schema validation
 
 ### Database & Storage
-- **PostgreSQL 14+** - Main relational database
-- **In-Memory Vector Store** - Vector search < 50ms
-- **Persisted Embeddings** - Database cache to avoid regeneration
+- **PostgreSQL 14+** - Banco relacional principal
+- **In-Memory Vector Store** - Busca vetorial < 50ms
+- **Embeddings persistidos** - Cache no banco para não regenerar
 
-### Integrations
-- **Meta WhatsApp Business API** - Official messaging
+### Integrações
+- **Meta WhatsApp Business API** - Messaging oficial
 - **Baileys** - WhatsApp Web API (fallback)
-- **CRM Webhooks** - Integration with Pipedrive/RD Station
+- **CRM Webhooks** - Integração com Pipedrive/RD Station
 
 ### DevOps & Quality
-- **Docker** - Containerization
+- **Docker** - Containerização
 - **Railway** - Deployment
 - **Vitest** - Testing framework
 - **GitHub Actions** - CI/CD
 - **Pino** - Structured logging
 - **Husky** - Git hooks (pre-commit)
 
-## 🔄 State Machine - Conversation Orchestration
+## 🔄 State Machine - Orquestração de Conversas
 
-The system uses a **State Machine in pure TypeScript** to manage conversation states:
+O sistema utiliza uma **State Machine em TypeScript puro** para gerenciar o fluxo de estados da conversa:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -101,31 +98,30 @@ The system uses a **State Machine in pure TypeScript** to manage conversation st
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Graph States
+### Estados do Grafo
 
-| State | Description |
+| Estado | Descrição |
 |--------|-----------|
-| **GREETING** | Welcome and customer name collection |
-| **DISCOVERY** | Initial discovery: what the customer is looking for |
-| **CLARIFICATION** | Questions to refine profile (budget, usage, etc.) |
-| **RECOMMENDATION** | Presentation of vehicle recommendations |
-| **FOLLOW_UP** | Post-recommendation follow-up |
-| **HANDOFF** | Transfer to human salesperson |
+| **GREETING** | Boas-vindas e coleta de nome do cliente |
+| **DISCOVERY** | Descoberta inicial: o que o cliente busca |
+| **CLARIFICATION** | Perguntas para refinar o perfil (budget, uso, etc) |
+| **RECOMMENDATION** | Apresentação das recomendações de veículos |
+| **FOLLOW_UP** | Acompanhamento pós-recomendação |
+| **HANDOFF** | Transferência para vendedor humano |
 
-### Specialized Nodes
+### Nodes Especializados
 
-Each state is processed by a specialized **node**:
+Cada estado é processado por um **node** especializado:
 
 ```typescript
 // src/graph/nodes/
-├── greeting.node.ts      // ISO42001: AI disclosure in first message
-├── quiz.node.ts          // Structured preference collection
-├── search.node.ts        // Vector search + filters
-├── recommendation.node.ts // Presentation with reasoning
-└── recommendation.node.ts // Presentation with reasoning
+├── greeting.node.ts      // ISO42001: AI disclosure na primeira mensagem
+├── quiz.node.ts          // Coleta de preferências estruturada
+├── search.node.ts        // Busca vetorial + filtros
+└── recommendation.node.ts // Apresentação com reasoning
 ```
 
-## 🏗️ Agent Architecture
+## 🏗️ Arquitetura de Agentes
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -152,51 +148,51 @@ Each state is processed by a specialized **node**:
          │          │               │
 ┌────────▼──────────▼───────────────▼─────────────────────────┐
 │                    LLM Router                                │
-│  • GPT-4o-mini (primary) → Groq LLaMA (fallback) → Mock     │
-│  • Circuit breaker + Automatic Retry                        │
+│  • GPT-4o-mini (primário) → Groq LLaMA (fallback) → Mock    │
+│  • Circuit breaker + Retry automático                       │
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
 │               In-Memory Vector Store                         │
-│  • OpenAI Embeddings (primary) → Cohere (fallback)          │
+│  • OpenAI Embeddings (primário) → Cohere (fallback)         │
 │  • Cosine similarity search < 50ms                          │
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
 │                   PostgreSQL + Prisma                        │
 │  • Vehicles, Conversations, Recommendations, Leads          │
-│  • Persisted Embeddings                                     │
+│  • Embeddings persistidos                                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Specialized Agents
+### Agentes Especializados
 
-| Agent | Responsibility |
+| Agente | Responsabilidade |
 |--------|------------------|
-| **OrchestratorAgent** | Intent classification and routing |
-| **QuizAgent** | Preference collection (8 questions) |
-| **RecommendationAgent** | Vehicle evaluation with LLM + specific model search |
-| **VehicleExpertAgent** | Technical details expert |
-| **PreferenceExtractorAgent** | Free text preference extraction |
+| **OrchestratorAgent** | Classificação de intenção e roteamento |
+| **QuizAgent** | Coleta de preferências (8 perguntas) |
+| **RecommendationAgent** | Avaliação de veículos com LLM + busca de modelo específico |
+| **VehicleExpertAgent** | Especialista em detalhes técnicos |
+| **PreferenceExtractorAgent** | Extração de preferências de texto livre |
 
-## 🔒 Security & Compliance
+## 🔒 Segurança & Compliance
 
 ### Guardrails Service
 
-- **Rate Limiting** - 10 msgs/min per user
-- **Prompt Injection Detection** - 30+ patterns (PT-BR and EN)
-- **Input Sanitization** - Removes control characters, HTML
-- **Output Validation** - Detects system prompt leakage
+- **Rate Limiting** - 10 msgs/min por usuário
+- **Prompt Injection Detection** - 30+ patterns (PT-BR e EN)
+- **Input Sanitization** - Remove caracteres de controle, HTML
+- **Output Validation** - Detecta vazamento de system prompts
 - **Message Length Limits** - 1000 chars input, 4096 output
 
 ### ISO42001 Compliance
 
-- **Automatic Disclaimers** - Transparency about AI
-- **Audit Logs** - Complete event tracking
-- **Anti-hallucination** - Guardrails for safe responses
-- **GDPR/LGPD Ready** - Structure for data rights
+- **Disclaimers automáticos** - Transparência sobre IA
+- **Audit Logs** - Rastreamento completo de eventos
+- **Anti-hallucination** - Guardrails para respostas seguras
+- **LGPD Ready** - Estrutura para direitos de dados
 
-## 📊 Data Model
+## 📊 Modelo de Dados
 
 ```prisma
 model Vehicle {
@@ -207,13 +203,13 @@ model Vehicle {
   ano             Int
   km              Int
   preco           Float
-  carroceria      String   // hatch, sedan, SUV, pickup
+  carroceria      String   // hatch, sedan, SUV, picape
   combustivel     String
   cambio          String
   // Embeddings
   embedding       String?  // JSON array (1536 dim)
   embeddingModel  String?
-  // Usage Contexts
+  // Contextos de uso
   aptoUber        Boolean
   aptoFamilia     Boolean
   // ...
@@ -234,59 +230,59 @@ model Recommendation {
   id              String   @id
   vehicleId       String
   matchScore      Int      // 0-100
-  reasoning       String   // LLM Justification
+  reasoning       String   // Justificativa LLM
   position        Int      // 1, 2, 3 (top 3)
 }
 ```
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Pré-requisitos
 
-- Node.js 20+ and npm
+- Node.js 20+ e npm
 - PostgreSQL 14+
 - OpenAI API Key
-- Groq API Key (optional, fallback)
-- Cohere API Key (optional, fallback embeddings)
+- Groq API Key (opcional, fallback)
+- Cohere API Key (opcional, fallback embeddings)
 - Meta WhatsApp Business Account
 
-### Installation
+### Instalação
 
 ```bash
-# Clone the repository
+# Clone o repositório
 git clone https://github.com/rafaelnovaes22/faciliauto-mvp-v2.git
 cd faciliauto-mvp-v2
 
-# Install dependencies
+# Instale as dependências
 npm install
 
-# Configure environment variables
+# Configure as variáveis de ambiente
 cp .env.example .env
-# Edit .env with your credentials
+# Edite .env com suas credenciais
 
-# Run migrations
+# Execute as migrations
 npm run db:push
 
-# Seed database with real data
+# Popule o banco com dados reais
 npm run db:seed:real
 
-# Generate OpenAI embeddings
+# Gere os embeddings OpenAI
 npm run embeddings:generate
 
-# Start the server
+# Inicie o servidor
 npm run dev
 ```
 
-### Environment Variables
+### Variáveis de Ambiente
 
 ```env
 # Database
 DATABASE_URL="postgresql://user:pass@localhost:5432/faciliauto"
 
-# LLM Providers (with automatic fallback)
-OPENAI_API_KEY="sk-proj-..."    # Primary (LLM + Embeddings)
-GROQ_API_KEY="gsk-..."          # Fallback LLM (optional)
-COHERE_API_KEY="..."            # Fallback Embeddings (optional)
+# LLM Providers (com fallback automático)
+OPENAI_API_KEY="sk-proj-..."    # Primário (LLM + Embeddings)
+GROQ_API_KEY="gsk-..."          # Fallback LLM (opcional)
+COHERE_API_KEY="..."            # Fallback Embeddings (opcional)
 
 # WhatsApp
 META_WHATSAPP_TOKEN="EAA..."
@@ -302,198 +298,198 @@ NODE_ENV="production"
 PORT=3000
 ```
 
-## 📊 Available Commands
+## 📊 Comandos Disponíveis
 
 ```bash
-# Development
-npm run dev              # Start development server
-npm run dev:api          # API server without WhatsApp
-npm run build            # Production build
-npm run start:prod       # Start production server
+# Desenvolvimento
+npm run dev              # Inicia servidor de desenvolvimento
+npm run dev:api          # Servidor API sem WhatsApp
+npm run build            # Build para produção
+npm run start:prod       # Inicia servidor em produção
 
 # Database
-npm run db:push          # Apply Prisma schema
-npm run db:studio        # Open Prisma Studio
-npm run db:seed:real     # Seed with real vehicles
+npm run db:push          # Aplica schema Prisma
+npm run db:studio        # Abre Prisma Studio
+npm run db:seed:real     # Popula com veículos reais
 
 # Embeddings
-npm run embeddings:generate    # Generate OpenAI embeddings
-npm run embeddings:stats       # Show statistics
-npm run embeddings:force       # Force regeneration
+npm run embeddings:generate    # Gera embeddings OpenAI
+npm run embeddings:stats       # Mostra estatísticas
+npm run embeddings:force       # Força regeneração
 
-# Tests
-npm test                 # Run all tests
-npm run test:coverage    # With coverage report
+# Testes
+npm test                 # Executa todos os testes
+npm run test:coverage    # Com coverage report
 npm run test:watch       # Watch mode
-npm run test:ui          # Visual interface
-npm run test:e2e         # E2E tests only
-npm run test:integration # Integration tests only
+npm run test:ui          # Interface visual
+npm run test:e2e         # Apenas testes E2E
+npm run test:integration # Apenas testes de integração
 
-# Utilities
-npm run conversations:reset     # Reset test conversations
-npm run vehicles:update-uber    # Update Uber eligibility
-npm run benchmark:llms          # Compare LLM performance
+# Utilitários
+npm run conversations:reset     # Reset conversas de teste
+npm run vehicles:update-uber    # Atualiza elegibilidade Uber
+npm run benchmark:llms          # Compara performance LLMs
 ```
 
-## 📁 Project Structure
+## 📁 Estrutura do Projeto
 
 ```
 faciliauto-mvp-v2/
 ├── src/
 │   ├── index.ts                    # Entry point
-│   ├── agents/                     # Specialized Agents
-│   │   ├── orchestrator.agent.ts   # Routing and intent
-│   │   ├── quiz.agent.ts           # Preference collection
-│   │   ├── recommendation.agent.ts # LLM recommendations
-│   │   ├── vehicle-expert.agent.ts # Vehicle expert
+│   ├── agents/                     # Agentes especializados
+│   │   ├── orchestrator.agent.ts   # Roteamento e intenção
+│   │   ├── quiz.agent.ts           # Coleta de preferências
+│   │   ├── recommendation.agent.ts # Recomendações com LLM
+│   │   ├── vehicle-expert.agent.ts # Especialista em veículos
 │   │   └── preference-extractor.agent.ts
-│   ├── lib/                        # Core libraries
-│   │   ├── llm-router.ts           # Multi-LLM with fallback
-│   │   ├── embedding-router.ts     # Multi-Embedding with fallback
-│   │   ├── groq.ts                 # Groq integration
-│   │   ├── embeddings.ts           # Embeddings wrapper
-│   │   ├── openai.ts               # OpenAI integration
+│   ├── lib/                        # Bibliotecas core
+│   │   ├── llm-router.ts           # Multi-LLM com fallback
+│   │   ├── embedding-router.ts     # Multi-Embedding com fallback
+│   │   ├── groq.ts                 # Integração Groq
+│   │   ├── embeddings.ts           # Wrapper embeddings
+│   │   ├── openai.ts               # Integração OpenAI
 │   │   ├── prisma.ts               # Database client
 │   │   └── logger.ts               # Pino logger
-│   ├── services/                   # Business Services
-│   │   ├── guardrails.service.ts   # Security and validation
+│   ├── services/                   # Serviços de negócio
+│   │   ├── guardrails.service.ts   # Segurança e validação
 │   │   ├── in-memory-vector.service.ts  # Vector store
 │   │   ├── message-handler-v2.service.ts
 │   │   ├── whatsapp-meta.service.ts
 │   │   └── vehicle-search-adapter.service.ts
-│   ├── routes/                     # Express Routes
+│   ├── routes/                     # Rotas Express
 │   │   ├── webhook.routes.ts       # WhatsApp webhooks
 │   │   ├── admin.routes.ts         # Admin endpoints
 │   │   └── debug.routes.ts         # Debug endpoints
-│   ├── config/                     # Configuration
-│   │   ├── env.ts                  # Environment variables
+│   ├── config/                     # Configurações
+│   │   ├── env.ts                  # Variáveis de ambiente
 │   │   └── disclosure.messages.ts  # ISO42001 disclaimers
-│   └── graph/                      # State Machine (Pure TypeScript)
+│   └── graph/                      # State Machine (TypeScript puro)
 │       └── conversation-graph.ts
 ├── prisma/
 │   ├── schema.prisma               # Database schema
 │   └── seed-robustcar.ts           # Seed script
-├── tests/                          # Test Suite
-│   ├── e2e/                        # End-to-end tests
-│   ├── integration/                # Integration tests
-│   ├── unit/                       # Unit tests
-│   └── agents/                     # Agent tests
-├── docs/                           # Technical Documentation
-├── scripts/                        # Utility scripts
+├── tests/                          # Suite de testes
+│   ├── e2e/                        # Testes end-to-end
+│   ├── integration/                # Testes de integração
+│   ├── unit/                       # Testes unitários
+│   └── agents/                     # Testes de agentes
+├── docs/                           # Documentação técnica
+├── scripts/                        # Scripts utilitários
 └── .github/workflows/              # CI/CD GitHub Actions
 ```
 
-## 🧪 Tests
+## 🧪 Testes
 
 ```bash
-# Run all tests
+# Executar todos os testes
 npm test
 
-# With coverage (target 80%+)
+# Com coverage (target 80%+)
 npm run test:coverage
 
-# Vitest Visual Interface
+# Interface visual do Vitest
 npm run test:ui
 
-# Watch mode (development)
+# Watch mode (desenvolvimento)
 npm run test:watch
 
-# Specific tests
+# Testes específicos
 npm run test:e2e           # End-to-end
-npm run test:integration   # Integration
-npm run test:unit          # Unit
+npm run test:integration   # Integração
+npm run test:unit          # Unitários
 ```
 
-### Test Categories
+### Categorias de Testes
 
-| Category | Description |
+| Categoria | Descrição |
 |-----------|-----------|
-| **E2E** | Full conversational flow, guardrails |
+| **E2E** | Fluxo conversacional completo, guardrails |
 | **Integration** | LLM integration, webhooks, API |
 | **Unit** | LLM router, embedding router, services |
 | **Agents** | Quiz agent, recommendation agent |
 
-## 🔄 Recommendation Flow
+## 🔄 Fluxo de Recomendação
 
 ```
-1. User sends message
+1. Usuário envia mensagem
          │
-2. Guardrails validates input (injection, rate limit)
+2. Guardrails valida input (injection, rate limit)
          │
-3. Orchestrator classifies intent
+3. Orchestrator classifica intenção
          │
-4. If QUALIFY → Quiz Agent (8 questions)
+4. Se QUALIFICAR → Quiz Agent (8 perguntas)
          │
-5. Quiz complete → Recommendation Agent
+5. Quiz completo → Recommendation Agent
          │
    ┌─────┴─────┐
    │           │
    ▼           ▼
-Specific    General
-Model       Profile
+Modelo      Perfil
+Específico  Geral
    │           │
    ▼           ▼
-Exact       Pre-filter
-Search      by budget/year/km
+Busca       Pré-filtra
+Exata       por budget/ano/km
    │           │
    ▼           ▼
-Found?      LLM evaluates
-   │        suitability
+Encontrou?  LLM avalia
+   │        adequação
    │           │
    └─────┬─────┘
          │
-6. Top 3 recommendations with reasoning
+6. Top 3 recomendações com reasoning
          │
-7. Save to DB + event
+7. Salva no banco + evento
          │
-8. Format WhatsApp message
+8. Formata mensagem WhatsApp
          │
-9. Guardrails validates output
+9. Guardrails valida output
          │
-10. Send to user
+10. Envia para usuário
 ```
 
-## 📚 Documentation
+## 📚 Documentação
 
-- [System Architecture](docs/development/RESUMO_IMPLEMENTACAO.md)
+- [Arquitetura do Sistema](docs/development/RESUMO_IMPLEMENTACAO.md)
 - [LLM Routing Guide](docs/LLM_ROUTING_GUIDE.md)
 - [ISO42001 Compliance](docs/development/ISO42001_IMPLEMENTACAO_COMPLETA.md)
 - [Guardrails Architecture](docs/GUARDRAILS_ADVANCED_ARCHITECTURE.md)
 - [Testing Summary](docs/development/TESTING_SUMMARY.md)
 - [Deploy Railway](docs/RAILWAY_DEPLOY_GUIDE.md)
 
-## 🤝 Contributing
+## 🤝 Contribuindo
 
-Contributions are welcome! Please:
+Contribuições são bem-vindas! Por favor:
 
-1. Fork the project
-2. Create a branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/amazing-feature`)
+3. Commit suas mudanças (`git commit -m 'feat: add amazing feature'`)
+4. Push para a branch (`git push origin feature/amazing-feature`)
+5. Abra um Pull Request
 
-## 📄 License
+## 📄 Licença
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+Este projeto está sob a licença MIT. Veja [LICENSE](LICENSE) para mais detalhes.
 
-## 👨‍💻 Author
+## 👨‍💻 Autor
 
 **Rafael Novaes**
 
 - GitHub: [@rafaelnovaes22](https://github.com/rafaelnovaes22)
 - LinkedIn: [Rafael Novaes](https://linkedin.com/in/rafaelnovaes22)
 
-## 🙏 Acknowledgements
+## 🙏 Agradecimentos
 
-- [OpenAI](https://openai.com/) - GPT-4o-mini and Embeddings
-- [Groq](https://groq.com/) - Ultra-fast LLM (fallback)
-- [Cohere](https://cohere.com/) - Multilingual embeddings
+- [OpenAI](https://openai.com/) - GPT-4o-mini e Embeddings
+- [Groq](https://groq.com/) - LLM ultra-rápido (fallback)
+- [Cohere](https://cohere.com/) - Embeddings multilingual
 - [Meta](https://developers.facebook.com/) - WhatsApp Business API
 - [Prisma](https://www.prisma.io/) - Type-safe ORM
-- [Vitest](https://vitest.dev/) - Modern testing framework
+- [Vitest](https://vitest.dev/) - Testing framework moderno
 
 ---
 
-⭐ If this project was useful, consider giving it a star!
+⭐ Se este projeto foi útil, considere dar uma estrela!
 
-**Status:** ✅ MVP 100% Functional | Multi-LLM Router | ISO42001 Compliant
+**Status:** ✅ MVP 100% Funcional | Multi-LLM Router | ISO42001 Compliant

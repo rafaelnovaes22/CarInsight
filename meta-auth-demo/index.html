@@ -63,6 +63,24 @@
         .btn-logout:hover {
             background-color: #d8dadf;
         }
+
+        /* Test message button style */
+        .btn-test-msg {
+            background-color: #008069;
+            /* WhatsApp Green */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .btn-test-msg:hover {
+            background-color: #006c59;
+        }
     </style>
 </head>
 
@@ -72,7 +90,7 @@
         <h1>CarInsight Login</h1>
         <p>Login Demo for Meta Verification</p>
 
-        <!-- Botão Customizado -->
+        <!-- Custom Login Button -->
         <button id="customLoginBtn" onclick="manualLogin()"
             style="background-color: #1877f2; color: white; border: none; border-radius: 6px; padding: 10px 20px; font-weight: bold; cursor: pointer; font-size: 16px;">
             Log in with Facebook
@@ -84,13 +102,27 @@
             <img id="userPicture" src="" alt="Profile">
             <h3 id="userName"></h3>
             <p id="userID"></p>
+
+            <!-- Send Test Message Button -->
+            <div style="margin-top: 20px; text-align: left;">
+                <label for="phoneInput"
+                    style="display: block; font-weight: bold; margin-bottom: 5px; color: #1c1e21;">Novo Lead /
+                    Cliente</label>
+                <input type="text" id="phoneInput" placeholder="Digite o número (ex: 5511999999999)"
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; margin-bottom: 10px;">
+                <p style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">Template: <code>hello_world</code></p>
+                <button class="btn-test-msg" onclick="dispararMensagemTeste()" style="margin-top: 0;">Enviar Proposta /
+                    Mensagem</button>
+            </div>
+
+            <br>
             <button class="btn-logout" onclick="logout()">Logout</button>
         </div>
     </div>
 
     <!-- Facebook SDK -->
     <script>
-        // Configuração
+        // Configuration
         const FACEBOOK_APP_ID = '853489967151672';
 
         function statusChangeCallback(response) {
@@ -125,9 +157,6 @@
                 if (response.status === 'connected') {
                     statusChangeCallback(response);
                 } else {
-                    // Call login specific for business apps often needing empty scope first or specific ones
-                    // Trying with empty scope first to bypass "supported permission" error for initial auth
-                    // Usando config_id para Business Login
                     FB.login(function (response) {
                         statusChangeCallback(response);
                     }, { config_id: '1384140643361202' });
@@ -155,7 +184,47 @@
             });
         }
 
-        // Carrega o SDK assincronamente
+        // Function to send test message via our backend
+        async function dispararMensagemTeste() {
+            const btn = document.querySelector('.btn-test-msg');
+            const phoneInput = document.getElementById('phoneInput');
+            const phoneNumber = phoneInput.value.replace(/\D/g, ''); // Remove non-digits
+
+            if (!phoneNumber) {
+                alert('Por favor, digite um número de telefone válido.');
+                return;
+            }
+
+            const originalText = btn.innerText;
+            btn.innerText = 'Enviando...';
+            btn.disabled = true;
+
+            try {
+                console.log('Sending message request to:', phoneNumber);
+                const response = await fetch('/send-message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to: phoneNumber })
+                });
+                const result = await response.json();
+                console.log('Result:', result);
+
+                if (response.ok) {
+                    alert('Mensagem enviada com sucesso! Verifique o WhatsApp.');
+                } else {
+                    console.error('Failed to send:', result);
+                    alert('Erro ao enviar mensagem: ' + (result.error?.message || JSON.stringify(result)));
+                }
+            } catch (err) {
+                console.error('Network error:', err);
+                alert('Erro de conexão ao enviar mensagem.');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Load SDK asynchronously
         (function (d, s, id) {
             var js, fjs = d.getElementsByTagName(s)[0];
             if (d.getElementById(id)) return;
