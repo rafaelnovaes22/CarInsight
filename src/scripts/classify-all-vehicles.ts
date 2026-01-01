@@ -13,7 +13,6 @@ import { PrismaClient } from '@prisma/client';
 import { VehicleClassifierService } from '../services/vehicle-classifier.service';
 
 const prisma = new PrismaClient();
-const vehicleClassifier = new VehicleClassifierService();
 
 async function classifyAllVehicles() {
   console.log('🚗 Classificando TODOS os veículos do banco...\n');
@@ -32,8 +31,8 @@ async function classifyAllVehicles() {
     try {
       console.log(`\n🔍 Classificando: ${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}`);
 
-      // Usar o VehicleClassifier para classificar
-      const classification = await vehicleClassifier.classifyVehicle({
+      // Usar o VehicleClassifier para classificar (método estático)
+      const classification = await VehicleClassifierService.classifyVehicle({
         marca: vehicle.marca,
         modelo: vehicle.modelo,
         versao: vehicle.versao || '',
