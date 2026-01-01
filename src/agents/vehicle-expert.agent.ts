@@ -1480,7 +1480,6 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             usage: profile.usage,
             usoPrincipal: profile.usoPrincipal,
             bodyType: profile.bodyType,
-            tipoCarroceria: profile.tipoCarroceria,
             priorities: profile.priorities,
           },
           query: {
@@ -1827,13 +1826,13 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       if (filteredResults.length === 0) {
         logger.warn(
           {
-            query: query.query,
+            searchText: query.searchText,
             filters: query.filters,
             rawResults: results.length,
             profile: {
-              budget: profile.orcamento,
-              usage: profile.uso,
-              bodyType: profile.tipoCarroceria,
+              budget: profile.budget || profile.orcamento,
+              usage: profile.usage,
+              bodyType: profile.bodyType,
             },
           },
           '⚠️  NO RECOMMENDATIONS FOUND - Debug info'
