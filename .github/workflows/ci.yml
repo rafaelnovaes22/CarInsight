@@ -163,6 +163,16 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
+      - name: Verify Railway Token
+        run: |
+          if [ -z "${RAILWAY_TOKEN}" ]; then
+            echo "❌ RAILWAY_TOKEN secret is not set!"
+            echo "Please add RAILWAY_TOKEN to your repository secrets."
+            exit 1
+          fi
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
       - name: Deploy to Railway
         run: railway up --detach --service faciliauto-mvp-v2
         env:
