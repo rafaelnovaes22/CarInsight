@@ -44,6 +44,8 @@
     "conversations:reset:all": "tsx scripts/reset-conversations.ts --all",
     "vehicles:update-uber": "tsx scripts/update-uber-eligibility.ts",
     "vehicles:update-uber-llm": "tsx scripts/update-uber-eligibility-llm.ts",
+    "vehicles:fix-urls": "tsx scripts/fix-robustcar-urls.ts",
+    "vehicles:update-urls": "tsx scripts/update-vehicle-urls.ts",
     "heroku-status": "heroku ps --app faciliauto-mvp",
     "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
     "heroku-open": "heroku open --app faciliauto-mvp",
