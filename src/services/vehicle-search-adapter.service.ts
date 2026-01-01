@@ -47,6 +47,13 @@ export class VehicleSearchAdapter {
     try {
       const limit = filters.limit || 5;
 
+      logger.info({ 
+        query, 
+        filters,
+        vectorStoreReady: inMemoryVectorStore.isInitialized(),
+        vectorStoreCount: inMemoryVectorStore.getCount()
+      }, '🔍 VehicleSearchAdapter.search START');
+
       // Step 1: Try exact search (model + year) first
       // Requirements: 1.1, 1.2 - Extract filters and prioritize exact matches
       const extractedFilters = exactSearchParser.parse(query);
@@ -80,7 +87,9 @@ export class VehicleSearchAdapter {
       }
 
       // Get vehicle IDs from semantic search
+      logger.info({ query, limit }, '🔍 Calling inMemoryVectorStore.search');
       const vehicleIds = await inMemoryVectorStore.search(query, limit * 2); // Get more to filter
+      logger.info({ vehicleIds: vehicleIds.length }, '🔍 Vector search returned IDs');
 
       // Se busca semântica não retornou nada, fazer fallback para busca SQL
       if (vehicleIds.length === 0) {
@@ -423,6 +432,14 @@ export class VehicleSearchAdapter {
   private async searchFallbackSQL(filters: SearchFilters): Promise<VehicleRecommendation[]> {
     const limit = filters.limit || 5;
 
+    logger.info({ 
+      filters,
+      maxPrice: filters.maxPrice,
+      minYear: filters.minYear,
+      bodyType: filters.bodyType,
+      aptoTrabalho: filters.aptoTrabalho
+    }, '🔍 SQL FALLBACK: Building query');
+
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
@@ -447,7 +464,18 @@ export class VehicleSearchAdapter {
       orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],
     });
 
-    logger.info({ filters, found: vehicles.length }, 'SQL fallback search results');
+    logger.info({ 
+      filters, 
+      found: vehicles.length,
+      sample: vehicles.slice(0, 2).map(v => ({
+        id: v.id,
+        marca: v.marca,
+        modelo: v.modelo,
+        ano: v.ano,
+        preco: v.preco,
+        aptoTrabalho: v.aptoTrabalho
+      }))
+    }, '🔍 SQL FALLBACK: Results');
 
     return this.formatVehicleResults(vehicles);
   }
