@@ -96,6 +96,7 @@ export class VehicleSearchAdapter {
             notIn: filters.excludeIds || [],
           },
           disponivel: true,
+          carroceria: { not: 'Moto' }, // FILTRO: Excluir motos das recomendações de carros
           // Apply filters
           ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
           ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
@@ -308,6 +309,7 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
+        carroceria: { not: 'Moto' }, // FILTRO: Excluir motos das recomendações de carros
         id: { notIn: filters.excludeIds || [] },
         // Filtro de marca (se especificado)
         ...(filters.brand && { marca: { contains: filters.brand, mode: 'insensitive' } }),
@@ -413,6 +415,7 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
+        carroceria: { not: 'Moto' }, // FILTRO: Excluir motos das recomendações de carros
         id: { notIn: filters.excludeIds || [] },
         ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
         ...(filters.minPrice && { preco: { gte: filters.minPrice } }),

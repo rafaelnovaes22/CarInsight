@@ -123,15 +123,23 @@ class InMemoryVectorStore {
 
     const queryEmbedding = await generateEmbedding(queryText);
 
-    const results = this.embeddings.map(item => ({
-      vehicleId: item.vehicleId,
-      similarity: this.cosineSimilarity(queryEmbedding, item.embedding),
-      metadata: item.metadata,
-    }));
+    const MIN_SIMILARITY = 0.5; // Threshold reduzido de 0.7 para 0.5 para mais resultados
+
+    const results = this.embeddings
+      .map(item => ({
+        vehicleId: item.vehicleId,
+        similarity: this.cosineSimilarity(queryEmbedding, item.embedding),
+        metadata: item.metadata,
+      }))
+      .filter(r => r.similarity >= MIN_SIMILARITY); // Filtrar por threshold
 
     results.sort((a, b) => b.similarity - a.similarity);
 
-    return results.slice(0, limit).map(r => r.vehicleId);
+    const topResults = results.slice(0, limit);
+    
+    console.log(`🔍 Vector search: ${topResults.length} results above ${MIN_SIMILARITY} threshold`);
+
+    return topResults.map(r => r.vehicleId);
   }
 
   async searchWithScores(

@@ -27,14 +27,38 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check with database validation
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+      uptime: process.uptime()
+    });
+  } catch (error) {
+    logger.error({ error }, 'Health check failed');
+    res.status(503).json({ 
+      status: 'error', 
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Privacy Policy (required by Meta)
 app.get('/privacy-policy', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'privacy-policy.html'));
+  const filePath = path.join(__dirname, '..', 'public', 'privacy-policy.html');
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      logger.error({ error: err }, 'Failed to send privacy policy');
+      res.status(404).send('Privacy policy not found');
+    }
+  });
 });
 
 // Reset conversation endpoint (for testing)
@@ -153,15 +177,29 @@ async function start() {
   }
 }
 
-// Handle shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
+// Handle shutdown gracefully
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, shutting down gracefully...');
+  try {
+    await prisma.$disconnect();
+    logger.info('✅ Database connections closed');
+    process.exit(0);
+  } catch (error) {
+    logger.error({ error }, '❌ Error during shutdown');
+    process.exit(1);
+  }
 });
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
+process.on('SIGINT', async () => {
+  logger.info('SIGINT received, shutting down gracefully...');
+  try {
+    await prisma.$disconnect();
+    logger.info('✅ Database connections closed');
+    process.exit(0);
+  } catch (error) {
+    logger.error({ error }, '❌ Error during shutdown');
+    process.exit(1);
+  }
 });
 
 start();
