@@ -32,20 +32,20 @@ app.get('/health', async (req, res) => {
   try {
     // Test database connection
     await prisma.$queryRaw`SELECT 1`;
-    
-    res.status(200).json({ 
-      status: 'ok', 
+
+    res.status(200).json({
+      status: 'ok',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      uptime: process.uptime()
+      uptime: process.uptime(),
     });
   } catch (error) {
     logger.error({ error }, 'Health check failed');
-    res.status(503).json({ 
-      status: 'error', 
+    res.status(503).json({
+      status: 'error',
       timestamp: new Date().toISOString(),
       database: 'disconnected',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -53,7 +53,7 @@ app.get('/health', async (req, res) => {
 // Privacy Policy (required by Meta)
 app.get('/privacy-policy', (req, res) => {
   const filePath = path.join(__dirname, '..', 'public', 'privacy-policy.html');
-  res.sendFile(filePath, (err) => {
+  res.sendFile(filePath, err => {
     if (err) {
       logger.error({ error: err }, 'Failed to send privacy policy');
       res.status(404).send('Privacy policy not found');

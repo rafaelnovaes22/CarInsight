@@ -1471,22 +1471,25 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       // Build search query
       const query = buildSearchQueryUtil(profile);
 
-      logger.info({
-        profile: {
-          budget: profile.budget || profile.budgetMax,
-          budgetMin: profile.budgetMin,
-          minYear: profile.minYear,
-          usage: profile.usage,
-          usoPrincipal: profile.usoPrincipal,
-          bodyType: profile.bodyType,
-          tipoCarroceria: profile.tipoCarroceria,
-          priorities: profile.priorities,
+      logger.info(
+        {
+          profile: {
+            budget: profile.budget || profile.budgetMax,
+            budgetMin: profile.budgetMin,
+            minYear: profile.minYear,
+            usage: profile.usage,
+            usoPrincipal: profile.usoPrincipal,
+            bodyType: profile.bodyType,
+            tipoCarroceria: profile.tipoCarroceria,
+            priorities: profile.priorities,
+          },
+          query: {
+            searchText: query.searchText,
+            filters: query.filters,
+          },
         },
-        query: {
-          searchText: query.searchText,
-          filters: query.filters,
-        }
-      }, '🔍 getRecommendations START - Profile and Query');
+        '🔍 getRecommendations START - Profile and Query'
+      );
 
       // Detect Uber requirements from profile
       const isUberBlack =
@@ -1576,26 +1579,29 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         profile.usage === 'trabalho' ||
         profile.priorities?.includes('trabalho');
 
-      logger.info({
-        isUberBlack,
-        isUberX,
-        isFamily,
-        isWork,
-        wantsPickup,
-        wantsMoto,
-        searchText: query.searchText,
-        filters: {
-          maxPrice: query.filters.maxPrice,
-          minYear: query.filters.minYear,
-          bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
-          brand: query.filters.brand?.[0],
-          model: query.filters.model?.[0],
-          aptoUber: isUberX || undefined,
-          aptoUberBlack: isUberBlack || undefined,
-          aptoFamilia: (isFamily && !wantsPickup && !wantsMoto) || undefined,
-          aptoTrabalho: isWork || undefined,
-        }
-      }, '🔍 BEFORE vehicleSearchAdapter.search - Full context');
+      logger.info(
+        {
+          isUberBlack,
+          isUberX,
+          isFamily,
+          isWork,
+          wantsPickup,
+          wantsMoto,
+          searchText: query.searchText,
+          filters: {
+            maxPrice: query.filters.maxPrice,
+            minYear: query.filters.minYear,
+            bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
+            brand: query.filters.brand?.[0],
+            model: query.filters.model?.[0],
+            aptoUber: isUberX || undefined,
+            aptoUberBlack: isUberBlack || undefined,
+            aptoFamilia: (isFamily && !wantsPickup && !wantsMoto) || undefined,
+            aptoTrabalho: isWork || undefined,
+          },
+        },
+        '🔍 BEFORE vehicleSearchAdapter.search - Full context'
+      );
 
       // Search vehicles - include brand/model filter for specific requests
       const results = await vehicleSearchAdapter.search(query.searchText, {
@@ -1614,16 +1620,19 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         aptoTrabalho: isWork || undefined,
       });
 
-      logger.info({
-        resultsCount: results.length,
-        sample: results.slice(0, 2).map(r => ({
-          vehicleId: r.vehicleId,
-          brand: r.vehicle.brand,
-          model: r.vehicle.model,
-          year: r.vehicle.year,
-          price: r.vehicle.price,
-        }))
-      }, '🔍 AFTER vehicleSearchAdapter.search - Results');
+      logger.info(
+        {
+          resultsCount: results.length,
+          sample: results.slice(0, 2).map(r => ({
+            vehicleId: r.vehicleId,
+            brand: r.vehicle.brand,
+            model: r.vehicle.model,
+            year: r.vehicle.year,
+            price: r.vehicle.price,
+          })),
+        },
+        '🔍 AFTER vehicleSearchAdapter.search - Results'
+      );
 
       // Se não encontrou motos e o usuário quer moto, informar
       if (wantsMoto && results.length === 0) {

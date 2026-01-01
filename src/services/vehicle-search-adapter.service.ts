@@ -47,12 +47,15 @@ export class VehicleSearchAdapter {
     try {
       const limit = filters.limit || 5;
 
-      logger.info({ 
-        query, 
-        filters,
-        vectorStoreReady: inMemoryVectorStore.isInitialized(),
-        vectorStoreCount: inMemoryVectorStore.getCount()
-      }, '🔍 VehicleSearchAdapter.search START');
+      logger.info(
+        {
+          query,
+          filters,
+          vectorStoreReady: inMemoryVectorStore.isInitialized(),
+          vectorStoreCount: inMemoryVectorStore.getCount(),
+        },
+        '🔍 VehicleSearchAdapter.search START'
+      );
 
       // Step 1: Try exact search (model + year) first
       // Requirements: 1.1, 1.2 - Extract filters and prioritize exact matches
@@ -179,7 +182,10 @@ export class VehicleSearchAdapter {
 
       // FALLBACK FINAL: Se não encontrou nada, fazer busca SQL sem filtros restritivos
       if (recommendations.length === 0) {
-        logger.warn({ query, filters }, '⚠️  No results from semantic search, trying aggressive SQL fallback');
+        logger.warn(
+          { query, filters },
+          '⚠️  No results from semantic search, trying aggressive SQL fallback'
+        );
         return this.searchFallbackSQL(filters);
       }
 
@@ -432,13 +438,16 @@ export class VehicleSearchAdapter {
   private async searchFallbackSQL(filters: SearchFilters): Promise<VehicleRecommendation[]> {
     const limit = filters.limit || 5;
 
-    logger.info({ 
-      filters,
-      maxPrice: filters.maxPrice,
-      minYear: filters.minYear,
-      bodyType: filters.bodyType,
-      aptoTrabalho: filters.aptoTrabalho
-    }, '🔍 SQL FALLBACK: Building query');
+    logger.info(
+      {
+        filters,
+        maxPrice: filters.maxPrice,
+        minYear: filters.minYear,
+        bodyType: filters.bodyType,
+        aptoTrabalho: filters.aptoTrabalho,
+      },
+      '🔍 SQL FALLBACK: Building query'
+    );
 
     const vehicles = await prisma.vehicle.findMany({
       where: {
@@ -464,18 +473,21 @@ export class VehicleSearchAdapter {
       orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],
     });
 
-    logger.info({ 
-      filters, 
-      found: vehicles.length,
-      sample: vehicles.slice(0, 2).map(v => ({
-        id: v.id,
-        marca: v.marca,
-        modelo: v.modelo,
-        ano: v.ano,
-        preco: v.preco,
-        aptoTrabalho: v.aptoTrabalho
-      }))
-    }, '🔍 SQL FALLBACK: Results');
+    logger.info(
+      {
+        filters,
+        found: vehicles.length,
+        sample: vehicles.slice(0, 2).map(v => ({
+          id: v.id,
+          marca: v.marca,
+          modelo: v.modelo,
+          ano: v.ano,
+          preco: v.preco,
+          aptoTrabalho: v.aptoTrabalho,
+        })),
+      },
+      '🔍 SQL FALLBACK: Results'
+    );
 
     return this.formatVehicleResults(vehicles);
   }

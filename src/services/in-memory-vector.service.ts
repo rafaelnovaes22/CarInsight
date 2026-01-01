@@ -122,7 +122,9 @@ class InMemoryVectorStore {
     }
 
     // Log detalhado para debug
-    console.log(`🔍 Vector search START: query="${queryText}", embeddings=${this.embeddings.length}, limit=${limit}`);
+    console.log(
+      `🔍 Vector search START: query="${queryText}", embeddings=${this.embeddings.length}, limit=${limit}`
+    );
 
     const queryEmbedding = await generateEmbedding(queryText);
 
@@ -139,21 +141,26 @@ class InMemoryVectorStore {
     results.sort((a, b) => b.similarity - a.similarity);
 
     const topResults = results.slice(0, limit);
-    
-    console.log(`🔍 Vector search RESULTS: ${topResults.length}/${results.length} above threshold ${MIN_SIMILARITY}`);
-    
+
+    console.log(
+      `🔍 Vector search RESULTS: ${topResults.length}/${results.length} above threshold ${MIN_SIMILARITY}`
+    );
+
     // Log top 3 results for debugging
     if (topResults.length > 0) {
-      console.log('Top 3 matches:', topResults.slice(0, 3).map(r => ({
-        vehicleId: r.vehicleId,
-        similarity: r.similarity.toFixed(3),
-        brand: r.metadata.brand,
-        model: r.metadata.model,
-        year: r.metadata.year,
-        price: r.metadata.price
-      })));
+      console.log(
+        'Top 3 matches:',
+        topResults.slice(0, 3).map(r => ({
+          vehicleId: r.vehicleId,
+          similarity: r.similarity.toFixed(3),
+          brand: r.metadata.brand,
+          model: r.metadata.model,
+          year: r.metadata.year,
+          price: r.metadata.price,
+        }))
+      );
     }
-    
+
     // Se não encontrou nada com threshold, retornar os top N sem filtro
     if (topResults.length === 0) {
       console.log('⚠️  No results above threshold, returning top matches without filter');
@@ -165,14 +172,17 @@ class InMemoryVectorStore {
         }))
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, limit);
-      
-      console.log('Top matches without threshold:', allResults.slice(0, 3).map(r => ({
-        vehicleId: r.vehicleId,
-        similarity: r.similarity.toFixed(3),
-        brand: r.metadata.brand,
-        model: r.metadata.model
-      })));
-      
+
+      console.log(
+        'Top matches without threshold:',
+        allResults.slice(0, 3).map(r => ({
+          vehicleId: r.vehicleId,
+          similarity: r.similarity.toFixed(3),
+          brand: r.metadata.brand,
+          model: r.metadata.model,
+        }))
+      );
+
       return allResults.map(r => r.vehicleId);
     }
 
