@@ -1,304 +1,271 @@
-# 🚀 FaciliAuto MVP - WhatsApp Bot
+# 📚 FaciliAuto Documentation
 
-Assistente de Vendas com IA para Concessionárias de Carros Usados via WhatsApp.
-
-## ✨ Features (MVP)
-
-- ✅ Integração WhatsApp com Baileys
-- ✅ Agente Orquestrador (identifica intenções)
-- ✅ Quiz de Qualificação (8 perguntas)
-- ✅ Recomendações com Match Score
-- ✅ Sistema de Tracking
-- ✅ API REST básica
-- ✅ Cache com Redis
-- ✅ Logging estruturado
-
-## 🛠️ Stack Tecnológico
-
-- **Runtime**: Node.js 18+
-- **Language**: TypeScript
-- **Framework**: Express
-- **Database**: PostgreSQL
-- **ORM**: Prisma
-- **Cache**: Redis (opcional)
-- **WhatsApp**: Baileys
-- **IA**: OpenAI GPT-4
-- **Logging**: Pino
-
-## 📋 Pré-requisitos
-
-- Node.js 18+ ([Download](https://nodejs.org/))
-- PostgreSQL 14+ ([Download](https://www.postgresql.org/download/))
-- Redis (opcional) ([Download](https://redis.io/download))
-- Conta OpenAI com API Key ([OpenAI](https://platform.openai.com/))
-- WhatsApp Business ou pessoal
-
-## 🚀 Instalação
-
-### 1. Clone o repositório
-
-```bash
-cd /home/rafaelnovaes22/project/faciliauto-mvp
-```
-
-### 2. Instale as dependências
-
-```bash
-npm install
-```
-
-### 3. Configure as variáveis de ambiente
-
-```bash
-cp .env.example .env
-```
-
-Edite o `.env` com suas credenciais:
-
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/faciliauto_mvp"
-REDIS_URL="redis://localhost:6379"
-OPENAI_API_KEY="sk-..."
-WHATSAPP_NAME="FaciliAuto"
-NODE_ENV="development"
-PORT=3000
-```
-
-### 4. Configure o banco de dados
-
-```bash
-# Gera o Prisma Client
-npx prisma generate
-
-# Cria as tabelas
-npx prisma db push
-
-# Popula com dados de exemplo (10 carros)
-npm run db:seed
-```
-
-### 5. Inicie o servidor
-
-```bash
-npm run dev
-```
-
-## 📱 Conectar WhatsApp
-
-1. Execute `npm run dev`
-2. Um QR Code aparecerá no terminal
-3. Abra o WhatsApp no celular
-4. Vá em **Configurações** → **Aparelhos conectados** → **Conectar aparelho**
-5. Escaneie o QR Code
-6. Aguarde mensagem: `✅ WhatsApp connected successfully!`
-
-## 🧪 Testar o Bot
-
-1. Com o WhatsApp conectado, envie uma mensagem de outro número para o número conectado
-2. Mensagem: `Olá, quero comprar um carro`
-3. O bot iniciará o quiz automaticamente
-
-### Fluxo de Teste
-
-```
-Você: Olá, quero comprar um carro
-
-Bot: Olá! 👋 Bem-vindo à FaciliAuto!
-     ...
-     🚗 Quer ver nossos veículos disponíveis?
-     Digite "sim" para começar
-
-Você: sim
-
-Bot: Perfeito! Vou fazer algumas perguntas...
-     💰 Qual seu orçamento disponível?
-
-Você: 50000
-
-Bot: ✅ Anotado!
-     🚗 Qual será o uso principal?
-     1️⃣ Cidade
-     2️⃣ Viagem
-     ...
-
-[Continua com 8 perguntas]
-
-Bot: ✅ Perfeito! Tenho todas informações.
-     Buscando os melhores veículos... ⏳
-
-Bot: 🎯 Encontrei 3 veículos perfeitos para você!
-     [Mostra top 3 com Match Score]
-```
-
-## 📊 APIs Disponíveis
-
-### Health Check
-```bash
-curl http://localhost:3000/health
-```
-
-### Estatísticas
-```bash
-curl http://localhost:3000/stats
-```
-
-Retorna:
-```json
-{
-  "conversations": 5,
-  "leads": 2,
-  "recommendations": 15,
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
-
-## 🗄️ Banco de Dados
-
-### Visualizar dados
-
-```bash
-npx prisma studio
-```
-
-Abre interface web em `http://localhost:5555`
-
-### Schema principal
-
-- **Vehicle**: Veículos no estoque (37 carros)
-- **Conversation**: Conversas no WhatsApp
-- **Event**: Eventos/ações na conversa
-- **Recommendation**: Recomendações geradas
-- **Lead**: Leads qualificados
-- **Message**: Log de mensagens
-
-## 🔧 Scripts Disponíveis
-
-```bash
-npm run dev          # Inicia em modo desenvolvimento
-npm run build        # Compila TypeScript
-npm run start        # Inicia em produção
-npm run db:push      # Aplica schema no banco
-npm run db:studio    # Abre Prisma Studio
-npm run db:seed      # Popula banco com dados
-```
-
-## 📝 Adicionar os 37 Carros do Cliente
-
-Edite `src/scripts/seed.ts` e adicione os dados dos 37 carros:
-
-```typescript
-const vehiclesData = [
-  {
-    marca: 'Toyota',
-    modelo: 'Corolla',
-    versao: 'XEI 2.0',
-    ano: 2019,
-    km: 58000,
-    preco: '68000',
-    cor: 'Prata',
-    carroceria: 'Sedan',
-    combustivel: 'Flex',
-    cambio: 'Automático',
-    arCondicionado: true,
-    direcaoHidraulica: true,
-    airbag: true,
-    abs: true,
-    descricao: 'Veículo em excelente estado...',
-    fotoUrl: 'https://exemplo.com/foto.jpg', // Opcional
-  },
-  // ... mais 36 carros
-];
-```
-
-Depois execute:
-```bash
-npm run db:seed
-```
-
-## 🔍 Logs
-
-O sistema usa Pino para logging estruturado. Em desenvolvimento, logs são coloridos e legíveis.
-
-Níveis de log:
-- `debug`: Detalhes técnicos
-- `info`: Informações importantes
-- `warn`: Avisos
-- `error`: Erros
-
-## ⚡ Performance
-
-### Custos por Atendimento
-
-- WhatsApp (Baileys): **R$ 0** (grátis)
-- GPT-4: **~R$ 0,64/atendimento**
-- PostgreSQL: **R$ 0** (auto-hospedado)
-- Redis: **R$ 0** (opcional, auto-hospedado)
-
-**Total: ~R$ 0,64 por cliente atendido**
-
-### Escalabilidade
-
-Este MVP suporta:
-- ~100-200 conversas/dia
-- ~1000 mensagens/dia
-- 1 concessionária
-
-Para escalar:
-- Use WhatsApp Business API (pago, mais estável)
-- Deploy em cloud (Railway, Render, AWS)
-- Add load balancing
-- Use Redis para cache distribuído
-
-## 🚨 Troubleshooting
-
-### WhatsApp desconecta
-
-**Problema**: Baileys perde conexão frequentemente
-
-**Solução**:
-1. Certifique-se que o celular está com internet
-2. Não use o WhatsApp Web em outros navegadores simultaneamente
-3. Considere migrar para WhatsApp Business API (mais estável)
-
-### OpenAI API error
-
-**Problema**: `Error: Insufficient quota`
-
-**Solução**:
-1. Verifique saldo na conta OpenAI
-2. Adicione créditos em https://platform.openai.com/billing
-3. Ou use GPT-3.5-turbo (mais barato) no `src/lib/openai.ts`
-
-### Database connection failed
-
-**Problema**: `Error: Can't reach database server`
-
-**Solução**:
-1. Verifique se PostgreSQL está rodando: `sudo service postgresql status`
-2. Confirme DATABASE_URL no `.env`
-3. Teste conexão: `psql -h localhost -U seu_usuario -d faciliauto_mvp`
-
-## 📈 Próximos Passos (V2)
-
-- [ ] Avaliação trade-in com GPT-4 Vision
-- [ ] Histórico veicular (Carfax)
-- [ ] Comparador de veículos
-- [ ] Simulador de financiamento
-- [ ] Agendamento de test-drive
-- [ ] Dashboard administrativo
-- [ ] Multi-concessionária
-- [ ] WhatsApp Business API
-
-## 🤝 Contribuindo
-
-Este é um MVP fechado para um cliente específico. Contribuições serão aceitas após validação inicial.
-
-## 📄 Licença
-
-Proprietário - Todos os direitos reservados.
+Welcome to the FaciliAuto documentation hub. This directory contains comprehensive guides, technical documentation, and setup instructions.
 
 ---
 
-**Desenvolvido com ❤️ para concessionárias de veículos usados**
+## 🚀 Getting Started
 
-**Status**: 🚀 MVP - Em Desenvolvimento
+### Setup & Installation
+
+| Document | Description |
+|----------|-------------|
+| [**Próximos Passos**](setup/PROXIMOS_PASSOS.md) | 🇧🇷 Quick start guide (Portuguese) |
+| [**Setup Ambiente**](setup/SETUP_AMBIENTE.md) | 🇧🇷 Complete environment setup |
+| [**Corrigir URLs**](setup/CORRIGIR_URLS.md) | 🇧🇷 Fix vehicle URLs from scraping |
+| [**Setup Database SQL**](setup/setup-database.sql) | PostgreSQL setup script |
+
+### Development Workflow
+
+| Document | Description |
+|----------|-------------|
+| [**Git Workflow**](GIT_WORKFLOW.md) | Multi-repository workflow guide |
+| [**Quick Start**](QUICK_START.md) | Fast development setup |
+| [**Como Executar**](COMO_EXECUTAR.md) | 🇧🇷 How to run the project |
+
+---
+
+## 🏗️ Architecture & Design
+
+### System Architecture
+
+| Document | Description |
+|----------|-------------|
+| [**Architecture V2**](ARQUITETURA_V2.md) | System architecture overview |
+| [**Resumo Implementação**](development/RESUMO_IMPLEMENTACAO.md) | Implementation summary |
+| [**Conversational Summary**](CONVERSATIONAL_SUMMARY.md) | Conversational AI design |
+| [**LangGraph Implementation**](LANGGRAPH_IMPLEMENTADO.md) | State machine details |
+
+### AI & LLM
+
+| Document | Description |
+|----------|-------------|
+| [**LLM Routing Guide**](LLM_ROUTING_GUIDE.md) | Multi-LLM router configuration |
+| [**LLM Routing Implementation**](LLM_ROUTING_IMPLEMENTATION.md) | Technical implementation |
+| [**Groq Integration**](GROQ_INTEGRATION.md) | Groq LLM setup |
+| [**Groq Setup**](GROQ_SETUP.md) | Groq configuration guide |
+
+### Vector Search & Embeddings
+
+| Document | Description |
+|----------|-------------|
+| [**ChromaDB Implementation**](CHROMADB_IMPLEMENTADO.md) | Vector database setup |
+| [**Jina Embeddings Setup**](JINA_EMBEDDINGS_SETUP.md) | Alternative embeddings |
+| [**README ChromaDB**](README_CHROMADB.md) | ChromaDB documentation |
+
+---
+
+## 🔒 Security & Compliance
+
+| Document | Description |
+|----------|-------------|
+| [**ISO42001 Implementation**](development/ISO42001_IMPLEMENTACAO_COMPLETA.md) | Complete compliance guide |
+| [**ISO42001 Checklist**](ISO42001_CHECKLIST.md) | Compliance checklist |
+| [**ISO42001 Governance**](ISO42001_GOVERNANCA_IA.md) | AI governance framework |
+| [**ISO42001 Risk Matrix**](ISO42001_MATRIZ_RISCOS.md) | Risk assessment |
+| [**Guardrails Architecture**](GUARDRAILS_ADVANCED_ARCHITECTURE.md) | Security guardrails |
+
+---
+
+## 🧪 Testing
+
+| Document | Description |
+|----------|-------------|
+| [**Testing Summary**](development/TESTING_SUMMARY.md) | Test strategy overview |
+| [**Testing Guide**](TESTING.md) | How to write tests |
+| [**Test Without WhatsApp**](TEST_WITHOUT_WHATSAPP.md) | Local testing guide |
+| [**Test WhatsApp Simulator**](TEST_WHATSAPP_SIMULATOR.md) | WhatsApp simulation |
+
+---
+
+## 🚀 Deployment
+
+### Railway
+
+| Document | Description |
+|----------|-------------|
+| [**Railway Deploy Guide**](RAILWAY_DEPLOY_GUIDE.md) | Complete deployment guide |
+| [**Railway Deploy**](RAILWAY_DEPLOY.md) | Quick deploy instructions |
+| [**Railway Variables Checklist**](RAILWAY_VARIABLES_CHECKLIST.md) | Environment variables |
+| [**Deploy Instructions**](DEPLOY_INSTRUCTIONS.md) | General deployment |
+
+### Configuration
+
+| Document | Description |
+|----------|-------------|
+| [**Deploy Checklist**](DEPLOY_CHECKLIST.md) | Pre-deployment checklist |
+| [**Deploy Ready**](DEPLOY_READY.md) | Production readiness |
+| [**Post Deploy Checklist**](POST_DEPLOY_CHECKLIST.md) | Post-deployment tasks |
+
+---
+
+## 📱 WhatsApp Integration
+
+| Document | Description |
+|----------|-------------|
+| [**Meta Cloud API Setup**](META_CLOUD_API_SETUP.md) | Official WhatsApp API |
+| [**Meta Quick Test**](META_QUICK_TEST.md) | Quick API testing |
+| [**Start WhatsApp**](START_WHATSAPP.md) | WhatsApp initialization |
+| [**Configurar Número Real**](CONFIGURAR_NUMERO_WHATSAPP_REAL.md) | 🇧🇷 Real number setup |
+| [**Baileys Troubleshooting**](BAILEYS_TROUBLESHOOTING.md) | WhatsApp Web API issues |
+
+---
+
+## 🔧 Features & Enhancements
+
+### Vehicle Management
+
+| Document | Description |
+|----------|-------------|
+| [**Atualizar Critérios Uber**](ATUALIZAR_CRITERIOS_UBER.md) | 🇧🇷 Update Uber eligibility |
+| [**Critérios Uber Atualizados**](CRITERIOS_UBER_ATUALIZADOS.md) | 🇧🇷 Updated Uber criteria |
+| [**Melhorias Match Score**](MELHORIAS_MATCH_SCORE_CATEGORIAS.md) | 🇧🇷 Match score improvements |
+
+### Conversational AI
+
+| Document | Description |
+|----------|-------------|
+| [**Conversational Evolution Plan**](CONVERSATIONAL_EVOLUTION_PLAN.md) | AI evolution roadmap |
+| [**Deploy Conversational**](DEPLOY_CONVERSATIONAL.md) | Conversational mode deployment |
+| [**Quick Start Conversacional**](QUICK_START_CONVERSACIONAL.md) | 🇧🇷 Conversational quick start |
+
+### Recommendations
+
+| Document | Description |
+|----------|-------------|
+| [**Mudanças Recomendação**](MUDANCAS_RECOMENDACAO.md) | 🇧🇷 Recommendation changes |
+| [**Proposta Ontologia LangGraph**](PROPOSTA_ONTOLOGIA_LANGGRAPH.md) | 🇧🇷 Ontology proposal |
+
+---
+
+## 💼 Business & Planning
+
+| Document | Description |
+|----------|-------------|
+| [**Proposta Cliente**](PROPOSTA_CLIENTE.md) | 🇧🇷 Client proposal |
+| [**Modelo Precificação**](MODELO_PRECIFICACAO.md) | 🇧🇷 Pricing model |
+| [**Comissionamento Vendedor**](COMISSIONAMENTO_VENDEDOR.md) | 🇧🇷 Sales commission |
+| [**Roadmap V2**](ROADMAP_V2.md) | Product roadmap |
+| [**MVP V2 Simplificado**](MVP_V2_SIMPLIFICADO.md) | 🇧🇷 Simplified MVP |
+
+---
+
+## 📊 Project Status
+
+| Document | Description |
+|----------|-------------|
+| [**Project Status Current**](PROJECT_STATUS_CURRENT.md) | Current project status |
+| [**Development Status**](DEVELOPMENT_STATUS.md) | Development progress |
+| [**Status Atual**](STATUS_ATUAL.md) | 🇧🇷 Current status |
+| [**Final Status**](FINAL_STATUS.txt) | Final implementation status |
+| [**Changelog**](CHANGELOG.md) | Version history |
+
+---
+
+## 🛠️ Troubleshooting
+
+| Document | Description |
+|----------|-------------|
+| [**Troubleshooting Número WhatsApp**](TROUBLESHOOTING_NUMERO_WHATSAPP.md) | 🇧🇷 WhatsApp number issues |
+| [**Troubleshoot Seed Error**](TROUBLESHOOT_SEED_ERROR.md) | Database seed errors |
+| [**Corrigir Erro WhatsApp**](CORRIGIR_ERRO_WHATSAPP.md) | 🇧🇷 WhatsApp error fixes |
+| [**Solução Erro Railway**](SOLUCAO_ERRO_RAILWAY.md) | 🇧🇷 Railway deployment errors |
+| [**Fix Railway**](FIX_RAILWAY.md) | Railway quick fixes |
+
+---
+
+## 📖 Additional Resources
+
+### Integration Guides
+
+| Document | Description |
+|----------|-------------|
+| [**Integration Guide**](INTEGRATION_GUIDE.md) | Third-party integrations |
+| [**Onboarding e Contextos**](ONBOARDING_E_CONTEXTOS.md) | 🇧🇷 User onboarding |
+
+### Migration & Updates
+
+| Document | Description |
+|----------|-------------|
+| [**Migração PostgreSQL**](MIGRACAO_POSTGRESQL.md) | 🇧🇷 PostgreSQL migration |
+| [**Resumo Migração RobustCar**](RESUMO_MIGRACAO_ROBUSTCAR.md) | 🇧🇷 RobustCar data migration |
+| [**Groq Migration Summary**](GROQ_MIGRATION_SUMMARY.md) | Groq integration migration |
+
+### Organization
+
+| Document | Description |
+|----------|-------------|
+| [**Organização Projeto**](ORGANIZACAO_PROJETO.md) | 🇧🇷 Project organization |
+| [**Resumo Organização**](RESUMO_ORGANIZACAO.md) | 🇧🇷 Organization summary |
+| [**Project Memory**](PROJECT_MEMORY.md) | Project context & decisions |
+
+---
+
+## 🔍 Quick Reference
+
+### Most Used Commands
+
+```bash
+# Development
+npm run dev              # Start dev server
+npm run db:push          # Apply database schema
+npm run db:seed:robustcar # Seed with vehicles
+npx prisma studio        # Visual database editor
+
+# Testing
+npm test                 # Run all tests
+npm run test:coverage    # With coverage
+
+# Utilities
+npm run embeddings:generate  # Generate embeddings
+npm run vehicles:fix-urls    # Fix vehicle URLs
+```
+
+### Environment Variables
+
+See [.env.example](../.env.example) for required environment variables.
+
+### Database Setup
+
+```bash
+# Create database
+psql -U postgres -f docs/setup/setup-database.sql
+
+# Apply schema
+npx prisma generate
+npx prisma db push
+```
+
+---
+
+## 📝 Documentation Standards
+
+When adding new documentation:
+
+1. **Language**: Use English for technical docs, Portuguese (🇧🇷) for business/client docs
+2. **Format**: Use Markdown with clear headings and code blocks
+3. **Location**: 
+   - Setup guides → `docs/setup/`
+   - Technical docs → `docs/development/`
+   - Business docs → `docs/`
+4. **Update**: Keep this index updated when adding new docs
+
+---
+
+## 🤝 Contributing to Docs
+
+Found an error or want to improve documentation?
+
+1. Edit the relevant file
+2. Commit with prefix `docs:` (e.g., `docs: update setup guide`)
+3. Submit a pull request
+
+---
+
+<div align="center">
+
+**Last Updated:** January 2026
+
+[Back to Main README](../README.md)
+
+</div>
