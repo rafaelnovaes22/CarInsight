@@ -35,15 +35,9 @@ async function classifyAllVehicles() {
       const classification = await VehicleClassifierService.classifyVehicle({
         marca: vehicle.marca,
         modelo: vehicle.modelo,
-        versao: vehicle.versao || '',
         ano: vehicle.ano,
-        km: vehicle.km,
-        preco: vehicle.preco || 0,
         carroceria: vehicle.carroceria,
         combustivel: vehicle.combustivel,
-        cambio: vehicle.cambio,
-        arCondicionado: vehicle.arCondicionado,
-        portas: vehicle.portas,
       });
 
       // Atualizar no banco
