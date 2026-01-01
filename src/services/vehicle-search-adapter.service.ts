@@ -434,6 +434,7 @@ export class VehicleSearchAdapter {
 
   /**
    * Busca SQL fallback quando busca semântica não retorna resultados
+   * IMPORTANTE: Fallback deve ser PERMISSIVO, não restritivo
    */
   private async searchFallbackSQL(filters: SearchFilters): Promise<VehicleRecommendation[]> {
     const limit = filters.limit || 5;
@@ -449,6 +450,8 @@ export class VehicleSearchAdapter {
       '🔍 SQL FALLBACK: Building query'
     );
 
+    // FALLBACK PERMISSIVO: Remover filtros muito restritivos
+    // Manter apenas: preço, ano, e excluir motos
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
@@ -457,17 +460,8 @@ export class VehicleSearchAdapter {
         id: { notIn: filters.excludeIds || [] },
         ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
         ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
-        ...(filters.minYear && { ano: { gte: filters.minYear } }),
-        ...(filters.maxKm && { km: { lte: filters.maxKm } }),
-        ...(filters.bodyType && { carroceria: { equals: filters.bodyType, mode: 'insensitive' } }),
-        ...(filters.transmission && {
-          cambio: { equals: filters.transmission, mode: 'insensitive' },
-        }),
-        ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
-        ...(filters.aptoUber && { aptoUber: true }),
-        ...(filters.aptoUberBlack && { aptoUberBlack: true }),
-        ...(filters.aptoFamilia && { aptoFamilia: true }),
-        ...(filters.aptoTrabalho && { aptoTrabalho: true }),
+        // NÃO aplicar filtros de uso (aptoTrabalho, aptoUber, aptoFamilia) no fallback
+        // Esses filtros são muito restritivos e podem não estar preenchidos corretamente
       },
       take: limit,
       orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],
