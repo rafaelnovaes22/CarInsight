@@ -123,7 +123,7 @@ class InMemoryVectorStore {
 
     const queryEmbedding = await generateEmbedding(queryText);
 
-    const MIN_SIMILARITY = 0.5; // Threshold reduzido de 0.7 para 0.5 para mais resultados
+    const MIN_SIMILARITY = 0.3; // Threshold reduzido de 0.5 para 0.3 para MUITO mais resultados
 
     const results = this.embeddings
       .map(item => ({
@@ -137,7 +137,21 @@ class InMemoryVectorStore {
 
     const topResults = results.slice(0, limit);
     
-    console.log(`🔍 Vector search: ${topResults.length} results above ${MIN_SIMILARITY} threshold`);
+    console.log(`🔍 Vector search: ${topResults.length}/${results.length} results (threshold: ${MIN_SIMILARITY})`);
+    
+    // Se não encontrou nada com threshold, retornar os top N sem filtro
+    if (topResults.length === 0) {
+      console.log('⚠️  No results above threshold, returning top matches without filter');
+      const allResults = this.embeddings
+        .map(item => ({
+          vehicleId: item.vehicleId,
+          similarity: this.cosineSimilarity(queryEmbedding, item.embedding),
+        }))
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, limit);
+      
+      return allResults.map(r => r.vehicleId);
+    }
 
     return topResults.map(r => r.vehicleId);
   }

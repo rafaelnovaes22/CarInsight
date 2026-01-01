@@ -96,7 +96,8 @@ export class VehicleSearchAdapter {
             notIn: filters.excludeIds || [],
           },
           disponivel: true,
-          carroceria: { not: 'Moto' }, // FILTRO: Excluir motos das recomendações de carros
+          // FILTRO CONDICIONAL: Excluir motos APENAS se não foi especificamente solicitado
+          ...(filters.bodyType?.toLowerCase() !== 'moto' && { carroceria: { not: 'Moto' } }),
           // Apply filters
           ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
           ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
@@ -145,7 +146,7 @@ export class VehicleSearchAdapter {
       }
 
       // Convert to VehicleRecommendation format
-      return vehicles.map((vehicle, index) => ({
+      const recommendations = vehicles.map((vehicle, index) => ({
         vehicleId: vehicle.id,
         matchScore: Math.max(95 - index * 5, 70), // Simple scoring based on order
         reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
@@ -166,9 +167,18 @@ export class VehicleSearchAdapter {
           detailsUrl: vehicle.url || null,
         },
       }));
+
+      // FALLBACK FINAL: Se não encontrou nada, fazer busca SQL sem filtros restritivos
+      if (recommendations.length === 0) {
+        logger.warn({ query, filters }, '⚠️  No results from semantic search, trying aggressive SQL fallback');
+        return this.searchFallbackSQL(filters);
+      }
+
+      return recommendations;
     } catch (error) {
       logger.error({ error, query, filters }, 'Error searching vehicles');
-      return [];
+      // Em caso de erro, tentar fallback SQL
+      return this.searchFallbackSQL(filters);
     }
   }
 
@@ -309,7 +319,8 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
-        carroceria: { not: 'Moto' }, // FILTRO: Excluir motos das recomendações de carros
+        // FILTRO CONDICIONAL: Excluir motos APENAS se não foi especificamente solicitado
+        ...(filters.bodyType?.toLowerCase() !== 'moto' && { carroceria: { not: 'Moto' } }),
         id: { notIn: filters.excludeIds || [] },
         // Filtro de marca (se especificado)
         ...(filters.brand && { marca: { contains: filters.brand, mode: 'insensitive' } }),
@@ -415,7 +426,8 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
-        carroceria: { not: 'Moto' }, // FILTRO: Excluir motos das recomendações de carros
+        // FILTRO CONDICIONAL: Excluir motos APENAS se não foi especificamente solicitado
+        ...(filters.bodyType?.toLowerCase() !== 'moto' && { carroceria: { not: 'Moto' } }),
         id: { notIn: filters.excludeIds || [] },
         ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
         ...(filters.minPrice && { preco: { gte: filters.minPrice } }),

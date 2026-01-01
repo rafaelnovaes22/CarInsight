@@ -1754,13 +1754,33 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         {
           profileKeys: Object.keys(profile),
           resultsCount: filteredResults.length,
+          rawResultsCount: results.length,
           isUberBlack,
           isUberX,
           isFamily,
           wantsPickup,
+          budget: query.filters.maxPrice,
+          minYear: query.filters.minYear,
         },
         'Generated recommendations'
       );
+
+      // Log detalhado se não encontrou nada
+      if (filteredResults.length === 0) {
+        logger.warn(
+          {
+            query: query.query,
+            filters: query.filters,
+            rawResults: results.length,
+            profile: {
+              budget: profile.orcamento,
+              usage: profile.uso,
+              bodyType: profile.tipoCarroceria,
+            },
+          },
+          '⚠️  NO RECOMMENDATIONS FOUND - Debug info'
+        );
+      }
 
       // Fallback para busca de apps de transporte: se não encontrou com filtro aptoUber,
       // tentar buscar veículos compatíveis (sedans/hatches de 2012+) sem o filtro rigoroso
