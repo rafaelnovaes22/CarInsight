@@ -10,9 +10,10 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { vehicleClassifier } from '../services/vehicle-classifier.service';
+import { VehicleClassifierService } from '../services/vehicle-classifier.service';
 
 const prisma = new PrismaClient();
+const vehicleClassifier = new VehicleClassifierService();
 
 async function classifyAllVehicles() {
   console.log('🚗 Classificando TODOS os veículos do banco...\n');
