@@ -81,7 +81,7 @@ SEND_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST \
     \"to\": \"$PHONE_NUMBER\",
     \"type\": \"text\",
     \"text\": {
-      \"body\": \"🎉 Teste FaciliAuto - $(date '+%H:%M:%S')\"
+      \"body\": \"🎉 Teste CarInsight - $(date '+%H:%M:%S')\"
     }
   }")
 

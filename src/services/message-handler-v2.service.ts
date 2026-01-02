@@ -639,7 +639,7 @@ Para começar, qual é o seu nome?`;
           if (success) {
             return '✅ Seus dados foram excluídos com sucesso!\n\nObrigado por usar o CarInsight. Se precisar de algo no futuro, estaremos aqui! 👋';
           } else {
-            return '❌ Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: suporte@faciliauto.com.br';
+            return '❌ Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: suporte@carinsight.com.br';
           }
         }
       } else if (lowerMessage === 'não' || lowerMessage === 'nao' || lowerMessage === 'cancelar') {
@@ -708,13 +708,13 @@ _Esta confirmação expira em 5 minutos._`;
 • Status: ${data.conversa?.status || 'N/A'}
 
 📧 Para receber seus dados completos em formato JSON, por favor entre em contato:
-• Email: privacidade@faciliauto.com.br
+• Email: privacidade@carinsight.com.br
 • Assunto: "Exportação de Dados - ${phoneNumber}"
 
 Responderemos em até 15 dias úteis, conforme LGPD.`;
       } catch (error) {
         logger.error({ error, phoneNumber }, 'LGPD: Error exporting data');
-        return '❌ Desculpe, houve um erro ao exportar seus dados. Por favor, tente novamente ou contate suporte@faciliauto.com.br';
+        return '❌ Desculpe, houve um erro ao exportar seus dados. Por favor, tente novamente ou contate suporte@carinsight.com.br';
       }
     }
 

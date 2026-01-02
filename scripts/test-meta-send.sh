@@ -24,7 +24,7 @@ RESPONSE=$(curl -s -X POST "https://graph.facebook.com/v18.0/${PHONE_ID}/message
     \"to\": \"${TO_NUMBER}\",
     \"type\": \"text\",
     \"text\": {
-      \"body\": \"🤖 Teste FaciliAuto\\n\\nServidor conectado com sucesso!\\n✅ 28 veículos carregados\\n✅ Meta Cloud API funcionando\\n\\nResponda 'oi' para iniciar conversa!\"
+      \"body\": \"🤖 Teste CarInsight\\n\\nServidor conectado com sucesso!\\n✅ 28 veículos carregados\\n✅ Meta Cloud API funcionando\\n\\nResponda 'oi' para iniciar conversa!\"
     }
   }")
 

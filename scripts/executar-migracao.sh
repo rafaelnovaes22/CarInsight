@@ -28,7 +28,7 @@ echo ""
 # Verificar se estamos no diretório correto
 if [ ! -f "package.json" ]; then
     echo "❌ Erro: package.json não encontrado!"
-    echo "Execute este script do diretório: /home/rafaelnovaes22/faciliauto-mvp-v2"
+    echo "Execute este script do diretório: /home/rafaelnovaes22/CarInsight"
     exit 1
 fi
 

@@ -1,5 +1,5 @@
 @echo off
-echo 🚀 Deploy FaciliAuto MVP no Heroku
+echo 🚀 Deploy CarInsight MVP no Heroku
 echo ========================================
 echo.
 
@@ -15,24 +15,24 @@ if %errorlevel% neq 0 (
 echo 📋 Configurando app para Heroku...
 
 REM Cria app Heroku se não existir
-heroku apps:info --app faciliauto-mvp >nul 2>&1
+heroku apps:info --app carinsight-mvp >nul 2>&1
 if %errorlevel% neq 0 (
-    echo 🎯 Criando app faciliauto-mvp no Heroku...
-    heroku apps:create faciliauto-mvp
+    echo 🎯 Criando app carinsight-mvp no Heroku...
+    heroku apps:create carinsight-mvp
     if %errorlevel% neq 0 (
         echo ⚠️  Não foi possível criar app com esse nome.
-        echo    O nome:faciliauto-mvp do app não está disponível heroku!
+        echo    O nome:carinsight-mvp do app não está disponível heroku!
         echo    O deploy vai continuar com o nome atual do git.
     )
 )
 
 echo.
 echo 🔧 Configurando buildpacks...
-heroku buildpacks:set heroku/nodejs --app faciliauto-mvp
+heroku buildpacks:set heroku/nodejs --app carinsight-mvp
 echo.
 
 echo 🔧 Configurando variáveis de ambiente...
-heroku config:set NODE_ENV=production --app faciliauto-mvp >nul 2>&1
+heroku config:set NODE_ENV=production --app carinsight-mvp >nul 2>&1
 echo ✅ NODE_ENV=production
 echo.
 
@@ -44,7 +44,7 @@ REM Fazer push limpo
 git push heroku main --force
 echo.
 
-REM Verificar logs heroku config:set NPM_CONFIG_PRODUCTION=false --app faciliauto-mvp
+REM Verificar logs heroku config:set NPM_CONFIG_PRODUCTION=false --app carinsight-mvp
 echo ✅ Verificando deploy...
 echo.
 
@@ -53,15 +53,15 @@ timeout /t 30 /nobreak >nul
 echo.
 
 REM Mostrar status tail
-start heroku ps --app faciliauto-mvp
+start heroku ps --app carinsight-mvp
 echo.
 echo 🎯 Para ver logs em tempo real, execute:
-echo    heroku logs --tail --app faciliauto-mvp
+echo    heroku logs --tail --app carinsight-mvp
 echo.
 echo 🌐 Para abrir app:
-echo    heroku open --app faciliauto-mvp
+echo    heroku open --app carinsight-mvp
 echo.
-echo 🌐 Para também pode ser configurado aqui: https://faciliauto-mvp.herokuapp.com/
+echo 🌐 Para também pode ser configurado aqui: https://carinsight-mvp.herokuapp.com/
 echo.
 echo ========================================
 echo ✅ Deploy configurado!

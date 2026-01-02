@@ -47,6 +47,7 @@ railway variables set GROQ_API_KEY "gsk_OodsADKNusVdNEDzxq2HWGdyb3FYKoSk9O8yoqKM
 echo ✅ GROQ_API_KEY configurada
 
 railway variables set META_WHATSAPP_TOKEN "EAAWqINRXnbcBP0UgH7kD4SzMZBK8m5miaimQmn5BiHf9cMiSuRQutiCVk1DOZCwk6kBxWlB4uMNgCK9gTmXk5sG7ICenlvFqZCEnaM5j1OIY9cVMT3ZCEXdL59LHqhjoRdoiZCov97ZCT7iTPNDW2IAMZAxTHBSh1ythrdYlLG19AXHckzMSwTm1NMpRR3jsttMwDpvXhx29pRsCl0EAiAHCMFBE646EFZBuTOZA2l29YiEVcpgZDZD" --environment production
+railway variables set META_WHATSAPP_TOKEN "EAAWqINRXnbcBP0UgH7kD4SzMZBK8m5miaimQmn5BiHf9cMiSuRQutiCVk1DOZCwk6kBxWlB4uMNcCK9gTmXk5sG7ICenlvFqZCEnaM5j1OIY9cVMT3ZCEXdL59LHqhjoRdoiZCov97ZCT7iTPNDW2IAMZAxTHBSh1ythrdYlLG19AXHckzMSwTm1NMpRR3jsttMwDpvXhx29pRsCl0EAiAHCMFBE646EFZBuTOZA2l29YiEVcpgZDZD" --environment production
 echo ✅ META_WHATSAPP_TOKEN configurada
 
 railway variables set META_WHATSAPP_PHONE_NUMBER_ID "897098916813396" --environment production
@@ -55,7 +56,7 @@ echo ✅ META_WHATSAPP_PHONE_NUMBER_ID configurada
 railway variables set META_WHATSAPP_BUSINESS_ACCOUNT_ID "2253418711831684" --environment production
 echo ✅ META_WHATSAPP_BUSINESS_ACCOUNT_ID configurada
 
-railway variables set META_WEBHOOK_VERIFY_TOKEN "faciliauto_webhook_2025" --environment production
+railway variables set META_WEBHOOK_VERIFY_TOKEN "carinsight_webhook_2025" --environment production
 echo ✅ META_WEBHOOK_VERIFY_TOKEN configurada
 
 echo.

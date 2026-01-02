@@ -43,7 +43,7 @@ echo =========================================
 echo.
 echo 1. Acesse: https://railway.app/new
 echo 2. Clique em "Deploy from GitHub repo"
-echo 3. Selecione: rafaelnovaes22/faciliauto-mvp
+echo 3. Selecione: rafaelnovaes22/CarInsight
 echo 4. Clique: "Deploy Now"
 echo.
 echo ✅ Aguarde 2-3 minutos o deploy inicial

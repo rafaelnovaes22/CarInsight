@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Script para iniciar o bot WhatsApp FaciliAuto
+# Script para iniciar o bot WhatsApp CarInsight
 # Uso: ./start.sh
 
-echo "🚀 Iniciando FaciliAuto WhatsApp Bot..."
+echo "🚀 Iniciando CarInsight WhatsApp Bot..."
 echo ""
 echo "📋 Verificando requisitos..."
 

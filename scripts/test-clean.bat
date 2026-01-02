@@ -1,5 +1,5 @@
 @echo off
-cd C:\Users\Rafael\faciliauto-mvp
+cd C:\Users\Rafael\CarInsight
 echo 🧹 Limpando banco de dados...
 echo.
 

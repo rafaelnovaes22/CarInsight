@@ -1,5 +1,5 @@
 @echo off
-cd C:\Users\Rafael\faciliauto-mvp
+cd C:\Users\Rafael\CarInsight
 echo Testing Meta Cloud API connection...
 echo.
 echo This will send a test message to the configured WhatsApp number.

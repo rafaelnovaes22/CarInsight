@@ -3,7 +3,7 @@
 # Script para rodar comandos locais com Node.js correto
 # Uso: ./run-local.sh [comando]
 
-PROJECT_DIR="/home/rafaelnovaes22/faciliauto-mvp-v2"
+PROJECT_DIR="/home/rafaelnovaes22/CarInsight"
 NODE_BIN="/home/rafaelnovaes22/nodejs/bin/node"
 TSX_BIN="$PROJECT_DIR/node_modules/.bin/tsx"
 

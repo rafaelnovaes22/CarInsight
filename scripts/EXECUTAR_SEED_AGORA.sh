@@ -1,7 +1,7 @@
 #!/bin/bash
 # Execute este script para popular o banco com veículos Robust Car
 
-cd /home/rafaelnovaes22/faciliauto-mvp-v2
+cd /home/rafaelnovaes22/CarInsight
 
 echo "🚀 Populando banco com 70 veículos Robust Car..."
 npm run db:seed:robustcar

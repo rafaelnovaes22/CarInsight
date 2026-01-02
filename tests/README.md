@@ -1,4 +1,4 @@
-# 🧪 Suite de Testes - FaciliAuto MVP v2
+# 🧪 Suite de Testes - CarInsight MVP
 
 > Suite completa de testes E2E (End-to-End), integração, unitários e performance usando **Vitest**
 

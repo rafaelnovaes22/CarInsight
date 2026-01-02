@@ -105,7 +105,7 @@ case $METHOD in
         
         if [ ! -f ~/.ssh/id_ed25519.pub ] && [ ! -f ~/.ssh/id_rsa.pub ]; then
             echo "📝 Gerando chave SSH..."
-            ssh-keygen -t ed25519 -C "rafael@faciliauto.com" -f ~/.ssh/id_ed25519 -N ""
+            ssh-keygen -t ed25519 -C "rafael@carinsight.com" -f ~/.ssh/id_ed25519 -N ""
             echo ""
             echo "✅ Chave gerada!"
         fi
@@ -126,7 +126,7 @@ case $METHOD in
         
         echo ""
         echo "🔧 Mudando remote para SSH..."
-        git remote set-url origin git@github.com:rafaelnovaes22/faciliauto-mvp.git
+        git remote set-url origin git@github.com:rafaelnovaes22/CarInsight.git
         
         echo "🚀 Fazendo push..."
         git branch -M main
@@ -155,7 +155,7 @@ if [ $? -eq 0 ]; then
     echo "✅ PUSH BEM-SUCEDIDO! 🎉"
     echo ""
     echo "📊 Verifique em:"
-    echo "   https://github.com/rafaelnovaes22/faciliauto-mvp"
+    echo "   https://github.com/rafaelnovaes22/CarInsight"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
@@ -163,7 +163,7 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "1. Acesse: https://railway.app"
     echo "2. New Project → Deploy from GitHub repo"
-    echo "3. Selecione: faciliauto-mvp"
+    echo "3. Selecione: CarInsight"
     echo "4. Leia: DEPLOY_INSTRUCTIONS.md"
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

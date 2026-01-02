@@ -1,5 +1,5 @@
 @echo off
-cd C:\Users\Rafael\faciliauto-mvp
+cd C:\Users\Rafael\CarInsight
 echo Limpando conversas antigas...
 npx prisma db execute --file="prisma/clear-conversations.sql" 2>nul || (
   echo DELETE FROM "Message" WHERE 1=1; > temp.sql

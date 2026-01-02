@@ -919,7 +919,7 @@ for v in vehicles:
     categories[cat] = categories.get(cat, 0) + 1
 
 # Salvar JSON
-output_path = '/home/rafaelnovaes22/faciliauto-mvp-v2/scripts/robustcar-vehicles.json'
+output_path = '/home/rafaelnovaes22/CarInsight/scripts/robustcar-vehicles.json'
 with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(vehicles, f, ensure_ascii=False, indent=2)
 

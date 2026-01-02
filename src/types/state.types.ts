@@ -1,5 +1,5 @@
 /**
- * LangGraph State Types for FaciliAuto Bot
+ * LangGraph State Types for CarInsight Bot
  */
 
 export interface QuizAnswers {

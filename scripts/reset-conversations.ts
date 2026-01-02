@@ -104,7 +104,7 @@ async function resetAllConversations() {
 async function main() {
   const args = process.argv.slice(2);
 
-  console.log('🔄 Reset de Conversas - FaciliAuto WhatsApp');
+  console.log('🔄 Reset de Conversas - CarInsight WhatsApp');
   console.log('━'.repeat(50));
 
   if (args.length === 0) {
