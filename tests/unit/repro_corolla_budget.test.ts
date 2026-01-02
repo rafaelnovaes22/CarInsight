@@ -64,6 +64,6 @@ describe('Smart Budget Relaxation', () => {
 
     // Expectation: Should find logic now!
     expect(results).toHaveLength(1);
-    expect(results[0].vehicle.modelo).toBe('Corolla');
+    expect(results[0].vehicle.model).toBe('Corolla');
   });
 });
