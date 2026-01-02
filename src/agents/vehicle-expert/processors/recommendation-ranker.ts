@@ -109,10 +109,12 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
 
       // Validate structure
       if (!parsed || !Array.isArray(parsed.selected)) {
-        logger.warn({ response: cleanJson }, 'AI Reranking returned invalid JSON structure (missing "selected" array)');
+        logger.warn(
+          { response: cleanJson },
+          'AI Reranking returned invalid JSON structure (missing "selected" array)'
+        );
         return recommendations.slice(0, limit);
       }
-
     } catch (e) {
       logger.error({ error: e, response }, 'Failed to parse AI Reranking response');
       return recommendations.slice(0, limit); // Fallback to original order
@@ -154,7 +156,13 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
     return reranked;
   } catch (error) {
     console.error('AI Reranking Error:', error);
-    logger.error({ error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }, 'Error during AI Reranking');
+    logger.error(
+      {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+      'Error during AI Reranking'
+    );
     return recommendations.slice(0, limit); // Fallback
   }
 }

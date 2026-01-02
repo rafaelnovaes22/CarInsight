@@ -1,4 +1,3 @@
-
 import { inMemoryVectorStore } from '../services/in-memory-vector.service';
 import { PrismaClient } from '@prisma/client';
 
@@ -19,7 +18,7 @@ async function debugRanking() {
 
   console.log(`✅ Store ready with ${store.getCount()} vectors.`);
 
-  const query = "viagem familia";
+  const query = 'viagem familia';
   const filters = { maxPrice: 90000 };
 
   console.log(`\n🔎 Searching for: "${query}" (Max Price: ${filters.maxPrice})`);
@@ -36,14 +35,16 @@ async function debugRanking() {
 
     const vehicle = await prisma.vehicle.findUnique({
       where: { id: res.vehicleId },
-      select: { marca: true, modelo: true, ano: true, preco: true, descricao: true }
+      select: { marca: true, modelo: true, ano: true, preco: true, descricao: true },
     });
 
     if (vehicle) {
       // Manual filter application
       if (filters.maxPrice && (vehicle.preco ?? 0) > filters.maxPrice) continue;
 
-      console.log(`\n[Score: ${(res.score * 100).toFixed(1)}%] ${vehicle.marca} ${vehicle.modelo} (${vehicle.ano})`);
+      console.log(
+        `\n[Score: ${(res.score * 100).toFixed(1)}%] ${vehicle.marca} ${vehicle.modelo} (${vehicle.ano})`
+      );
       console.log(`   💰 R$ ${vehicle.preco?.toLocaleString()}`);
       console.log(`   📝 Desc excerpt: ${vehicle.descricao?.substring(0, 100)}...`);
       count++;
