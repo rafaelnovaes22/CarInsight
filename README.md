@@ -35,8 +35,8 @@ FaciliAuto is a production-ready conversational AI system designed for automotiv
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
-│              TypeScript State Machine                        │
-│  • Conversation orchestration                               │
+│              LangGraph State Machine                         │
+│  • Graph-based orchestration                                │
 │  • Multi-agent routing                                      │
 └──────────┬──────────┬──────────┬───────────────────────────┘
            │          │          │
@@ -106,7 +106,7 @@ npm run dev
 
 | Category | Technologies |
 |----------|-------------|
-| **Backend** | Node.js 20, TypeScript 5.3, Express.js |
+| **Backend** | Node.js 20, TypeScript 5.3, Express.js, LangGraph |
 | **AI/LLM** | OpenAI GPT-4o-mini, Groq LLaMA 3.1, Cohere |
 | **Database** | PostgreSQL 14+, Prisma ORM |
 | **Messaging** | Meta WhatsApp Business API |
