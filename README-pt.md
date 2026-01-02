@@ -2,7 +2,7 @@
 
 > Sistema de vendas automotivas de nível empresarial utilizando IA Generativa, RAG e roteamento Multi-LLM para recomendações inteligentes de veículos via WhatsApp.
 
-[![CI/CD](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)](https://www.postgresql.org/)
@@ -77,8 +77,8 @@ FaciliAuto é um sistema de IA conversacional pronto para produção, projetado 
 
 ```bash
 # Clonar repositório
-git clone https://github.com/rafaelnovaes22/faciliauto-mvp-v2.git
-cd faciliauto-mvp-v2
+git clone https://github.com/rafaelnovaes22/CarInsight.git
+cd CarInsight
 
 # Instalar dependências
 npm install
@@ -148,7 +148,7 @@ npm run dev
 ## 📁 Estrutura do Projeto
 
 ```
-faciliauto-mvp-v2/
+CarInsight/
 ├── src/
 │   ├── agents/           # Agentes de IA especializados
 │   ├── lib/              # Bibliotecas core (roteador LLM, embeddings)

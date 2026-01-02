@@ -2,7 +2,7 @@
 
 > Enterprise-grade automotive sales assistant leveraging Generative AI, RAG, and Multi-LLM routing for intelligent vehicle recommendations via WhatsApp.
 
-[![CI/CD](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)](https://www.postgresql.org/)
@@ -77,8 +77,8 @@ FaciliAuto is a production-ready conversational AI system designed for automotiv
 
 ```bash
 # Clone repository
-git clone https://github.com/rafaelnovaes22/faciliauto-mvp-v2.git
-cd faciliauto-mvp-v2
+git clone https://github.com/rafaelnovaes22/CarInsight.git
+cd CarInsight
 
 # Install dependencies
 npm install
@@ -148,7 +148,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-faciliauto-mvp-v2/
+CarInsight/
 ├── src/
 │   ├── agents/           # Specialized AI agents
 │   ├── lib/              # Core libraries (LLM router, embeddings)
