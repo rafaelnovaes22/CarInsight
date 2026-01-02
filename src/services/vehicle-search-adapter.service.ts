@@ -377,11 +377,11 @@ export class VehicleSearchAdapter {
         // Apply other filters
         ...(filters.maxPrice || filters.minPrice
           ? {
-              preco: {
-                ...(filters.maxPrice && { lte: filters.maxPrice }),
-                ...(filters.minPrice && { gte: filters.minPrice }),
-              },
-            }
+            preco: {
+              ...(filters.maxPrice && { lte: filters.maxPrice }),
+              ...(filters.minPrice && { gte: filters.minPrice }),
+            },
+          }
           : {}),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
         ...(filters.maxKm && { km: { lte: filters.maxKm } }),
@@ -555,6 +555,7 @@ export class VehicleSearchAdapter {
           color: vehicle.cor,
           imageUrl: vehicle.fotoUrl || null,
           detailsUrl: vehicle.url || null,
+          description: vehicle.descricao || '', // Added for AI Reranker context
         },
       };
     });

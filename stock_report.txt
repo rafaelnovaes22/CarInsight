@@ -1,0 +1,47 @@
+🔍 Checking stock for Family SUVs/Sedans around 90k...
+
+Found 12 candidates in DB (60k-95k, Family types):
+- [5b920677-c61e-4c68-8c05-f8efb0ff9582] VOLKSWAGEN T-CROSS (2020) - R$ 93990 - SUV
+- [fc9e9939-28d3-4ee4-aa9c-5d361c97e3df] KIA STONIC (2022) - R$ 88990 - SUV
+- [a49a039d-d5aa-4fa7-9e18-c24db3c83872] HYUNDAI HB20S (2024) - R$ 88990 - Sedan
+- [f55cdd9c-4ec7-44bc-8988-681e7fca5aa9] TOYOTA PRIUS (2018) - R$ 86990 - Sedan
+- [9e75b429-20f0-433c-84b7-b8af802292ff] HYUNDAI HB20S (2025) - R$ 82990 - Sedan
+- [13f2d296-77c8-4eb5-afc3-52c92ea68c9c] RENAULT DUSTER (2022) - R$ 80990 - SUV
+- [03f3989e-2b52-41fa-8566-dc9aba2c4d76] JEEP RENEGADE (2020) - R$ 78990 - SUV
+- [1d630068-fead-4ee0-8614-20dcb22641e6] HYUNDAI HB20S (2018) - R$ 73990 - Sedan
+- [af3b3e14-1542-4ba9-acb8-6268f3e6c638] SSANGYONG KORANDO (2018) - R$ 70990 - SUV
+- [cc2ae990-6b82-495a-bcfd-e3a69dd0a5d8] FORD ECOSPORT (2018) - R$ 65990 - SUV
+- [604e19b1-f4d1-4e4f-b2ca-4df1cfd9dd71] CHEVROLET CRUZE (2014) - R$ 62990 - Sedan
+- [b96f9e4f-9dd5-4791-925a-35c5d900fc6b] HONDA CITY (2015) - R$ 60990 - Sedan
+
+🧠 Checking Semantic Scores for query: "viagem familia espaco"
+
+Vector Store Size: 0
+⚠️ Vector store empty! Attempting to force load...
+
+Top 20 Semantic Matches:
+✅ MATCH Score: 0.4040 | ID: cc2ae990-6b82-495a-bcfd-e3a69dd0a5d8
+   -> FORD ECOSPORT - R$ 65990
+❌ (Filter mismatch) Score: 0.3952 | ID: bc655365-7a26-4cac-887a-43471af0426c
+❌ (Filter mismatch) Score: 0.3911 | ID: 63a74524-28b5-4b34-8014-e91c0b20d703
+❌ (Filter mismatch) Score: 0.3864 | ID: 9c03f11e-0855-4078-b33c-086963518eb8
+❌ (Filter mismatch) Score: 0.3855 | ID: a3039588-79bc-4357-98be-f554617e7895
+❌ (Filter mismatch) Score: 0.3762 | ID: 03269f49-cc2a-4a1a-bdd5-b2738cc8d88f
+❌ (Filter mismatch) Score: 0.3762 | ID: f1190ce5-e6e4-48a8-9bc7-0cdd6fcb52ae
+❌ (Filter mismatch) Score: 0.3693 | ID: 70698551-d1c1-44c5-8936-1ecc1fe1cece
+❌ (Filter mismatch) Score: 0.3689 | ID: 870d2a06-ba24-4fcb-ae53-a618cbfc1de6
+❌ (Filter mismatch) Score: 0.3641 | ID: 12211231-561d-4866-b4b7-e2e6bb2bad8d
+❌ (Filter mismatch) Score: 0.3640 | ID: 17d1b7cf-9209-4fd5-abe9-06bdfe997dea
+✅ MATCH Score: 0.3611 | ID: 5b920677-c61e-4c68-8c05-f8efb0ff9582
+   -> VOLKSWAGEN T-CROSS - R$ 93990
+❌ (Filter mismatch) Score: 0.3599 | ID: b04f8029-3fbd-4567-956a-f11055e48daa
+❌ (Filter mismatch) Score: 0.3579 | ID: 224a40f6-2f67-4239-9d0e-955ac9031b88
+❌ (Filter mismatch) Score: 0.3548 | ID: 72338adc-3764-4d9b-939b-4d4a1d199ffb
+❌ (Filter mismatch) Score: 0.3542 | ID: 5c724624-f5d7-470f-b2bf-fe939eebc7b0
+❌ (Filter mismatch) Score: 0.3521 | ID: ae1ac3fe-6be0-4edd-a27e-f3296cfde80c
+✅ MATCH Score: 0.3506 | ID: 03f3989e-2b52-41fa-8566-dc9aba2c4d76
+   -> JEEP RENEGADE - R$ 78990
+✅ MATCH Score: 0.3494 | ID: b96f9e4f-9dd5-4791-925a-35c5d900fc6b
+   -> HONDA CITY - R$ 60990
+✅ MATCH Score: 0.3419 | ID: 604e19b1-f4d1-4e4f-b2ca-4df1cfd9dd71
+   -> CHEVROLET CRUZE - R$ 62990

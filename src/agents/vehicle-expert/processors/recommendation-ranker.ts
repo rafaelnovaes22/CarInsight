@@ -50,7 +50,12 @@ export async function rankRecommendations(
     const vehicleList = recommendations
       .map((rec, index) => {
         const v = rec.vehicle;
-        return `[ID:${index}] ${v.brand} ${v.model} ${v.year} | ${v.bodyType} | R$ ${v.price.toLocaleString('pt-BR')} | ${v.mileage.toLocaleString('pt-BR')}km | Detalhes: ${v.transmission}, ${v.fuel}`;
+        // Truncate to first 400 chars to fit context but keep the Expert Analysis part
+        const desc = v.description
+          ? v.description.replace(/\n/g, ' ').substring(0, 400)
+          : 'Detalhes básicos';
+
+        return `[ID:${index}] ${v.brand} ${v.model} ${v.year} | ${v.bodyType} | R$ ${v.price.toLocaleString('pt-BR')} | ${v.mileage.toLocaleString('pt-BR')}km | Info: ${desc}`;
       })
       .join('\n');
 
