@@ -14,12 +14,13 @@
 
 ## 🎯 Overview
 
-FaciliAuto is a production-ready conversational AI system designed for automotive dealerships. It combines state-of-the-art LLM technology with vector search to provide personalized vehicle recommendations through WhatsApp, featuring intelligent fallback mechanisms and ISO42001 compliance.
+CarInsight is a production-ready conversational AI system designed for automotive dealerships. It combines state-of-the-art LLM technology with vector search to provide personalized vehicle recommendations through WhatsApp, featuring intelligent fallback mechanisms and ISO42001 compliance.
 
 ### Key Highlights
 
 - 🤖 **Multi-LLM Architecture** - OpenAI GPT-4o-mini with Groq fallback
-- 🔍 **RAG-Powered Search** - Vector embeddings for semantic vehicle matching
+- �️ **LangGraph Orchestration** - Advanced state machine for complex conversational flows
+- �🔍 **RAG-Powered Search** - Vector embeddings for semantic vehicle matching
 - 📱 **WhatsApp Integration** - Official Meta Business API
 - 🔒 **Enterprise Security** - ISO42001 compliant with anti-injection guardrails
 - 🔄 **High Availability** - Circuit breaker pattern with automatic failover

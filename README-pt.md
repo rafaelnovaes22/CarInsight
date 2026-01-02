@@ -19,6 +19,7 @@ FaciliAuto é um sistema de IA conversacional pronto para produção, projetado 
 ### Destaques Principais
 
 - 🤖 **Arquitetura Multi-LLM** - OpenAI GPT-4o-mini com fallback Groq
+- 🕷️ **Orquestração LangGraph** - Máquina de estados avançada para fluxos conversacionais
 - 🔍 **Busca com RAG** - Embeddings vetoriais para matching semântico de veículos
 - 📱 **Integração WhatsApp** - API oficial Meta Business
 - 🔒 **Segurança Empresarial** - Conformidade ISO42001 com guardrails anti-injection
