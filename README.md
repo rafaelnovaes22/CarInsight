@@ -1,4 +1,4 @@
-# 🚗 FaciliAuto - AI-Powered WhatsApp Sales Assistant
+# 🚗 CarInsight - AI-Powered WhatsApp Sales Assistant
 
 > Enterprise-grade automotive sales assistant leveraging Generative AI, RAG, and Multi-LLM routing for intelligent vehicle recommendations via WhatsApp.
 
