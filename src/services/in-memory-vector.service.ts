@@ -196,9 +196,10 @@ class InMemoryVectorStore {
       parts.push(vehicle.descricao);
     }
 
-    if (vehicle.preco) {
-      parts.push(`preço R$ ${vehicle.preco.toLocaleString('pt-BR')}`);
-    }
+    // Price is NOT embedded to avoid number confusion. We filter by price metadata.
+    // if (vehicle.preco) {
+    //   parts.push(`preço R$ ${vehicle.preco.toLocaleString('pt-BR')}`);
+    // }
 
     // --- DATA ENRICHMENT: Inject criteria tags to guide valid semantic matching ---
     const criteria: string[] = [];
@@ -251,8 +252,9 @@ class InMemoryVectorStore {
 
     let finalDescription = parts.join('. ');
 
+    // PREPEND criteria for stronger weight
     if (criteria.length > 0) {
-      finalDescription += ` [Critérios: ${criteria.join(', ')}]`;
+      finalDescription = `[${criteria.join(', ')}] ${finalDescription}`;
     }
 
     // Prepend Category for strong signal

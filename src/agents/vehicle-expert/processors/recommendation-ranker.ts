@@ -72,9 +72,10 @@ ${vehicleList}
 TAREFA:
 1. Analise quais veículos atendem melhor às necessidades reais do cliente (ex: se pediu "família", priorize espaço/porta-malas sobre esportividade).
 2. Se o cliente pediu algo específico (ex: "Corolla"), priorize esse modelo mesmo se for mais caro.
-3. Ignore veículos que violem restrições graves (ex: Câmbio Manual se pediu Automático), a menos que não haja outra opção.
-4. Selecione os Top ${limit}.
-5. Para cada um, dê uma razão curta e persuasiva (1 frase) conectando ao perfil.
+3. CRITÉRIO DE NEGÓCIO (UPSELL): Entre opções que atendam bem à necessidade, priorize veículos mais novos (Ano maior) e de maior valor (Preço maior), desde que caibam no orçamento.
+4. Ignore veículos que violem restrições graves (ex: Câmbio Manual se pediu Automático), a menos que não haja outra opção.
+5. Selecione os Top ${limit}.
+6. Para cada um, dê uma razão curta e persuasiva (1 frase) conectando ao perfil.
 
 FORMATO DE RESPOSTA (JSON puro, sem markdown):
 {
@@ -96,7 +97,7 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
       }
     );
 
-    // 5. Parse Response
+    // 5. Parse & Validate Response
     let parsed: { selected: { index: number; reasoning: string }[] };
     try {
       // Remove potential markdown code blocks if the model adds them
@@ -105,6 +106,13 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
         .replace(/```/g, '')
         .trim();
       parsed = JSON.parse(cleanJson);
+
+      // Validate structure
+      if (!parsed || !Array.isArray(parsed.selected)) {
+        logger.warn({ response: cleanJson }, 'AI Reranking returned invalid JSON structure (missing "selected" array)');
+        return recommendations.slice(0, limit);
+      }
+
     } catch (e) {
       logger.error({ error: e, response }, 'Failed to parse AI Reranking response');
       return recommendations.slice(0, limit); // Fallback to original order
@@ -145,7 +153,8 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
 
     return reranked;
   } catch (error) {
-    logger.error({ error }, 'Error during AI Reranking');
+    console.error('AI Reranking Error:', error);
+    logger.error({ error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }, 'Error during AI Reranking');
     return recommendations.slice(0, limit); // Fallback
   }
 }

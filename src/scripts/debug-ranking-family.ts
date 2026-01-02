@@ -1,54 +1,56 @@
+
 import { inMemoryVectorStore } from '../services/in-memory-vector.service';
-import { prisma } from '../lib/prisma';
-import * as fs from 'fs';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+const store = inMemoryVectorStore;
 
 async function debugRanking() {
-  console.log('🔄 Inicializando Vector Store...');
-  await inMemoryVectorStore.initialize();
+  console.log('🔄 Initializing Store...');
+  await store.initialize();
 
-  // Wait for initialization to complete
-  process.stdout.write('⏳ Aguardando carregamento...');
-  while (!inMemoryVectorStore.isInitialized()) {
-    process.stdout.write('.');
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-  console.log('\n✅ Vector Store pronto!');
-
-  const query = 'carro confortável para viagem em família';
-  console.log(`\n🔍 Buscando scores para: "${query}"\n`);
-
-  // Force loading all items to verify everything
-  const allResults = await inMemoryVectorStore.searchWithScores(query, 100);
-
-  // Get details from DB to show Names
-  const vehicleIds = allResults.map(r => r.vehicleId);
-  const vehicles = await prisma.vehicle.findMany({
-    where: { id: { in: vehicleIds }, disponivel: true },
-    select: { id: true, marca: true, modelo: true, ano: true, preco: true, carroceria: true },
-  });
-
-  const vehicleMap = new Map(vehicles.map(v => [v.id, v]));
-
-  let output = `# Ranking Debug: "${query}"\n\n`;
-  output += '📊 Ranking por SCORE SEMÂNTICO (O que a IA acha melhor):\n';
-  output += '---------------------------------------------------------\n';
-
-  let rank = 1;
-  for (const res of allResults) {
-    const v = vehicleMap.get(res.vehicleId);
-    if (!v) continue; // Pode estar indisponível
-
-    // Highlight Fiat Idea
-    const isFocus = v.modelo.toLowerCase().includes('idea');
-    const marker = isFocus ? '<<<< FIAT IDEA' : '';
-
-    output += `#${rank} [Score: ${res.score.toFixed(4)}] ${v.marca} ${v.modelo} ${v.ano} - R$ ${v.preco?.toLocaleString('pt-BR')} ${marker}\n`;
-    rank++;
+  // Wait for vectors to be populated
+  let retries = 0;
+  while (store.getCount() === 0 && retries < 10) {
+    console.log(`⏳ Waiting for vectors... (${retries}/10)`);
+    await new Promise(r => setTimeout(r, 1000));
+    retries++;
   }
 
-  // Use absolute path or relative to cwd
-  fs.writeFileSync('debug_results.md', output, { encoding: 'utf8' });
-  console.log('✅ Resultados salvos em debug_results.md');
+  console.log(`✅ Store ready with ${store.getCount()} vectors.`);
+
+  const query = "viagem familia";
+  const filters = { maxPrice: 90000 };
+
+  console.log(`\n🔎 Searching for: "${query}" (Max Price: ${filters.maxPrice})`);
+
+  // 1. Run Search with Scores (Limit 50 to get enough candidates to filter)
+  const results = await store.searchWithScores(query, 50);
+
+  console.log(`\n📊 Raw Semantic Scores (Top 20 filtered):`);
+
+  let count = 0;
+  // Fetch details for context
+  for (const res of results) {
+    if (count >= 20) break;
+
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { id: res.vehicleId },
+      select: { marca: true, modelo: true, ano: true, preco: true, descricao: true }
+    });
+
+    if (vehicle) {
+      // Manual filter application
+      if (filters.maxPrice && (vehicle.preco ?? 0) > filters.maxPrice) continue;
+
+      console.log(`\n[Score: ${(res.score * 100).toFixed(1)}%] ${vehicle.marca} ${vehicle.modelo} (${vehicle.ano})`);
+      console.log(`   💰 R$ ${vehicle.preco?.toLocaleString()}`);
+      console.log(`   📝 Desc excerpt: ${vehicle.descricao?.substring(0, 100)}...`);
+      count++;
+    }
+  }
+
+  await prisma.$disconnect();
 }
 
 debugRanking();
