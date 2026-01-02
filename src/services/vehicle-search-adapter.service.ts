@@ -46,6 +46,7 @@ export class VehicleSearchAdapter {
   async search(query: string, filters: SearchFilters = {}): Promise<VehicleRecommendation[]> {
     try {
       const limit = filters.limit || 5;
+      console.log(`DEBUG: Entering search with query: ${query}`);
 
       // Step 1: Try exact search (model + year) first
       // Requirements: 1.1, 1.2 - Extract filters and prioritize exact matches
@@ -70,23 +71,55 @@ export class VehicleSearchAdapter {
       }
 
       // Step 2: Se tem filtro de marca, modelo OU categoria específica, fazer busca DIRETA no banco
-      // (não depender da busca semântica que pode não retornar o veículo)
       if (filters.brand || filters.model || filters.bodyType) {
+        console.log(`DEBUG: Direct search triggered. Model: ${filters.model}`);
+
         logger.info(
           { brand: filters.brand, model: filters.model, bodyType: filters.bodyType, query },
           'Direct database search for specific filter'
         );
-        return this.searchDirectByFilters(filters);
+        let results = await this.searchDirectByFilters(filters);
+
+        // Smart Budget Relaxation: If no results found for specific model, try relaxing budget
+        if (results.length === 0 && filters.model && filters.maxPrice) {
+          logger.info({ model: filters.model }, 'No results for model with budget. Relaxing budget filter.');
+          const relaxedFilters = { ...filters };
+          delete relaxedFilters.maxPrice;
+          results = await this.searchDirectByFilters(relaxedFilters);
+
+          if (results.length > 0) {
+            logger.info({ count: results.length }, 'Found results after budget relaxation');
+            // Logic handled below in recommendations formatting
+          }
+        }
+
+        // Ensure direct search results also get budget warnings
+        const recommendations = results; // searchDirectByFilters returns Recommendations directly
+        if (filters && filters.maxPrice && results.length > 0) {
+          recommendations.forEach(rec => {
+            if (rec.vehicle.price && filters.maxPrice && rec.vehicle.price > filters.maxPrice) {
+              rec.reasoning += ` (Valor acima do orçamento de R$ ${filters.maxPrice.toLocaleString('pt-BR')}, mas incluído por relevância exata)`;
+              rec.concerns.push(`Preço R$ ${rec.vehicle.price.toLocaleString('pt-BR')} excede orçamento`);
+            }
+          });
+        }
+        return recommendations;
       }
 
-      // Get vehicle IDs from semantic search
-      const vehicleIds = await inMemoryVectorStore.search(query, limit * 2); // Get more to filter
+      // Get vehicle IDs with SCORES from semantic search
+      const scoredResults = await inMemoryVectorStore.searchWithScores(query, limit * 2);
+      console.log(`DEBUG: scoredResults lengths: ${scoredResults.length}`);
 
       // Se busca semântica não retornou nada, fazer fallback para busca SQL
-      if (vehicleIds.length === 0) {
+      if (scoredResults.length === 0) {
+        console.log('DEBUG: Falling back to SQL');
         logger.info({ query, filters }, 'Semantic search returned empty, falling back to SQL');
         return this.searchFallbackSQL(filters);
       }
+
+      // Map vehicle IDs
+      const vehicleIds = scoredResults.map(r => r.vehicleId);
+      const scoreMap = new Map(scoredResults.map(r => [r.vehicleId, r.score]));
 
       // Fetch full vehicle data
       const vehicles = await prisma.vehicle.findMany({
@@ -101,32 +134,39 @@ export class VehicleSearchAdapter {
           ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
           ...(filters.minYear && { ano: { gte: filters.minYear } }),
           ...(filters.maxKm && { km: { lte: filters.maxKm } }),
-          ...(filters.bodyType && {
-            carroceria: { equals: filters.bodyType, mode: 'insensitive' },
-          }),
-          ...(filters.transmission && {
-            cambio: { equals: filters.transmission, mode: 'insensitive' },
-          }),
-          ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
-          // Uber filters
-          ...(filters.aptoUber && { aptoUber: true }),
-          ...(filters.aptoUberBlack && { aptoUberBlack: true }),
-          // Family filter
-          ...(filters.aptoFamilia && { aptoFamilia: true }),
-          // Work filter
-          ...(filters.aptoTrabalho && { aptoTrabalho: true }),
         },
-        take: limit,
-        orderBy: [
-          { preco: 'desc' }, // Mais caro primeiro
-          { km: 'asc' }, // Menos rodado
-          { ano: 'desc' }, // Mais novo
-        ],
       });
+
+      // Filter and Sort in Memory based on Semantic Score
+      const finalResults = vehicles
+        .filter(v => {
+          // Apply remaining filters in-memory
+          const matchesBodyType = !filters.bodyType || (v.carroceria && v.carroceria.toLowerCase() === filters.bodyType.toLowerCase());
+          const matchesTransmission = !filters.transmission || (v.cambio && v.cambio.toLowerCase() === filters.transmission.toLowerCase());
+          const matchesBrand = !filters.brand || (v.marca && v.marca.toLowerCase() === filters.brand.toLowerCase());
+          const matchesUber = !filters.aptoUber || v.aptoUber;
+          const matchesUberBlack = !filters.aptoUberBlack || v.aptoUberBlack;
+          const matchesFamilia = !filters.aptoFamilia || v.aptoFamilia;
+          const matchesTrabalho = !filters.aptoTrabalho || v.aptoTrabalho;
+
+          return matchesBodyType && matchesTransmission && matchesBrand && matchesUber && matchesUberBlack && matchesFamilia && matchesTrabalho;
+        })
+        .map(v => ({
+          ...v,
+          score: scoreMap.get(v.id) || 0
+        }))
+        .sort((a, b) => b.score - a.score) // Sort by relevance (score) DESC
+        .slice(0, limit);
+
+      logger.info({
+        query,
+        found: finalResults.length,
+        topScore: finalResults[0]?.score
+      }, 'Semantic search results');
 
       // Se filtrou por bodyType e não encontrou nada, buscar SEM o filtro de IDs
       // para verificar se existem veículos desse tipo no estoque
-      if (vehicles.length === 0 && filters.bodyType) {
+      if (finalResults.length === 0 && filters.bodyType) {
         const existsInStock = await prisma.vehicle.count({
           where: {
             disponivel: true,
@@ -143,28 +183,20 @@ export class VehicleSearchAdapter {
         return this.searchFallbackSQL(filters);
       }
 
-      // Convert to VehicleRecommendation format
-      return vehicles.map((vehicle, index) => ({
-        vehicleId: vehicle.id,
-        matchScore: Math.max(95 - index * 5, 70), // Simple scoring based on order
-        reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
-        highlights: this.generateHighlights(vehicle),
-        concerns: [],
-        vehicle: {
-          id: vehicle.id,
-          brand: vehicle.marca,
-          model: vehicle.modelo,
-          year: vehicle.ano,
-          price: vehicle.preco,
-          mileage: vehicle.km,
-          bodyType: vehicle.carroceria,
-          transmission: vehicle.cambio,
-          fuelType: vehicle.combustivel,
-          color: vehicle.cor,
-          imageUrl: vehicle.fotoUrl || null,
-          detailsUrl: vehicle.url || null,
-        },
-      }));
+      const recommendations = this.formatVehicleResults(finalResults, scoreMap, query);
+
+      // Add Smart Budget reasoning if needed
+      if (filters && filters.maxPrice) {
+        recommendations.forEach(rec => {
+          // Double check filters.maxPrice exists to satisfy TS
+          if (rec.vehicle.price && filters.maxPrice && rec.vehicle.price > filters.maxPrice) {
+            rec.reasoning += ` (Valor acima do orçamento de R$ ${filters.maxPrice.toLocaleString('pt-BR')}, mas incluído por relevância)`;
+            rec.concerns.push(`Preço R$ ${rec.vehicle.price.toLocaleString('pt-BR')} excede orçamento`);
+          }
+        });
+      }
+
+      return recommendations;
     } catch (error) {
       logger.error({ error, query, filters }, 'Error searching vehicles');
       return [];
@@ -440,28 +472,60 @@ export class VehicleSearchAdapter {
   /**
    * Formata veículos para o formato VehicleRecommendation
    */
-  private formatVehicleResults(vehicles: any[]): VehicleRecommendation[] {
-    return vehicles.map((vehicle, index) => ({
-      vehicleId: vehicle.id,
-      matchScore: Math.max(95 - index * 5, 70),
-      reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
-      highlights: this.generateHighlights(vehicle),
-      concerns: [],
-      vehicle: {
-        id: vehicle.id,
-        brand: vehicle.marca,
-        model: vehicle.modelo,
-        year: vehicle.ano,
-        price: vehicle.preco,
-        mileage: vehicle.km,
-        bodyType: vehicle.carroceria,
-        transmission: vehicle.cambio,
-        fuelType: vehicle.combustivel,
-        color: vehicle.cor,
-        imageUrl: vehicle.fotoUrl || null,
-        detailsUrl: vehicle.url || null,
-      },
-    }));
+  private formatVehicleResults(
+    vehicles: any[],
+    scoreMap?: Map<string, number>,
+    query?: string
+  ): VehicleRecommendation[] {
+    return vehicles.map((vehicle, index) => {
+      let score = 0;
+      let reasoning = `Veículo ${index + 1} mais relevante para sua busca`;
+
+      if (scoreMap && index === 0) {
+        console.log(`DEBUG: scoreMap sample key: ${Array.from(scoreMap.keys())[0]} (Type: ${typeof Array.from(scoreMap.keys())[0]})`);
+        console.log(`DEBUG: vehicle.id: ${vehicle.id} (Type: ${typeof vehicle.id})`);
+        console.log(`DEBUG: scoreMap has vehicle.id? ${scoreMap.has(vehicle.id)}`);
+      }
+
+      if (scoreMap && scoreMap.has(vehicle.id)) {
+        score = scoreMap.get(vehicle.id)!;
+        // Convert to 0-100 scale for matchScore (assuming score is cosine similarity -1 to 1, usually 0.3-0.8 for openAI)
+        // OpenAI small embeddings usually range 0.7-0.85 for good matches.
+        // Let's normalize visually: 0.7 -> 70, 0.8 -> 90, 0.9 -> 100
+        // Or just map raw * 100 if user understands it.
+        // Better: (score - 0.7) / 0.2 * 100 ?
+        // For simplicity now, let's just multiply by 100, but capped.
+        // Actually, just expose the RAW semantic score if it's high enough, but UI expects 0-100.
+        // Let's use a simpler heuristic: score * 100.
+      } else {
+        // Fallback scoring
+        score = (Math.max(95 - index * 5, 70)) / 100;
+      }
+
+      const matchScore = Math.round(score * 100);
+
+      return {
+        vehicleId: vehicle.id,
+        matchScore: matchScore,
+        reasoning: reasoning, // Will be updated by caller if budget violation
+        highlights: this.generateHighlights(vehicle),
+        concerns: [],
+        vehicle: {
+          id: vehicle.id,
+          brand: vehicle.marca,
+          model: vehicle.modelo,
+          year: vehicle.ano,
+          price: vehicle.preco,
+          mileage: vehicle.km,
+          bodyType: vehicle.carroceria,
+          transmission: vehicle.cambio,
+          fuelType: vehicle.combustivel,
+          color: vehicle.cor,
+          imageUrl: vehicle.fotoUrl || null,
+          detailsUrl: vehicle.url || null,
+        },
+      };
+    });
   }
 
   /**

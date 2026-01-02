@@ -18,22 +18,27 @@ interface GenerateEmbeddingsOptions {
 /**
  * Gera texto descritivo para o veículo (usado para criar embedding)
  */
+/**
+ * Gera texto descritivo para o veículo (usado para criar embedding)
+ * NOTE: Duplicated logic from InMemoryVectorStore (should be shared util)
+ */
 function buildVehicleDescription(vehicle: any): string {
   const parts = [
     vehicle.marca,
     vehicle.modelo,
     vehicle.versao || '',
-    `${vehicle.ano}`,
-    vehicle.carroceria,
+    `ano ${vehicle.ano}`,
+    `${vehicle.km.toLocaleString('pt-BR')}km`,
     vehicle.combustivel,
     vehicle.cambio,
+    `cor ${vehicle.cor}`,
   ];
 
   const features: string[] = [];
   if (vehicle.arCondicionado) features.push('ar condicionado');
   if (vehicle.direcaoHidraulica) features.push('direção hidráulica');
   if (vehicle.airbag) features.push('airbag');
-  if (vehicle.abs) features.push('ABS');
+  if (vehicle.abs) features.push('abs');
   if (vehicle.vidroEletrico) features.push('vidro elétrico');
   if (vehicle.travaEletrica) features.push('trava elétrica');
   if (vehicle.alarme) features.push('alarme');
@@ -41,14 +46,65 @@ function buildVehicleDescription(vehicle: any): string {
   if (vehicle.som) features.push('som');
 
   if (features.length > 0) {
-    parts.push(`Equipamentos: ${features.join(', ')}`);
+    parts.push(`equipamentos: ${features.join(', ')}`);
   }
 
   if (vehicle.descricao) {
     parts.push(vehicle.descricao);
   }
 
-  return parts.filter(p => p).join(' ');
+  if (vehicle.preco) {
+    parts.push(`preço R$ ${vehicle.preco.toLocaleString('pt-BR')}`);
+  }
+
+  // --- DATA ENRICHMENT (Sync with InMemoryVectorStore) ---
+  const criteria: string[] = [];
+  const bodyType = vehicle.carroceria?.toLowerCase() || '';
+  const version = vehicle.versao?.toLowerCase() || '';
+  const model = vehicle.modelo?.toLowerCase() || '';
+  const desc = vehicle.descricao?.toLowerCase() || '';
+
+  // Criteria: Family / Space / Trip
+  if (
+    bodyType.includes('suv') ||
+    bodyType.includes('utilitário') ||
+    bodyType.includes('minivan') ||
+    bodyType.includes('perua') ||
+    desc.includes('7 lugares') ||
+    model.includes('7 lugares')
+  ) {
+    criteria.push('ideal para família', 'espaçoso', 'porta-malas grande', 'conforto para viagem');
+  }
+
+  // Criteria: Comfort / Executive
+  if (bodyType.includes('sedan') || bodyType.includes('sedã')) {
+    criteria.push('conforto', 'porta-malas espaçoso', 'carro familiar', 'executivo');
+  }
+
+  // Criteria: Economy / City
+  if (bodyType.includes('hatch')) {
+    // Try to detect 1.0 engine
+    const isOnePointZero = version.includes('1.0') || desc.includes('1.0') || model.includes('1.0');
+    if (isOnePointZero) {
+      criteria.push('econômico', 'carro urbano', 'bom para dia a dia', 'baixo consumo');
+    } else {
+      criteria.push('prático', 'compacto', 'ágil');
+    }
+  }
+
+  // Criteria: Utility / Work
+  if (bodyType.includes('picape') || bodyType.includes('pickup')) {
+    criteria.push('picape', 'caminhonete', 'robusto', 'para trabalho', 'caçamba', 'off-road', 'transportar carga');
+  }
+
+  let finalDescription = parts.filter(p => p).join('. ');
+
+  if (criteria.length > 0) {
+    finalDescription += ` [Critérios: ${criteria.join(', ')}]`;
+  }
+
+  // Prepend Category for strong signal
+  return `Categoria: ${vehicle.carroceria}. ${finalDescription}`;
 }
 
 /**
@@ -64,8 +120,8 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     const whereClause = forceRegenerate
       ? {}
       : {
-          OR: [{ embedding: null }, { embedding: '' }],
-        };
+        OR: [{ embedding: null }, { embedding: '' }],
+      };
 
     const vehicles = await prisma.vehicle.findMany({
       where: whereClause,

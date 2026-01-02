@@ -200,7 +200,54 @@ class InMemoryVectorStore {
       parts.push(`preço R$ ${vehicle.preco.toLocaleString('pt-BR')}`);
     }
 
-    return parts.join('. ');
+    // --- DATA ENRICHMENT: Inject criteria tags to guide valid semantic matching ---
+    const criteria: string[] = [];
+    const bodyType = vehicle.carroceria?.toLowerCase() || '';
+    const version = vehicle.versao?.toLowerCase() || '';
+    const model = vehicle.modelo?.toLowerCase() || '';
+    const desc = vehicle.descricao?.toLowerCase() || '';
+
+    // Criteria: Family / Space / Trip
+    if (
+      bodyType.includes('suv') ||
+      bodyType.includes('utilitário') ||
+      bodyType.includes('minivan') ||
+      bodyType.includes('perua') ||
+      desc.includes('7 lugares') ||
+      model.includes('7 lugares')
+    ) {
+      criteria.push('ideal para família', 'espaçoso', 'porta-malas grande', 'conforto para viagem');
+    }
+
+    // Criteria: Comfort / Executive
+    if (bodyType.includes('sedan') || bodyType.includes('sedã')) {
+      criteria.push('conforto', 'porta-malas espaçoso', 'carro familiar', 'executivo');
+    }
+
+    // Criteria: Economy / City
+    if (bodyType.includes('hatch')) {
+      // Try to detect 1.0 engine
+      const isOnePointZero = version.includes('1.0') || desc.includes('1.0') || model.includes('1.0');
+      if (isOnePointZero) {
+        criteria.push('econômico', 'carro urbano', 'bom para dia a dia', 'baixo consumo');
+      } else {
+        criteria.push('prático', 'compacto', 'ágil');
+      }
+    }
+
+    // Criteria: Utility / Work
+    if (bodyType.includes('picape') || bodyType.includes('pickup')) {
+      criteria.push('picape', 'caminhonete', 'robusto', 'para trabalho', 'caçamba', 'off-road', 'transportar carga');
+    }
+
+    let finalDescription = parts.join('. ');
+
+    if (criteria.length > 0) {
+      finalDescription += ` [Critérios: ${criteria.join(', ')}]`;
+    }
+
+    // Prepend Category for strong signal
+    return `Categoria: ${vehicle.carroceria}. ${finalDescription}`;
   }
 
   private cosineSimilarity(vecA: number[], vecB: number[]): number {

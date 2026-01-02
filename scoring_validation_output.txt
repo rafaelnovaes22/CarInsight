@@ -1,0 +1,83 @@
+🚀 Starting Scoring Criteria Validation...
+
+---------------------------------------------------
+🧪 Testing Criteria: Family (Família)
+   🔎 Query: "carro para família"
+      🏆 Top 1: [MERIVA] Score: 45
+      📊 Top 3 Relevance: 2/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 1 (High: 45, Low: 44)
+   🔎 Query: "espaço para viagem"
+      🏆 Top 1: [MERIVA] Score: 35
+      📊 Top 3 Relevance: 3/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 2 (High: 35, Low: 33)
+   🔎 Query: "carro grande"
+      🏆 Top 1: [TORO] Score: 41
+      📊 Top 3 Relevance: 2/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 2 (High: 41, Low: 39)
+
+---------------------------------------------------
+🧪 Testing Criteria: Economy (Economia)
+   🔎 Query: "carro econômico"
+      🏆 Top 1: [FIAT] Score: 53
+      📊 Top 3 Relevance: 2/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 4 (High: 53, Low: 49)
+   🔎 Query: "gasta pouco"
+      🏆 Top 1: [FIAT] Score: 28
+      📊 Top 3 Relevance: 3/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 2 (High: 28, Low: 26)
+   🔎 Query: "carro pro dia a dia"
+      🏆 Top 1: [YARIS] Score: 45
+      📊 Top 3 Relevance: 1/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 2 (High: 45, Low: 43)
+
+---------------------------------------------------
+🧪 Testing Criteria: Work (Trabalho)
+   🔎 Query: "carro para trabalho"
+      🏆 Top 1: [YARIS] Score: 48
+      📊 Top 3 Relevance: 1/3
+      ⚠️ WARNING: Top result [YARIS] might not be optimal.
+         Reasoning: Veículo 1 mais relevante para sua busca
+      SC Spread: 3 (High: 48, Low: 45)
+   🔎 Query: "carro de firma"
+      🏆 Top 1: [TORO] Score: 34
+      📊 Top 3 Relevance: 1/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 2 (High: 34, Low: 32)
+   🔎 Query: "carregar peso"
+      🏆 Top 1: [FIT] Score: 25
+      📊 Top 3 Relevance: 0/3
+      ⚠️ WARNING: Top result [FIT] might not be optimal.
+         Reasoning: Veículo 1 mais relevante para sua busca
+      SC Spread: 1 (High: 25, Low: 24)
+   🔎 Query: "picape"
+      🏆 Top 1: [PUNTO] Score: 20
+      📊 Top 3 Relevance: 0/3
+      ⚠️ WARNING: Top result [PUNTO] might not be optimal.
+         Reasoning: Veículo 1 mais relevante para sua busca
+      SC Spread: 4 (High: 20, Low: 16)
+
+---------------------------------------------------
+🧪 Testing Criteria: Comfort/Executive (Conforto)
+   🔎 Query: "carro confortável"
+      🏆 Top 1: [HB20S] Score: 57
+      📊 Top 3 Relevance: 2/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 1 (High: 57, Low: 56)
+   🔎 Query: "sedan executivo"
+      🏆 Top 1: [FOCUS] Score: 29
+      📊 Top 3 Relevance: 1/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 2 (High: 29, Low: 27)
+   🔎 Query: "viagem com conforto"
+      🏆 Top 1: [HB20S] Score: 39
+      📊 Top 3 Relevance: 1/3
+      ✅ PASS: Top result matches criteria.
+      SC Spread: 2 (High: 39, Low: 37)
+
+✅ Validation Complete.
