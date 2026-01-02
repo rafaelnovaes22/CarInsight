@@ -64,7 +64,7 @@ async function inspectData() {
         output += `--------------------------------------------------\n`;
         output += `📝 BODY TYPE (Banco): ${vehicle.carroceria}\n`;
         output += `📝 DESCRIÇÃO ORIGINAL (Banco): ${vehicle.descricao || '[VAZIO]'}\n`;
-        output += `🔤 STRING GERADA PARA A IA (O que vira embedding):`);
+        output += `🔤 STRING GERADA PARA A IA (O que vira embedding):\n`;
         output += `"${description}"\n`;
         output += `--------------------------------------------------\n\n`;
     }

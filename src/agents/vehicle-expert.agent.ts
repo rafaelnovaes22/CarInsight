@@ -1616,239 +1616,207 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         finalResults = sevenSeaterResults;
       }
 
-      // AI RERANKING: Apply strict reasoning to valid candidates
-      // Only rerank if we have enough results to make a choice
-      if (finalResults.length > 1) {
+      // Link post-filters to the already seat-filtered results
+      let filteredResults = finalResults;
+      if (isFamily) {
+        const hasCadeirinha =
+          profile.priorities?.includes('cadeirinha') || profile.priorities?.includes('crianca');
+        const peopleCount = profile.people || 4;
+
+        filteredResults = results.filter(rec => {
+          const model = rec.vehicle.model?.toLowerCase() || '';
+          const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
+
+          // NUNCA para família: hatch compactos/subcompactos
+          const neverForFamily = ['mobi', 'kwid', 'up!', 'uno', 'ka', 'march', 'sandero'];
+          if (neverForFamily.some(n => model.includes(n))) {
+            return false;
+          }
+
+          // Para família: pickups GRANDES de cabine dupla são OK (espaço similar a SUVs)
+          // Pickups COMPACTAS devem ser excluídas (cabine menor, menos conforto)
+          const isPickup =
+            bodyType.includes('pickup') ||
+            bodyType.includes('picape') ||
+            bodyType.includes('cabine');
+          if (isPickup) {
+            // Pickups grandes de cabine dupla - PERMITIDAS para família
+            const largePickups = [
+              'ranger',
+              'amarok',
+              's10',
+              'hilux',
+              'frontier',
+              'l200',
+              'triton',
+              'toro',
+            ];
+            const isLargePickup = largePickups.some(p => model.includes(p));
+
+            // Se for pickup compacta (Strada, Saveiro, Montana), excluir para família
+            if (!isLargePickup) {
+              return false;
+            }
+            // Pickups grandes passam no filtro (são adequadas para família)
+          }
+
+          // Com cadeirinha: precisa de mais espaço
+          if (hasCadeirinha) {
+            // Ideais para 2 cadeirinhas: SUVs, Sedans médios/grandes, Minivans
+            const idealForCadeirinha = [
+              // SUVs compactos bons
+              'creta',
+              'kicks',
+              't-cross',
+              'tcross',
+              'tracker',
+              'hr-v',
+              'hrv',
+              'renegade',
+              // SUVs médios (excelentes)
+              'tucson',
+              'compass',
+              'corolla cross',
+              'tiguan',
+              'sw4',
+              'trailblazer',
+              'commander',
+              // Sedans médios/grandes (muito bons)
+              'corolla',
+              'civic',
+              'cruze',
+              'sentra',
+              'jetta',
+              'virtus',
+              // Sedans compactos (aceitáveis)
+              'hb20s',
+              'onix plus',
+              'cronos',
+              'voyage',
+              'prisma',
+              // Minivans (excelentes)
+              'spin',
+              'livina',
+              'zafira',
+            ];
+
+            // Se é hatch, só aceita se for espaçoso
+            if (bodyType.includes('hatch')) {
+              const hatchOkForFamily = ['fit', 'golf', 'polo', 'argo'];
+              return hatchOkForFamily.some(h => model.includes(h));
+            }
+
+            // SUV e Sedan são sempre ok (exceto os já filtrados)
+            if (bodyType.includes('suv') || bodyType.includes('sedan')) {
+              return true;
+            }
+
+            // Minivan é excelente
+            if (bodyType.includes('minivan') || model.includes('spin')) {
+              return true;
+            }
+
+            // Verifica se está na lista ideal
+            return idealForCadeirinha.some(ideal => model.includes(ideal));
+          }
+
+          // Família sem cadeirinha (mais flexível)
+          // Exclui apenas os muito pequenos
+          if (bodyType.includes('hatch')) {
+            const smallHatch = ['mobi', 'kwid', 'up', 'uno', 'ka', 'march'];
+            return !smallHatch.some(s => model.includes(s));
+          }
+
+          return true;
+        });
+
+        // Se filtrou demais, relaxa os critérios
+        if (filteredResults.length < 3 && results.length >= 3) {
+          // Tenta pegar pelo menos sedans e SUVs
+          filteredResults = results.filter(rec => {
+            const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
+            return (
+              bodyType.includes('suv') || bodyType.includes('sedan') || bodyType.includes('minivan')
+            );
+          });
+
+          if (filteredResults.length < 3) {
+            filteredResults = results.slice(0, 5);
+          }
+        }
+      }
+
+      logger.info(
+        {
+          profileKeys: Object.keys(profile),
+          resultsCount: filteredResults.length,
+          isUberBlack,
+          isUberX,
+          isFamily,
+          wantsPickup,
+        },
+        'Generated recommendations'
+      );
+
+      // Fallback para busca de apps de transporte: se não encontrou com filtro aptoUber,
+      // tentar buscar veículos compatíveis (sedans/hatches de 2012+) sem o filtro rigoroso
+      if ((isUberX || isUberBlack) && filteredResults.length === 0) {
+        logger.info(
+          { isUberX, isUberBlack },
+          'App transport search found no results, trying fallback without aptoUber filter'
+        );
+
+        // Buscar veículos que seriam aptos para apps (sedan/hatch, 2012+, com ar)
+        // mas que podem não ter o campo aptoUber marcado no banco
+        const fallbackResults = await vehicleSearchAdapter.search('sedan hatch carro', {
+          maxPrice: query.filters.maxPrice,
+          minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
+          limit: 10,
+          // NÃO usar filtro aptoUber/aptoUberBlack aqui
+        });
+
+        // Filtrar manualmente por carroceria adequada
+        const compatibleResults = fallbackResults.filter(rec => {
+          const bodyType = (rec.vehicle.bodyType || '').toLowerCase();
+          // Para apps: apenas sedan, hatch ou minivan
+          return (
+            bodyType.includes('sedan') ||
+            bodyType.includes('hatch') ||
+            bodyType.includes('minivan') ||
+            bodyType === ''
+          );
+        });
+
+        if (compatibleResults.length > 0) {
+          logger.info(
+            { count: compatibleResults.length },
+            'Fallback found compatible vehicles for app transport'
+          );
+          return { recommendations: compatibleResults.slice(0, 5), wantsPickup: false };
+        }
+      }
+
+      // AI RERANKING (Final Step)
+      if (filteredResults.length > 1) {
         try {
           // Dynamic import to avoid circular deps if any
           const { rankRecommendations } = await import('./vehicle-expert/processors/recommendation-ranker');
           // Fix type incompatibility by casting or ensuring rankRecommendations returns compatible type
-          const ranked = await rankRecommendations(finalResults, profile, 5);
-          logger.info('Applied AI Reranking to search results');
+          const ranked = await rankRecommendations(filteredResults, profile, 5);
+          logger.info('Applied AI Reranking to final results');
 
           // Cast back to VehicleRecommendation[] since RankedRecommendation extends it
-          return { recommendations: ranked as VehicleRecommendation[] };
+          return { recommendations: ranked as VehicleRecommendation[], wantsPickup };
         } catch (e) {
           logger.error({ error: e }, 'Failed to import/run rankRecommendations');
-          // Fallback to original order
-          return { recommendations: finalResults };
         }
       }
 
-      return { recommendations: finalResults };
-
+      return { recommendations: filteredResults.slice(0, 5), wantsPickup };
     } catch (error) {
-      logger.error({ error }, 'Error getting recommendations');
+      logger.error({ error, profile }, 'Failed to get recommendations');
       return { recommendations: [] };
     }
-  }
-  const modelLower = (rec.vehicle.model || '').toLowerCase();
-          return isSevenSeater(modelLower);
-        });
-
-logger.info(
-  {
-    requiredSeats,
-    sevenSeaterResults: sevenSeaterResults.length,
-    filteredModels: sevenSeaterResults.map(r => r.vehicle.model),
-  },
-  'Seven seater filter results'
-);
-
-if (sevenSeaterResults.length === 0) {
-  // Não encontrou veículos de 7 lugares - NÃO retornar alternativas automaticamente
-  return { recommendations: [], noSevenSeaters: true, requiredSeats };
-}
-
-// Retornar APENAS os veículos de 7 lugares
-return { recommendations: sevenSeaterResults.slice(0, 5), requiredSeats };
-      }
-
-// Post-filter: apply family-specific rules
-let filteredResults = results;
-if (isFamily) {
-  const hasCadeirinha =
-    profile.priorities?.includes('cadeirinha') || profile.priorities?.includes('crianca');
-  const peopleCount = profile.people || 4;
-
-  filteredResults = results.filter(rec => {
-    const model = rec.vehicle.model?.toLowerCase() || '';
-    const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
-
-    // NUNCA para família: hatch compactos/subcompactos
-    const neverForFamily = ['mobi', 'kwid', 'up!', 'uno', 'ka', 'march', 'sandero'];
-    if (neverForFamily.some(n => model.includes(n))) {
-      return false;
-    }
-
-    // Para família: pickups GRANDES de cabine dupla são OK (espaço similar a SUVs)
-    // Pickups COMPACTAS devem ser excluídas (cabine menor, menos conforto)
-    const isPickup =
-      bodyType.includes('pickup') ||
-      bodyType.includes('picape') ||
-      bodyType.includes('cabine');
-    if (isPickup) {
-      // Pickups grandes de cabine dupla - PERMITIDAS para família
-      const largePickups = [
-        'ranger',
-        'amarok',
-        's10',
-        'hilux',
-        'frontier',
-        'l200',
-        'triton',
-        'toro',
-      ];
-      const isLargePickup = largePickups.some(p => model.includes(p));
-
-      // Se for pickup compacta (Strada, Saveiro, Montana), excluir para família
-      if (!isLargePickup) {
-        return false;
-      }
-      // Pickups grandes passam no filtro (são adequadas para família)
-    }
-
-    // Com cadeirinha: precisa de mais espaço
-    if (hasCadeirinha) {
-      // Ideais para 2 cadeirinhas: SUVs, Sedans médios/grandes, Minivans
-      const idealForCadeirinha = [
-        // SUVs compactos bons
-        'creta',
-        'kicks',
-        't-cross',
-        'tcross',
-        'tracker',
-        'hr-v',
-        'hrv',
-        'renegade',
-        // SUVs médios (excelentes)
-        'tucson',
-        'compass',
-        'corolla cross',
-        'tiguan',
-        'sw4',
-        'trailblazer',
-        'commander',
-        // Sedans médios/grandes (muito bons)
-        'corolla',
-        'civic',
-        'cruze',
-        'sentra',
-        'jetta',
-        'virtus',
-        // Sedans compactos (aceitáveis)
-        'hb20s',
-        'onix plus',
-        'cronos',
-        'voyage',
-        'prisma',
-        // Minivans (excelentes)
-        'spin',
-        'livina',
-        'zafira',
-      ];
-
-      // Se é hatch, só aceita se for espaçoso
-      if (bodyType.includes('hatch')) {
-        const hatchOkForFamily = ['fit', 'golf', 'polo', 'argo'];
-        return hatchOkForFamily.some(h => model.includes(h));
-      }
-
-      // SUV e Sedan são sempre ok (exceto os já filtrados)
-      if (bodyType.includes('suv') || bodyType.includes('sedan')) {
-        return true;
-      }
-
-      // Minivan é excelente
-      if (bodyType.includes('minivan') || model.includes('spin')) {
-        return true;
-      }
-
-      // Verifica se está na lista ideal
-      return idealForCadeirinha.some(ideal => model.includes(ideal));
-    }
-
-    // Família sem cadeirinha (mais flexível)
-    // Exclui apenas os muito pequenos
-    if (bodyType.includes('hatch')) {
-      const smallHatch = ['mobi', 'kwid', 'up', 'uno', 'ka', 'march'];
-      return !smallHatch.some(s => model.includes(s));
-    }
-
-    return true;
-  });
-
-  // Se filtrou demais, relaxa os critérios
-  if (filteredResults.length < 3 && results.length >= 3) {
-    // Tenta pegar pelo menos sedans e SUVs
-    filteredResults = results.filter(rec => {
-      const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
-      return (
-        bodyType.includes('suv') || bodyType.includes('sedan') || bodyType.includes('minivan')
-      );
-    });
-
-    if (filteredResults.length < 3) {
-      filteredResults = results.slice(0, 5);
-    }
-  }
-}
-
-logger.info(
-  {
-    profileKeys: Object.keys(profile),
-    resultsCount: filteredResults.length,
-    isUberBlack,
-    isUberX,
-    isFamily,
-    wantsPickup,
-  },
-  'Generated recommendations'
-);
-
-// Fallback para busca de apps de transporte: se não encontrou com filtro aptoUber,
-// tentar buscar veículos compatíveis (sedans/hatches de 2012+) sem o filtro rigoroso
-if ((isUberX || isUberBlack) && filteredResults.length === 0) {
-  logger.info(
-    { isUberX, isUberBlack },
-    'App transport search found no results, trying fallback without aptoUber filter'
-  );
-
-  // Buscar veículos que seriam aptos para apps (sedan/hatch, 2012+, com ar)
-  // mas que podem não ter o campo aptoUber marcado no banco
-  const fallbackResults = await vehicleSearchAdapter.search('sedan hatch carro', {
-    maxPrice: query.filters.maxPrice,
-    minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
-    limit: 10,
-    // NÃO usar filtro aptoUber/aptoUberBlack aqui
-  });
-
-  // Filtrar manualmente por carroceria adequada
-  const compatibleResults = fallbackResults.filter(rec => {
-    const bodyType = (rec.vehicle.bodyType || '').toLowerCase();
-    // Para apps: apenas sedan, hatch ou minivan
-    return (
-      bodyType.includes('sedan') ||
-      bodyType.includes('hatch') ||
-      bodyType.includes('minivan') ||
-      bodyType === ''
-    );
-  });
-
-  if (compatibleResults.length > 0) {
-    logger.info(
-      { count: compatibleResults.length },
-      'Fallback found compatible vehicles for app transport'
-    );
-    return { recommendations: compatibleResults.slice(0, 5), wantsPickup: false };
-  }
-}
-
-return { recommendations: filteredResults.slice(0, 5), wantsPickup };
-    } catch (error) {
-  logger.error({ error, profile }, 'Failed to get recommendations');
-  return { recommendations: [] };
-}
   }
 }
 

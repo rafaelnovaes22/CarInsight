@@ -479,6 +479,7 @@ export class VehicleSearchAdapter {
   ): VehicleRecommendation[] {
     return vehicles.map((vehicle, index) => {
       let score = 0;
+      // reasoning is modified below if budget exceeded, so warning might be false positive or based on flow where it's NOT modified
       let reasoning = `Veículo ${index + 1} mais relevante para sua busca`;
 
       if (scoreMap && index === 0) {
