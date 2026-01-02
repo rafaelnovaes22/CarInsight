@@ -35,8 +35,8 @@ FaciliAuto é um sistema de IA conversacional pronto para produção, projetado 
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
-│              Máquina de Estados TypeScript                   │
-│  • Orquestração de conversas                                │
+│              Máquina de Estados LangGraph                    │
+│  • Orquestração baseada em Grafos                           │
 │  • Roteamento multi-agente                                  │
 └──────────┬──────────┬──────────┬───────────────────────────┘
            │          │          │
@@ -106,7 +106,7 @@ npm run dev
 
 | Categoria | Tecnologias |
 |----------|-------------|
-| **Backend** | Node.js 20, TypeScript 5.3, Express.js |
+| **Backend** | Node.js 20, TypeScript 5.3, Express.js, LangGraph |
 | **IA/LLM** | OpenAI GPT-4o-mini, Groq LLaMA 3.1, Cohere |
 | **Banco de Dados** | PostgreSQL 14+, Prisma ORM |
 | **Mensageria** | Meta WhatsApp Business API |
