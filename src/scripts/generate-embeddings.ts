@@ -94,7 +94,15 @@ function buildVehicleDescription(vehicle: any): string {
 
   // Criteria: Utility / Work
   if (bodyType.includes('picape') || bodyType.includes('pickup')) {
-    criteria.push('picape', 'caminhonete', 'robusto', 'para trabalho', 'caçamba', 'off-road', 'transportar carga');
+    criteria.push(
+      'picape',
+      'caminhonete',
+      'robusto',
+      'para trabalho',
+      'caçamba',
+      'off-road',
+      'transportar carga'
+    );
   }
 
   let finalDescription = parts.filter(p => p).join('. ');
@@ -120,8 +128,8 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     const whereClause = forceRegenerate
       ? {}
       : {
-        OR: [{ embedding: null }, { embedding: '' }],
-      };
+          OR: [{ embedding: null }, { embedding: '' }],
+        };
 
     const vehicles = await prisma.vehicle.findMany({
       where: whereClause,

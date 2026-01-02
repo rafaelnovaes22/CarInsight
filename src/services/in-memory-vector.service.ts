@@ -227,7 +227,8 @@ class InMemoryVectorStore {
     // Criteria: Economy / City
     if (bodyType.includes('hatch')) {
       // Try to detect 1.0 engine
-      const isOnePointZero = version.includes('1.0') || desc.includes('1.0') || model.includes('1.0');
+      const isOnePointZero =
+        version.includes('1.0') || desc.includes('1.0') || model.includes('1.0');
       if (isOnePointZero) {
         criteria.push('econômico', 'carro urbano', 'bom para dia a dia', 'baixo consumo');
       } else {
@@ -237,7 +238,15 @@ class InMemoryVectorStore {
 
     // Criteria: Utility / Work
     if (bodyType.includes('picape') || bodyType.includes('pickup')) {
-      criteria.push('picape', 'caminhonete', 'robusto', 'para trabalho', 'caçamba', 'off-road', 'transportar carga');
+      criteria.push(
+        'picape',
+        'caminhonete',
+        'robusto',
+        'para trabalho',
+        'caçamba',
+        'off-road',
+        'transportar carga'
+      );
     }
 
     let finalDescription = parts.join('. ');

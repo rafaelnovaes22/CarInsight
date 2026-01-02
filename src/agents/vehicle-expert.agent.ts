@@ -1092,8 +1092,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                askedBodyType === 'motocicleta' ||
-                askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1114,8 +1114,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                    askedBodyType === 'motocicleta' ||
+                    askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
@@ -1602,9 +1602,12 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         // Filtrar APENAS veículos de 7 lugares
         const sevenSeaterResults = results.filter(rec => {
           const v = rec.vehicle;
-          return isSevenSeater(v.model || '') ||
+          return (
+            isSevenSeater(v.model || '') ||
             v.bodyType?.toLowerCase().includes('minivan') ||
-            (v.bodyType?.toLowerCase().includes('suv') && v.descricao?.toLowerCase().includes('7 lugares'));
+            (v.bodyType?.toLowerCase().includes('suv') &&
+              v.descricao?.toLowerCase().includes('7 lugares'))
+          );
         });
 
         // Se não sobrou nada, retornar flag
@@ -1800,7 +1803,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       if (filteredResults.length > 1) {
         try {
           // Dynamic import to avoid circular deps if any
-          const { rankRecommendations } = await import('./vehicle-expert/processors/recommendation-ranker');
+          const { rankRecommendations } =
+            await import('./vehicle-expert/processors/recommendation-ranker');
           // Fix type incompatibility by casting or ensuring rankRecommendations returns compatible type
           const ranked = await rankRecommendations(filteredResults, profile, 5);
           logger.info('Applied AI Reranking to final results');

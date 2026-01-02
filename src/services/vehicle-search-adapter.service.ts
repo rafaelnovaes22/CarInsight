@@ -82,7 +82,10 @@ export class VehicleSearchAdapter {
 
         // Smart Budget Relaxation: If no results found for specific model, try relaxing budget
         if (results.length === 0 && filters.model && filters.maxPrice) {
-          logger.info({ model: filters.model }, 'No results for model with budget. Relaxing budget filter.');
+          logger.info(
+            { model: filters.model },
+            'No results for model with budget. Relaxing budget filter.'
+          );
           const relaxedFilters = { ...filters };
           delete relaxedFilters.maxPrice;
           results = await this.searchDirectByFilters(relaxedFilters);
@@ -99,7 +102,9 @@ export class VehicleSearchAdapter {
           recommendations.forEach(rec => {
             if (rec.vehicle.price && filters.maxPrice && rec.vehicle.price > filters.maxPrice) {
               rec.reasoning += ` (Valor acima do orçamento de R$ ${filters.maxPrice.toLocaleString('pt-BR')}, mas incluído por relevância exata)`;
-              rec.concerns.push(`Preço R$ ${rec.vehicle.price.toLocaleString('pt-BR')} excede orçamento`);
+              rec.concerns.push(
+                `Preço R$ ${rec.vehicle.price.toLocaleString('pt-BR')} excede orçamento`
+              );
             }
           });
         }
@@ -141,28 +146,44 @@ export class VehicleSearchAdapter {
       const finalResults = vehicles
         .filter(v => {
           // Apply remaining filters in-memory
-          const matchesBodyType = !filters.bodyType || (v.carroceria && v.carroceria.toLowerCase() === filters.bodyType.toLowerCase());
-          const matchesTransmission = !filters.transmission || (v.cambio && v.cambio.toLowerCase() === filters.transmission.toLowerCase());
-          const matchesBrand = !filters.brand || (v.marca && v.marca.toLowerCase() === filters.brand.toLowerCase());
+          const matchesBodyType =
+            !filters.bodyType ||
+            (v.carroceria && v.carroceria.toLowerCase() === filters.bodyType.toLowerCase());
+          const matchesTransmission =
+            !filters.transmission ||
+            (v.cambio && v.cambio.toLowerCase() === filters.transmission.toLowerCase());
+          const matchesBrand =
+            !filters.brand || (v.marca && v.marca.toLowerCase() === filters.brand.toLowerCase());
           const matchesUber = !filters.aptoUber || v.aptoUber;
           const matchesUberBlack = !filters.aptoUberBlack || v.aptoUberBlack;
           const matchesFamilia = !filters.aptoFamilia || v.aptoFamilia;
           const matchesTrabalho = !filters.aptoTrabalho || v.aptoTrabalho;
 
-          return matchesBodyType && matchesTransmission && matchesBrand && matchesUber && matchesUberBlack && matchesFamilia && matchesTrabalho;
+          return (
+            matchesBodyType &&
+            matchesTransmission &&
+            matchesBrand &&
+            matchesUber &&
+            matchesUberBlack &&
+            matchesFamilia &&
+            matchesTrabalho
+          );
         })
         .map(v => ({
           ...v,
-          score: scoreMap.get(v.id) || 0
+          score: scoreMap.get(v.id) || 0,
         }))
         .sort((a, b) => b.score - a.score) // Sort by relevance (score) DESC
         .slice(0, limit);
 
-      logger.info({
-        query,
-        found: finalResults.length,
-        topScore: finalResults[0]?.score
-      }, 'Semantic search results');
+      logger.info(
+        {
+          query,
+          found: finalResults.length,
+          topScore: finalResults[0]?.score,
+        },
+        'Semantic search results'
+      );
 
       // Se filtrou por bodyType e não encontrou nada, buscar SEM o filtro de IDs
       // para verificar se existem veículos desse tipo no estoque
@@ -191,7 +212,9 @@ export class VehicleSearchAdapter {
           // Double check filters.maxPrice exists to satisfy TS
           if (rec.vehicle.price && filters.maxPrice && rec.vehicle.price > filters.maxPrice) {
             rec.reasoning += ` (Valor acima do orçamento de R$ ${filters.maxPrice.toLocaleString('pt-BR')}, mas incluído por relevância)`;
-            rec.concerns.push(`Preço R$ ${rec.vehicle.price.toLocaleString('pt-BR')} excede orçamento`);
+            rec.concerns.push(
+              `Preço R$ ${rec.vehicle.price.toLocaleString('pt-BR')} excede orçamento`
+            );
           }
         });
       }
@@ -483,7 +506,9 @@ export class VehicleSearchAdapter {
       const reasoning = `Veículo ${index + 1} mais relevante para sua busca`;
 
       if (scoreMap && index === 0) {
-        console.log(`DEBUG: scoreMap sample key: ${Array.from(scoreMap.keys())[0]} (Type: ${typeof Array.from(scoreMap.keys())[0]})`);
+        console.log(
+          `DEBUG: scoreMap sample key: ${Array.from(scoreMap.keys())[0]} (Type: ${typeof Array.from(scoreMap.keys())[0]})`
+        );
         console.log(`DEBUG: vehicle.id: ${vehicle.id} (Type: ${typeof vehicle.id})`);
         console.log(`DEBUG: scoreMap has vehicle.id? ${scoreMap.has(vehicle.id)}`);
       }
@@ -500,7 +525,7 @@ export class VehicleSearchAdapter {
         // Let's use a simpler heuristic: score * 100.
       } else {
         // Fallback scoring
-        score = (Math.max(95 - index * 5, 70)) / 100;
+        score = Math.max(95 - index * 5, 70) / 100;
       }
 
       const matchScore = Math.round(score * 100);
