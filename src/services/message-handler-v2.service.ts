@@ -276,9 +276,49 @@ Para começar, qual é o seu nome?`;
           'Processing with LangGraph (integrated mode)'
         );
 
-        // Initialize state if new conversation
+        // Initialize state if new conversation or recovery from cache miss
         if (!currentState) {
-          currentState = this.initializeState(conversation.id, phoneNumber);
+          // Tentar recuperar do banco de dados (Resiliência)
+          if (conversation.profileData || conversation.quizAnswers) {
+            logger.info(
+              { conversationId: conversation.id },
+              '⚠️ Cache miss but found DB data - Rehydrating state'
+            );
+            currentState = this.initializeState(conversation.id, phoneNumber);
+
+            // Recover Profile
+            if (conversation.profileData) {
+              try {
+                currentState.profile = typeof conversation.profileData === 'string'
+                  ? JSON.parse(conversation.profileData)
+                  : conversation.profileData;
+              } catch (e) {
+                logger.error('Failed to parse profileData from DB');
+              }
+            }
+
+            // Recover Quiz
+            if (conversation.quizAnswers) {
+              try {
+                currentState.quiz.answers = typeof conversation.quizAnswers === 'string'
+                  ? JSON.parse(conversation.quizAnswers)
+                  : conversation.quizAnswers;
+
+                // Se tem respostas, assumimos progresso (estimado)
+                currentState.quiz.progress = Object.keys(currentState.quiz.answers).length * 10;
+              } catch (e) {
+                logger.error('Failed to parse quizAnswers from DB');
+              }
+            }
+
+            // Recover Graph Position
+            if (conversation.currentStep) {
+              currentState.graph.currentNode = conversation.currentStep;
+            }
+          } else {
+            // Nova conversa real
+            currentState = this.initializeState(conversation.id, phoneNumber);
+          }
         }
 
         const langGraph = new LangGraphConversation();
