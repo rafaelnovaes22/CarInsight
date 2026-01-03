@@ -62,10 +62,12 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
   // DEBUG: Log state before merge
   logger.info(
     {
-      statProfileBudget: state.profile?.budget,
-      extractedBudget: response.extractedPreferences?.budget,
-      stateProfileUsage: state.profile?.usage,
-      extractedUsage: response.extractedPreferences?.usage,
+      statProfileBudget: state.profile?.budget ?? 'EMPTY',
+      extractedBudget: response.extractedPreferences?.budget ?? 'EMPTY',
+      stateProfileUsage: state.profile?.usage ?? 'EMPTY',
+      extractedUsage: response.extractedPreferences?.usage ?? 'EMPTY',
+      stateProfileBodyType: state.profile?.bodyType ?? 'EMPTY',
+      extractedBodyType: response.extractedPreferences?.bodyType ?? 'EMPTY',
     },
     'DiscoveryNode: Profile merge DEBUG'
   );
@@ -86,8 +88,9 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
   // DEBUG: Log merged profile
   logger.info(
     {
-      mergedBudget: updatedProfile.budget,
-      mergedUsage: updatedProfile.usage,
+      mergedBudget: updatedProfile.budget ?? 'EMPTY',
+      mergedUsage: updatedProfile.usage ?? 'EMPTY',
+      mergedBodyType: updatedProfile.bodyType ?? 'EMPTY',
     },
     'DiscoveryNode: Profile after merge'
   );

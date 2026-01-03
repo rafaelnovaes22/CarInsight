@@ -1430,9 +1430,14 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         context: summarizeContextUtil(context),
       });
 
+      // IMPORTANT: Return updatedProfile which includes modifications like bodyType
+      // from rule-based logic (e.g., moto detection), not just raw LLM extraction
       return {
         response: nextQuestion,
-        extractedPreferences: extracted.extracted,
+        extractedPreferences: {
+          ...extracted.extracted,
+          ...updatedProfile, // Include runtime modifications like bodyType
+        },
         needsMoreInfo: readiness.missingRequired,
         canRecommend: false,
         nextMode: context.mode === 'discovery' ? 'clarification' : context.mode,
