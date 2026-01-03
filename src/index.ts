@@ -3,7 +3,6 @@ import path from 'path';
 import { env } from './config/env';
 import { logger } from './lib/logger';
 import { prisma } from './lib/prisma';
-import { inMemoryVectorStore } from './services/in-memory-vector.service';
 import webhookRoutes from './routes/webhook.routes';
 import adminRoutes from './routes/admin.routes';
 import debugRoutes from './routes/debug.routes';
@@ -117,16 +116,6 @@ async function start() {
       logger.info(`✅ Database has ${vehicleCount} vehicles`);
     }
 
-    // Initialize vector store in background (non-blocking)
-    logger.info('🧠 Starting vector store initialization in background...');
-    inMemoryVectorStore
-      .initialize()
-      .then(() => {
-        logger.info(`✅ Vector store ready with ${inMemoryVectorStore.getCount()} embeddings`);
-      })
-      .catch(error => {
-        logger.error({ error }, '⚠️  Vector store failed, will use SQL fallback');
-      });
 
     // Start Express server
     app.listen(PORT, () => {

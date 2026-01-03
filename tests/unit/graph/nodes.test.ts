@@ -24,18 +24,16 @@ vi.mock('../../../src/agents/vehicle-expert.agent', () => ({
   },
 }));
 
-// Mock Vector Search
-const { mockSearchVehicles } = vi.hoisted(() => {
-  return { mockSearchVehicles: vi.fn() };
+// Mock Vehicle Search Adapter
+const { mockSearch } = vi.hoisted(() => {
+  return { mockSearch: vi.fn() };
 });
 
-vi.mock('../../../src/services/vector-search.service', () => {
-  return {
-    VectorSearchService: class {
-      searchVehicles = mockSearchVehicles;
-    },
-  };
-});
+vi.mock('../../../src/services/vehicle-search-adapter.service', () => ({
+  vehicleSearchAdapter: {
+    search: mockSearch,
+  },
+}));
 
 describe('LangGraph Nodes Logic', () => {
   beforeEach(() => {
@@ -156,19 +154,22 @@ describe('LangGraph Nodes Logic', () => {
       const state = createInitialState();
       state.profile = { budget: 100000, vehicleType: 'SUV' };
 
-      mockSearchVehicles.mockResolvedValue([
+      mockSearch.mockResolvedValue([
         {
-          id: 'v1',
+          vehicleId: 'v1',
           matchScore: 90,
-          matchReasons: ['Good price'],
-          brand: 'Jeep',
-          model: 'Renegade',
+          reasoning: 'Good price',
+          vehicle: {
+            id: 'v1',
+            marca: 'Jeep',
+            modelo: 'Renegade',
+          },
         },
       ]);
 
       const result = await searchNode(state);
 
-      expect(mockSearchVehicles).toHaveBeenCalled();
+      expect(mockSearch).toHaveBeenCalled();
       expect(result.recommendations).toHaveLength(1);
       expect(result.recommendations?.[0].vehicleId).toBe('v1');
       expect(result.next).toBe('recommendation');
@@ -177,7 +178,7 @@ describe('LangGraph Nodes Logic', () => {
     it('should handle no results', async () => {
       const state = createInitialState();
       state.profile = { budget: 10000 };
-      mockSearchVehicles.mockResolvedValue([]);
+      mockSearch.mockResolvedValue([]);
 
       const result = await searchNode(state);
 

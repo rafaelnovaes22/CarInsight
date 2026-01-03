@@ -120,16 +120,20 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
       return recommendations.slice(0, limit); // Fallback to original order
     }
 
-    // 6. Map back to objects
+    // 6. Map back to objects with NEW matchScores based on AI ranking position
     const reranked: RankedRecommendation[] = [];
 
-    for (const item of parsed.selected) {
+    for (let i = 0; i < parsed.selected.length; i++) {
+      const item = parsed.selected[i];
       const original = recommendations[item.index];
       if (original) {
+        // Assign matchScore based on position: 1st = 100, 2nd = 90, 3rd = 85, 4th = 80, 5th = 75
+        const positionScore = i === 0 ? 100 : i === 1 ? 90 : i === 2 ? 85 : Math.max(75, 100 - i * 5);
         reranked.push({
           ...original,
+          matchScore: positionScore,
+          aiScore: positionScore, // Store AI score for reference
           reasoning: item.reasoning,
-          // Boost score artificially to reflect AI preference if needed, or just keep order
         });
       }
     }

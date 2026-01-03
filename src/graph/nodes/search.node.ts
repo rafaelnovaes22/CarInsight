@@ -1,12 +1,11 @@
 import { IGraphState } from '../../types/graph.types';
 import { AIMessage } from '@langchain/core/messages';
 import { logger } from '../../lib/logger';
-import { VectorSearchService, VehicleSearchCriteria } from '../../services/vector-search.service';
-
-const vectorSearchService = new VectorSearchService();
+import { vehicleSearchAdapter } from '../../services/vehicle-search-adapter.service';
 
 /**
- * SearchNode - Find vehicles matching customer profile using vector search
+ * SearchNode - Find vehicles matching customer profile using SQL search + AI Reranker
+ * (Simplified: removed vector search, uses SQL-based adapter)
  */
 export async function searchNode(state: IGraphState): Promise<Partial<IGraphState>> {
   logger.info({ profile: state.profile }, 'SearchNode: Searching vehicles');
@@ -27,26 +26,29 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
   const profile = state.profile;
 
   try {
-    const criteria: VehicleSearchCriteria = {
-      budget: profile.budget,
-      usage: profile.usagePattern,
-      persons: profile.familySize,
-      bodyType: profile.vehicleType !== 'qualquer' ? profile.vehicleType : undefined,
-      year: profile.minYear,
-      mileage: profile.maxKm,
-    };
+    // Build search query from profile
+    const searchQuery = [
+      profile.vehicleType !== 'qualquer' ? profile.vehicleType : '',
+      profile.usagePattern || '',
+    ].filter(Boolean).join(' ') || 'carro';
 
-    const scoredVehicles = await vectorSearchService.searchVehicles(criteria, 3);
+    const recommendations = await vehicleSearchAdapter.search(searchQuery, {
+      maxPrice: profile.budget,
+      minYear: profile.minYear,
+      maxKm: profile.maxKm,
+      bodyType: profile.vehicleType !== 'qualquer' ? profile.vehicleType : undefined,
+      limit: 5,
+    });
 
     logger.info(
       {
-        vehiclesFound: scoredVehicles.length,
-        topScores: scoredVehicles.map(v => v.matchScore),
+        vehiclesFound: recommendations.length,
+        topScores: recommendations.map(v => v.matchScore),
       },
       'SearchNode: Vehicles found'
     );
 
-    if (scoredVehicles.length === 0) {
+    if (recommendations.length === 0) {
       return {
         messages: [
           new AIMessage(
@@ -54,7 +56,7 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
           ),
         ],
         recommendations: [],
-        next: 'recommendation', // State transition
+        next: 'recommendation',
         metadata: {
           ...state.metadata,
           lastMessageAt: Date.now(),
@@ -62,32 +64,8 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
       };
     }
 
-    const topRecommendations = scoredVehicles.map(sv => {
-      return {
-        vehicleId: sv.id,
-        matchScore: sv.matchScore,
-        reasoning: sv.matchReasons.join(', '),
-        highlights: sv.matchReasons,
-        concerns: [],
-        vehicle: {
-          id: sv.id,
-          marca: sv.brand,
-          modelo: sv.model,
-          versao: sv.version,
-          ano: sv.year,
-          km: sv.mileage,
-          preco: (sv.price ?? 0).toString(),
-          combustivel: sv.fuelType,
-          cambio: sv.transmission,
-          cor: sv.color,
-          opcionais: sv.features,
-          fotos: sv.photos || [],
-        },
-      };
-    });
-
     return {
-      recommendations: topRecommendations,
+      recommendations: recommendations,
       next: 'recommendation',
       metadata: {
         ...state.metadata,
@@ -106,7 +84,7 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
         errorCount: state.metadata.errorCount + 1,
         lastMessageAt: Date.now(),
       },
-      next: 'greeting', // Reset on error
+      next: 'greeting',
     };
   }
 }

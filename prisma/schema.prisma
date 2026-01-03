@@ -50,11 +50,6 @@ model Vehicle {
   // Descrição
   descricao     String?
   
-  // Embedding vetorial (OpenAI text-embedding-3-small - 1536 dimensões)
-  embedding     String?  // JSON array de números
-  embeddingModel String? @default("text-embedding-3-small")
-  embeddingGeneratedAt DateTime?
-  
   // Status
   disponivel    Boolean  @default(true)
   

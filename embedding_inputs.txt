@@ -1,26 +1,38 @@
 📊 ANALISANDO DADOS DE INPUT PARA EMBEDDINGS...
 
-🚗 VEÍCULO: HYUNDAI HB20 2025
+🚗 VEÍCULO: HYUNDAI HB20S 2025
 --------------------------------------------------
-📝 BODY TYPE (Banco): Hatchback
-📝 DESCRIÇÃO ORIGINAL (Banco): HYUNDAI HB20 10M COMFORT 2025. FLEX, Manual, azul. 57.120 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.
+📝 BODY TYPE (Banco): Sedan
+📝 DESCRIÇÃO ORIGINAL (Banco): [ANÁLISE DO ESPECIALISTA]: O Hyundai HB20S 2025 é a escolha perfeita para quem busca conforto e espaço interno, ideal para a sua família em viagens ou para o dia a dia no trabalho. Com um porta-malas amplo e a economia do motor flex, ele se destaca também como uma excelente opção para motoristas de Uber, proporcionando uma experiência agradável aos passageiros. Aproveite a oportunidade de ter um sedan em ótimo estado de conservação, com os principais itens de conforto e segurança, por apenas R$ 82.990. 
+
+[DETALHES TÉCNICOS]: HYUNDAI HB20S 1.0 M COMFORT 2025. FLEX, Manual, prata. 61.421 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.
 🔤 STRING GERADA PARA A IA (O que vira embedding):
-"HYUNDAI HB20 10M COMFORT. ano 2025. 57.120km. Flex. Manual. cor AZUL. equipamentos: ar condicionado, direção hidráulica, airbag, abs, vidro elétrico, trava elétrica. HYUNDAI HB20 10M COMFORT 2025. FLEX, Manual, azul. 57.120 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.. preço R$ 75.990"
+"HYUNDAI HB20S 1.0 M COMFORT. ano 2025. 61.421km. Flex. Manual. cor PRATA. equipamentos: ar condicionado, direção hidráulica, airbag, abs, vidro elétrico, trava elétrica. [ANÁLISE DO ESPECIALISTA]: O Hyundai HB20S 2025 é a escolha perfeita para quem busca conforto e espaço interno, ideal para a sua família em viagens ou para o dia a dia no trabalho. Com um porta-malas amplo e a economia do motor flex, ele se destaca também como uma excelente opção para motoristas de Uber, proporcionando uma experiência agradável aos passageiros. Aproveite a oportunidade de ter um sedan em ótimo estado de conservação, com os principais itens de conforto e segurança, por apenas R$ 82.990. 
+
+[DETALHES TÉCNICOS]: HYUNDAI HB20S 1.0 M COMFORT 2025. FLEX, Manual, prata. 61.421 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.. preço R$ 82.990"
 --------------------------------------------------
 
 🚗 VEÍCULO: HYUNDAI TUCSON 2013
 --------------------------------------------------
 📝 BODY TYPE (Banco): SUV
-📝 DESCRIÇÃO ORIGINAL (Banco): HYUNDAI TUCSON GLSB 2013. FLEX, Manual, prata. 110.999 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.
+📝 DESCRIÇÃO ORIGINAL (Banco): [ANÁLISE DO ESPECIALISTA]: A Hyundai Tucson 2013 é a escolha perfeita para quem busca espaço interno e conforto, ideal para viagens em família ou para quem atua como motorista de Uber, oferecendo um ambiente agradável para os passageiros. Com seu câmbio manual e motor flex, você terá economia no dia a dia sem abrir mão da robustez e da altura do solo que um SUV proporciona. Não perca a oportunidade de adquirir este veículo em ótimo estado, pronto para te acompanhar em todas as suas aventuras! 
+
+[DETALHES TÉCNICOS]: HYUNDAI TUCSON GLSB 2013. FLEX, Manual, prata. 110.999 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.
 🔤 STRING GERADA PARA A IA (O que vira embedding):
-"HYUNDAI TUCSON GLSB. ano 2013. 110.999km. Flex. Manual. cor PRATA. equipamentos: ar condicionado, direção hidráulica, airbag, abs, vidro elétrico, trava elétrica. HYUNDAI TUCSON GLSB 2013. FLEX, Manual, prata. 110.999 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.. preço R$ 54.990"
+"HYUNDAI TUCSON GLSB. ano 2013. 110.999km. Flex. Manual. cor PRATA. equipamentos: ar condicionado, direção hidráulica, airbag, abs, vidro elétrico, trava elétrica. [ANÁLISE DO ESPECIALISTA]: A Hyundai Tucson 2013 é a escolha perfeita para quem busca espaço interno e conforto, ideal para viagens em família ou para quem atua como motorista de Uber, oferecendo um ambiente agradável para os passageiros. Com seu câmbio manual e motor flex, você terá economia no dia a dia sem abrir mão da robustez e da altura do solo que um SUV proporciona. Não perca a oportunidade de adquirir este veículo em ótimo estado, pronto para te acompanhar em todas as suas aventuras! 
+
+[DETALHES TÉCNICOS]: HYUNDAI TUCSON GLSB 2013. FLEX, Manual, prata. 110.999 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.. preço R$ 54.990"
 --------------------------------------------------
 
 🚗 VEÍCULO: FIAT IDEA 2014
 --------------------------------------------------
 📝 BODY TYPE (Banco): Minivan
-📝 DESCRIÇÃO ORIGINAL (Banco): FIAT IDEA ATTRACTIVE 1.4 2014. FLEX, Manual, bege. 176.620 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.
+📝 DESCRIÇÃO ORIGINAL (Banco): [ANÁLISE DO ESPECIALISTA]: A FIAT IDEA 2014 é a escolha perfeita para quem busca espaço interno e conforto, ideal para famílias que precisam de um veículo versátil para o dia a dia. Com seu câmbio manual e motor flex, oferece economia de combustível, tornando-se uma excelente opção também para quem trabalha com Uber ou realiza viagens. Em ótimo estado de conservação, este modelo conta com ar-condicionado, direção hidráulica e vidros elétricos, garantindo praticidade e comodidade em cada trajeto. 
+
+[DETALHES TÉCNICOS]: FIAT IDEA ATTRACTIVE 1.4 2014. FLEX, Manual, bege. 176.620 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.
 🔤 STRING GERADA PARA A IA (O que vira embedding):
-"FIAT IDEA ATTRACTIVE 1.4. ano 2014. 176.620km. Flex. Manual. cor BEGE. equipamentos: ar condicionado, direção hidráulica, airbag, abs, vidro elétrico, trava elétrica. FIAT IDEA ATTRACTIVE 1.4 2014. FLEX, Manual, bege. 176.620 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.. preço R$ 40.990"
+"FIAT IDEA ATTRACTIVE 1.4. ano 2014. 176.620km. Flex. Manual. cor BEGE. equipamentos: ar condicionado, direção hidráulica, airbag, abs, vidro elétrico, trava elétrica. [ANÁLISE DO ESPECIALISTA]: A FIAT IDEA 2014 é a escolha perfeita para quem busca espaço interno e conforto, ideal para famílias que precisam de um veículo versátil para o dia a dia. Com seu câmbio manual e motor flex, oferece economia de combustível, tornando-se uma excelente opção também para quem trabalha com Uber ou realiza viagens. Em ótimo estado de conservação, este modelo conta com ar-condicionado, direção hidráulica e vidros elétricos, garantindo praticidade e comodidade em cada trajeto. 
+
+[DETALHES TÉCNICOS]: FIAT IDEA ATTRACTIVE 1.4 2014. FLEX, Manual, bege. 176.620 km rodados. Equipado com: Ar-condicionado, Direção hidráulica, Airbag, Freios ABS, Vidros elétricos, Travas elétricas. Veículo em ótimo estado de conservação.. preço R$ 40.990"
 --------------------------------------------------
 

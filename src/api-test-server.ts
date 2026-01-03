@@ -3,29 +3,9 @@ import path from 'path';
 import { env } from './config/env';
 import { logger } from './lib/logger';
 import { MessageHandlerV2 } from './services/message-handler-v2.service';
-import { inMemoryVectorStore } from './services/in-memory-vector.service';
 
 const app = express();
 const messageHandler = new MessageHandlerV2();
-
-let vectorStoreReady = false;
-
-async function initializeVectorStore() {
-  try {
-    logger.info('🧠 Inicializando vector store...');
-    await inMemoryVectorStore.initialize();
-    vectorStoreReady = true;
-    logger.info('✅ Vector store pronto!');
-  } catch (error) {
-    logger.error({ error }, '❌ Erro ao inicializar vector store');
-    logger.warn('⚠️  Continuando sem vector search (usará SQL fallback)');
-    vectorStoreReady = false;
-  }
-}
-
-initializeVectorStore().catch(err => {
-  logger.error({ error: err }, 'Fatal error initializing vector store');
-});
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));

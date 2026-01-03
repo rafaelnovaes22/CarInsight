@@ -1,13 +1,14 @@
 /**
  * Vehicle Search Adapter
  *
- * Adapter to use inMemoryVectorStore with the interface expected by VehicleExpertAgent
+ * Simplified SQL-based search adapter.
+ * Uses database filters + AI Reranker for recommendations.
  *
  * **Feature: exact-vehicle-search**
  * Requirements: 1.1, 1.2
  */
 
-import { inMemoryVectorStore } from './in-memory-vector.service';
+
 import { prisma } from '../lib/prisma';
 import { VehicleRecommendation } from '../types/state.types';
 import { logger } from '../lib/logger';
@@ -111,115 +112,9 @@ export class VehicleSearchAdapter {
         return recommendations;
       }
 
-      // Get vehicle IDs with SCORES from semantic search
-      const scoredResults = await inMemoryVectorStore.searchWithScores(query, limit * 2);
-      console.log(`DEBUG: scoredResults lengths: ${scoredResults.length}`);
-
-      // Se busca semântica não retornou nada, fazer fallback para busca SQL
-      if (scoredResults.length === 0) {
-        console.log('DEBUG: Falling back to SQL');
-        logger.info({ query, filters }, 'Semantic search returned empty, falling back to SQL');
-        return this.searchFallbackSQL(filters);
-      }
-
-      // Map vehicle IDs
-      const vehicleIds = scoredResults.map(r => r.vehicleId);
-      const scoreMap = new Map(scoredResults.map(r => [r.vehicleId, r.score]));
-
-      // Fetch full vehicle data
-      const vehicles = await prisma.vehicle.findMany({
-        where: {
-          id: {
-            in: vehicleIds,
-            notIn: filters.excludeIds || [],
-          },
-          disponivel: true,
-          // Apply filters
-          ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
-          ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
-          ...(filters.minYear && { ano: { gte: filters.minYear } }),
-          ...(filters.maxKm && { km: { lte: filters.maxKm } }),
-        },
-      });
-
-      // Filter and Sort in Memory based on Semantic Score
-      const finalResults = vehicles
-        .filter(v => {
-          // Apply remaining filters in-memory
-          const matchesBodyType =
-            !filters.bodyType ||
-            (v.carroceria && v.carroceria.toLowerCase() === filters.bodyType.toLowerCase());
-          const matchesTransmission =
-            !filters.transmission ||
-            (v.cambio && v.cambio.toLowerCase() === filters.transmission.toLowerCase());
-          const matchesBrand =
-            !filters.brand || (v.marca && v.marca.toLowerCase() === filters.brand.toLowerCase());
-          const matchesUber = !filters.aptoUber || v.aptoUber;
-          const matchesUberBlack = !filters.aptoUberBlack || v.aptoUberBlack;
-          const matchesFamilia = !filters.aptoFamilia || v.aptoFamilia;
-          const matchesTrabalho = !filters.aptoTrabalho || v.aptoTrabalho;
-
-          return (
-            matchesBodyType &&
-            matchesTransmission &&
-            matchesBrand &&
-            matchesUber &&
-            matchesUberBlack &&
-            matchesFamilia &&
-            matchesTrabalho
-          );
-        })
-        .map(v => ({
-          ...v,
-          score: scoreMap.get(v.id) || 0,
-        }))
-        .sort((a, b) => b.score - a.score) // Sort by relevance (score) DESC
-        .slice(0, limit);
-
-      logger.info(
-        {
-          query,
-          found: finalResults.length,
-          topScore: finalResults[0]?.score,
-        },
-        'Semantic search results'
-      );
-
-      // Se filtrou por bodyType e não encontrou nada, buscar SEM o filtro de IDs
-      // para verificar se existem veículos desse tipo no estoque
-      if (finalResults.length === 0 && filters.bodyType) {
-        const existsInStock = await prisma.vehicle.count({
-          where: {
-            disponivel: true,
-            carroceria: { equals: filters.bodyType, mode: 'insensitive' },
-          },
-        });
-
-        if (existsInStock === 0) {
-          logger.info({ bodyType: filters.bodyType }, 'Body type not available in stock');
-          return []; // Retorna vazio para trigger "não temos X no estoque"
-        }
-
-        // Se existe no estoque mas não veio da busca semântica, fazer fallback SQL
-        return this.searchFallbackSQL(filters);
-      }
-
-      const recommendations = this.formatVehicleResults(finalResults, scoreMap, query);
-
-      // Add Smart Budget reasoning if needed
-      if (filters && filters.maxPrice) {
-        recommendations.forEach(rec => {
-          // Double check filters.maxPrice exists to satisfy TS
-          if (rec.vehicle.price && filters.maxPrice && rec.vehicle.price > filters.maxPrice) {
-            rec.reasoning += ` (Valor acima do orçamento de R$ ${filters.maxPrice.toLocaleString('pt-BR')}, mas incluído por relevância)`;
-            rec.concerns.push(
-              `Preço R$ ${rec.vehicle.price.toLocaleString('pt-BR')} excede orçamento`
-            );
-          }
-        });
-      }
-
-      return recommendations;
+      // Step 3: SQL-based search (embeddings removed - AI Reranker handles intelligent ordering)
+      logger.info({ query, filters }, 'SQL-based search');
+      return this.searchFallbackSQL(filters);
     } catch (error) {
       logger.error({ error, query, filters }, 'Error searching vehicles');
       return [];
@@ -377,11 +272,11 @@ export class VehicleSearchAdapter {
         // Apply other filters
         ...(filters.maxPrice || filters.minPrice
           ? {
-              preco: {
-                ...(filters.maxPrice && { lte: filters.maxPrice }),
-                ...(filters.minPrice && { gte: filters.minPrice }),
-              },
-            }
+            preco: {
+              ...(filters.maxPrice && { lte: filters.maxPrice }),
+              ...(filters.minPrice && { gte: filters.minPrice }),
+            },
+          }
           : {}),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
         ...(filters.maxKm && { km: { lte: filters.maxKm } }),
