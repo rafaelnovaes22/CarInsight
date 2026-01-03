@@ -47,7 +47,7 @@ Me diz o que prefere!`;
     const vehiclesList = vehiclesToShow
       .map((rec, i) => {
         const v = rec.vehicle;
-        const link = v.detailsUrl || v.url;
+        const link = v?.detailsUrl;
 
         // Só mostrar % match em recomendações personalizadas
         const matchScore = showMatchScore && rec.matchScore ? `${Math.round(rec.matchScore)}%` : '';
@@ -58,10 +58,10 @@ Me diz o que prefere!`;
             ? '🚗 '
             : `${i + 1}. ${i === 0 ? '🏆 ' : ''}`;
 
-        let item = `${prefix}*${v.brand} ${v.model} ${v.year}*${matchScore ? ` (${matchScore} match)` : ''}
-   💰 R$ ${v.price.toLocaleString('pt-BR')}
-   🛣️ ${v.mileage?.toLocaleString('pt-BR') || '?'} km
-   🚗 ${v.bodyType || 'N/A'}${v.transmission ? ` | ${v.transmission}` : ''}`;
+        let item = `${prefix}*${v?.brand || ''} ${v?.model || ''} ${v?.year || ''}*${matchScore ? ` (${matchScore} match)` : ''}
+   💰 R$ ${(v?.price || 0).toLocaleString('pt-BR')}
+   🛣️ ${v?.mileage?.toLocaleString('pt-BR') || '?'} km
+   🚗 ${v?.bodyType || 'N/A'}${v?.transmission ? ` | ${v?.transmission}` : ''}`;
 
         if (link) {
           item += `\n   🔗 ${link}`;
@@ -110,7 +110,7 @@ Me diz o que prefere!`;
         .slice(0, 5)
         .map(
           (r, i) =>
-            `${i + 1}. ${r.vehicle.brand} ${r.vehicle.model} - R$ ${r.vehicle.price.toLocaleString('pt-BR')}`
+            `${i + 1}. ${r.vehicle?.brand || 'N/A'} ${r.vehicle?.model || 'N/A'} - R$ ${(r.vehicle?.price || 0).toLocaleString('pt-BR')}`
         )
         .join('\n')
     );

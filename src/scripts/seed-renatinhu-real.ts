@@ -801,8 +801,9 @@ async function main() {
       });
       inserted++;
       console.log(`✅ ${inserted}/27 - ${veiculo.marca} ${veiculo.modelo} ${veiculo.ano}`);
-    } catch (error: any) {
-      console.error(`❌ Erro ao inserir ${veiculo.marca} ${veiculo.modelo}:`, error.message);
+    } catch (error) {
+      const err = error as Error;
+      console.error(`❌ Erro ao inserir ${veiculo.marca} ${veiculo.modelo}:`, err.message);
     }
   }
 

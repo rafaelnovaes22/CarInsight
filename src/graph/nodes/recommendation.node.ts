@@ -61,29 +61,24 @@ function formatRecommendations(recommendations: any[]): string {
 
     message += `━━━━━━━━━━━━━━━━━━━━━\n`;
     message += `${index + 1}️⃣ Match Score: ${rec.matchScore}/100 ⭐\n\n`;
-    message += `🚗 ${vehicle.marca || ''} ${vehicle.modelo || ''} ${vehicle.versao || ''}\n`;
+    message += `🚗 ${vehicle.brand} ${vehicle.model} ${vehicle.version || ''}\n`;
 
-    const ano = vehicle.ano || 'N/D';
-    const km =
-      vehicle.km !== undefined && vehicle.km !== null ? vehicle.km.toLocaleString('pt-BR') : 'N/D';
+    const ano = vehicle.year || 0;
+    const km = (vehicle.mileage || 0).toLocaleString('pt-BR');
     message += `📅 Ano: ${ano} | 🛣️ ${km} km\n`;
 
     let priceFormatted = 'Consulte';
-    if (vehicle.preco) {
-      try {
-        priceFormatted = `R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      } catch (e) {
-        priceFormatted = 'R$ ' + vehicle.preco; // Fallback
-      }
+    if (vehicle.price) {
+      priceFormatted = `R$ ${vehicle.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
     message += `💰 ${priceFormatted}\n`;
-    message += `🎨 Cor: ${vehicle.cor || 'Não informada'}\n`;
+    message += `🎨 Cor: ${vehicle.color || 'Não informada'}\n`;
 
-    if (vehicle.combustivel) {
-      message += `⛽ ${vehicle.combustivel}`;
-      if (vehicle.cambio) {
-        message += ` | 🔧 ${vehicle.cambio}`;
+    if (vehicle.fuelType) {
+      message += `⛽ ${vehicle.fuelType}`;
+      if (vehicle.transmission) {
+        message += ` | 🔧 ${vehicle.transmission}`;
       }
       message += `\n`;
     }
@@ -183,21 +178,17 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     if (vehicleIndex >= 0 && vehicleIndex < state.recommendations.length) {
       const rec = state.recommendations[vehicleIndex];
       const vehicle = rec.vehicle;
+      if (!vehicle) return { messages: [] };
 
       let detailsMessage = `📋 Detalhes completos:\n\n`;
-      detailsMessage += `🚗 ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}\n`;
-      detailsMessage += `📅 Ano: ${vehicle.ano}\n`;
-      detailsMessage += `🛣️ Quilometragem: ${vehicle.km.toLocaleString('pt-BR')} km\n`;
-      detailsMessage += `💰 Preço: R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-      detailsMessage += `🎨 Cor: ${vehicle.cor}\n`;
+      detailsMessage += `🚗 ${vehicle.brand} ${vehicle.model} ${vehicle.version || ''}\n`;
+      detailsMessage += `📅 Ano: ${vehicle.year || 'N/A'}\n`;
+      detailsMessage += `🛣️ Quilometragem: ${(vehicle.mileage || 0).toLocaleString('pt-BR')} km\n`;
+      detailsMessage += `💰 Preço: R$ ${(vehicle.price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+      detailsMessage += `🎨 Cor: ${vehicle.color || 'N/A'}\n`;
 
-      if (vehicle.combustivel) detailsMessage += `⛽ Combustível: ${vehicle.combustivel}\n`;
-      if (vehicle.cambio) detailsMessage += `🔧 Câmbio: ${vehicle.cambio}\n`;
-      if (vehicle.portas) detailsMessage += `🚪 Portas: ${vehicle.portas}\n`;
-
-      if (vehicle.descricao) {
-        detailsMessage += `\n📝 ${vehicle.descricao}\n`;
-      }
+      if (vehicle.fuelType) detailsMessage += `⛽ Combustível: ${vehicle.fuelType}\n`;
+      if (vehicle.transmission) detailsMessage += `🔧 Câmbio: ${vehicle.transmission}\n`;
 
       detailsMessage += `\n━━━━━━━━━━━━━━━━━━━━━\n\n`;
       detailsMessage += `Gostou? Digite:\n`;

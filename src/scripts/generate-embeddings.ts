@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Vehicle } from '@prisma/client';
 import {
   generateEmbedding,
   embeddingToString,
@@ -18,7 +18,7 @@ interface GenerateEmbeddingsOptions {
 /**
  * Gera texto descritivo para o veículo (usado para criar embedding)
  */
-function buildVehicleDescription(vehicle: any): string {
+function buildVehicleDescription(vehicle: Vehicle): string {
   const parts = [
     vehicle.marca,
     vehicle.modelo,
@@ -64,8 +64,8 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     const whereClause = forceRegenerate
       ? {}
       : {
-          OR: [{ embedding: null }, { embedding: '' }],
-        };
+        OR: [{ embedding: null }, { embedding: '' }],
+      };
 
     const vehicles = await prisma.vehicle.findMany({
       where: whereClause,
@@ -122,10 +122,11 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
           if (i + batch.indexOf(vehicle) + 1 < vehicles.length) {
             await new Promise(resolve => setTimeout(resolve, delayMs));
           }
-        } catch (error: any) {
+        } catch (error) {
+          const err = error as any;
           errors++;
-          console.error(`     ❌ Erro ao processar ${vehicle.modelo}: ${error.message}`);
-          logger.error({ vehicleId: vehicle.id, error: error.message }, 'Erro ao gerar embedding');
+          console.error(`     ❌ Erro ao processar ${vehicle.modelo}: ${err.message}`);
+          logger.error({ vehicleId: vehicle.id, error: err.message }, 'Erro ao gerar embedding');
         }
       }
     }
@@ -156,9 +157,10 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     } else {
       console.log(`⚠️  ${totalVehicles - totalWithEmbeddings} veículos ainda sem embeddings\n`);
     }
-  } catch (error: any) {
-    console.error('\n❌ Erro fatal:', error.message);
-    logger.error({ error: error.message }, 'Erro fatal ao gerar embeddings');
+  } catch (error) {
+    const err = error as any;
+    console.error('\n❌ Erro fatal:', err.message);
+    logger.error({ error: err.message }, 'Erro fatal ao gerar embeddings');
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -193,8 +195,9 @@ async function regenerateVehicleEmbedding(vehicleId: string): Promise<void> {
     });
 
     console.log('✅ Embedding regenerado com sucesso!\n');
-  } catch (error: any) {
-    console.error(`❌ Erro: ${error.message}`);
+  } catch (error) {
+    const err = error as any;
+    console.error(`❌ Erro: ${err.message}`);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -232,8 +235,9 @@ async function showEmbeddingStats(): Promise<void> {
       console.log(`  - ${group.embeddingModel || 'null'}: ${group._count} veículos`);
     });
     console.log('='.repeat(60) + '\n');
-  } catch (error: any) {
-    console.error(`❌ Erro: ${error.message}`);
+  } catch (error) {
+    const err = error as any;
+    console.error(`❌ Erro: ${err.message}`);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -305,8 +309,9 @@ if (!command || command === 'help') {
     }
 
     process.exit(0);
-  } catch (error: any) {
-    console.error(`\n❌ Erro fatal: ${error.message}\n`);
+  } catch (error) {
+    const err = error as any;
+    console.error(`\n❌ Erro fatal: ${err.message}\n`);
     process.exit(1);
   }
 })();

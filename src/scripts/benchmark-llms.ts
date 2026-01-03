@@ -32,7 +32,7 @@ interface TestCase {
   systemPrompt: string;
   userMessage: string;
   expectedKeywords?: string[]; // Palavras que devem aparecer
-  context?: any;
+  context?: unknown;
 }
 
 // Casos de teste representativos
@@ -274,8 +274,9 @@ async function runBenchmark() {
 
       // Delay para não bater rate limit
       await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error: any) {
-      console.log(`❌ Erro: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      console.log(`❌ Erro: ${err.message}`);
     }
   }
 

@@ -115,9 +115,9 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
 
   // Filter for exact matches
   const matchingResults = result.recommendations.filter(rec => {
-    const vehicleBrand = rec.vehicle.brand?.toLowerCase() || '';
-    const vehicleModel = rec.vehicle.model?.toLowerCase() || '';
-    const vehicleYear = rec.vehicle.year;
+    const vehicleBrand = rec.vehicle?.brand?.toLowerCase() || '';
+    const vehicleModel = rec.vehicle?.model?.toLowerCase() || '';
+    const vehicleYear = rec.vehicle?.year || 0;
 
     if (requestedBrand && !vehicleBrand.includes(requestedBrand)) return false;
     if (requestedModel && !vehicleModel.includes(requestedModel)) return false;
@@ -161,10 +161,10 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
           _lastSearchType: 'specific' as const,
           _lastShownVehicles: matchingResults.map(r => ({
             vehicleId: r.vehicleId,
-            brand: r.vehicle.brand,
-            model: r.vehicle.model,
-            year: r.vehicle.year,
-            price: r.vehicle.price,
+            brand: r.vehicle?.brand || 'N/A',
+            model: r.vehicle?.model || 'N/A',
+            year: r.vehicle?.year || 0,
+            price: r.vehicle?.price ?? 0,
           })),
         },
         {
@@ -194,12 +194,12 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
   // Check for same model different year
   if (requestedYear && requestedModel) {
     const sameModelResults = result.recommendations.filter(rec => {
-      const vehicleModel = rec.vehicle.model?.toLowerCase() || '';
+      const vehicleModel = rec.vehicle?.model?.toLowerCase() || '';
       return vehicleModel.includes(requestedModel);
     });
 
     if (sameModelResults.length > 0) {
-      const availableYears = [...new Set(sameModelResults.map(r => r.vehicle.year))].sort(
+      const availableYears = [...new Set(sameModelResults.map(r => r.vehicle?.year || 0))].sort(
         (a, b) => b - a
       );
       const yearsText = availableYears.slice(0, 5).join(', ');
@@ -244,9 +244,9 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
     });
 
     if (similarResults.length > 0) {
-      similarResults.sort((a, b) => a.vehicle.price - b.vehicle.price);
+      similarResults.sort((a, b) => (a.vehicle?.price ?? 0) - (b.vehicle?.price ?? 0));
 
-      const firstPrice = similarResults[0].vehicle.price.toLocaleString('pt-BR', {
+      const firstPrice = (similarResults[0].vehicle?.price ?? 0).toLocaleString('pt-BR', {
         minimumFractionDigits: 0,
       });
 

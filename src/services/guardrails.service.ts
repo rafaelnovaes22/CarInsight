@@ -266,7 +266,7 @@ export class GuardrailsService {
    * Check for inappropriate content in output
    */
   private containsInappropriateContent(output: string): boolean {
-    const lowerOutput = output.toLowerCase();
+    // const lowerOutput = output.toLowerCase();
 
     // Basic content filtering
     const inappropriatePatterns = [

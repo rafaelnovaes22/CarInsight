@@ -107,9 +107,10 @@ export async function handleUberBlackQuestion(
     response += `✅ *Temos ${uberBlackVehicles.length} veículos aptos para Uber Black:*\n\n`;
     uberBlackVehicles.slice(0, 5).forEach((rec, i) => {
       const v = rec.vehicle;
+      if (!v) return;
       response += `${i + 1}. ${v.brand} ${v.model} ${v.year}\n`;
-      response += `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n`;
-      response += `   📍 ${v.mileage.toLocaleString('pt-BR')}km\n\n`;
+      response += `   💰 R$ ${(v.price || 0).toLocaleString('pt-BR')}\n`;
+      response += `   📍 ${(v.mileage || 0).toLocaleString('pt-BR')}km\n\n`;
     });
     response += `_Quer saber mais sobre algum?_`;
   } else {

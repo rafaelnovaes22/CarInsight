@@ -6,7 +6,7 @@
  * and generates personalized recommendations.
  */
 
-import { chatCompletion } from '../lib/llm-router';
+// import { chatCompletion } from '../lib/llm-router';
 import { logger } from '../lib/logger';
 // import { vehicleSearchAdapter } from '../services/vehicle-search-adapter.service';
 import { preferenceExtractor } from './preference-extractor.agent';
@@ -16,10 +16,6 @@ import { CustomerProfile, VehicleRecommendation } from '../types/state.types';
 import {
   ConversationContext,
   ConversationResponse,
-  ConversationMode,
-  ReadinessAssessment,
-  QuestionGenerationOptions,
-  VehicleSearchQuery,
 } from '../types/conversation.types';
 
 // Import constants from refactored module
@@ -27,20 +23,14 @@ import {
   SYSTEM_PROMPT,
   capitalize,
   capitalizeWords,
-  SEDAN_COMPACT_MODELS,
-  SEDAN_MEDIUM_MODELS,
-  detectBodyTypeFromModel,
-  detectVehicleCategory,
 } from './vehicle-expert/constants';
 
 // Import extractors
-import { extractTradeInInfo, inferBrandFromModel } from './vehicle-expert/extractors';
+import { extractTradeInInfo } from './vehicle-expert/extractors';
 
 // Import formatters
 import {
   formatRecommendations as formatRecommendationsUtil,
-  generateRecommendationIntro as generateRecommendationIntroUtil,
-  type SearchType,
 } from './vehicle-expert/formatters';
 
 // Import builders
@@ -59,8 +49,6 @@ import {
   generateNextQuestion as generateNextQuestionUtil,
   handleUberBlackQuestion,
   handleUberEligibilityQuestion,
-  handleTradeInInitial,
-  handleTradeInAfterSelection,
   handleSuggestionResponse,
   handleSpecificModel,
   type SuggestionResponseContext,
@@ -70,37 +58,21 @@ import {
 // Import intent detection functions
 import {
   detectUserQuestion,
-  detectAffirmativeResponse,
-  detectNegativeResponse,
-  detectSearchIntent,
   detectPostRecommendationIntent,
-  isPostRecommendationResponse,
   isRecommendationRequest,
-  type SearchIntent,
-  type PostRecommendationIntent,
 } from './vehicle-expert/intent-detector';
 
 // Import post-recommendation handlers
 import {
   routePostRecommendationIntent,
   isFinancingResponse,
-  handleFinancingResponse,
   handleWantOthers,
   type PostRecommendationContext,
   type ShownVehicle,
   type WantOthersContext,
 } from './vehicle-expert/handlers';
 
-/**
- * Helper function to get the correct app name based on user's mention
- * Returns the name the user actually used (99, Uber, or generic "app")
- */
-function getAppName(profile: Partial<CustomerProfile>): string {
-  if (profile.appMencionado === '99') return '99';
-  if (profile.appMencionado === 'uber') return 'Uber';
-  if (profile.appMencionado === 'app') return 'app de transporte';
-  return 'Uber/99'; // Default when not specified
-}
+
 
 /**
  * Helper function to get the app category name (e.g., "99Pop" or "Uber X")
@@ -369,11 +341,11 @@ export class VehicleExpertAgent {
                 _searchedItem: targetModel,
                 _lastShownVehicles: [exactResult.exactMatch].map(r => ({
                   vehicleId: r.vehicleId,
-                  brand: r.vehicle.brand,
-                  model: r.vehicle.model,
-                  year: r.vehicle.year,
-                  price: r.vehicle.price,
-                  bodyType: r.vehicle.bodyType,
+                  brand: r.vehicle?.brand || 'N/A',
+                  model: r.vehicle?.model || 'N/A',
+                  year: r.vehicle?.year || 0,
+                  price: r.vehicle?.price ?? 0,
+                  bodyType: r.vehicle?.bodyType,
                 })),
               },
               needsMoreInfo: [],
@@ -530,7 +502,7 @@ export class VehicleExpertAgent {
                   brand: r.vehicle?.brand || '',
                   model: r.vehicle?.model || '',
                   year: r.vehicle?.year || 0,
-                  price: r.vehicle?.price || 0,
+                  price: r.vehicle?.price ?? 0,
                   bodyType: r.vehicle?.bodyType,
                 })),
               },
@@ -583,16 +555,6 @@ export class VehicleExpertAgent {
 
         if (tradeInInfo.model || tradeInInfo.km) {
           logger.info({ userMessage, tradeInInfo }, 'Processing trade-in vehicle details');
-
-          const vehicleName = `${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}`;
-          const tradeInText = [
-            tradeInInfo.brand,
-            tradeInInfo.model,
-            tradeInInfo.year,
-            tradeInInfo.km ? `(${tradeInInfo.km.toLocaleString('pt-BR')} km)` : null,
-          ]
-            .filter(Boolean)
-            .join(' ');
 
           // DELEGATION: Delegate detailed trade-in response to trade_in node
           logger.info('VehicleExpert: Delegating trade-in details to trade_in node');
@@ -946,11 +908,11 @@ export class VehicleExpertAgent {
             _lastSearchType: 'specific' as const,
             _lastShownVehicles: alternativeYearResult.recommendations.map(r => ({
               vehicleId: r.vehicleId,
-              brand: r.vehicle.brand,
-              model: r.vehicle.model,
-              year: r.vehicle.year,
-              price: r.vehicle.price,
-              bodyType: r.vehicle.bodyType,
+              brand: r.vehicle?.brand || 'N/A',
+              model: r.vehicle?.model || 'N/A',
+              year: r.vehicle?.year || 0,
+              price: r.vehicle?.price ?? 0,
+              bodyType: r.vehicle?.bodyType,
             })),
           },
           needsMoreInfo: [],
@@ -1035,11 +997,11 @@ export class VehicleExpertAgent {
               _lastSearchType: 'recommendation' as const,
               _lastShownVehicles: (availabilityCheck.vehicleList || []).map(r => ({
                 vehicleId: r.vehicleId,
-                brand: r.vehicle.brand,
-                model: r.vehicle.model,
-                year: r.vehicle.year,
-                price: r.vehicle.price,
-                bodyType: r.vehicle.bodyType,
+                brand: r.vehicle?.brand || 'N/A',
+                model: r.vehicle?.model || 'N/A',
+                year: r.vehicle?.year || 0,
+                price: r.vehicle?.price ?? 0,
+                bodyType: r.vehicle?.bodyType,
               })),
             },
             needsMoreInfo: [],
@@ -1247,10 +1209,10 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             _lastSearchType: 'recommendation' as const,
             _lastShownVehicles: filteredRecommendations.map(r => ({
               vehicleId: r.vehicleId,
-              brand: r.vehicle.brand,
-              model: r.vehicle.model,
-              year: r.vehicle.year,
-              price: r.vehicle.price,
+              brand: r.vehicle?.brand || 'N/A',
+              model: r.vehicle?.model || 'N/A',
+              year: r.vehicle?.year || 0,
+              price: r.vehicle?.price ?? 0,
             })),
             _excludeVehicleIds: undefined, // Limpar após usar
           },

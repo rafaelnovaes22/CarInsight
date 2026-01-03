@@ -161,7 +161,7 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
   const shownVehicleIds = lastShownVehicles.map(v => v.vehicleId);
   const newResults = similarResults.filter(r => {
     if (shownVehicleIds.includes(r.vehicleId)) return false;
-    if (bodyType && r.vehicle.bodyType) {
+    if (bodyType && r.vehicle?.bodyType) {
       const resultBodyType = r.vehicle.bodyType.toLowerCase();
       if (!resultBodyType.includes(bodyType)) return false;
     }
@@ -169,7 +169,7 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
   });
 
   // 7. Sort by price (most expensive first - benefits dealership)
-  newResults.sort((a, b) => b.vehicle.price - a.vehicle.price);
+  newResults.sort((a, b) => (b.vehicle?.price ?? 0) - (a.vehicle?.price ?? 0));
 
   // 8. Handle results
   if (newResults.length > 0) {
@@ -193,10 +193,10 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
           _lastSearchType: 'recommendation' as const,
           _lastShownVehicles: newResults.slice(0, 5).map(r => ({
             vehicleId: r.vehicleId,
-            brand: r.vehicle.brand,
-            model: r.vehicle.model,
-            year: r.vehicle.year,
-            price: r.vehicle.price,
+            brand: r.vehicle?.brand || 'N/A',
+            model: r.vehicle?.model || 'N/A',
+            year: r.vehicle?.year || 0,
+            price: r.vehicle?.price ?? 0,
           })),
         },
         {

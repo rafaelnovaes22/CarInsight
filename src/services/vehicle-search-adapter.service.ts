@@ -9,6 +9,7 @@
 
 import { inMemoryVectorStore } from './in-memory-vector.service';
 import { prisma } from '../lib/prisma';
+import { Vehicle as PrismaVehicle } from '@prisma/client';
 import { VehicleRecommendation } from '../types/state.types';
 import { logger } from '../lib/logger';
 import { exactSearchParser, ExtractedFilters } from './exact-search-parser.service';
@@ -154,6 +155,7 @@ export class VehicleSearchAdapter {
           id: vehicle.id,
           brand: vehicle.marca,
           model: vehicle.modelo,
+          version: vehicle.versao,
           year: vehicle.ano,
           price: vehicle.preco,
           mileage: vehicle.km,
@@ -254,6 +256,7 @@ export class VehicleSearchAdapter {
         id: match.vehicle.id,
         brand: match.vehicle.marca,
         model: match.vehicle.modelo,
+        version: match.vehicle.versao,
         year: match.vehicle.ano,
         price: match.vehicle.preco,
         mileage: match.vehicle.km,
@@ -440,7 +443,7 @@ export class VehicleSearchAdapter {
   /**
    * Formata veículos para o formato VehicleRecommendation
    */
-  private formatVehicleResults(vehicles: any[]): VehicleRecommendation[] {
+  private formatVehicleResults(vehicles: PrismaVehicle[]): VehicleRecommendation[] {
     return vehicles.map((vehicle, index) => ({
       vehicleId: vehicle.id,
       matchScore: Math.max(95 - index * 5, 70),
@@ -451,6 +454,7 @@ export class VehicleSearchAdapter {
         id: vehicle.id,
         brand: vehicle.marca,
         model: vehicle.modelo,
+        version: vehicle.versao,
         year: vehicle.ano,
         price: vehicle.preco,
         mileage: vehicle.km,
@@ -467,7 +471,7 @@ export class VehicleSearchAdapter {
   /**
    * Generate highlights for a vehicle
    */
-  private generateHighlights(vehicle: any): string[] {
+  private generateHighlights(vehicle: PrismaVehicle): string[] {
     const highlights: string[] = [];
 
     // Low mileage

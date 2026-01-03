@@ -223,12 +223,12 @@ describe('LangGraph Nodes Logic', () => {
           concerns: [],
           vehicle: {
             id: 'v1',
-            marca: 'Jeep',
-            modelo: 'Renegade',
-            ano: 2021,
-            km: 30000,
-            preco: '90000',
-            cor: 'Preto',
+            brand: 'Jeep',
+            model: 'Renegade',
+            year: 2021,
+            mileage: 30000,
+            price: 90000,
+            color: 'Preto',
           } as any,
         },
       ];
@@ -237,6 +237,34 @@ describe('LangGraph Nodes Logic', () => {
       const result = await recommendationNode(state);
 
       expect(result.messages?.[0].content).toContain('Jeep Renegade');
+    });
+
+    it('should handle vehicle with missing details gracefully', async () => {
+      const state = createInitialState();
+      state.recommendations = [
+        {
+          vehicleId: 'v2',
+          matchScore: 80,
+          reasoning: 'Fallback test',
+          highlights: [],
+          concerns: [],
+          vehicle: {
+            id: 'v2',
+            brand: 'Fiat',
+            model: 'Uno',
+            // Missing year, mileage, price to test fallbacks
+          } as any,
+        },
+      ];
+      state.messages = [new HumanMessage('Ver opções')];
+
+      const result = await recommendationNode(state);
+
+      const content = result.messages?.[0].content as string;
+      expect(content).toContain('Fiat Uno');
+      expect(content).toContain('Ano: 0'); // Fallback for year
+      expect(content).toContain('0 km');   // Fallback for mileage
+      expect(content).toContain('Consulte'); // Fallback for price
     });
 
     it('should handle handoff request', async () => {
