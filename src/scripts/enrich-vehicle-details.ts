@@ -76,11 +76,10 @@ async function enrichVehicles() {
         where: { id: vehicle.id },
         data: {
           descricao: newDesc,
-          embedding: null, // Force regeneration
         },
       });
 
-      console.log('   ✅ Saved & Embedding cleared.');
+      console.log('   ✅ Saved.');
 
       // Rate limit protection
       await delay(500);
@@ -89,9 +88,7 @@ async function enrichVehicles() {
     }
   }
 
-  console.log(
-    '\n✨ Enrichment Complete! Run "npm run embeddings:generate" (or force) to regenerate embeddings.'
-  );
+  console.log('\n✨ Enrichment Complete!');
 }
 
 enrichVehicles()
