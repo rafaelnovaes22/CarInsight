@@ -5,24 +5,12 @@
  * Supports various formats: "Onix 2019", "2019 Onix", "Onix 19", "Onix 2018 a 2020", "Onix 2019/2020"
  *
  * **Feature: exact-vehicle-search**
- * Requirements: 1.1, 5.1, 5.2, 5.3, 5.4
+ * Requirements: 1.1, 5.1, 5.2, 5.3, 5.4 - Dynamic Model Loading
  */
 
+import { prisma } from '../lib/prisma';
 // Lazy logger import to avoid env validation issues during testing
-let logger: { debug: (...args: any[]) => void } | null = null;
-
-async function getLogger() {
-  if (!logger) {
-    try {
-      const loggerModule = await import('../lib/logger');
-      logger = loggerModule.logger;
-    } catch {
-      // Fallback for testing environment
-      logger = { debug: () => {} };
-    }
-  }
-  return logger;
-}
+import { logger } from '../lib/logger';
 
 /**
  * Extracted filters from user query
@@ -35,241 +23,82 @@ export interface ExtractedFilters {
 }
 
 /**
- * Common Brazilian car models for pattern matching
- */
-const BRAZILIAN_CAR_MODELS = [
-  // Chevrolet (incluindo clássicos)
-  'onix',
-  'prisma',
-  'cruze',
-  'tracker',
-  'spin',
-  'cobalt',
-  'montana',
-  's10',
-  'trailblazer',
-  'equinox',
-  'celta',
-  'corsa',
-  'classic',
-  'agile',
-  'astra',
-  'vectra',
-  'meriva',
-  'zafira',
-  'captiva',
-  'blazer',
-  // Volkswagen
-  'gol',
-  'polo',
-  'virtus',
-  'voyage',
-  'saveiro',
-  'fox',
-  'up',
-  't-cross',
-  'tcross',
-  'tiguan',
-  'taos',
-  'nivus',
-  'jetta',
-  'amarok',
-  // Fiat
-  'uno',
-  'mobi',
-  'argo',
-  'cronos',
-  'strada',
-  'toro',
-  'pulse',
-  'fastback',
-  'fiorino',
-  'ducato',
-  'doblo',
-  'siena',
-  'palio',
-  'punto',
-  // Ford
-  'ka',
-  'fiesta',
-  'focus',
-  'ecosport',
-  'ranger',
-  'territory',
-  'bronco',
-  'maverick',
-  'fusion',
-  // Honda (incluindo variações de transcrição de áudio)
-  'civic',
-  'circ',
-  'civico',
-  'sivic',
-  'civick',
-  'cívic',
-  'cívico',
-  'sívic',
-  'city',
-  'fit',
-  'hr-v',
-  'hrv',
-  'cr-v',
-  'crv',
-  'wr-v',
-  'wrv',
-  'accord',
-  // Toyota
-  'corolla',
-  'yaris',
-  'etios',
-  'hilux',
-  'sw4',
-  'rav4',
-  'camry',
-  'prius',
-  // Hyundai
-  'hb20',
-  'hb20s',
-  'creta',
-  'tucson',
-  'santa fe',
-  'santafe',
-  'i30',
-  'azera',
-  'elantra',
-  'ix35',
-  // Renault
-  'kwid',
-  'sandero',
-  'logan',
-  'duster',
-  'captur',
-  'oroch',
-  'stepway',
-  'master',
-  // Nissan
-  'march',
-  'versa',
-  'sentra',
-  'kicks',
-  'frontier',
-  // Jeep
-  'renegade',
-  'compass',
-  'commander',
-  'wrangler',
-  'gladiator',
-  // Mitsubishi
-  'lancer',
-  'asx',
-  'outlander',
-  'pajero',
-  'l200',
-  'eclipse',
-  // Peugeot
-  '208',
-  '2008',
-  '308',
-  '3008',
-  '408',
-  '5008',
-  'partner',
-  'expert',
-  // Citroën
-  'c3',
-  'c4',
-  'aircross',
-  'cactus',
-  'jumpy',
-  // Kia
-  'picanto',
-  'rio',
-  'cerato',
-  'sportage',
-  'sorento',
-  'carnival',
-  'stonic',
-  'seltos',
-  // BMW
-  'x1',
-  'x3',
-  'x5',
-  'x6',
-  '320i',
-  '328i',
-  '330i',
-  '520i',
-  '530i',
-  // Mercedes
-  'classe a',
-  'classe c',
-  'classe e',
-  'gla',
-  'glb',
-  'glc',
-  'gle',
-  // Audi
-  'a3',
-  'a4',
-  'a5',
-  'q3',
-  'q5',
-  'q7',
-  'q8',
-  // Volvo
-  'xc40',
-  'xc60',
-  'xc90',
-  's60',
-  'v60',
-  // Land Rover
-  'evoque',
-  'discovery',
-  'defender',
-  'velar',
-  // Suzuki
-  'jimny',
-  'vitara',
-  'swift',
-  's-cross',
-  'scross',
-  // Caoa Chery
-  'tiggo',
-  'arrizo',
-  // BYD
-  'dolphin',
-  'seal',
-  'song',
-  'tang',
-  'yuan',
-  // GWM
-  'haval',
-  'ora',
-  // JAC
-  'j3',
-  'j5',
-  't40',
-  't50',
-  't60',
-  't80',
-];
-
-/**
- * Build regex pattern for model matching
- */
-function buildModelPattern(): RegExp {
-  // Sort by length descending to match longer names first (e.g., "hb20s" before "hb20")
-  const sortedModels = [...BRAZILIAN_CAR_MODELS].sort((a, b) => b.length - a.length);
-  const escapedModels = sortedModels.map(m => m.replace(/[-/]/g, '[-/]?'));
-  return new RegExp(`\\b(${escapedModels.join('|')})\\b`, 'i');
-}
-
-const MODEL_PATTERN = buildModelPattern();
-
-/**
  * ExactSearchParser class
- * Extracts model and year from user queries
+ * Extracts model and year from user queries using dynamic database data
  */
 export class ExactSearchParser {
+  private modelPattern: RegExp | null = null;
+  private isInitialized = false;
+  private knownModels: string[] = [];
+
+  // Fallback models in case DB is unreachable at startup
+  private static readonly FALLBACK_MODELS = [
+    'onix', 'prisma', 'gol', 'polo', 'hb20', 'corolla', 'civic', 'mobi', 'argo', 'renegade',
+    'compass', 'kicks', 'creta', 'tracker', 'hr-v', 'kwid', 'ka', 'fiesta', 'ecosport',
+    'strada', 'toro', 'saveiro', 'hilux', 's10', 'ranger', 'cg', 'titan', 'fan', 'biz',
+    'bros', 'pcx', 'fazer', 'factor', 'crosser', 'lander', 'nmax'
+  ];
+
+  /**
+   * Initialize the parser by loading models from the database
+   */
+  async initialize(): Promise<void> {
+    try {
+      logger.info('ExactSearchParser: Loading vehicle models from database...');
+
+      // Fetch distinct models from DB
+      const dbModels = await prisma.vehicle.findMany({
+        select: { modelo: true },
+        distinct: ['modelo'],
+        where: { disponivel: true }
+      });
+
+      const uniqueModels = new Set<string>();
+
+      // Add DB models
+      dbModels.forEach(m => {
+        if (m.modelo) uniqueModels.add(m.modelo);
+      });
+
+      // If DB is empty, use fallback
+      if (uniqueModels.size === 0) {
+        logger.warn('ExactSearchParser: No models found in DB, using fallback list');
+        ExactSearchParser.FALLBACK_MODELS.forEach(m => uniqueModels.add(m));
+      }
+
+      this.knownModels = Array.from(uniqueModels);
+      this.buildModelPattern();
+      this.isInitialized = true;
+
+      logger.info({ count: this.knownModels.length }, 'ExactSearchParser: Initialized with models');
+    } catch (error) {
+      logger.error({ error }, 'ExactSearchParser: Failed to initialize from DB, using fallback');
+      this.knownModels = [...ExactSearchParser.FALLBACK_MODELS];
+      this.buildModelPattern();
+      this.isInitialized = true;
+    }
+  }
+
+  /**
+   * Build regex pattern for model matching
+   */
+  private buildModelPattern(): void {
+    // Sort by length descending to match longer names first
+    const sortedModels = this.knownModels.sort((a, b) => b.length - a.length);
+    const escapedModels = sortedModels.map(m => m.replace(/[-/]/g, '[-/]?'));
+    // Create regex: word boundary + (model1|model2|...) + word boundary, case insensitive
+    this.modelPattern = new RegExp(`\\b(${escapedModels.join('|')})\\b`, 'i');
+  }
+
+  /**
+   * Ensure parser is initialized
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+  }
+
   /**
    * Patterns that indicate the user is talking about a vehicle they OWN (trade-in)
    * vs a vehicle they want to BUY
@@ -309,12 +138,10 @@ export class ExactSearchParser {
 
     for (const pattern of ExactSearchParser.TRADE_IN_PATTERNS) {
       if (pattern.test(normalizedQuery)) {
-        if (logger) {
-          logger.debug(
-            { query, pattern: pattern.source },
-            'ExactSearchParser: detected trade-in context'
-          );
-        }
+        logger.debug(
+          { query, pattern: pattern.source },
+          'ExactSearchParser: detected trade-in context'
+        );
         return true;
       }
     }
@@ -325,7 +152,9 @@ export class ExactSearchParser {
   /**
    * Parse a user query and extract model and year filters
    */
-  parse(query: string): ExtractedFilters {
+  async parse(query: string): Promise<ExtractedFilters> {
+    await this.ensureInitialized();
+
     const normalizedQuery = this.normalizeQuery(query);
 
     const model = this.extractModel(normalizedQuery);
@@ -339,12 +168,19 @@ export class ExactSearchParser {
       rawQuery: query,
     };
 
-    // Log asynchronously without blocking (logger may not be available in tests)
-    if (logger) {
-      logger.debug({ query, result }, 'ExactSearchParser: parsed query');
-    }
+    logger.debug({ query, result }, 'ExactSearchParser: parsed query');
 
     return result;
+  }
+
+  /**
+   * Allow manual injection of models (mostly for testing)
+   */
+  addModels(models: string[]) {
+    models.forEach(m => {
+      if (!this.knownModels.includes(m)) this.knownModels.push(m);
+    });
+    this.buildModelPattern();
   }
 
   /**
@@ -391,7 +227,9 @@ export class ExactSearchParser {
    * Extract model name from query
    */
   private extractModel(query: string): string | null {
-    const match = query.match(MODEL_PATTERN);
+    if (!this.modelPattern) return null;
+
+    const match = query.match(this.modelPattern);
     if (match) {
       const rawModel = match[1].toLowerCase();
 
@@ -518,6 +356,3 @@ export class ExactSearchParser {
 
 // Singleton export
 export const exactSearchParser = new ExactSearchParser();
-
-// Export model list for testing
-export const KNOWN_MODELS = BRAZILIAN_CAR_MODELS;

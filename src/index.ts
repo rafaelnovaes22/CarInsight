@@ -4,6 +4,7 @@ import { env } from './config/env';
 import { logger } from './lib/logger';
 import { prisma } from './lib/prisma';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
+import { exactSearchParser } from './services/exact-search-parser.service';
 import webhookRoutes from './routes/webhook.routes';
 import adminRoutes from './routes/admin.routes';
 import debugRoutes from './routes/debug.routes';
@@ -126,6 +127,14 @@ async function start() {
       })
       .catch(error => {
         logger.error({ error }, '⚠️  Vector store failed, will use SQL fallback');
+      });
+
+    // Initialize exact search parser (load models)
+    logger.info('🧠 Loading dynamic vehicle models...');
+    exactSearchParser
+      .initialize()
+      .catch(error => {
+        logger.error({ error }, '⚠️  Exact search parser failed to load models');
       });
 
     // Start Express server
