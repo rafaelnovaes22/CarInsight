@@ -38,17 +38,19 @@ export class LangGraphConversation {
       // The graph handles persistence via PrismaCheckpointer using thread_id
       const config = { configurable: { thread_id: conversationId } };
 
-      // We pass the new user message. The graph loads history from persistence.
-      // Note: If this is the VERY first message and nothing is in persistence,
-      // the graph will initialize with default state + this message.
-      const result = await this.app.invoke(
-        {
-          messages: [new HumanMessage(message)],
-          // Merge relevant existing state functionality if needed, e.g. persistence of legacy fields not yet in graph
-          // But ideally graph persistence is the source of truth now.
-        },
-        config
-      );
+      // We pass the new user message.
+      // Also inject current state to ensure persistence/rehydration works
+      // (The graph channels use merge reducers, so this is safe and necessary if checkpointer fails)
+      const input: any = {
+        messages: [new HumanMessage(message)],
+      };
+
+      if (state.profile) input.profile = state.profile;
+      if (state.quiz) input.quiz = state.quiz;
+      if (state.recommendations) input.recommendations = state.recommendations;
+      // We don't inject metadata to rely on graph's internal tracking, unless strictly needed
+
+      const result = await this.app.invoke(input, config);
 
       const finalState = result as IGraphState;
       const lastMessage = finalState.messages[finalState.messages.length - 1];
