@@ -128,7 +128,8 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
       const original = recommendations[item.index];
       if (original) {
         // Assign matchScore based on position: 1st = 100, 2nd = 90, 3rd = 85, 4th = 80, 5th = 75
-        const positionScore = i === 0 ? 100 : i === 1 ? 90 : i === 2 ? 85 : Math.max(75, 100 - i * 5);
+        const positionScore =
+          i === 0 ? 100 : i === 1 ? 90 : i === 2 ? 85 : Math.max(75, 100 - i * 5);
         reranked.push({
           ...original,
           matchScore: positionScore,

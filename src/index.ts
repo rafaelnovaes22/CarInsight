@@ -116,7 +116,6 @@ async function start() {
       logger.info(`✅ Database has ${vehicleCount} vehicles`);
     }
 
-
     // Start Express server
     app.listen(PORT, () => {
       logger.info(`🚀 Server running on port ${PORT}`);

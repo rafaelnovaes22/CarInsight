@@ -8,7 +8,6 @@
  * Requirements: 1.1, 1.2
  */
 
-
 import { prisma } from '../lib/prisma';
 import { VehicleRecommendation } from '../types/state.types';
 import { logger } from '../lib/logger';
@@ -272,11 +271,11 @@ export class VehicleSearchAdapter {
         // Apply other filters
         ...(filters.maxPrice || filters.minPrice
           ? {
-            preco: {
-              ...(filters.maxPrice && { lte: filters.maxPrice }),
-              ...(filters.minPrice && { gte: filters.minPrice }),
-            },
-          }
+              preco: {
+                ...(filters.maxPrice && { lte: filters.maxPrice }),
+                ...(filters.minPrice && { gte: filters.minPrice }),
+              },
+            }
           : {}),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
         ...(filters.maxKm && { km: { lte: filters.maxKm } }),

@@ -27,10 +27,10 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
 
   try {
     // Build search query from profile
-    const searchQuery = [
-      profile.vehicleType !== 'qualquer' ? profile.vehicleType : '',
-      profile.usagePattern || '',
-    ].filter(Boolean).join(' ') || 'carro';
+    const searchQuery =
+      [profile.vehicleType !== 'qualquer' ? profile.vehicleType : '', profile.usagePattern || '']
+        .filter(Boolean)
+        .join(' ') || 'carro';
 
     const recommendations = await vehicleSearchAdapter.search(searchQuery, {
       maxPrice: profile.budget,
