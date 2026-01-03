@@ -21,6 +21,7 @@
     "db:seed:real": "tsx src/scripts/seed-renatinhu-real.ts",
     "db:seed:robustcar": "tsx prisma/seed-robustcar.ts",
     "db:migrate": "prisma migrate deploy",
+    "vehicles:classify": "tsx src/scripts/classify-all-vehicles.ts",
     "postinstall": "prisma generate",
     "test": "vitest",
     "test:ui": "vitest --ui",
