@@ -22,17 +22,7 @@ REGRAS:
 3. Seja preciso e literal (não invente ou assuma)
 4. Considere sinônimos e variações de escrita
 5. Retorne APENAS JSON válido, sem texto adicional
-6. IMPORTANTE: Se usuário mencionar NOME DE MODELO (ex: Spin, Civic, Corolla), 
-   SEMPRE extraia brand e model. Conheça marcas dos modelos populares:
-   - Spin, Onix, Prisma, Celta, Corsa, Classic, Cobalt, Tracker, S10 = Chevrolet
-   - Civic, City, Fit, HR-V, CR-V = Honda
-   - Corolla, Yaris, Etios, Hilux = Toyota
-   - Gol, Polo, Fox, Voyage, Saveiro, T-Cross = Volkswagen
-   - HB20, Creta, Tucson, i30 = Hyundai
-   - Argo, Cronos, Mobi, Uno, Palio, Siena, Strada, Toro = Fiat
-   - Ka, Fiesta, Focus, EcoSport, Ranger = Ford
-   - Kwid, Sandero, Logan, Duster = Renault
-   etc.
+6. IMPORTANTE: Se usuário mencionar NOME DE MODELO (ex: Spin, Civic), SEMPRE extraia brand e model.
 
 CAMPOS POSSÍVEIS:
 - budget: number (valor em reais - CONVERTER valores por extenso para número!)
@@ -75,6 +65,18 @@ IMPORTANTE - VALORES POR EXTENSO E ERROS DE TRANSCRIÇÃO:
 - tradeInYear: number (ano do carro de troca)
 
 REGRAS ESPECIAIS:
+- USO:
+  - "trabalhar com o carro", "uso profissional", "carregar peso", "firma", "obra" → usage: "trabalho"
+  - "ir para o trabalho", "trabalhar" (sentido de locomoção), "dia a dia", "cidade", "passear" → usage: "cidade"
+  - "viajar", "estrada", "viagem" → usage: "viagem"
+  - "família", "levar filhos" → usage: "misto" ou "cidade" (depende do contexto), se não souber use "misto"
+
+- ANOS RELATIVOS:
+  - "não muito velho", "mais ou menos novo", "conservado" → minYear: 2008
+  - "carro mais antigo", "baratinho", "velhinho" → minYear: 2000, maxYear: 2012
+  - "seminovo", "novo" → minYear: 2019
+  - "não muito novo" → geralmente sem restrição de maxYear, mas indica minYear >= 2008
+
 - Se mencionar "cadeirinha", "bebê conforto", "criança", "filho", "filhos" → usoPrincipal: "familia", priorities: ["cadeirinha", "espaco_traseiro"]
 - Para família com crianças, NUNCA recomendar hatch pequeno (Mobi, Kwid, Up, Uno)
 - Se mencionar "picape", "pickup", "caminhonete", "caçamba", "carga pesada", "obra", "material" → bodyType: "pickup", priorities incluir "pickup"
@@ -166,60 +168,30 @@ Saída: {
   "fieldsExtracted": ["dealBreakers", "minYear"]
 }
 
-Entrada: "Preciso de um carro para Uber, até 60 mil"
+Entrada: "Quero um carro pra trabalhar no dia a dia, não muito caro"
+Saída: {
+  "extracted": {
+    "usage": "cidade",
+    "priorities": ["economico"]
+  },
+  "confidence": 0.95,
+  "reasoning": "'trabalhar no dia a dia' indica uso cotidiano/cidade",
+  "fieldsExtracted": ["usage", "priorities"]
+}
+
+Entrada: "Preciso de um carro para Uber, até 60 mil" (OU "99", "app", "motorista de aplicativo")
 Saída: {
   "extracted": {
     "usoPrincipal": "uber",
-    "appMencionado": "uber",
+    "appMencionado": "uber", // ou "99" ou "app" conforme entrada
     "budget": 60000,
     "budgetMax": 60000,
     "priorities": ["apto_uber"],
     "minYear": 2012
   },
   "confidence": 0.95,
-  "reasoning": "Contexto Uber identificado, orçamento definido, ano mínimo implícito",
+  "reasoning": "Contexto app de transporte identificado",
   "fieldsExtracted": ["usoPrincipal", "appMencionado", "budget", "budgetMax", "priorities", "minYear"]
-}
-
-Entrada: "Quero um carro para fazer 99" ou "Carro pra 99" ou "Quero rodar no 99"
-Saída: {
-  "extracted": {
-    "usoPrincipal": "uber",
-    "appMencionado": "99",
-    "priorities": ["apto_uber"],
-    "minYear": 2012
-  },
-  "confidence": 0.95,
-  "reasoning": "Contexto app de transporte (99) identificado - PRESERVAR o nome '99' em appMencionado",
-  "fieldsExtracted": ["usoPrincipal", "appMencionado", "priorities", "minYear"]
-}
-
-Entrada: "Quero trabalhar com Uber Black, precisa ser sedan"
-Saída: {
-  "extracted": {
-    "usoPrincipal": "uber",
-    "appMencionado": "uber",
-    "tipoUber": "black",
-    "bodyType": "sedan",
-    "priorities": ["apto_uber"],
-    "minYear": 2018
-  },
-  "confidence": 0.9,
-  "reasoning": "Uber Black requer sedan, ano mínimo 2018",
-  "fieldsExtracted": ["usoPrincipal", "appMencionado", "tipoUber", "bodyType", "priorities", "minYear"]
-}
-
-Entrada: "Carro pra aplicativo" ou "Trabalhar com app" ou "Motorista de aplicativo"
-Saída: {
-  "extracted": {
-    "usoPrincipal": "uber",
-    "appMencionado": "app",
-    "priorities": ["apto_uber"],
-    "minYear": 2012
-  },
-  "confidence": 0.9,
-  "reasoning": "Contexto app de transporte genérico identificado",
-  "fieldsExtracted": ["usoPrincipal", "appMencionado", "priorities", "minYear"]
 }
 
 Entrada: "Spin" ou "Quero uma Spin" ou "Tem Chevrolet Spin?"
@@ -294,29 +266,19 @@ Saída: {
   "fieldsExtracted": ["brand", "model", "minYear"]
 }
 
-Entrada: "Preciso de uma picape para trabalho" ou "Quero uma pickup" ou "Tem caminhonete?"
+Entrada: "Preciso de uma picape para trabalho" (OU "Quero uma S10", "Hilux até 80 mil")
 Saída: {
   "extracted": {
     "bodyType": "pickup",
     "usage": "trabalho",
-    "priorities": ["pickup", "carga"]
+    "priorities": ["pickup", "carga"],
+    "model": "s10", // se especificado "S10"
+    "brand": "chevrolet", // se especificado S10
+    "budget": 80000 // se "até 80 mil"
   },
   "confidence": 0.95,
-  "reasoning": "Solicitação explícita de pickup/picape/caminhonete",
-  "fieldsExtracted": ["bodyType", "usage", "priorities"]
-}
-
-Entrada: "Tem Strada?" ou "Quero uma S10" ou "Hilux até 80 mil"
-Saída: {
-  "extracted": {
-    "bodyType": "pickup",
-    "model": "strada",
-    "brand": "fiat",
-    "priorities": ["pickup"]
-  },
-  "confidence": 0.95,
-  "reasoning": "Modelo de pickup identificado (Strada é Fiat, S10 é Chevrolet, Hilux é Toyota)",
-  "fieldsExtracted": ["bodyType", "model", "brand", "priorities"]
+  "reasoning": "Pickup solicitada (genérica ou específica)",
+  "fieldsExtracted": ["bodyType", "usage", "priorities", "model", "brand", "budget"]
 }
 
 Entrada: "Oi, tudo bem?"
@@ -327,40 +289,19 @@ Saída: {
   "fieldsExtracted": []
 }
 
-Entrada: "Quero uma SUV de 7 lugares"
-Saída: {
-  "extracted": {
-    "bodyType": "suv",
-    "minSeats": 7,
-    "priorities": ["espaco", "familia"]
-  },
-  "confidence": 0.95,
-  "reasoning": "SUV com requisito explícito de 7 lugares - OBRIGATÓRIO",
-  "fieldsExtracted": ["bodyType", "minSeats", "priorities"]
-}
-
-Entrada: "Preciso de um carro de 7 lugares pra família"
+Entrada: "Preciso de um carro de 7 lugares pra família" (OU "Quero uma Spin")
 Saída: {
   "extracted": {
     "minSeats": 7,
+    "bodyType": "suv", // ou "minivan" se inferido
+    "brand": "chevrolet", // se mencionar Spin
+    "model": "spin",      // se mencionar Spin
     "usoPrincipal": "familia",
     "priorities": ["familia", "espaco"]
   },
   "confidence": 0.95,
-  "reasoning": "Requisito explícito de 7 lugares para família",
-  "fieldsExtracted": ["minSeats", "usoPrincipal", "priorities"]
-}
-
-Entrada: "Spin ou algum carro de 7 lugares"
-Saída: {
-  "extracted": {
-    "brand": "chevrolet",
-    "model": "spin",
-    "minSeats": 7
-  },
-  "confidence": 0.95,
-  "reasoning": "Modelo específico (Spin é Chevrolet e tem 7 lugares) ou alternativas de 7 lugares",
-  "fieldsExtracted": ["brand", "model", "minSeats"]
+  "reasoning": "Veículo de 7 lugares solicitado / Spin identificada",
+  "fieldsExtracted": ["minSeats", "usoPrincipal", "priorities", "bodyType", "brand", "model"]
 }`;
 
   /**
