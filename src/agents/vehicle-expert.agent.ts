@@ -463,7 +463,7 @@ export class VehicleExpertAgent {
           logger.info('Intercepting flow: Moto request (No inventory)');
 
           return {
-            response: `No momento trabalhamos apenas com carros (sedans, hatches, SUVs e picapes). 🚗\n\nAinda não temos motos no estoque, mas se estiver procurando um carro econômico para o dia a dia, posso te mostrar algumas opções! O que acha?`,
+            response: `No momento não temos motos disponíveis no estoque. 🏍️\n\nMas se considerar um carro, temos opções muito econômicas para o dia a dia! O que acha?`,
             extractedPreferences: {
               ...extracted.extracted,
               _waitingForSuggestionResponse: true,
