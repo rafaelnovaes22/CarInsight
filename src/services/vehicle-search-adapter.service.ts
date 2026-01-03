@@ -377,11 +377,11 @@ export class VehicleSearchAdapter {
         // Apply other filters
         ...(filters.maxPrice || filters.minPrice
           ? {
-            preco: {
-              ...(filters.maxPrice && { lte: filters.maxPrice }),
-              ...(filters.minPrice && { gte: filters.minPrice }),
-            },
-          }
+              preco: {
+                ...(filters.maxPrice && { lte: filters.maxPrice }),
+                ...(filters.minPrice && { gte: filters.minPrice }),
+              },
+            }
           : {}),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
         ...(filters.maxKm && { km: { lte: filters.maxKm } }),
