@@ -88,7 +88,7 @@ Me diz o que prefere!`;
           : capitalizeWords(profile.tradeInModel);
         outro = `\n\nGostou? 😊 Já anotei seu ${tradeInInfo} para a troca! 🚗🔄\n\nMe conta como pretende pagar o restante:\n• À vista\n• Financiamento`;
       } else {
-        outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem carro na troca?`;
+        outro = `\n\nGostou? 😊 Me conta como pretende pagar:\n• À vista\n• Financiamento\n• Tem veículo na troca?`;
       }
     } else {
       // Vários carros - perguntar qual gostou

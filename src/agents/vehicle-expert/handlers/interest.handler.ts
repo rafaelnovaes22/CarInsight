@@ -72,7 +72,7 @@ Como você mencionou o interesse em financiar 🏦, me conta:
 Me conta como pretende pagar:
 • À vista
 • Financiamento
-• Tem carro na troca?`;
+• Tem veículo na troca?`;
   }
 
   return {
