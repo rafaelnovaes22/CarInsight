@@ -289,9 +289,10 @@ Para começar, qual é o seu nome?`;
             // Recover Profile
             if (conversation.profileData) {
               try {
-                currentState.profile = typeof conversation.profileData === 'string'
-                  ? JSON.parse(conversation.profileData)
-                  : conversation.profileData;
+                currentState.profile =
+                  typeof conversation.profileData === 'string'
+                    ? JSON.parse(conversation.profileData)
+                    : conversation.profileData;
               } catch (e) {
                 logger.error('Failed to parse profileData from DB');
               }
@@ -300,9 +301,10 @@ Para começar, qual é o seu nome?`;
             // Recover Quiz
             if (conversation.quizAnswers) {
               try {
-                currentState.quiz.answers = typeof conversation.quizAnswers === 'string'
-                  ? JSON.parse(conversation.quizAnswers)
-                  : conversation.quizAnswers;
+                currentState.quiz.answers =
+                  typeof conversation.quizAnswers === 'string'
+                    ? JSON.parse(conversation.quizAnswers)
+                    : conversation.quizAnswers;
 
                 // Se tem respostas, assumimos progresso (estimado)
                 currentState.quiz.progress = Object.keys(currentState.quiz.answers).length * 10;
