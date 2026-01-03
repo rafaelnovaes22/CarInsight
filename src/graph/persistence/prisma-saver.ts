@@ -19,8 +19,11 @@ export class PrismaCheckpointer extends BaseCheckpointSaver {
     const checkpoint_ns = config.configurable?.checkpoint_ns || ''; // Default namespace
 
     if (!thread_id) {
+      logger.info('PrismaCheckpointer: getTuple called without thread_id');
       return undefined;
     }
+
+    logger.info({ thread_id, checkpoint_ns }, 'PrismaCheckpointer: getTuple called');
 
     const dbCheckpoint = await prisma.langGraphCheckpoint.findFirst({
       where: {
@@ -33,8 +36,14 @@ export class PrismaCheckpointer extends BaseCheckpointSaver {
     });
 
     if (!dbCheckpoint) {
+      logger.info({ thread_id }, 'PrismaCheckpointer: No checkpoint found in DB');
       return undefined;
     }
+
+    logger.info(
+      { thread_id, checkpoint_id: dbCheckpoint.checkpoint_id },
+      'PrismaCheckpointer: Checkpoint loaded from DB'
+    );
 
     try {
       return {
