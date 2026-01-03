@@ -81,7 +81,7 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
   const hasSpecificModel = !!(extracted.extracted.model || extracted.extracted.brand);
 
   // Parse for exact model+year
-  const exactFilters = exactSearchParser.parse(userMessage);
+  const exactFilters = await exactSearchParser.parse(userMessage);
   const hasExactModelYear = !!(exactFilters.model && (exactFilters.year || exactFilters.yearRange));
 
   // Guard: No specific model or brand mentioned

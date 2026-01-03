@@ -49,7 +49,7 @@ export class VehicleSearchAdapter {
 
       // Step 1: Try exact search (model + year) first
       // Requirements: 1.1, 1.2 - Extract filters and prioritize exact matches
-      const extractedFilters = exactSearchParser.parse(query);
+      const extractedFilters = await exactSearchParser.parse(query);
 
       if (extractedFilters.model && (extractedFilters.year || extractedFilters.yearRange)) {
         logger.info(

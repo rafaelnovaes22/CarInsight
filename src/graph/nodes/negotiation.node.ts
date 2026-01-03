@@ -63,7 +63,7 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
 
   // 5. Determine Next Node
   // Default to staying in negotiation unless expert says otherwise
-  let next = response.nextMode || 'negotiation';
+  const next = response.nextMode || 'negotiation';
 
   // If expert suggests recommendation (e.g. "here is the car again"), we might go to recommendation node
   // But usually we stay here to answer questions.

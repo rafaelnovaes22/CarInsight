@@ -208,7 +208,7 @@ export class VehicleExpertAgent {
 
       // 2.1. Intercept Specific Model + Year Search (Exact Intent)
       // Requirements: Return immediately if user provides model and year OR if profile has it (from greeting)
-      const exactMatch = exactSearchParser.parse(userMessage);
+      const exactMatch = await exactSearchParser.parse(userMessage);
 
       // Check if we have model+year in message OR in profile (captured in Greeting)
       const targetModel = exactMatch.model || updatedProfile.model;
@@ -850,7 +850,7 @@ export class VehicleExpertAgent {
 
         // PRIORITY: Check if user is asking for a SPECIFIC MODEL not in the shown list
         // e.g., "Não tem HB20?", "Tem Onix?", "E o Civic?"
-        const specificModelMatch = exactSearchParser.parse(userMessage);
+        const specificModelMatch = await exactSearchParser.parse(userMessage);
         if (specificModelMatch.model) {
           // Check if this model was NOT in the shown vehicles
           const modelInShown = lastShownVehicles.some(
@@ -1092,8 +1092,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                askedBodyType === 'motocicleta' ||
+                askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1114,8 +1114,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                    askedBodyType === 'motocicleta' ||
-                    askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
