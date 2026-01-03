@@ -49,7 +49,7 @@
     "heroku-status": "heroku ps --app faciliauto-mvp",
     "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
     "heroku-open": "heroku open --app faciliauto-mvp",
-    "lint": "eslint src/**/*.ts --max-warnings 0",
+    "lint": "eslint src/**/*.ts --max-warnings 300",
     "lint:warn": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",

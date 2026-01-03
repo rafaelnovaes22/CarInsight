@@ -375,7 +375,7 @@ Saída: {
       return {
         extracted: {},
         confidence: 0,
-        reasoning: `Erro na extração: ${error.message}`,
+        reasoning: `Erro na extração: ${(error as Error).message}`,
         fieldsExtracted: [],
       };
     }
@@ -418,7 +418,7 @@ Saída: {
       return parsed as ExtractionResult;
     } catch (error) {
       logger.error({ error, llmResponse }, 'Failed to parse extraction result');
-      throw new Error(`Parse error: ${error.message}`);
+      throw new Error(`Parse error: ${(error as Error).message}`);
     }
   }
 
