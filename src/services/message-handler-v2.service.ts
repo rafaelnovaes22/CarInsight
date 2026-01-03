@@ -1,4 +1,3 @@
-
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { guardrails } from './guardrails.service';
@@ -43,7 +42,10 @@ export class MessageHandlerV2 {
       const sanitizedMessage = inputValidation.sanitizedInput || message;
 
       // 2. 🔄 Check for system commands (Exit, Restart, LGPD)
-      const commandResponse = await messageCommandHandler.handleSystemCommands(phoneNumber, sanitizedMessage);
+      const commandResponse = await messageCommandHandler.handleSystemCommands(
+        phoneNumber,
+        sanitizedMessage
+      );
       if (commandResponse) {
         return commandResponse;
       }
@@ -64,7 +66,10 @@ export class MessageHandlerV2 {
 
           if (timeDiff >= SESSION_TIMEOUT) {
             // Session is stale, restart
-            logger.info({ phoneNumber, timeDiff }, 'User sent greeting in stale session (>10m), restarting');
+            logger.info(
+              { phoneNumber, timeDiff },
+              'User sent greeting in stale session (>10m), restarting'
+            );
             await sessionManager.resetConversation(phoneNumber);
 
             // Create new session via SessionManager
@@ -94,7 +99,10 @@ Para começar, qual é o seu nome?`;
 
             return greetingResponse;
           } else {
-            logger.info({ phoneNumber }, 'User sent greeting in active session (<10m), passing to graph');
+            logger.info(
+              { phoneNumber },
+              'User sent greeting in active session (<10m), passing to graph'
+            );
           }
         }
       }
@@ -201,7 +209,6 @@ Para começar, qual é o seu nome?`;
       this.handlePostProcessing(conversation, currentState, newState, phoneNumber);
 
       return finalResponse;
-
     } catch (error) {
       logger.error({ error, phoneNumber }, 'Error handling message');
       return 'Desculpe, ocorreu um erro. Por favor, tente novamente.';

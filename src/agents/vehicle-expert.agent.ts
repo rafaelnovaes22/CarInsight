@@ -1017,11 +1017,8 @@ export class VehicleExpertAgent {
       const isRecommendation = isRecommendationRequest(userMessage);
 
       if (isUserQuestion && !isRecommendation) {
-
-
-        const availabilityCheck = await vehicleRecommendationService.processAvailabilityQuestion(
-          userMessage
-        );
+        const availabilityCheck =
+          await vehicleRecommendationService.processAvailabilityQuestion(userMessage);
 
         if (availabilityCheck.handled && availabilityCheck.response) {
           // Update profile with the asked bodyType
