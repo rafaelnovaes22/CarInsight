@@ -38,17 +38,16 @@ export class LangGraphConversation {
       // The graph handles persistence via PrismaCheckpointer using thread_id
       const config = { configurable: { thread_id: conversationId } };
 
-      // We pass the new user message.
-      // Also inject current state to ensure persistence/rehydration works
-      // (The graph channels use merge reducers, so this is safe and necessary if checkpointer fails)
+      // IMPORTANT: Only pass the new user message.
+      // DO NOT inject profile/quiz/recommendations here - the checkpointer already loads
+      // the full state from the database. Injecting state here would OVERWRITE the
+      // persisted state with potentially stale/empty values from MessageHandlerV2.
       const input: any = {
         messages: [new HumanMessage(message)],
       };
-
-      if (state.profile) input.profile = state.profile;
-      if (state.quiz) input.quiz = state.quiz;
-      if (state.recommendations) input.recommendations = state.recommendations;
-      // We don't inject metadata to rely on graph's internal tracking, unless strictly needed
+      // Removed: if (state.profile) input.profile = state.profile;
+      // Removed: if (state.quiz) input.quiz = state.quiz;
+      // Removed: if (state.recommendations) input.recommendations = state.recommendations;
 
       const result = await this.app.invoke(input, config);
 
