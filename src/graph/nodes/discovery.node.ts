@@ -59,11 +59,38 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
   // Call Vehicle Expert
   const response = await vehicleExpert.chat(messageContent, context);
 
-  // Update Profile
+  // DEBUG: Log state before merge
+  logger.info(
+    {
+      statProfileBudget: state.profile?.budget,
+      extractedBudget: response.extractedPreferences?.budget,
+      stateProfileUsage: state.profile?.usage,
+      extractedUsage: response.extractedPreferences?.usage,
+    },
+    'DiscoveryNode: Profile merge DEBUG'
+  );
+
+  // Update Profile - with protection for critical fields
+  // Filter out undefined/null values from extracted preferences to avoid overwriting
+  const cleanedExtracted = Object.fromEntries(
+    Object.entries(response.extractedPreferences || {}).filter(
+      ([_, v]) => v !== undefined && v !== null
+    )
+  );
+
   const updatedProfile = {
     ...state.profile,
-    ...response.extractedPreferences,
+    ...cleanedExtracted,
   };
+
+  // DEBUG: Log merged profile
+  logger.info(
+    {
+      mergedBudget: updatedProfile.budget,
+      mergedUsage: updatedProfile.usage,
+    },
+    'DiscoveryNode: Profile after merge'
+  );
 
   // Determine Next Node
   let next = 'discovery'; // Default: stay in discovery/loop
