@@ -455,26 +455,35 @@ export class VehicleExpertAgent {
           updatedProfile.priorities?.includes('moto')) &&
         !context.profile?._waitingForSuggestionResponse
       ) {
-        logger.info('Intercepting flow: Moto request');
+        // Check if we ACTUALLY have motos in stock before rejecting
+        const motoCheck = await vehicleSearchAdapter.search('moto', { limit: 1 });
+        const hasMotos = motoCheck.length > 0;
 
-        return {
-          response: `No momento trabalhamos apenas com carros (sedans, hatches, SUVs e picapes). 🚗\n\nAinda não temos motos no estoque, mas se estiver procurando um carro econômico para o dia a dia, posso te mostrar algumas opções! O que acha?`,
-          extractedPreferences: {
-            ...extracted.extracted,
-            _waitingForSuggestionResponse: true,
-            bodyType: 'moto',
-            _searchedItem: 'moto',
-          },
-          needsMoreInfo: [],
-          canRecommend: false,
-          nextMode: 'clarification',
-          metadata: {
-            processingTime: Date.now() - startTime,
-            confidence: 1.0,
-            llmUsed: 'rule-based',
-            noMotosFound: true,
-          } as any,
-        };
+        if (!hasMotos) {
+          logger.info('Intercepting flow: Moto request (No inventory)');
+
+          return {
+            response: `No momento trabalhamos apenas com carros (sedans, hatches, SUVs e picapes). 🚗\n\nAinda não temos motos no estoque, mas se estiver procurando um carro econômico para o dia a dia, posso te mostrar algumas opções! O que acha?`,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: true,
+              bodyType: 'moto',
+              _searchedItem: 'moto',
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'clarification',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 1.0,
+              llmUsed: 'rule-based',
+              noMotosFound: true,
+            } as any,
+          };
+        } else {
+          logger.info('Moto requested and found in inventory - Allowing flow to proceed');
+          updatedProfile.bodyType = 'moto';
+        }
       }
 
       // 2.2. Intercept Hard Constraints (FAIL FAST) - 7 seats
@@ -1092,8 +1101,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                askedBodyType === 'motocicleta' ||
+                askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1114,8 +1123,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                    askedBodyType === 'motocicleta' ||
-                    askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
