@@ -14,18 +14,26 @@ import {
   Vehicle,
   VehicleMatch,
 } from '../../src/services/exact-search.service';
-import { KNOWN_MODELS } from '../../src/services/exact-search-parser.service';
 
 const serializer = new SearchResultSerializer();
 
-// ============================================================================
-// Generators for property-based testing
-// ============================================================================
+const TEST_MODELS = [
+  'onix',
+  'prisma',
+  'gol',
+  'polo',
+  'hb20',
+  'corolla',
+  'civic',
+  'mobi',
+  'argo',
+  'renegade',
+];
 
 /**
  * Generator for valid vehicle model names
  */
-const modelGenerator = fc.constantFrom(...KNOWN_MODELS.slice(0, 20));
+const modelGenerator = fc.constantFrom(...TEST_MODELS);
 
 /**
  * Generator for valid years (1990-2025)

@@ -37,6 +37,27 @@ vi.mock('../../../src/services/vector-search.service', () => {
   };
 });
 
+// Mock Exact Search Parser
+vi.mock('../../../src/services/exact-search-parser.service', () => ({
+  exactSearchParser: {
+    parse: vi.fn().mockImplementation(async (msg: string) => {
+      if (msg.toLowerCase().includes('civic')) {
+        const yearMatch = msg.match(/20\d\d/);
+        return {
+          model: 'Civic',
+          year: yearMatch ? parseInt(yearMatch[0]) : null,
+          rawQuery: msg,
+        };
+      }
+      return { model: null, rawQuery: msg };
+    }),
+    isTradeInContext: vi.fn().mockImplementation((msg: string) => {
+      const lower = msg.toLowerCase();
+      return lower.includes('troca') || lower.includes('meu');
+    }),
+  },
+}));
+
 describe('LangGraph Nodes Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks();

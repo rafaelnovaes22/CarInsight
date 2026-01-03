@@ -131,11 +131,9 @@ async function start() {
 
     // Initialize exact search parser (load models)
     logger.info('🧠 Loading dynamic vehicle models...');
-    exactSearchParser
-      .initialize()
-      .catch(error => {
-        logger.error({ error }, '⚠️  Exact search parser failed to load models');
-      });
+    exactSearchParser.initialize().catch(error => {
+      logger.error({ error }, '⚠️  Exact search parser failed to load models');
+    });
 
     // Start Express server
     app.listen(PORT, () => {

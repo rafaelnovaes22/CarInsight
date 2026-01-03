@@ -5,22 +5,46 @@
  * **Validates: Requirements 1.1, 5.1, 5.2, 5.3, 5.4**
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import * as fc from 'fast-check';
-import {
-  ExactSearchParser,
-  KNOWN_MODELS,
-  ExtractedFilters,
-} from '../../src/services/exact-search-parser.service';
+import { ExactSearchParser } from '../../src/services/exact-search-parser.service';
 
 const parser = new ExactSearchParser();
+
+// Models for testing
+const TEST_MODELS = [
+  'onix',
+  'prisma',
+  'gol',
+  'polo',
+  'hb20',
+  'corolla',
+  'civic',
+  'mobi',
+  'argo',
+  'renegade',
+  'compass',
+  'kicks',
+  'creta',
+  'tracker',
+  'hr-v',
+  'kwid',
+  'ka',
+  'fiesta',
+  'ecosport',
+];
+
+// Initialize parser with test models
+beforeAll(async () => {
+  parser.addModels(TEST_MODELS);
+});
 
 // Generators for property-based testing
 
 /**
  * Generator for valid vehicle model names
  */
-const modelGenerator = fc.constantFrom(...KNOWN_MODELS);
+const modelGenerator = fc.constantFrom(...TEST_MODELS);
 
 /**
  * Generator for valid full years (1990-2025)
@@ -85,10 +109,10 @@ describe('ExactSearchParser Property Tests', () => {
    * **Validates: Requirements 1.1, 5.1, 5.2, 5.3, 5.4**
    */
   describe('Property 1: Parser extracts model and year correctly from all valid formats', () => {
-    it('extracts model and year from "model year" format (Requirement 1.1)', () => {
-      fc.assert(
-        fc.property(modelYearQueryGenerator, query => {
-          const result = parser.parse(query);
+    it('extracts model and year from "model year" format (Requirement 1.1)', async () => {
+      await fc.assert(
+        fc.asyncProperty(modelYearQueryGenerator, async query => {
+          const result = await parser.parse(query);
 
           // Model should be extracted (case-insensitive match)
           expect(result.model).not.toBeNull();
@@ -106,10 +130,10 @@ describe('ExactSearchParser Property Tests', () => {
       );
     });
 
-    it('extracts model and year from "year model" format (Requirement 5.1)', () => {
-      fc.assert(
-        fc.property(yearModelQueryGenerator, query => {
-          const result = parser.parse(query);
+    it('extracts model and year from "year model" format (Requirement 5.1)', async () => {
+      await fc.assert(
+        fc.asyncProperty(yearModelQueryGenerator, async query => {
+          const result = await parser.parse(query);
 
           // Model should be extracted
           expect(result.model).not.toBeNull();
@@ -123,10 +147,10 @@ describe('ExactSearchParser Property Tests', () => {
       );
     });
 
-    it('interprets abbreviated year format correctly (Requirement 5.2)', () => {
-      fc.assert(
-        fc.property(modelAbbrevYearQueryGenerator, query => {
-          const result = parser.parse(query);
+    it('interprets abbreviated year format correctly (Requirement 5.2)', async () => {
+      await fc.assert(
+        fc.asyncProperty(modelAbbrevYearQueryGenerator, async query => {
+          const result = await parser.parse(query);
 
           // Model should be extracted
           expect(result.model).not.toBeNull();
@@ -143,10 +167,10 @@ describe('ExactSearchParser Property Tests', () => {
       );
     });
 
-    it('extracts year range from "model YYYY a YYYY" format (Requirement 5.3)', () => {
-      fc.assert(
-        fc.property(yearRangeQueryGenerator, query => {
-          const result = parser.parse(query);
+    it('extracts year range from "model YYYY a YYYY" format (Requirement 5.3)', async () => {
+      await fc.assert(
+        fc.asyncProperty(yearRangeQueryGenerator, async query => {
+          const result = await parser.parse(query);
 
           // Model should be extracted
           expect(result.model).not.toBeNull();
@@ -164,10 +188,10 @@ describe('ExactSearchParser Property Tests', () => {
       );
     });
 
-    it('extracts year range from "model YYYY/YYYY" slash format (Requirement 5.4)', () => {
-      fc.assert(
-        fc.property(slashYearQueryGenerator, query => {
-          const result = parser.parse(query);
+    it('extracts year range from "model YYYY/YYYY" slash format (Requirement 5.4)', async () => {
+      await fc.assert(
+        fc.asyncProperty(slashYearQueryGenerator, async query => {
+          const result = await parser.parse(query);
 
           // Model should be extracted
           expect(result.model).not.toBeNull();
@@ -183,7 +207,7 @@ describe('ExactSearchParser Property Tests', () => {
       );
     });
 
-    it('preserves raw query in all cases', () => {
+    it('preserves raw query in all cases', async () => {
       const allFormatsGenerator = fc.oneof(
         modelYearQueryGenerator,
         yearModelQueryGenerator,
@@ -192,26 +216,26 @@ describe('ExactSearchParser Property Tests', () => {
         slashYearQueryGenerator
       );
 
-      fc.assert(
-        fc.property(allFormatsGenerator, query => {
-          const result = parser.parse(query);
+      await fc.assert(
+        fc.asyncProperty(allFormatsGenerator, async query => {
+          const result = await parser.parse(query);
           expect(result.rawQuery).toBe(query);
         }),
         { numRuns: 100 }
       );
     });
 
-    it('returns null for model when no known model is present', () => {
+    it('returns null for model when no known model is present', async () => {
       // Use array of characters to build strings without known models
       const noModelQueryGenerator = fc
         .array(fc.constantFrom('a', 'b', 'c', ' ', '1', '2', '3'), { minLength: 1, maxLength: 20 })
         .map(chars => chars.join(''))
         .filter(s => s.trim().length > 0)
-        .filter(s => !KNOWN_MODELS.some(m => s.toLowerCase().includes(m)));
+        .filter(s => !TEST_MODELS.some(m => s.toLowerCase().includes(m)));
 
-      fc.assert(
-        fc.property(noModelQueryGenerator, query => {
-          const result = parser.parse(query);
+      await fc.assert(
+        fc.asyncProperty(noModelQueryGenerator, async query => {
+          const result = await parser.parse(query);
           // If no known model in query, model should be null
           expect(result.model).toBeNull();
         }),

@@ -22,6 +22,30 @@ vi.mock('../../src/lib/logger', () => ({
   },
 }));
 
+// Mock Exact Search Parser
+vi.mock('../../src/services/exact-search-parser.service', () => ({
+  exactSearchParser: {
+    parse: vi.fn().mockImplementation(async (msg: string) => {
+      const lower = msg.toLowerCase();
+      if (lower.includes('gol')) {
+        return { model: 'gol', year: 2015, rawQuery: msg };
+      }
+      if (lower.includes('civic')) {
+        return { model: 'civic', year: 2021, rawQuery: msg };
+      }
+      if (lower.includes('corolla')) {
+        return { model: 'corolla', year: 2020, rawQuery: msg };
+      }
+      return { model: null, rawQuery: msg };
+    }),
+    isTradeInContext: vi.fn().mockImplementation((msg: string) => {
+      const lower = msg.toLowerCase();
+      return lower.includes('troca') || lower.includes('tenho um');
+    }),
+    ensureInitialized: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 describe('LangGraph Flows Integration', () => {
   let app: any;
   let memory: MemorySaver;
@@ -189,7 +213,7 @@ describe('LangGraph Flows Integration', () => {
       extractedPreferences: {},
       recommendations: [],
       needsMoreInfo: [],
-      nextMode: 'handoff', // ?? Context mode.
+      nextMode: 'negotiation' as any, // Context mode.
     });
 
     const res = await runGraph(threadId, 'falar com vendedor');

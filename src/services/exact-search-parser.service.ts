@@ -33,10 +33,42 @@ export class ExactSearchParser {
 
   // Fallback models in case DB is unreachable at startup
   private static readonly FALLBACK_MODELS = [
-    'onix', 'prisma', 'gol', 'polo', 'hb20', 'corolla', 'civic', 'mobi', 'argo', 'renegade',
-    'compass', 'kicks', 'creta', 'tracker', 'hr-v', 'kwid', 'ka', 'fiesta', 'ecosport',
-    'strada', 'toro', 'saveiro', 'hilux', 's10', 'ranger', 'cg', 'titan', 'fan', 'biz',
-    'bros', 'pcx', 'fazer', 'factor', 'crosser', 'lander', 'nmax'
+    'onix',
+    'prisma',
+    'gol',
+    'polo',
+    'hb20',
+    'corolla',
+    'civic',
+    'mobi',
+    'argo',
+    'renegade',
+    'compass',
+    'kicks',
+    'creta',
+    'tracker',
+    'hr-v',
+    'kwid',
+    'ka',
+    'fiesta',
+    'ecosport',
+    'strada',
+    'toro',
+    'saveiro',
+    'hilux',
+    's10',
+    'ranger',
+    'cg',
+    'titan',
+    'fan',
+    'biz',
+    'bros',
+    'pcx',
+    'fazer',
+    'factor',
+    'crosser',
+    'lander',
+    'nmax',
   ];
 
   /**
@@ -50,7 +82,7 @@ export class ExactSearchParser {
       const dbModels = await prisma.vehicle.findMany({
         select: { modelo: true },
         distinct: ['modelo'],
-        where: { disponivel: true }
+        where: { disponivel: true },
       });
 
       const uniqueModels = new Set<string>();
@@ -181,6 +213,7 @@ export class ExactSearchParser {
       if (!this.knownModels.includes(m)) this.knownModels.push(m);
     });
     this.buildModelPattern();
+    this.isInitialized = true;
   }
 
   /**

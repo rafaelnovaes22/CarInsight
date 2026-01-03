@@ -223,10 +223,7 @@ export async function handleUberEligibilityQuestion(
 
   if (!dbVehicle) {
     const parsed = await exactSearchParser.parse(userMessage);
-    const askedModel =
-      parsed.model ||
-      extracted.extracted.model ||
-      updatedProfile.model;
+    const askedModel = parsed.model || extracted.extracted.model || updatedProfile.model;
     const modelText = askedModel ? ` do ${askedModel}` : '';
     const appName = is99 ? '99' : 'Uber';
 
