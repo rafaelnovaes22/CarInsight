@@ -55,7 +55,7 @@ export async function rankRecommendations(
           ? v.description.replace(/\n/g, ' ').substring(0, 400)
           : 'Detalhes básicos';
 
-        return `[ID:${index}] ${v.brand} ${v.model} ${v.year} | ${v.bodyType} | R$ ${v.price.toLocaleString('pt-BR')} | ${v.mileage.toLocaleString('pt-BR')}km | Info: ${desc}`;
+        return `[ID:${index}] ${v.brand} ${v.model} ${v.year} | ${v.bodyType} | R$ ${(v.price ?? 0).toLocaleString('pt-BR')} | ${(v.mileage ?? 0).toLocaleString('pt-BR')}km | Info: ${desc}`;
       })
       .join('\n');
 

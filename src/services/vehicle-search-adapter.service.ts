@@ -377,11 +377,11 @@ export class VehicleSearchAdapter {
         // Apply other filters
         ...(filters.maxPrice || filters.minPrice
           ? {
-              preco: {
-                ...(filters.maxPrice && { lte: filters.maxPrice }),
-                ...(filters.minPrice && { gte: filters.minPrice }),
-              },
-            }
+            preco: {
+              ...(filters.maxPrice && { lte: filters.maxPrice }),
+              ...(filters.minPrice && { gte: filters.minPrice }),
+            },
+          }
           : {}),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),
         ...(filters.maxKm && { km: { lte: filters.maxKm } }),
@@ -547,7 +547,7 @@ export class VehicleSearchAdapter {
           brand: vehicle.marca,
           model: vehicle.modelo,
           year: vehicle.ano,
-          price: vehicle.preco,
+          price: vehicle.preco ?? 0,
           mileage: vehicle.km,
           bodyType: vehicle.carroceria,
           transmission: vehicle.cambio,
