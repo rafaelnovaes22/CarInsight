@@ -639,11 +639,12 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     const maxPages = 6;
 
     // Importar classificador LLM se necessário
-    let classifyVehicle: any = null;
-    if (useLLM) {
-      const { vehicleClassifier } = await import('../services/vehicle-classifier.service');
-      classifyVehicle = vehicleClassifier.classifyVehicle;
-    }
+    // let classifyVehicle: any = null;
+    // if (useLLM) {
+    //   // const { vehicleClassifier } = await import('../services/vehicle-classifier.service');
+    //   // classifyVehicle = vehicleClassifier.classifyVehicle;
+    //   logger.warn('⚠️ LLM Classification temporarily disabled due to missing service method');
+    // }
 
     // Fallback: Mapeamento estático de categorias
     const CATEGORY_MAP: Record<string, string> = {
@@ -744,11 +745,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-                priceMatch[1]
-                  .replace(/R\$|\./g, '')
-                  .replace(',', '.')
-                  .trim()
-              ) || null
+              priceMatch[1]
+                .replace(/R\$|\./g, '')
+                .replace(',', '.')
+                .trim()
+            ) || null
             : null;
 
           vehicles.push({
@@ -790,7 +791,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     // Atualizar banco de dados
     let created = 0;
     let updated = 0;
-    let llmClassified = 0;
+    const llmClassified = 0;
 
     for (const vehicle of allVehicles) {
       try {
@@ -799,39 +800,33 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
         });
 
         // Usar LLM para classificar se habilitado
-        let classification: {
-          category: string;
-          confidence: number;
-          aptoUber?: boolean;
-          aptoUberBlack?: boolean;
-          aptoFamilia?: boolean;
-          aptoTrabalho?: boolean;
-        } | null = null;
-        if (useLLM && classifyVehicle) {
-          try {
-            classification = await classifyVehicle({
-              marca: vehicle.brand,
-              modelo: vehicle.model,
-              ano: vehicle.year,
-              carroceria: vehicle.category,
-              combustivel: vehicle.fuel,
-            });
-            llmClassified++;
-            logger.info(
-              {
-                vehicle: `${vehicle.brand} ${vehicle.model}`,
-                category: classification?.category,
-                confidence: classification?.confidence,
-              },
-              'LLM classification'
-            );
-          } catch (llmError) {
-            logger.warn(
-              { vehicle: vehicle.model, error: llmError },
-              'LLM classification failed, using fallback'
-            );
-          }
-        }
+        // let classification: ... | null = null;
+
+        // if (useLLM && classifyVehicle) {
+        //   try {
+        //     classification = await classifyVehicle({
+        //       marca: vehicle.brand,
+        //       modelo: vehicle.model,
+        //       ano: vehicle.year,
+        //       carroceria: vehicle.category,
+        //       combustivel: vehicle.fuel,
+        //     });
+        //     llmClassified++;
+        //     logger.info(
+        //       {
+        //         vehicle: `${vehicle.brand} ${vehicle.model}`,
+        //         category: classification?.category,
+        //         confidence: classification?.confidence,
+        //       },
+        //       'LLM classification'
+        //     );
+        //   } catch (llmError) {
+        //     logger.warn(
+        //       { vehicle: vehicle.model, error: llmError },
+        //       'LLM classification failed, using fallback'
+        //     );
+        //   }
+        // }
 
         const vehicleData = {
           marca: vehicle.brand,
@@ -842,14 +837,14 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           combustivel: vehicle.fuel,
           cor: vehicle.color,
           preco: vehicle.price || 0,
-          carroceria: classification?.category || vehicle.category,
+          carroceria: vehicle.category,
           url: vehicle.detailUrl,
           disponivel: true,
           // Aptidões (do LLM se disponível)
-          aptoUber: classification?.aptoUber ?? false,
-          aptoUberBlack: classification?.aptoUberBlack ?? false,
-          aptoFamilia: classification?.aptoFamilia ?? false,
-          aptoTrabalho: classification?.aptoTrabalho ?? false,
+          aptoUber: false,
+          aptoUberBlack: false,
+          aptoFamilia: false,
+          aptoTrabalho: false,
           // Limpar embedding para regenerar
           embedding: null,
           embeddingModel: null,
