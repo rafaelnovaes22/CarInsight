@@ -1,4 +1,3 @@
-
 export interface VehicleClassificationInput {
   model: string;
   brand: string; // Adicionado para validação LLM
@@ -17,7 +16,6 @@ export interface VehicleClassificationInput {
 }
 
 export class VehicleClassifierService {
-
   static detectUberEligibility(vehicle: VehicleClassificationInput): boolean {
     // Uber normal: veículo em bom estado, ano recente, preço acessível
     const yearValid = vehicle.year >= 2010;
@@ -38,8 +36,21 @@ export class VehicleClassifierService {
 
     // EXCLUSÃO: Sedans compactos não entram
     const COMPACT_SEDANS = [
-      'HB20S', 'HB20', 'ONIX', 'PRISMA', 'CRONOS', 'VOYAGE', 'LOGAN',
-      'KA', 'YARIS', 'CITY', 'VERSA', 'VIRTUS', 'COBALT', 'SIENA', 'GRAND SIENA'
+      'HB20S',
+      'HB20',
+      'ONIX',
+      'PRISMA',
+      'CRONOS',
+      'VOYAGE',
+      'LOGAN',
+      'KA',
+      'YARIS',
+      'CITY',
+      'VERSA',
+      'VIRTUS',
+      'COBALT',
+      'SIENA',
+      'GRAND SIENA',
     ];
 
     const modelUpper = vehicle.model.toUpperCase();
@@ -61,9 +72,12 @@ export class VehicleClassifierService {
     const fuelValid = fuelUpper === 'FLEX' || fuelUpper === 'GASOLINA';
 
     const { features } = vehicle;
-    const featuresValid = features.arCondicionado && features.direcaoHidraulica && features.airbag && features.abs;
+    const featuresValid =
+      features.arCondicionado && features.direcaoHidraulica && features.airbag && features.abs;
 
-    return yearValidStrict && priceValid && categoryValid && !isCompact && fuelValid && featuresValid;
+    return (
+      yearValidStrict && priceValid && categoryValid && !isCompact && fuelValid && featuresValid
+    );
   }
 
   static detectFamilyEligibility(vehicle: VehicleClassificationInput): boolean {
@@ -75,7 +89,8 @@ export class VehicleClassifierService {
 
     // 2. Segurança/Conforto obrigatórios
     const { features } = vehicle;
-    const isSafeAndComfortable = features.arCondicionado &&
+    const isSafeAndComfortable =
+      features.arCondicionado &&
       features.direcaoHidraulica &&
       features.airbag &&
       features.abs &&
@@ -93,7 +108,9 @@ export class VehicleClassifierService {
     return workCategories.includes(categoryUpper) && vehicle.year >= 2012;
   }
 
-  static async detectEligibilityWithLLM(vehicle: VehicleClassificationInput): Promise<import('./uber-eligibility-validator.service').UberEligibilityResult> {
+  static async detectEligibilityWithLLM(
+    vehicle: VehicleClassificationInput
+  ): Promise<import('./uber-eligibility-validator.service').UberEligibilityResult> {
     const { uberEligibilityValidator } = await import('./uber-eligibility-validator.service');
 
     // 🚨 REGRA HARDCODED: Ano Mínimo SP (2014)
@@ -104,7 +121,7 @@ export class VehicleClassifierService {
         uberComfort: false,
         uberBlack: false,
         reasoning: 'Reprovado automaticamente: Ano inferior a 2014 (SP Restrito).',
-        confidence: 1.0
+        confidence: 1.0,
       };
     }
 
@@ -116,7 +133,7 @@ export class VehicleClassifierService {
       arCondicionado: vehicle.features.arCondicionado,
       portas: vehicle.features.portas,
       cambio: vehicle.transmission,
-      cor: '' // Cor não é crítica para X/Comfort, e Black assume ok se não informada no seed
+      cor: '', // Cor não é crítica para X/Comfort, e Black assume ok se não informada no seed
     });
   }
 }
