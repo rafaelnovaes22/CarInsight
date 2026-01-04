@@ -33,6 +33,8 @@ interface SearchFilters {
   aptoTrabalho?: boolean;
   // Exclude specific IDs
   excludeIds?: string[];
+  // Motorcycle filter - CRITICAL: excludes motorcycles when searching for cars
+  excludeMotorcycles?: boolean;
 }
 
 export class VehicleSearchAdapter {
@@ -96,6 +98,10 @@ export class VehicleSearchAdapter {
             notIn: filters.excludeIds || [],
           },
           disponivel: true,
+          // CRITICAL: Exclude motorcycles when searching for cars
+          ...(filters.excludeMotorcycles && {
+            carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
+          }),
           // Apply filters
           ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
           ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
@@ -188,6 +194,10 @@ export class VehicleSearchAdapter {
       const dbVehicles = await prisma.vehicle.findMany({
         where: {
           disponivel: true,
+          // CRITICAL: Exclude motorcycles when searching for cars
+          ...(searchFilters.excludeMotorcycles && {
+            carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
+          }),
           // Apply additional filters if provided
           ...(searchFilters.maxPrice && { preco: { lte: searchFilters.maxPrice } }),
           ...(searchFilters.minPrice && { preco: { gte: searchFilters.minPrice } }),
@@ -309,6 +319,10 @@ export class VehicleSearchAdapter {
       where: {
         disponivel: true,
         id: { notIn: filters.excludeIds || [] },
+        // CRITICAL: Exclude motorcycles when searching for cars
+        ...(filters.excludeMotorcycles && {
+          carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
+        }),
         // Filtro de marca (se especificado)
         ...(filters.brand && { marca: { contains: filters.brand, mode: 'insensitive' } }),
         // Filtro de modelo (se especificado)
@@ -414,6 +428,10 @@ export class VehicleSearchAdapter {
       where: {
         disponivel: true,
         id: { notIn: filters.excludeIds || [] },
+        // CRITICAL: Exclude motorcycles when searching for cars
+        ...(filters.excludeMotorcycles && {
+          carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
+        }),
         ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
         ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
         ...(filters.minYear && { ano: { gte: filters.minYear } }),

@@ -348,6 +348,7 @@ export class VehicleExpertAgent {
               limit: 5,
               model: targetModel,
               minYear: targetYear,
+              excludeMotorcycles: true, // Exact search excludes motorcycles by default
             }
           );
 
@@ -404,6 +405,7 @@ export class VehicleExpertAgent {
             const modelResults = await vehicleSearchAdapter.search(targetModel, {
               model: targetModel,
               limit: 20,
+              excludeMotorcycles: true, // Model search excludes motorcycles
             });
 
             if (modelResults.length > 0) {
@@ -448,34 +450,9 @@ export class VehicleExpertAgent {
         }
       }
 
-      // 2.2. Intercept Hard Constraints (FAIL FAST) - Moto
-      if (
-        (updatedProfile.bodyType === 'moto' ||
-          userMessage.toLowerCase().includes('moto') ||
-          updatedProfile.priorities?.includes('moto')) &&
-        !context.profile?._waitingForSuggestionResponse
-      ) {
-        logger.info('Intercepting flow: Moto request');
-
-        return {
-          response: `No momento trabalhamos apenas com carros (sedans, hatches, SUVs e picapes). 🚗\n\nAinda não temos motos no estoque, mas se estiver procurando um carro econômico para o dia a dia, posso te mostrar algumas opções! O que acha?`,
-          extractedPreferences: {
-            ...extracted.extracted,
-            _waitingForSuggestionResponse: true,
-            bodyType: 'moto',
-            _searchedItem: 'moto',
-          },
-          needsMoreInfo: [],
-          canRecommend: false,
-          nextMode: 'clarification',
-          metadata: {
-            processingTime: Date.now() - startTime,
-            confidence: 1.0,
-            llmUsed: 'rule-based',
-            noMotosFound: true,
-          } as any,
-        };
-      }
+      // 2.2. Moto request handling - ALLOW motorcycles to be searched
+      // Motos agora podem ser retornadas se solicitadas pelo usuário
+      // O filtro será aplicado no vehicle-search-adapter baseado no bodyType
 
       // 2.2. Intercept Hard Constraints (FAIL FAST) - 7 seats
       if (
@@ -486,6 +463,7 @@ export class VehicleExpertAgent {
         // Search specifically for 7 seaters to check availability
         const results = await vehicleSearchAdapter.search('7 lugares', {
           limit: 20,
+          excludeMotorcycles: true, // 7-seater search excludes motorcycles
         });
 
         // Filter strictly for 7 seaters
@@ -1107,6 +1085,7 @@ export class VehicleExpertAgent {
           const categoryResults = await vehicleSearchAdapter.search(`${normalizedBodyType}`, {
             bodyType: normalizedBodyType,
             limit: 5, // Retornar até 5 veículos da categoria
+            excludeMotorcycles: normalizedBodyType !== 'moto', // Exclude motos unless asking for motos
           });
 
           if (categoryResults.length === 0) {
@@ -1567,6 +1546,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
         model: query.filters.model?.[0], // Filtrar por modelo quando especificado
         limit: 10, // Get more to filter
+        // CRITICAL: Exclude motorcycles when searching for cars
+        excludeMotorcycles: !wantsMoto,
         // Apply Uber filters
         aptoUber: isUberX || undefined,
         aptoUberBlack: isUberBlack || undefined,
@@ -1776,6 +1757,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           maxPrice: query.filters.maxPrice,
           minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
           limit: 10,
+          excludeMotorcycles: true, // Uber search excludes motorcycles
           // NÃO usar filtro aptoUber/aptoUberBlack aqui
         });
 
