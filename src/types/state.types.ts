@@ -112,13 +112,29 @@ export interface ExactSearchMetadata {
   matchType: 'exact' | 'year_alternative' | 'suggestion';
 }
 
+export interface UnifiedVehicle {
+  id: string;
+  brand: string;
+  model: string;
+  version: string | null;
+  year: number;
+  price: number | null;
+  mileage: number;
+  bodyType: string;
+  transmission: string;
+  fuelType: string;
+  color: string | null;
+  imageUrl: string | null;
+  detailsUrl: string | null;
+}
+
 export interface VehicleRecommendation {
   vehicleId: string;
   matchScore: number; // 0-100
   reasoning: string;
   highlights: string[];
   concerns: string[];
-  vehicle?: any; // Full vehicle object from DB
+  vehicle?: UnifiedVehicle; // Processed vehicle object (English fields)
   exactSearchMetadata?: ExactSearchMetadata; // Metadata from exact search (Feature: exact-vehicle-search)
 }
 

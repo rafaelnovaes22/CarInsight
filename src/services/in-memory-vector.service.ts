@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Vehicle } from '@prisma/client';
 import { generateEmbedding } from '../lib/embeddings';
 
 const prisma = new PrismaClient();
@@ -56,7 +56,7 @@ class InMemoryVectorStore {
         try {
           embedding = JSON.parse(vehicle.embedding);
           loadedFromDb++;
-        } catch (e) {
+        } catch {
           // Embedding inválido, regenerar
           embedding = await this.generateAndSaveEmbedding(vehicle.id, description);
           generatedNew++;
@@ -170,7 +170,7 @@ class InMemoryVectorStore {
     console.log('🗑️  Vector store limpo');
   }
 
-  private buildVehicleDescription(vehicle: any): string {
+  private buildVehicleDescription(vehicle: Vehicle): string {
     const parts = [
       `${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}`,
       `ano ${vehicle.ano}`,

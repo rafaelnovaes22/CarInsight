@@ -13,11 +13,11 @@ export interface TranscriptionResult {
   language?: string;
   error?: string;
   errorCode?:
-    | 'DOWNLOAD_FAILED'
-    | 'TRANSCRIPTION_FAILED'
-    | 'DURATION_EXCEEDED'
-    | 'LOW_QUALITY'
-    | 'DISABLED';
+  | 'DOWNLOAD_FAILED'
+  | 'TRANSCRIPTION_FAILED'
+  | 'DURATION_EXCEEDED'
+  | 'LOW_QUALITY'
+  | 'DISABLED';
 }
 
 /**
@@ -90,14 +90,15 @@ export class AudioTranscriptionService {
         });
 
         return Buffer.from(audioResponse.data);
-      } catch (error: any) {
-        lastError = error;
+      } catch (error) {
+        const err = error as any;
+        lastError = err;
         logger.warn(
           {
             mediaId,
             attempt: attempt + 1,
             maxRetries: this.maxRetries + 1,
-            error: error.message,
+            error: err.message,
           },
           'Failed to download media, retrying...'
         );
@@ -148,17 +149,18 @@ export class AudioTranscriptionService {
         duration: verboseResult.duration,
         language: verboseResult.language,
       };
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       // Log detailed error for debugging
       logger.error(
         {
-          error: error.message,
-          status: error.status,
-          statusCode: error.statusCode,
-          code: error.code,
-          type: error.type,
-          errorDetails: error.error,
-          stack: error.stack?.substring(0, 500),
+          error: err.message,
+          status: err.status,
+          statusCode: err.statusCode,
+          code: err.code,
+          type: err.type,
+          errorDetails: err.error,
+          stack: err.stack?.substring(0, 500),
         },
         '❌ Groq Whisper API call failed'
       );
@@ -200,13 +202,14 @@ export class AudioTranscriptionService {
     try {
       audioBuffer = await this.downloadMediaFromMeta(mediaId);
       audioSizeBytes = audioBuffer.length;
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       this.logTranscription({
         mediaId,
         processingTimeMs: Date.now() - startTime,
         success: false,
         errorCode: 'DOWNLOAD_FAILED',
-        errorMessage: error.message,
+        errorMessage: err.message,
       });
 
       return {
@@ -281,8 +284,9 @@ export class AudioTranscriptionService {
         duration: result.duration,
         language: result.language,
       };
-    } catch (error: any) {
-      const errorMessage = error.message || 'Unknown transcription error';
+    } catch (error) {
+      const err = error as any;
+      const errorMessage = err.message || 'Unknown transcription error';
       const isLowQuality =
         errorMessage.toLowerCase().includes('quality') ||
         errorMessage.toLowerCase().includes('audio') ||

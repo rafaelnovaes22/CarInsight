@@ -116,23 +116,23 @@ export class ConversationGraph {
     );
 
     // Execute current node
-    let update;
+    let update: Partial<ConversationState>;
     try {
       switch (state.graph.currentNode) {
         case 'greeting':
-          update = await greetingNode(state as any);
+          update = (await greetingNode(state as any)) as any;
           break;
 
         case 'quiz':
-          update = await quizNode(state);
+          update = (await quizNode(state)) as any;
           break;
 
         case 'search':
-          update = await searchNode(state as any);
+          update = (await searchNode(state as any)) as any;
           break;
 
         case 'recommendation':
-          update = await recommendationNode(state as any);
+          update = (await recommendationNode(state as any)) as any;
           break;
 
         default:

@@ -9,10 +9,10 @@ import { logger } from '../lib/logger';
 export interface DataExportResult {
   solicitacao: string;
   telefone: string;
-  conversa?: any;
-  mensagens: any[];
-  lead?: any;
-  recomendacoes: any[];
+  conversa?: unknown;
+  mensagens: unknown[];
+  lead?: unknown;
+  recomendacoes: unknown[];
   totalRegistros: number;
 }
 

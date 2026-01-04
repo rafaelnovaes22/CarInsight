@@ -2,7 +2,7 @@ import axios from 'axios';
 import { logger } from '../lib/logger';
 import { env } from '../config/env';
 import { MessageHandlerV2 } from './message-handler-v2.service';
-import { AudioTranscriptionService, TranscriptionResult } from './audio-transcription.service';
+import { AudioTranscriptionService } from './audio-transcription.service';
 
 interface MetaWebhookMessage {
   from: string;
@@ -181,11 +181,12 @@ export class WhatsAppMetaService {
         to: phoneNumber,
         length: response.length,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       logger.error(
         {
-          error: error.message,
-          stack: error.stack,
+          error: err.message,
+          stack: err.stack,
           message,
         },
         '❌ Error handling incoming message'
@@ -355,12 +356,13 @@ export class WhatsAppMetaService {
         messageId: response.data.messages?.[0]?.id,
         to: to,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       logger.error(
         {
-          error: error.response?.data || error.message,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
+          error: err.response?.data || err.message,
+          status: err.response?.status,
+          statusText: err.response?.statusText,
           to,
           apiUrl: this.apiUrl,
           hasToken: !!this.accessToken,
@@ -394,7 +396,7 @@ export class WhatsAppMetaService {
               text: bodyText,
             },
             action: {
-              buttons: buttons.map((btn, idx) => ({
+              buttons: buttons.map((btn, _idx) => ({
                 type: 'reply',
                 reply: {
                   id: btn.id,
@@ -415,10 +417,11 @@ export class WhatsAppMetaService {
       logger.debug('✅ Button message sent', {
         messageId: response.data.messages?.[0]?.id,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       logger.error(
         {
-          error: error.response?.data || error.message,
+          error: err.response?.data || err.message,
         },
         '❌ Failed to send button message'
       );
@@ -487,10 +490,11 @@ export class WhatsAppMetaService {
         messageId: response.data.messages?.[0]?.id,
         template: templateName,
       });
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       logger.error(
         {
-          error: error.response?.data || error.message,
+          error: err.response?.data || err.message,
           template: templateName,
         },
         '❌ Failed to send template'
@@ -511,10 +515,11 @@ export class WhatsAppMetaService {
       });
 
       return response.data.url;
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as any;
       logger.error(
         {
-          error: error.response?.data || error.message,
+          error: err.response?.data || err.message,
           mediaId,
         },
         '❌ Failed to get media URL'

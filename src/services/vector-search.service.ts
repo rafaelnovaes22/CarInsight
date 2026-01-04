@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Vehicle, Prisma } from '@prisma/client';
 import { generateEmbedding, stringToEmbedding, searchSimilar } from '../lib/embeddings';
 import { logger } from '../lib/logger';
 
@@ -50,8 +50,9 @@ export class VectorSearchService {
         logger.info('🔍 Usando busca SQL (fallback)');
         return this.sqlSearch(criteria, limit);
       }
-    } catch (error: any) {
-      logger.error({ error: error.message }, 'Erro na busca de veículos');
+    } catch (error) {
+      const err = error as any;
+      logger.error({ error: err.message }, 'Erro na busca de veículos');
       return this.sqlSearch(criteria, limit);
     }
   }
@@ -69,7 +70,7 @@ export class VectorSearchService {
         },
       });
       return count > 0;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -110,10 +111,10 @@ export class VectorSearchService {
           vehicle: v,
         }))
         .filter(v => v.embedding !== null) as Array<{
-        id: string;
-        embedding: number[];
-        vehicle: any;
-      }>;
+          id: string;
+          embedding: number[];
+          vehicle: Vehicle;
+        }>;
 
       if (vehiclesWithEmbeddings.length === 0) {
         logger.warn('Nenhum embedding válido encontrado');
@@ -174,8 +175,9 @@ export class VectorSearchService {
       });
 
       return scoredVehicles.slice(0, limit);
-    } catch (error: any) {
-      logger.error({ error: error.message }, 'Erro na busca vetorial');
+    } catch (error) {
+      const err = error as any;
+      logger.error({ error: err.message }, 'Erro na busca vetorial');
       return this.sqlSearch(criteria, limit);
     }
   }
@@ -188,7 +190,7 @@ export class VectorSearchService {
     limit: number
   ): Promise<ScoredVehicle[]> {
     try {
-      const where: any = { disponivel: true };
+      const where: Prisma.VehicleWhereInput = { disponivel: true };
 
       if (criteria.budget) {
         where.preco = { lte: criteria.budget * 1.1 };
@@ -247,8 +249,9 @@ export class VectorSearchService {
       });
 
       return scoredVehicles.slice(0, limit);
-    } catch (error: any) {
-      logger.error({ error: error.message }, 'Erro na busca SQL');
+    } catch (error) {
+      const err = error as any;
+      logger.error({ error: err.message }, 'Erro na busca SQL');
       return [];
     }
   }
@@ -297,7 +300,7 @@ export class VectorSearchService {
   /**
    * Calcula score baseado em critérios objetivos
    */
-  private calculateCriteriaMatch(vehicle: any, criteria: VehicleSearchCriteria): number {
+  private calculateCriteriaMatch(vehicle: Vehicle, criteria: VehicleSearchCriteria): number {
     let score = 0;
     let totalWeight = 0;
 
@@ -306,11 +309,11 @@ export class VectorSearchService {
       const budgetWeight = 0.3;
       totalWeight += budgetWeight;
 
-      if (vehicle.preco <= criteria.budget) {
+      if ((vehicle.preco ?? Infinity) <= criteria.budget) {
         score += budgetWeight;
-      } else if (vehicle.preco <= criteria.budget * 1.1) {
+      } else if ((vehicle.preco ?? Infinity) <= criteria.budget * 1.1) {
         score += budgetWeight * 0.7;
-      } else if (vehicle.preco <= criteria.budget * 1.2) {
+      } else if ((vehicle.preco ?? Infinity) <= criteria.budget * 1.2) {
         score += budgetWeight * 0.4;
       }
     }
@@ -391,10 +394,10 @@ export class VectorSearchService {
   /**
    * Gera razões do match
    */
-  private generateMatchReasons(vehicle: any, criteria: VehicleSearchCriteria): string[] {
+  private generateMatchReasons(vehicle: Vehicle, criteria: VehicleSearchCriteria): string[] {
     const reasons: string[] = [];
 
-    if (criteria.budget && vehicle.preco <= criteria.budget) {
+    if (criteria.budget && (vehicle.preco ?? Infinity) <= criteria.budget) {
       reasons.push('Dentro do orçamento');
     }
 
@@ -421,7 +424,7 @@ export class VectorSearchService {
   /**
    * Extrai features do veículo
    */
-  private extractFeatures(vehicle: any): string[] {
+  private extractFeatures(vehicle: Vehicle): string[] {
     const features: string[] = [];
 
     if (vehicle.arCondicionado) features.push('Ar condicionado');

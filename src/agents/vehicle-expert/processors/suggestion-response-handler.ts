@@ -142,11 +142,11 @@ async function handleUberXAlternatives(
           _lastSearchType: 'recommendation' as const,
           _lastShownVehicles: uberXVehicles.map(r => ({
             vehicleId: r.vehicleId,
-            brand: r.vehicle.brand,
-            model: r.vehicle.model,
-            year: r.vehicle.year,
-            price: r.vehicle.price,
-            bodyType: r.vehicle.bodyType,
+            brand: r.vehicle?.brand || 'N/A',
+            model: r.vehicle?.model || 'N/A',
+            year: r.vehicle?.year || 0,
+            price: r.vehicle?.price ?? 0,
+            bodyType: r.vehicle?.bodyType,
           })),
         },
         {
@@ -204,7 +204,7 @@ async function handleAlternativeYears(
     limit: 5,
   });
 
-  const matchingResults = results.filter(r => r.vehicle.year === firstAvailableYear);
+  const matchingResults = results.filter(r => r.vehicle?.year === firstAvailableYear);
 
   if (matchingResults.length > 0) {
     const formattedResponse = await formatRecommendationsUtil(
@@ -232,10 +232,10 @@ async function handleAlternativeYears(
           _lastSearchType: 'specific' as const,
           _lastShownVehicles: matchingResults.map(r => ({
             vehicleId: r.vehicleId,
-            brand: r.vehicle.brand,
-            model: r.vehicle.model,
-            year: r.vehicle.year,
-            price: r.vehicle.price,
+            brand: r.vehicle?.brand || 'N/A',
+            model: r.vehicle?.model || 'N/A',
+            year: r.vehicle?.year || 0,
+            price: r.vehicle?.price ?? 0,
           })),
         },
         {
@@ -303,7 +303,7 @@ async function handleSevenSeaterAlternative(
         handled: true,
         response: buildResponse(
           `Entendido! Considerando seu orçamento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opções de SUVs espaçosos:\n\n` +
-            formattedResponse,
+          formattedResponse,
           altProfile,
           {
             canRecommend: true,
