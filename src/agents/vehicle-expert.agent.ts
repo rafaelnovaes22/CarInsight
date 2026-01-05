@@ -450,11 +450,57 @@ export class VehicleExpertAgent {
         }
       }
 
-      // 2.2. Moto request handling - ALLOW motorcycles to be searched
-      // Motos agora podem ser retornadas se solicitadas pelo usuário
-      // O filtro será aplicado no vehicle-search-adapter baseado no bodyType
+      // 2.2. Intercept Hard Constraints (FAIL FAST) - Motorcycles
+      // Detect motorcycle requests early and check availability immediately
+      const motoKeywords = ['moto', 'motocicleta', 'scooter', 'biz', 'titan', 'fan', 'bros'];
+      const recentMotoMessages = context.messages
+        .filter(m => m.role === 'user')
+        .slice(-3)
+        .map(m => m.content.toLowerCase())
+        .join(' ');
+      const hasMotoInMessage = motoKeywords.some(kw => recentMotoMessages.includes(kw));
+      const isMotoRequest =
+        updatedProfile.bodyType === 'moto' ||
+        extracted.extracted.bodyType === 'moto' ||
+        hasMotoInMessage;
 
-      // 2.2. Intercept Hard Constraints (FAIL FAST) - 7 seats
+      if (isMotoRequest && !context.profile?._waitingForSuggestionResponse) {
+        logger.info(
+          { bodyType: updatedProfile.bodyType, hasMotoInMessage },
+          'Intercepting flow: motorcycle request detected'
+        );
+
+        // Search specifically for motorcycles to check availability
+        const results = await vehicleSearchAdapter.search('moto', {
+          bodyType: 'moto',
+          limit: 5,
+          excludeMotorcycles: false, // Allow motorcycles in this search
+        });
+
+        if (results.length === 0) {
+          logger.info('No motorcycles found in inventory - offering car alternatives');
+
+          return {
+            response: `No momento não temos motos disponíveis no estoque. 🏍️\n\nQuer responder algumas perguntas rápidas para eu te dar sugestões de carros?`,
+            extractedPreferences: {
+              ...extracted.extracted,
+              _waitingForSuggestionResponse: true,
+              _searchedItem: 'moto',
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: 'clarification',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 1.0,
+              llmUsed: 'rule-based',
+              noMotosFound: true,
+            } as any,
+          };
+        }
+      }
+
+      // 2.4. Intercept Hard Constraints (FAIL FAST) - 7 seats
       if (
         updatedProfile.minSeats &&
         updatedProfile.minSeats >= 7 &&
@@ -497,7 +543,7 @@ export class VehicleExpertAgent {
         }
       }
 
-      // 2.3. Intercept Pending Similar Vehicles Approval
+      // 2.5. Intercept Pending Similar Vehicles Approval
       if (context.profile?._waitingForSimilarApproval) {
         const isYes = /sim|claro|pode|quero|manda|gostaria|ok|beleza|sim pode|com certeza/i.test(
           userMessage
