@@ -18,7 +18,24 @@ export function assessReadiness(
   profile: Partial<CustomerProfile>,
   context: ConversationContext
 ): ReadinessAssessment {
-  // Required fields
+  // SPECIAL CASE: If user specified bodyType (moto, pickup, SUV, etc.), we can recommend immediately
+  // This prevents loops where we keep asking for budget/usage when user just wants to see what's available
+  const hasSpecificBodyType =
+    profile.bodyType &&
+    ['moto', 'pickup', 'suv', 'sedan', 'hatch', 'minivan'].includes(profile.bodyType);
+
+  if (hasSpecificBodyType) {
+    return {
+      canRecommend: true,
+      confidence: 80, // Good confidence with specific body type
+      missingRequired: [],
+      missingOptional: ['budget', 'usage'].filter(field => !(profile as any)[field]),
+      action: 'recommend_now',
+      reasoning: `Tipo de veículo especificado (${profile.bodyType}) - suficiente para mostrar opções`,
+    };
+  }
+
+  // Required fields for general searches
   const required = ['budget', 'usage'];
   const missingRequired = required.filter(field => !(profile as any)[field]);
 
