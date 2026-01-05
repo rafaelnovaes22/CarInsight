@@ -150,7 +150,7 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
   );
 
   // 5. Search for similar vehicles
-  const similarResults = await vehicleSearchAdapter.search(searchQuery, {
+  const { recommendations: similarResults } = await vehicleSearchAdapter.search(searchQuery, {
     maxPrice: priceRange.max,
     minYear: firstVehicle.year - 5,
     bodyType: bodyType || undefined,

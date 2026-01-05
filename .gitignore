@@ -100,3 +100,5 @@ RECOMENDACOES_*.md
 
 # Core dumps
 core
+# AI Temp Files
+.claude/

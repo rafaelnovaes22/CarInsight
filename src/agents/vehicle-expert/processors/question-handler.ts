@@ -27,7 +27,7 @@ export async function answerQuestion(
 ): Promise<string> {
   try {
     // Search relevant vehicles semantically
-    const relevantVehicles = await vehicleSearchAdapter.search(question, {
+    const { recommendations: relevantVehicles } = await vehicleSearchAdapter.search(question, {
       maxPrice: profile.budget,
       bodyType: profile.bodyType,
       minYear: profile.minYear,
@@ -38,11 +38,11 @@ export async function answerQuestion(
     const vehicleContext =
       relevantVehicles.length > 0
         ? `VEÍCULOS RELEVANTES NO ESTOQUE:\n${relevantVehicles
-            .map(
-              (v, i) =>
-                `${i + 1}. ${v.vehicle.brand} ${v.vehicle.model} ${v.vehicle.year} - R$ ${v.vehicle.price.toLocaleString('pt-BR')}`
-            )
-            .join('\n')}`
+          .map(
+            (v, i) =>
+              `${i + 1}. ${v.vehicle.brand} ${v.vehicle.model} ${v.vehicle.year} - R$ ${v.vehicle.price.toLocaleString('pt-BR')}`
+          )
+          .join('\n')}`
         : 'Nenhum veículo específico encontrado para essa pergunta.';
 
     const conversationSummary = summarizeContext(context);

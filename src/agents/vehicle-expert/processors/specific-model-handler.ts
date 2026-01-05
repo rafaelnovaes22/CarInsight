@@ -238,7 +238,7 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
       'Searching for similar vehicles of same type'
     );
 
-    const similarResults = await vehicleSearchAdapter.search(`${bodyTypeInfo.type} usado`, {
+    const { recommendations: similarResults } = await vehicleSearchAdapter.search(`${bodyTypeInfo.type} usado`, {
       bodyType: bodyTypeInfo.type,
       limit: 10,
     });

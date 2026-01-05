@@ -92,6 +92,9 @@ import {
   type WantOthersContext,
 } from './vehicle-expert/handlers';
 
+// Import evaluator
+import { vehicleEvaluator } from './vehicle-expert/services/vehicle-evaluator';
+
 /**
  * Helper function to get the correct app name based on user's mention
  * Returns the name the user actually used (99, Uber, or generic "app")
@@ -226,19 +229,7 @@ export class VehicleExpertAgent {
         context.profile._lastShownVehicles.length > 0;
 
       // 2.2. Handle trade-in from initial message (delegated to handler)
-      // 2.2. Handle trade-in from initial message (delegated to handler)
-      /* 
-      const tradeInInitialResult = handleTradeInInitial(
-        exactMatch,
-        isTradeInContext,
-        !!alreadyHasSelectedVehicle,
-        extracted,
-        startTime
-      );
-      if (tradeInInitialResult.handled && tradeInInitialResult.response) {
-        return tradeInInitialResult.response;
-      }
-      */
+      // Delegated to trade_in node below
       // DELEGATION: Check for trade-in in initial message -> Delegate to trade_in node
       if (isTradeInContext && exactMatch.model && exactMatch.year && !alreadyHasSelectedVehicle) {
         logger.info('VehicleExpert: Delegating initial trade-in to trade_in node');
@@ -253,20 +244,7 @@ export class VehicleExpertAgent {
       }
 
       // 2.3. Handle trade-in after vehicle selection (delegated to handler)
-      // 2.3. Handle trade-in after vehicle selection (delegated to handler)
-      /*
-      const tradeInAfterResult = handleTradeInAfterSelection(
-        exactMatch,
-        isTradeInContext,
-        !!alreadyHasSelectedVehicle,
-        context.profile?._lastShownVehicles || [],
-        extracted,
-        startTime
-      );
-      if (tradeInAfterResult.handled && tradeInAfterResult.response) {
-        return tradeInAfterResult.response;
-      }
-      */
+      // Delegated to trade_in node below
       // DELEGATION: Check for trade-in after selection -> Delegate to trade_in node
       if (isTradeInContext && exactMatch.model && exactMatch.year && alreadyHasSelectedVehicle) {
         logger.info('VehicleExpert: Delegating post-selection trade-in to trade_in node');
@@ -342,7 +320,7 @@ export class VehicleExpertAgent {
           logger.info({ model: targetModel, year: targetYear }, 'Intercepting Exact Search intent');
 
           // 1. Tentar busca exata
-          const exactResults = await vehicleSearchAdapter.search(
+          const { recommendations: exactResults } = await vehicleSearchAdapter.search(
             userMessage.length > 3 ? userMessage : targetModel,
             {
               limit: 5,
@@ -402,7 +380,7 @@ export class VehicleExpertAgent {
             };
           } else {
             // Não encontrou o ano exato - verificar se O MODELO existe em outros anos
-            const modelResults = await vehicleSearchAdapter.search(targetModel, {
+            const { recommendations: modelResults } = await vehicleSearchAdapter.search(targetModel, {
               model: targetModel,
               limit: 20,
               excludeMotorcycles: true, // Model search excludes motorcycles
@@ -461,7 +439,7 @@ export class VehicleExpertAgent {
         !context.profile?._waitingForSuggestionResponse
       ) {
         // Search specifically for 7 seaters to check availability
-        const results = await vehicleSearchAdapter.search('7 lugares', {
+        const { recommendations: results } = await vehicleSearchAdapter.search('7 lugares', {
           limit: 20,
           excludeMotorcycles: true, // 7-seater search excludes motorcycles
         });
@@ -930,7 +908,7 @@ export class VehicleExpertAgent {
             );
 
             // Search for the model with selected year
-            const results = await vehicleSearchAdapter.search(searchedModel || '', {
+            const { recommendations: results } = await vehicleSearchAdapter.search(searchedModel || '', {
               model: searchedModel,
               minYear: selectedYear,
               limit: 5,
@@ -1070,8 +1048,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                askedBodyType === 'motocicleta' ||
+                askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1082,7 +1060,7 @@ export class VehicleExpertAgent {
           );
 
           // Para perguntas de disponibilidade, buscar DIRETO por categoria (sem filtros extras)
-          const categoryResults = await vehicleSearchAdapter.search(`${normalizedBodyType}`, {
+          const { recommendations: categoryResults, totalCount: categoryTotal } = await vehicleSearchAdapter.search(`${normalizedBodyType}`, {
             bodyType: normalizedBodyType,
             limit: 5, // Retornar até 5 veículos da categoria
             excludeMotorcycles: normalizedBodyType !== 'moto', // Exclude motos unless asking for motos
@@ -1093,8 +1071,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                    askedBodyType === 'motocicleta' ||
-                    askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
@@ -1134,7 +1112,7 @@ export class VehicleExpertAgent {
                     ? 'hatches'
                     : `${askedBodyType}s`;
 
-          const intro = `Temos ${categoryResults.length} ${categoryName} disponíveis! 🚗\n\n`;
+          const intro = `Temos ${categoryTotal > 0 ? categoryTotal : categoryResults.length} ${categoryName} disponíveis! 🚗\n\n`;
           const vehicleList = categoryResults
             .map((rec, i) => {
               const v = rec.vehicle;
@@ -1363,7 +1341,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         const formattedResponse = await formatRecommendationsUtil(
           filteredRecommendations,
           updatedProfile,
-          'recommendation' // Fluxo de recomendação personalizada
+          'recommendation', // Fluxo de recomendação personalizada
+          result.totalMatches // Pass total available for context
         );
 
         return {
@@ -1445,6 +1424,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
     wantsMoto?: boolean;
     noSevenSeaters?: boolean;
     requiredSeats?: number;
+    totalMatches?: number;
   }> {
     try {
       // Build search query
@@ -1539,13 +1519,13 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         profile.priorities?.includes('trabalho');
 
       // Search vehicles - include brand/model filter for specific requests
-      const results = await vehicleSearchAdapter.search(query.searchText, {
+      const { recommendations: results, totalCount } = await vehicleSearchAdapter.search(query.searchText, {
         maxPrice: query.filters.maxPrice,
         minYear: query.filters.minYear,
         bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
         brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
         model: query.filters.model?.[0], // Filtrar por modelo quando especificado
-        limit: 10, // Get more to filter
+        limit: 50, // Get up to 50 candidates for smart ranking
         // CRITICAL: Exclude motorcycles when searching for cars
         excludeMotorcycles: !wantsMoto,
         // Apply Uber filters
@@ -1753,7 +1733,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
         // Buscar veículos que seriam aptos para apps (sedan/hatch, 2012+, com ar)
         // mas que podem não ter o campo aptoUber marcado no banco
-        const fallbackResults = await vehicleSearchAdapter.search('sedan hatch carro', {
+        const { recommendations: fallbackResults } = await vehicleSearchAdapter.search('sedan hatch carro', {
           maxPrice: query.filters.maxPrice,
           minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
           limit: 10,
@@ -1778,11 +1758,18 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             { count: compatibleResults.length },
             'Fallback found compatible vehicles for app transport'
           );
-          return { recommendations: compatibleResults.slice(0, 5), wantsPickup: false };
+
+          // Use evaluator for fallback results to pick best ones
+          const evaluatedFallback = await vehicleEvaluator.evaluateVehicles(compatibleResults, profile);
+          return { recommendations: evaluatedFallback.slice(0, 5), wantsPickup: false, totalMatches: compatibleResults.length };
         }
       }
 
-      return { recommendations: filteredResults.slice(0, 5), wantsPickup };
+      // Apply Smart Ranking using VehicleEvaluator
+      logger.info({ candidateCount: filteredResults.length }, 'Applying Smart Ranking with LLM');
+      const rankedRecommendations = await vehicleEvaluator.evaluateVehicles(filteredResults, profile);
+
+      return { recommendations: rankedRecommendations.slice(0, 5), wantsPickup, totalMatches: totalCount };
     } catch (error) {
       logger.error({ error, profile }, 'Failed to get recommendations');
       return { recommendations: [] };
