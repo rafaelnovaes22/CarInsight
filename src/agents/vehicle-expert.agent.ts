@@ -33,6 +33,8 @@ import {
   detectBodyTypeFromModel,
   detectVehicleCategory,
 } from './vehicle-expert/constants';
+import { PlatformRulesConfig } from '../config/platform-rules.config';
+import { platformValidator } from '../services/platform-validator.service';
 
 // Import extractors
 import { extractTradeInInfo, inferBrandFromModel } from './vehicle-expert/extractors';
@@ -1054,8 +1056,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                askedBodyType === 'motocicleta' ||
+                askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1078,8 +1080,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                    askedBodyType === 'motocicleta' ||
-                    askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
@@ -1400,6 +1402,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       };
     } catch (error) {
       logger.error({ error, userMessage }, 'VehicleExpert chat failed');
+      console.error('AGENT ERROR:', error);
 
       // Fallback response
       return {
@@ -1525,12 +1528,59 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         profile.usage === 'trabalho' ||
         profile.priorities?.includes('trabalho');
 
+
+      // Detect Platform/App Intent (Universal)
+      const detectPlatformIntent = (p: Partial<CustomerProfile>, q: string) => {
+        const text = (q + ' ' + (p.usoPrincipal || '') + ' ' + (p.priorities || []).join(' ')).toLowerCase();
+
+        // Transport
+        if (text.includes('black') || p.tipoUber === 'black') return { type: 'transport', app: 'uber', category: 'black' };
+        if (text.includes('comfort')) return { type: 'transport', app: 'uber', category: 'comfort' };
+        if (text.includes('uber') || text.includes('99') || text.includes('indrive')) return { type: 'transport', app: 'uber', category: 'x' }; // Default to X standard
+
+        // Delivery
+        if (text.includes('ifood')) return { type: 'delivery', app: 'ifood', category: 'moto' };
+        if (text.includes('loggi')) return { type: 'delivery', app: 'loggi', category: 'moto' }; // Default
+        if (text.includes('lalamove')) return { type: 'delivery', app: 'lalamove', category: 'carro' }; // Default to car if ambiguous
+        if (text.includes('mercado') || text.includes('envio') || text.includes('livre')) return { type: 'delivery', app: 'mercadoEnvios', category: 'flex' };
+        if (text.includes('shopee')) return { type: 'delivery', app: 'shopee', category: 'entregador' };
+
+        return null;
+      };
+
+      const platformIntent = detectPlatformIntent(profile, query.searchText);
+
+      // Enforce Strict Platform Rules (Hybrid Policy)
+      let enforcedMinYear = query.filters.minYear;
+      const currentYear = new Date().getFullYear();
+
+      if (platformIntent) {
+        let limitRelative = 10; // Default safety
+
+        // Resolve rule from config
+        try {
+          const rule = PlatformRulesConfig[platformIntent.type]?.[platformIntent.app]?.[platformIntent.category];
+          if (rule && rule.minYearRelative) {
+            limitRelative = rule.minYearRelative;
+          }
+        } catch (e) {
+          logger.warn({ platformIntent }, 'Could not resolve platform rule from config, using default 10y');
+        }
+
+        const ruleMinYear = currentYear - limitRelative;
+
+        if (!enforcedMinYear || ruleMinYear > enforcedMinYear) {
+          logger.info({ ruleMinYear, originalMin: query.filters.minYear, platformIntent }, 'Enforcing Platform Min Year Rule');
+          enforcedMinYear = ruleMinYear;
+        }
+      }
+
       // Search vehicles - include brand/model filter for specific requests
       const { recommendations: results, totalCount } = await vehicleSearchAdapter.search(
         query.searchText,
         {
           maxPrice: query.filters.maxPrice,
-          minYear: query.filters.minYear,
+          minYear: enforcedMinYear,
           bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
           brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
           model: query.filters.model?.[0], // Filtrar por modelo quando especificado
@@ -1718,6 +1768,57 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           if (filteredResults.length < 3) {
             filteredResults = results.slice(0, 5);
           }
+        }
+      }
+
+      // Post-filter: Hybrid Policy Validation (Strict Eligibility)
+      if (platformIntent) {
+        const validatedResults: VehicleRecommendation[] = [];
+
+        for (const rec of filteredResults) {
+          const validation = await platformValidator.validateAll({
+            marca: rec.vehicle.brand,
+            modelo: rec.vehicle.model,
+            ano: rec.vehicle.year,
+            carroceria: rec.vehicle.bodyType,
+            arCondicionado: true,
+            portas: 4,
+            cambio: rec.vehicle.transmission || 'Manual'
+          });
+
+          let passed = false;
+
+          // Validate based on Intent
+          if (platformIntent.app === 'uber' && platformIntent.category === 'black') {
+            passed = validation.transport.uberBlack;
+          } else if (platformIntent.app === 'uber' || platformIntent.app === '99') {
+            passed = validation.transport.uberX || validation.transport.pop99;
+          } else if (platformIntent.app === 'mercadoEnvios') {
+            passed = validation.delivery.mercadoEnviosFlex;
+          } else if (platformIntent.app === 'shopee') {
+            passed = validation.delivery.shopee;
+          } else if (platformIntent.app === 'lalamove') {
+            // Lalamove is broad, check car or moto based on intent
+            if (platformIntent.category === 'moto') passed = validation.delivery.lalamoveMoto;
+            else passed = validation.delivery.lalamoveCarro || validation.delivery.lalamoveUtility;
+          } else if (platformIntent.app === 'ifood') {
+            passed = validation.delivery.ifoodMoto;
+          } else {
+            // Default safe fallback if unknown
+            passed = true;
+          }
+
+          if (passed) {
+            validatedResults.push(rec);
+          } else {
+            logger.info({ vehicle: rec.vehicle.model, reason: "Failed Platform Validation", intent: platformIntent }, 'Filtered out by Validator');
+          }
+        }
+
+        if (validatedResults.length > 0) {
+          filteredResults = validatedResults;
+        } else {
+          logger.warn('All vehicles filtered by Strict Validator.');
         }
       }
 
