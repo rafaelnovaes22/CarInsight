@@ -1056,8 +1056,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                askedBodyType === 'motocicleta' ||
-                askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1080,8 +1080,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                    askedBodyType === 'motocicleta' ||
+                    askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
@@ -1528,22 +1528,33 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         profile.usage === 'trabalho' ||
         profile.priorities?.includes('trabalho');
 
-
       // Detect Platform/App Intent (Universal)
       const detectPlatformIntent = (p: Partial<CustomerProfile>, q: string) => {
-        const text = (q + ' ' + (p.usoPrincipal || '') + ' ' + (p.priorities || []).join(' ')).toLowerCase();
+        const text = (
+          q +
+          ' ' +
+          (p.usoPrincipal || '') +
+          ' ' +
+          (p.priorities || []).join(' ')
+        ).toLowerCase();
 
         // Transport
-        if (text.includes('black') || p.tipoUber === 'black') return { type: 'transport', app: 'uber', category: 'black' };
-        if (text.includes('comfort')) return { type: 'transport', app: 'uber', category: 'comfort' };
-        if (text.includes('uber') || text.includes('99') || text.includes('indrive')) return { type: 'transport', app: 'uber', category: 'x' }; // Default to X standard
+        if (text.includes('black') || p.tipoUber === 'black')
+          return { type: 'transport', app: 'uber', category: 'black' };
+        if (text.includes('comfort'))
+          return { type: 'transport', app: 'uber', category: 'comfort' };
+        if (text.includes('uber') || text.includes('99') || text.includes('indrive'))
+          return { type: 'transport', app: 'uber', category: 'x' }; // Default to X standard
 
         // Delivery
         if (text.includes('ifood')) return { type: 'delivery', app: 'ifood', category: 'moto' };
         if (text.includes('loggi')) return { type: 'delivery', app: 'loggi', category: 'moto' }; // Default
-        if (text.includes('lalamove')) return { type: 'delivery', app: 'lalamove', category: 'carro' }; // Default to car if ambiguous
-        if (text.includes('mercado') || text.includes('envio') || text.includes('livre')) return { type: 'delivery', app: 'mercadoEnvios', category: 'flex' };
-        if (text.includes('shopee')) return { type: 'delivery', app: 'shopee', category: 'entregador' };
+        if (text.includes('lalamove'))
+          return { type: 'delivery', app: 'lalamove', category: 'carro' }; // Default to car if ambiguous
+        if (text.includes('mercado') || text.includes('envio') || text.includes('livre'))
+          return { type: 'delivery', app: 'mercadoEnvios', category: 'flex' };
+        if (text.includes('shopee'))
+          return { type: 'delivery', app: 'shopee', category: 'entregador' };
 
         return null;
       };
@@ -1559,18 +1570,27 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
         // Resolve rule from config
         try {
-          const rule = PlatformRulesConfig[platformIntent.type]?.[platformIntent.app]?.[platformIntent.category];
+          const rule =
+            PlatformRulesConfig[platformIntent.type]?.[platformIntent.app]?.[
+              platformIntent.category
+            ];
           if (rule && rule.minYearRelative) {
             limitRelative = rule.minYearRelative;
           }
         } catch (e) {
-          logger.warn({ platformIntent }, 'Could not resolve platform rule from config, using default 10y');
+          logger.warn(
+            { platformIntent },
+            'Could not resolve platform rule from config, using default 10y'
+          );
         }
 
         const ruleMinYear = currentYear - limitRelative;
 
         if (!enforcedMinYear || ruleMinYear > enforcedMinYear) {
-          logger.info({ ruleMinYear, originalMin: query.filters.minYear, platformIntent }, 'Enforcing Platform Min Year Rule');
+          logger.info(
+            { ruleMinYear, originalMin: query.filters.minYear, platformIntent },
+            'Enforcing Platform Min Year Rule'
+          );
           enforcedMinYear = ruleMinYear;
         }
       }
@@ -1783,7 +1803,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             carroceria: rec.vehicle.bodyType,
             arCondicionado: true,
             portas: 4,
-            cambio: rec.vehicle.transmission || 'Manual'
+            cambio: rec.vehicle.transmission || 'Manual',
           });
 
           let passed = false;
@@ -1811,7 +1831,14 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           if (passed) {
             validatedResults.push(rec);
           } else {
-            logger.info({ vehicle: rec.vehicle.model, reason: "Failed Platform Validation", intent: platformIntent }, 'Filtered out by Validator');
+            logger.info(
+              {
+                vehicle: rec.vehicle.model,
+                reason: 'Failed Platform Validation',
+                intent: platformIntent,
+              },
+              'Filtered out by Validator'
+            );
           }
         }
 
