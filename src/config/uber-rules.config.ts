@@ -6,50 +6,50 @@
  */
 
 export const UberRulesConfig = {
-    // Models explicitly blocked from Uber Black regardless of year/price
-    // These are "popular" sedans/hatchs that don't meet the premium criteria
-    blackExclusions: [
-        'HB20',
-        'HB20S',
-        'Hb20',
-        'Hb20s',
-        'Onix',
-        'Onix Plus',
-        'Prisma',
-        'Fiat Cronos',
-        'Grand Siena',
-        'Siena',
-        'VW Voyage',
-        'Virtus', // Except GTS/Exclusive, but safe to block for general rule
-        'Ford Ka',
-        'Ka Sedan',
-        'Toyota Yaris',
-        'Etios',
-        'Nissan Versa',
-        'V-Drive',
-        'Honda City',
-        'Renault Logan',
-        'Sandero',
-    ],
+  // Models explicitly blocked from Uber Black regardless of year/price
+  // These are "popular" sedans/hatchs that don't meet the premium criteria
+  blackExclusions: [
+    'HB20',
+    'HB20S',
+    'Hb20',
+    'Hb20s',
+    'Onix',
+    'Onix Plus',
+    'Prisma',
+    'Fiat Cronos',
+    'Grand Siena',
+    'Siena',
+    'VW Voyage',
+    'Virtus', // Except GTS/Exclusive, but safe to block for general rule
+    'Ford Ka',
+    'Ka Sedan',
+    'Toyota Yaris',
+    'Etios',
+    'Nissan Versa',
+    'V-Drive',
+    'Honda City',
+    'Renault Logan',
+    'Sandero',
+  ],
 
-    // Age limits relative to current year
-    ageLimits: {
-        uberX: 10, // 10 years rule (Main capitals)
-        uberComfort: 6, // ~6 years rule (Varies by city, 6 is safe average)
-        uberBlack: 6, // ~6 years rule
-    },
+  // Age limits relative to current year
+  ageLimits: {
+    uberX: 10, // 10 years rule (Main capitals)
+    uberComfort: 6, // ~6 years rule (Varies by city, 6 is safe average)
+    uberBlack: 6, // ~6 years rule
+  },
 
-    /**
-     * Generates the LLM prompt with strict rules for the current year.
-     * @param currentYear The reference year (e.g. 2026)
-     */
-    getSafetyPrompt: (currentYear: number) => {
-        const rules = UberRulesConfig;
-        const uberXCutoff = currentYear - rules.ageLimits.uberX;
-        const uberComfortCutoff = currentYear - rules.ageLimits.uberComfort;
-        const uberBlackCutoff = currentYear - rules.ageLimits.uberBlack;
+  /**
+   * Generates the LLM prompt with strict rules for the current year.
+   * @param currentYear The reference year (e.g. 2026)
+   */
+  getSafetyPrompt: (currentYear: number) => {
+    const rules = UberRulesConfig;
+    const uberXCutoff = currentYear - rules.ageLimits.uberX;
+    const uberComfortCutoff = currentYear - rules.ageLimits.uberComfort;
+    const uberBlackCutoff = currentYear - rules.ageLimits.uberBlack;
 
-        return `ATENÇÃO MÁXIMA: Você é um validador RIGOROSO de veículos para Uber Black/Comfort no Brasil (Data Atual: ${currentYear}).
+    return `ATENÇÃO MÁXIMA: Você é um validador RIGOROSO de veículos para Uber Black/Comfort no Brasil (Data Atual: ${currentYear}).
 
 🚨 REGRA DE OURO (EXCLUSÕES IMEDIATAS):
 Se o veículo estiver nesta lista, ele **NUNCA** pode ser Uber Black, não importa o ano ou preço:
@@ -99,5 +99,5 @@ Formato de resposta:
   "reasoning": "Seja direto. Mencione a exclusão se houver.",
   "confidence": 1.0
 }`;
-    },
+  },
 };

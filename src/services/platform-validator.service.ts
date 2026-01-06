@@ -1,4 +1,3 @@
-
 import { chatCompletion } from '../lib/llm-router';
 import { logger } from '../lib/logger';
 import { PlatformRulesConfig } from '../config/platform-rules.config';
@@ -58,7 +57,6 @@ export interface VehicleInfo {
 }
 
 export class PlatformValidator {
-
   /**
    * Validate vehicle against ALL platform rules
    */
@@ -123,7 +121,6 @@ Retorne JSON no formato:
         reasoning: result.reasoning || '',
         confidence: result.confidence || 0.8,
       };
-
     } catch (error) {
       logger.error({ error, vehicle }, 'Error validating platform eligibility');
       return this.fallbackValidation(vehicle, currentYear);
@@ -142,7 +139,7 @@ Retorne JSON no formato:
       uberBlack: fullResult.transport.uberBlack,
       reasoning: fullResult.reasoning,
       confidence: fullResult.confidence,
-      otherApps: fullResult
+      otherApps: fullResult,
     };
   }
 
@@ -158,10 +155,27 @@ Retorne JSON no formato:
 
     // Default fail
     const res: PlatformEligibilityResult = {
-      transport: { uberX: false, uberComfort: false, uberBlack: false, pop99: false, comfort99: false, indrive: false },
-      delivery: { ifoodMoto: false, ifoodBike: false, loggiMoto: false, loggiVan: false, lalamoveCarro: false, lalamoveMoto: false, lalamoveUtility: false, mercadoEnviosFlex: false, shopee: false },
+      transport: {
+        uberX: false,
+        uberComfort: false,
+        uberBlack: false,
+        pop99: false,
+        comfort99: false,
+        indrive: false,
+      },
+      delivery: {
+        ifoodMoto: false,
+        ifoodBike: false,
+        loggiMoto: false,
+        loggiVan: false,
+        lalamoveCarro: false,
+        lalamoveMoto: false,
+        lalamoveUtility: false,
+        mercadoEnviosFlex: false,
+        shopee: false,
+      },
       reasoning: 'Fallback: Logic failed, returning safe defaults.',
-      confidence: 0.5
+      confidence: 0.5,
     };
 
     if (isCar) {
@@ -206,4 +220,4 @@ Retorne JSON no formato:
 
 // Export singleton with alias for backward compatibility
 export const platformValidator = new PlatformValidator();
-export const uberEligibilityValidator = platformValidator; 
+export const uberEligibilityValidator = platformValidator;
