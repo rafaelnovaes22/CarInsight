@@ -95,7 +95,6 @@ export async function handleUberBlackQuestion(
     limit: 10,
   });
 
-
   let response = `🚖 *Critérios para Uber Black:*\n\n`;
   response += `• Ano: 2018 ou mais recente\n`;
   response += `• Tipo: APENAS Sedan PREMIUM\n`;

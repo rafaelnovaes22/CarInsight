@@ -303,7 +303,7 @@ async function handleSevenSeaterAlternative(
         handled: true,
         response: buildResponse(
           `Entendido! Considerando seu orçamento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opções de SUVs espaçosos:\n\n` +
-          formattedResponse,
+            formattedResponse,
           altProfile,
           {
             canRecommend: true,

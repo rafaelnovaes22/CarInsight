@@ -171,7 +171,6 @@ export function generateRecommendationIntro(
     parts.push(`até R$ ${profile.budget.toLocaleString('pt-BR')}`);
   }
 
-
   const criteria = parts.length > 0 ? ` para ${parts.join(', ')}` : '';
 
   // If we found more than 5 (which is the display limit), indicate selection

@@ -238,10 +238,13 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
       'Searching for similar vehicles of same type'
     );
 
-    const { recommendations: similarResults } = await vehicleSearchAdapter.search(`${bodyTypeInfo.type} usado`, {
-      bodyType: bodyTypeInfo.type,
-      limit: 10,
-    });
+    const { recommendations: similarResults } = await vehicleSearchAdapter.search(
+      `${bodyTypeInfo.type} usado`,
+      {
+        bodyType: bodyTypeInfo.type,
+        limit: 10,
+      }
+    );
 
     if (similarResults.length > 0) {
       similarResults.sort((a, b) => a.vehicle.price - b.vehicle.price);
