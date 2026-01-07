@@ -24,7 +24,8 @@ export type SearchType = 'specific' | 'similar' | 'recommendation';
 export async function formatRecommendations(
   recommendations: VehicleRecommendation[],
   profile: Partial<CustomerProfile>,
-  searchType: SearchType = 'recommendation'
+  searchType: SearchType = 'recommendation',
+  totalMatches?: number
 ): Promise<string> {
   if (recommendations.length === 0) {
     return `Hmm, não encontrei veículos que atendam exatamente suas preferências. 🤔
@@ -73,7 +74,7 @@ Me diz o que prefere!`;
 
     const intro = generateRecommendationIntro(
       profile,
-      vehiclesToShow.length,
+      totalMatches || recommendations.length, // Use totalMatches if provided, otherwise length
       searchType,
       vehiclesToShow[0]?.vehicle
     );
@@ -171,6 +172,11 @@ export function generateRecommendationIntro(
   }
 
   const criteria = parts.length > 0 ? ` para ${parts.join(', ')}` : '';
+
+  // If we found more than 5 (which is the display limit), indicate selection
+  if (count > 5) {
+    return `Encontrei ${count} veículos disponíveis! Selecionei os 5 MELHORES${criteria}:`;
+  }
 
   return `Perfeito! Encontrei ${count} veículo${count > 1 ? 's IDEAIS' : ' IDEAL'}${criteria}:`;
 }

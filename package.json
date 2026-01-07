@@ -1,7 +1,7 @@
 {
-  "name": "faciliauto-mvp",
+  "name": "car-insight",
   "version": "1.0.1",
-  "description": "MVP - Assistente de Vendas WhatsApp com IA para Concessionárias",
+  "description": "CarInsight - Assistente Inteligente de Vendas Automotivas",
   "main": "dist/index.js",
   "scripts": {
     "heroku-prebuild": "echo 'Skipping TypeScript build, using tsx directly'",

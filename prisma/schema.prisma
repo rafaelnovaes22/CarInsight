@@ -7,226 +7,168 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Veículos no estoque
 model Vehicle {
-  id          String   @id @default(uuid())
-  externalId  String?  @unique // ID do veículo no site original (para sync)
-  marca       String
-  modelo      String
-  versao      String?
-  ano         Int
-  km          Int
-  preco       Float?   // Opcional - pode ser null quando "Consulte"
-  cor         String?  // Opcional - pode ser null quando não informado
-  carroceria  String   // hatch, sedan, SUV, picape
-  combustivel String   @default("Flex")
-  cambio      String   @default("Manual")
-  
-  // Opcionais básicos
-  arCondicionado     Boolean @default(false)
-  direcaoHidraulica  Boolean @default(false)
-  airbag            Boolean @default(false)
-  abs               Boolean @default(false)
-  
-  // Opcionais adicionais
-  vidroEletrico     Boolean @default(false)
-  travaEletrica     Boolean @default(false)
-  alarme            Boolean @default(false)
-  rodaLigaLeve      Boolean @default(false)
-  som               Boolean @default(false)
-  portas            Int     @default(4)
-  
-  // Lista de opcionais (JSON string array)
-  opcionais     String?  // JSON array com todos os opcionais do veículo
-  
-  // Mídia
-  fotoUrl       String?
-  fotosUrls     String   @default("") // JSON string array
-  
-  // URL do veículo no site da loja (página de detalhes)
-  url           String?
-  detailUrl     String?  // Link completo para cliente acessar
-  
-  // Descrição
-  descricao     String?
-  
-  // Embedding vetorial (OpenAI text-embedding-3-small - 1536 dimensões)
-  embedding     String?  // JSON array de números
-  embeddingModel String? @default("text-embedding-3-small")
+  id                   String           @id @default(uuid())
+  externalId           String?          @unique
+  marca                String
+  modelo               String
+  versao               String?
+  ano                  Int
+  km                   Int
+  preco                Float?
+  cor                  String?
+  carroceria           String
+  combustivel          String           @default("Flex")
+  cambio               String           @default("Manual")
+  arCondicionado       Boolean          @default(false)
+  direcaoHidraulica    Boolean          @default(false)
+  airbag               Boolean          @default(false)
+  abs                  Boolean          @default(false)
+  vidroEletrico        Boolean          @default(false)
+  travaEletrica        Boolean          @default(false)
+  alarme               Boolean          @default(false)
+  rodaLigaLeve         Boolean          @default(false)
+  som                  Boolean          @default(false)
+  portas               Int              @default(4)
+  opcionais            String?
+  fotoUrl              String?
+  fotosUrls            String           @default("")
+  url                  String?
+  detailUrl            String?
+  descricao            String?
+  embedding            String?
+  embeddingModel       String?          @default("text-embedding-3-small")
   embeddingGeneratedAt DateTime?
-  
-  // Status
-  disponivel    Boolean  @default(true)
-  
-  // Contextos de uso
-  aptoUber      Boolean  @default(false)  // Apto para Uber/99/apps
-  aptoUberBlack Boolean  @default(false)  // Apto para Uber Black
-  aptoFamilia   Boolean  @default(true)   // Recomendado para família
-  aptoTrabalho  Boolean  @default(true)   // Bom para trabalho/cidade
-  economiaCombustivel String? // baixa, media, alta
-  
-  // Timestamps
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  // Relations
-  recommendations Recommendation[]
+  disponivel           Boolean          @default(true)
+  aptoUber             Boolean          @default(false)
+  aptoUberBlack        Boolean          @default(false)
+  aptoFamilia          Boolean          @default(true)
+  aptoTrabalho         Boolean          @default(true)
+  economiaCombustivel  String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  recommendations      Recommendation[]
 }
 
-// Conversas no WhatsApp
 model Conversation {
-  id              String   @id @default(uuid())
+  id              String           @id @default(uuid())
   phoneNumber     String
   customerName    String?
-  
-  // Estado da conversa
-  status          String   @default("active") // active, qualified, converted, abandoned
-  currentStep     String   @default("greeting") // greeting, quiz, recommendation, closed
-  
-  // Dados do quiz (JSON as string)
+  status          String           @default("active")
+  currentStep     String           @default("greeting")
   quizAnswers     String?
   profileData     String?
-  
-  // Timestamps
-  startedAt       DateTime @default(now())
-  lastMessageAt   DateTime @default(now())
+  startedAt       DateTime         @default(now())
+  lastMessageAt   DateTime         @default(now())
   closedAt        DateTime?
-  
-  // Relations
   events          Event[]
+  lead            Lead?
   messages        Message[]
   recommendations Recommendation[]
-  lead            Lead?
 }
 
-// Eventos/Actions na conversa
 model Event {
-  id              String   @id @default(uuid())
-  conversationId  String
-  eventType       String   // started, quiz_question, quiz_completed, recommendation_sent, visit_scheduled, sold
-  metadata        String?
-  timestamp       DateTime @default(now())
-  
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
+  id             String       @id @default(uuid())
+  conversationId String
+  eventType      String
+  metadata       String?
+  timestamp      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
   @@index([conversationId])
   @@index([eventType])
   @@index([timestamp])
 }
 
-// Recomendações geradas
 model Recommendation {
-  id              String   @id @default(uuid())
-  conversationId  String
-  vehicleId       String
-  
-  matchScore      Int      // 0-100
-  reasoning       String   // Justificativa da recomendação
-  position        Int      @default(1) // 1, 2, 3 (top 3)
-  
-  // Cliente interagiu?
-  clicked         Boolean  @default(false)
-  interested      Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  vehicle         Vehicle      @relation(fields: [vehicleId], references: [id])
-  
+  id             String       @id @default(uuid())
+  conversationId String
+  vehicleId      String
+  matchScore     Int
+  reasoning      String
+  position       Int          @default(1)
+  clicked        Boolean      @default(false)
+  interested     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle      @relation(fields: [vehicleId], references: [id])
+
   @@index([conversationId])
   @@index([matchScore])
 }
 
-// Leads qualificados
 model Lead {
-  id              String   @id @default(uuid())
-  conversationId  String   @unique
-  
-  // Dados do cliente
-  name            String
-  phone           String
-  email           String?
-  
-  // Perfil
-  budget          Float?
-  usage           String?  // urbano, viagem, trabalho
-  people          Int?
-  hasTradeIn      Boolean  @default(false)
-  tradeInInfo     String?
-  
-  // Interesse
-  interestedVehicles String? // JSON array de vehicle IDs
-  urgency         String?  // urgente, 1mes, 3meses, pesquisando
-  
-  // Status
-  status          String   @default("new") // new, contacted, visited, sold, lost
-  
-  // Atribuição
-  source          String   @default("whatsapp_bot")
-  
-  // Venda
-  soldAt          DateTime?
-  soldVehicleId   String?
-  saleValue       Float?
-  
-  // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  // CRM
-  crmSynced       Boolean  @default(false)
-  crmId           String?
-  
-  conversation    Conversation @relation(fields: [conversationId], references: [id])
-  
+  id                 String       @id @default(uuid())
+  conversationId     String       @unique
+  name               String
+  phone              String
+  email              String?
+  budget             Float?
+  usage              String?
+  people             Int?
+  hasTradeIn         Boolean      @default(false)
+  tradeInInfo        String?
+  interestedVehicles String?
+  urgency            String?
+  status             String       @default("new")
+  source             String       @default("whatsapp_bot")
+  soldAt             DateTime?
+  soldVehicleId      String?
+  saleValue          Float?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  crmSynced          Boolean      @default(false)
+  crmId              String?
+  conversation       Conversation @relation(fields: [conversationId], references: [id])
+
   @@index([phone])
   @@index([status])
   @@index([createdAt])
 }
 
-// Mensagens (log opcional)
 model Message {
-  id              String   @id @default(uuid())
+  id              String       @id @default(uuid())
   conversationId  String
-  
-  direction       String   // incoming, outgoing
+  direction       String
   content         String
-  messageType     String   @default("text") // text, image, button, audio_transcription
-  
-  // WhatsApp metadata
+  messageType     String       @default("text")
   waMessageId     String?
-  
-  // Audio message metadata (for audio_transcription type)
-  originalMediaId String?  // Meta media ID for audio messages
-  
-  timestamp       DateTime @default(now())
-  
+  originalMediaId String?
+  timestamp       DateTime     @default(now())
   conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  
+
   @@index([conversationId])
   @@index([timestamp])
 }
 
-// LangGraph Persistence
 model LangGraphCheckpoint {
-  thread_id         String
-  checkpoint_ns     String   @default("")
-  checkpoint_id     String
+  thread_id            String
+  checkpoint_ns        String   @default("")
+  checkpoint_id        String
   parent_checkpoint_id String?
-  type              String?  // 'checkpoint' or 'blob' 
-  checkpoint        Json     // The actual state blob
-  metadata          Json     @default("{}")
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  type                 String?
+  checkpoint           Json
+  metadata             Json     @default("{}")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@id([thread_id, checkpoint_ns, checkpoint_id])
 }
 
 model LangGraphCheckpointBlob {
-  thread_id         String
-  checkpoint_ns     String   @default("")
-  content           Json
+  thread_id     String
+  checkpoint_ns String @default("")
+  content       Json
 
   @@id([thread_id, checkpoint_ns])
+}
+
+model system_prompts {
+  id          String   @id
+  key         String   @unique
+  content     String
+  description String?
+  version     Int      @default(1)
+  updatedAt   DateTime
+  createdAt   DateTime @default(now())
 }

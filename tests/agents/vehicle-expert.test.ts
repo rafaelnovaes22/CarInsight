@@ -52,7 +52,7 @@ vi.mock('../../src/lib/llm-router', () => ({
 // Mock vehicle search adapter to prevent database calls in tests
 vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
   vehicleSearchAdapter: {
-    search: vi.fn(async () => []),
+    search: vi.fn(async () => ({ recommendations: [], totalCount: 0 })),
   },
 }));
 

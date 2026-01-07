@@ -69,7 +69,10 @@ describe('Vehicle Expert Intent Detection', () => {
     };
 
     // The agent calls `getRecommendations` which calls `vehicleSearchAdapter.search`
-    (vehicleSearchAdapter.search as any).mockResolvedValue([mockVehicle]);
+    (vehicleSearchAdapter.search as any).mockResolvedValue({
+      recommendations: [mockVehicle],
+      totalCount: 1,
+    });
 
     const result = await vehicleExpert.chat(userMessage, context);
 
@@ -112,7 +115,10 @@ describe('Vehicle Expert Intent Detection', () => {
     // Adapter returns the 2019 model even if we filtered for 2020 in logic,
     // BUT specific-model-year logic in Agent filters them out if they don't match EXACTLY.
     // So we simulate adapter returning the 2019 one when searched broadly for "Onix".
-    (vehicleSearchAdapter.search as any).mockResolvedValue([mockVehicle2019]);
+    (vehicleSearchAdapter.search as any).mockResolvedValue({
+      recommendations: [mockVehicle2019],
+      totalCount: 1,
+    });
 
     const result1 = await vehicleExpert.chat(userMessage1, context);
 

@@ -33,6 +33,8 @@ import {
   detectBodyTypeFromModel,
   detectVehicleCategory,
 } from './vehicle-expert/constants';
+import { PlatformRulesConfig } from '../config/platform-rules.config';
+import { platformValidator } from '../services/platform-validator.service';
 
 // Import extractors
 import { extractTradeInInfo, inferBrandFromModel } from './vehicle-expert/extractors';
@@ -91,6 +93,9 @@ import {
   type ShownVehicle,
   type WantOthersContext,
 } from './vehicle-expert/handlers';
+
+// Import evaluator
+import { vehicleEvaluator } from './vehicle-expert/services/vehicle-evaluator';
 
 /**
  * Helper function to get the correct app name based on user's mention
@@ -226,19 +231,7 @@ export class VehicleExpertAgent {
         context.profile._lastShownVehicles.length > 0;
 
       // 2.2. Handle trade-in from initial message (delegated to handler)
-      // 2.2. Handle trade-in from initial message (delegated to handler)
-      /* 
-      const tradeInInitialResult = handleTradeInInitial(
-        exactMatch,
-        isTradeInContext,
-        !!alreadyHasSelectedVehicle,
-        extracted,
-        startTime
-      );
-      if (tradeInInitialResult.handled && tradeInInitialResult.response) {
-        return tradeInInitialResult.response;
-      }
-      */
+      // Delegated to trade_in node below
       // DELEGATION: Check for trade-in in initial message -> Delegate to trade_in node
       if (isTradeInContext && exactMatch.model && exactMatch.year && !alreadyHasSelectedVehicle) {
         logger.info('VehicleExpert: Delegating initial trade-in to trade_in node');
@@ -253,20 +246,7 @@ export class VehicleExpertAgent {
       }
 
       // 2.3. Handle trade-in after vehicle selection (delegated to handler)
-      // 2.3. Handle trade-in after vehicle selection (delegated to handler)
-      /*
-      const tradeInAfterResult = handleTradeInAfterSelection(
-        exactMatch,
-        isTradeInContext,
-        !!alreadyHasSelectedVehicle,
-        context.profile?._lastShownVehicles || [],
-        extracted,
-        startTime
-      );
-      if (tradeInAfterResult.handled && tradeInAfterResult.response) {
-        return tradeInAfterResult.response;
-      }
-      */
+      // Delegated to trade_in node below
       // DELEGATION: Check for trade-in after selection -> Delegate to trade_in node
       if (isTradeInContext && exactMatch.model && exactMatch.year && alreadyHasSelectedVehicle) {
         logger.info('VehicleExpert: Delegating post-selection trade-in to trade_in node');
@@ -342,7 +322,7 @@ export class VehicleExpertAgent {
           logger.info({ model: targetModel, year: targetYear }, 'Intercepting Exact Search intent');
 
           // 1. Tentar busca exata
-          const exactResults = await vehicleSearchAdapter.search(
+          const { recommendations: exactResults } = await vehicleSearchAdapter.search(
             userMessage.length > 3 ? userMessage : targetModel,
             {
               limit: 5,
@@ -402,11 +382,14 @@ export class VehicleExpertAgent {
             };
           } else {
             // Não encontrou o ano exato - verificar se O MODELO existe em outros anos
-            const modelResults = await vehicleSearchAdapter.search(targetModel, {
-              model: targetModel,
-              limit: 20,
-              excludeMotorcycles: true, // Model search excludes motorcycles
-            });
+            const { recommendations: modelResults } = await vehicleSearchAdapter.search(
+              targetModel,
+              {
+                model: targetModel,
+                limit: 20,
+                excludeMotorcycles: true, // Model search excludes motorcycles
+              }
+            );
 
             if (modelResults.length > 0) {
               const availableYears = [...new Set(modelResults.map(r => r.vehicle.year))].sort(
@@ -461,7 +444,7 @@ export class VehicleExpertAgent {
         !context.profile?._waitingForSuggestionResponse
       ) {
         // Search specifically for 7 seaters to check availability
-        const results = await vehicleSearchAdapter.search('7 lugares', {
+        const { recommendations: results } = await vehicleSearchAdapter.search('7 lugares', {
           limit: 20,
           excludeMotorcycles: true, // 7-seater search excludes motorcycles
         });
@@ -930,11 +913,14 @@ export class VehicleExpertAgent {
             );
 
             // Search for the model with selected year
-            const results = await vehicleSearchAdapter.search(searchedModel || '', {
-              model: searchedModel,
-              minYear: selectedYear,
-              limit: 5,
-            });
+            const { recommendations: results } = await vehicleSearchAdapter.search(
+              searchedModel || '',
+              {
+                model: searchedModel,
+                minYear: selectedYear,
+                limit: 5,
+              }
+            );
 
             // Filter for exact year match
             const matchingResults = results.filter(r => r.vehicle.year === selectedYear);
@@ -1082,11 +1068,12 @@ export class VehicleExpertAgent {
           );
 
           // Para perguntas de disponibilidade, buscar DIRETO por categoria (sem filtros extras)
-          const categoryResults = await vehicleSearchAdapter.search(`${normalizedBodyType}`, {
-            bodyType: normalizedBodyType,
-            limit: 5, // Retornar até 5 veículos da categoria
-            excludeMotorcycles: normalizedBodyType !== 'moto', // Exclude motos unless asking for motos
-          });
+          const { recommendations: categoryResults, totalCount: categoryTotal } =
+            await vehicleSearchAdapter.search(`${normalizedBodyType}`, {
+              bodyType: normalizedBodyType,
+              limit: 5, // Retornar até 5 veículos da categoria
+              excludeMotorcycles: normalizedBodyType !== 'moto', // Exclude motos unless asking for motos
+            });
 
           if (categoryResults.length === 0) {
             const categoryName =
@@ -1134,7 +1121,7 @@ export class VehicleExpertAgent {
                     ? 'hatches'
                     : `${askedBodyType}s`;
 
-          const intro = `Temos ${categoryResults.length} ${categoryName} disponíveis! 🚗\n\n`;
+          const intro = `Temos ${categoryTotal > 0 ? categoryTotal : categoryResults.length} ${categoryName} disponíveis! 🚗\n\n`;
           const vehicleList = categoryResults
             .map((rec, i) => {
               const v = rec.vehicle;
@@ -1363,7 +1350,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         const formattedResponse = await formatRecommendationsUtil(
           filteredRecommendations,
           updatedProfile,
-          'recommendation' // Fluxo de recomendação personalizada
+          'recommendation', // Fluxo de recomendação personalizada
+          result.totalMatches // Pass total available for context
         );
 
         return {
@@ -1414,6 +1402,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       };
     } catch (error) {
       logger.error({ error, userMessage }, 'VehicleExpert chat failed');
+      console.error('AGENT ERROR:', error);
 
       // Fallback response
       return {
@@ -1445,6 +1434,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
     wantsMoto?: boolean;
     noSevenSeaters?: boolean;
     requiredSeats?: number;
+    totalMatches?: number;
   }> {
     try {
       // Build search query
@@ -1538,24 +1528,94 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         profile.usage === 'trabalho' ||
         profile.priorities?.includes('trabalho');
 
+      // Detect Platform/App Intent (Universal)
+      const detectPlatformIntent = (p: Partial<CustomerProfile>, q: string) => {
+        const text = (
+          q +
+          ' ' +
+          (p.usoPrincipal || '') +
+          ' ' +
+          (p.priorities || []).join(' ')
+        ).toLowerCase();
+
+        // Transport
+        if (text.includes('black') || p.tipoUber === 'black')
+          return { type: 'transport', app: 'uber', category: 'black' };
+        if (text.includes('comfort'))
+          return { type: 'transport', app: 'uber', category: 'comfort' };
+        if (text.includes('uber') || text.includes('99') || text.includes('indrive'))
+          return { type: 'transport', app: 'uber', category: 'x' }; // Default to X standard
+
+        // Delivery
+        if (text.includes('ifood')) return { type: 'delivery', app: 'ifood', category: 'moto' };
+        if (text.includes('loggi')) return { type: 'delivery', app: 'loggi', category: 'moto' }; // Default
+        if (text.includes('lalamove'))
+          return { type: 'delivery', app: 'lalamove', category: 'carro' }; // Default to car if ambiguous
+        if (text.includes('mercado') || text.includes('envio') || text.includes('livre'))
+          return { type: 'delivery', app: 'mercadoEnvios', category: 'flex' };
+        if (text.includes('shopee'))
+          return { type: 'delivery', app: 'shopee', category: 'entregador' };
+
+        return null;
+      };
+
+      const platformIntent = detectPlatformIntent(profile, query.searchText);
+
+      // Enforce Strict Platform Rules (Hybrid Policy)
+      let enforcedMinYear = query.filters.minYear;
+      const currentYear = new Date().getFullYear();
+
+      if (platformIntent) {
+        let limitRelative = 10; // Default safety
+
+        // Resolve rule from config
+        try {
+          const rule =
+            PlatformRulesConfig[platformIntent.type]?.[platformIntent.app]?.[
+              platformIntent.category
+            ];
+          if (rule && rule.minYearRelative) {
+            limitRelative = rule.minYearRelative;
+          }
+        } catch (e) {
+          logger.warn(
+            { platformIntent },
+            'Could not resolve platform rule from config, using default 10y'
+          );
+        }
+
+        const ruleMinYear = currentYear - limitRelative;
+
+        if (!enforcedMinYear || ruleMinYear > enforcedMinYear) {
+          logger.info(
+            { ruleMinYear, originalMin: query.filters.minYear, platformIntent },
+            'Enforcing Platform Min Year Rule'
+          );
+          enforcedMinYear = ruleMinYear;
+        }
+      }
+
       // Search vehicles - include brand/model filter for specific requests
-      const results = await vehicleSearchAdapter.search(query.searchText, {
-        maxPrice: query.filters.maxPrice,
-        minYear: query.filters.minYear,
-        bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
-        brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
-        model: query.filters.model?.[0], // Filtrar por modelo quando especificado
-        limit: 10, // Get more to filter
-        // CRITICAL: Exclude motorcycles when searching for cars
-        excludeMotorcycles: !wantsMoto,
-        // Apply Uber filters
-        aptoUber: isUberX || undefined,
-        aptoUberBlack: isUberBlack || undefined,
-        // Apply family filter (only if family, not for pickup/work/moto)
-        aptoFamilia: (isFamily && !wantsPickup && !wantsMoto) || undefined,
-        // Apply work filter
-        aptoTrabalho: isWork || undefined,
-      });
+      const { recommendations: results, totalCount } = await vehicleSearchAdapter.search(
+        query.searchText,
+        {
+          maxPrice: query.filters.maxPrice,
+          minYear: enforcedMinYear,
+          bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
+          brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
+          model: query.filters.model?.[0], // Filtrar por modelo quando especificado
+          limit: 50, // Get up to 50 candidates for smart ranking
+          // CRITICAL: Exclude motorcycles when searching for cars
+          excludeMotorcycles: !wantsMoto,
+          // Apply Uber filters
+          aptoUber: isUberX || undefined,
+          aptoUberBlack: isUberBlack || undefined,
+          // Apply family filter (only if family, not for pickup/work/moto)
+          aptoFamilia: (isFamily && !wantsPickup && !wantsMoto) || undefined,
+          // Apply work filter
+          aptoTrabalho: isWork || undefined,
+        }
+      );
 
       // Se não encontrou motos e o usuário quer moto, informar
       if (wantsMoto && results.length === 0) {
@@ -1731,6 +1791,64 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         }
       }
 
+      // Post-filter: Hybrid Policy Validation (Strict Eligibility)
+      if (platformIntent) {
+        const validatedResults: VehicleRecommendation[] = [];
+
+        for (const rec of filteredResults) {
+          const validation = await platformValidator.validateAll({
+            marca: rec.vehicle.brand,
+            modelo: rec.vehicle.model,
+            ano: rec.vehicle.year,
+            carroceria: rec.vehicle.bodyType,
+            arCondicionado: true,
+            portas: 4,
+            cambio: rec.vehicle.transmission || 'Manual',
+          });
+
+          let passed = false;
+
+          // Validate based on Intent
+          if (platformIntent.app === 'uber' && platformIntent.category === 'black') {
+            passed = validation.transport.uberBlack;
+          } else if (platformIntent.app === 'uber' || platformIntent.app === '99') {
+            passed = validation.transport.uberX || validation.transport.pop99;
+          } else if (platformIntent.app === 'mercadoEnvios') {
+            passed = validation.delivery.mercadoEnviosFlex;
+          } else if (platformIntent.app === 'shopee') {
+            passed = validation.delivery.shopee;
+          } else if (platformIntent.app === 'lalamove') {
+            // Lalamove is broad, check car or moto based on intent
+            if (platformIntent.category === 'moto') passed = validation.delivery.lalamoveMoto;
+            else passed = validation.delivery.lalamoveCarro || validation.delivery.lalamoveUtility;
+          } else if (platformIntent.app === 'ifood') {
+            passed = validation.delivery.ifoodMoto;
+          } else {
+            // Default safe fallback if unknown
+            passed = true;
+          }
+
+          if (passed) {
+            validatedResults.push(rec);
+          } else {
+            logger.info(
+              {
+                vehicle: rec.vehicle.model,
+                reason: 'Failed Platform Validation',
+                intent: platformIntent,
+              },
+              'Filtered out by Validator'
+            );
+          }
+        }
+
+        if (validatedResults.length > 0) {
+          filteredResults = validatedResults;
+        } else {
+          logger.warn('All vehicles filtered by Strict Validator.');
+        }
+      }
+
       logger.info(
         {
           profileKeys: Object.keys(profile),
@@ -1753,13 +1871,16 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
         // Buscar veículos que seriam aptos para apps (sedan/hatch, 2012+, com ar)
         // mas que podem não ter o campo aptoUber marcado no banco
-        const fallbackResults = await vehicleSearchAdapter.search('sedan hatch carro', {
-          maxPrice: query.filters.maxPrice,
-          minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
-          limit: 10,
-          excludeMotorcycles: true, // Uber search excludes motorcycles
-          // NÃO usar filtro aptoUber/aptoUberBlack aqui
-        });
+        const { recommendations: fallbackResults } = await vehicleSearchAdapter.search(
+          'sedan hatch carro',
+          {
+            maxPrice: query.filters.maxPrice,
+            minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
+            limit: 10,
+            excludeMotorcycles: true, // Uber search excludes motorcycles
+            // NÃO usar filtro aptoUber/aptoUberBlack aqui
+          }
+        );
 
         // Filtrar manualmente por carroceria adequada
         const compatibleResults = fallbackResults.filter(rec => {
@@ -1778,11 +1899,32 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             { count: compatibleResults.length },
             'Fallback found compatible vehicles for app transport'
           );
-          return { recommendations: compatibleResults.slice(0, 5), wantsPickup: false };
+
+          // Use evaluator for fallback results to pick best ones
+          const evaluatedFallback = await vehicleEvaluator.evaluateVehicles(
+            compatibleResults,
+            profile
+          );
+          return {
+            recommendations: evaluatedFallback.slice(0, 5),
+            wantsPickup: false,
+            totalMatches: compatibleResults.length,
+          };
         }
       }
 
-      return { recommendations: filteredResults.slice(0, 5), wantsPickup };
+      // Apply Smart Ranking using VehicleEvaluator
+      logger.info({ candidateCount: filteredResults.length }, 'Applying Smart Ranking with LLM');
+      const rankedRecommendations = await vehicleEvaluator.evaluateVehicles(
+        filteredResults,
+        profile
+      );
+
+      return {
+        recommendations: rankedRecommendations.slice(0, 5),
+        wantsPickup,
+        totalMatches: totalCount,
+      };
     } catch (error) {
       logger.error({ error, profile }, 'Failed to get recommendations');
       return { recommendations: [] };
