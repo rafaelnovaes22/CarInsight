@@ -1393,25 +1393,38 @@ export class VehicleExpertAgent {
           };
         }
 
-        // BEFORE answering as a regular question, check if it's about motos availability
-        // This handles cases like "e moto vc tem?" that might not match the strict availability pattern
-        const motoKeywords = ['moto', 'motocicleta', 'scooter'];
-        const hasMotoMention = motoKeywords.some(kw => messageLower.includes(kw));
+        // BEFORE answering as a regular question, check if it's about vehicle type availability
+        // This handles cases like "e pickup vc tem?", "e SUV vc tem?" that might not match the strict availability pattern
+        const vehicleTypeKeywordsFallback = [
+          { keywords: ['moto', 'motocicleta', 'scooter'], type: 'moto', name: 'moto', plural: 'motos', emoji: '🏍️' },
+          { keywords: ['pickup', 'picape', 'caminhonete'], type: 'pickup', name: 'pickup', plural: 'picapes', emoji: '🛻' },
+          { keywords: ['suv'], type: 'suv', name: 'SUV', plural: 'SUVs', emoji: '🚙' },
+          { keywords: ['sedan', 'sedã'], type: 'sedan', name: 'sedan', plural: 'sedans', emoji: '🚗' },
+          { keywords: ['hatch', 'hatchback'], type: 'hatch', name: 'hatch', plural: 'hatches', emoji: '🚗' },
+          { keywords: ['minivan', 'van'], type: 'minivan', name: 'minivan', plural: 'minivans', emoji: '🚐' },
+        ];
 
-        if (hasMotoMention && messageLower.match(/tem|disponível|disponivel|há/i)) {
-          logger.info({ userMessage }, 'Detected moto availability question (fallback)');
+        const detectedVehicleType = vehicleTypeKeywordsFallback.find(vt =>
+          vt.keywords.some(kw => messageLower.includes(kw))
+        );
 
-          // Search for motos
-          const motoResults = await vehicleSearchAdapter.search('moto', {
-            bodyType: 'moto',
+        if (detectedVehicleType && messageLower.match(/tem|disponível|disponivel|há/i)) {
+          logger.info(
+            { userMessage, vehicleType: detectedVehicleType.type },
+            'Detected vehicle type availability question (fallback)'
+          );
+
+          // Search for this vehicle type
+          const typeResults = await vehicleSearchAdapter.search(detectedVehicleType.type, {
+            bodyType: detectedVehicleType.type,
             limit: 5,
-            excludeMotorcycles: false,
+            excludeMotorcycles: detectedVehicleType.type !== 'moto',
           });
 
-          if (motoResults.length > 0) {
-            // Format and return moto list with _lastShownVehicles
-            const intro = `Temos ${motoResults.length} moto${motoResults.length > 1 ? 's' : ''} disponível${motoResults.length > 1 ? 'eis' : ''}! 🏍️\n\n`;
-            const vehicleList = motoResults
+          if (typeResults.length > 0) {
+            // Format and return vehicle list with _lastShownVehicles
+            const intro = `Temos ${typeResults.length} ${typeResults.length > 1 ? detectedVehicleType.plural : detectedVehicleType.name} disponível${typeResults.length > 1 ? 'eis' : ''}! ${detectedVehicleType.emoji}\n\n`;
+            const vehicleList = typeResults
               .map((rec, i) => {
                 const v = rec.vehicle;
                 const emoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
@@ -1423,27 +1436,27 @@ export class VehicleExpertAgent {
               })
               .join('\n\n');
 
-            const footer = '\n\n💬 Quer saber mais detalhes de alguma? Me diz qual te interessou!';
+            const footer = `\n\n💬 Quer saber mais detalhes ${detectedVehicleType.type === 'moto' ? 'de alguma' : 'de algum'}? Me diz qual te interessou!`;
 
             return {
               response: intro + vehicleList + footer,
               extractedPreferences: {
                 ...extracted.extracted,
-                bodyType: 'moto',
+                bodyType: detectedVehicleType.type,
                 _showedRecommendation: true,
                 _lastSearchType: 'recommendation' as const,
-                _lastShownVehicles: motoResults.map(r => ({
+                _lastShownVehicles: typeResults.map(r => ({
                   vehicleId: r.vehicleId,
                   brand: r.vehicle.brand,
                   model: r.vehicle.model,
                   year: r.vehicle.year,
                   price: r.vehicle.price,
-                  bodyType: 'moto', // CRITICAL: Include bodyType for want-others handler
+                  bodyType: detectedVehicleType.type, // CRITICAL: Include bodyType for want-others handler
                 })),
               },
               needsMoreInfo: [],
               canRecommend: true,
-              recommendations: motoResults,
+              recommendations: typeResults,
               nextMode: 'recommendation',
               metadata: {
                 processingTime: Date.now() - startTime,
@@ -1452,12 +1465,12 @@ export class VehicleExpertAgent {
               },
             };
           } else {
-            // No motos found
+            // No vehicles of this type found
             return {
-              response: `No momento não temos motos disponíveis no estoque. 🏍️\n\nQuer que eu busque outras opções para você?`,
+              response: `No momento não temos ${detectedVehicleType.plural} disponíveis no estoque. ${detectedVehicleType.emoji}\n\nQuer que eu busque outras opções para você?`,
               extractedPreferences: {
                 ...extracted.extracted,
-                bodyType: 'moto',
+                bodyType: detectedVehicleType.type,
                 _waitingForSuggestionResponse: true,
               },
               needsMoreInfo: [],
