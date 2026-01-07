@@ -74,10 +74,15 @@ REGRAS DE AVALIAÇÃO:
    - Baixa quilometragem = mais confiável para viagens longas
 
 3. **Para UBER/99:**
-   - UberX: ano >= 2012, 4 portas, ar condicionado
-   - Comfort: ano >= 2017, mais espaçoso
+   - PRIORIZAR: SUVs > Sedans > Hatches médios/grandes
+   - EVITAR COMPLETAMENTE: Hatches básicos/compactos (Kwid, Uno, Mobi, Gol, Fox, Celta, Palio)
+   - TRANSMISSÃO AUTOMÁTICA = GRANDE VANTAGEM (muito mais conforto no trânsito urbano)
+   - UberX: ano >= 2012, 4 portas, ar condicionado, ESPAÇO para passageiros
+   - Comfort: ano >= 2017, OBRIGATÓRIO ser espaçoso (sedan médio ou SUV)
    - Black: ano >= 2018, sedan executivo ou SUV premium
-   - Baixa quilometragem é importante (carro roda muito)
+   - Quilometragem baixa é CRÍTICA (carro vai rodar MUITO mais)
+   - Aparência profissional importa (cliente quer conforto e status)
+   - Hatches básicos devem ter score < 50 para Uber (inadequados profissionalmente)
 
 4. **Para TRABALHO:**
    - Considerar durabilidade, economia, custo de manutenção
@@ -87,13 +92,21 @@ REGRAS DE AVALIAÇÃO:
    - Ano mais recente = melhor (tecnologia, segurança, garantia)
    - Menor quilometragem = melhor (menos desgaste)
    - Preço deve ser avaliado como custo-benefício, NÃO priorizar mais caro
-   - Transmissão automática é preferível para família/conforto
+   - Transmissão automática = GRANDE DIFERENCIAL para Uber, família, conforto
+   - SUVs e Sedans sempre superiores a hatches básicos para uso profissional/família
 
 IMPORTANTE:
 - Score de 90-100: Excelente match, atende todos os critérios
 - Score de 75-89: Bom match, atende maioria dos critérios
 - Score de 60-74: Razoável, tem compromissos
 - Score < 60: Não recomendado para este perfil
+
+EXEMPLOS DE SCORES PARA UBER:
+- SUV 2018+ automático, baixa KM = 95-100 (EXCELENTE)
+- Sedan médio 2015+ automático = 85-95 (ÓTIMO)
+- Sedan 2014+ manual = 70-80 (BOM)
+- Hatch médio 2017+ (HB20, Onix) = 60-70 (RAZOÁVEL)
+- Hatch básico (Kwid, Uno, Mobi) = 30-45 (INADEQUADO)
 
 Retorne APENAS JSON válido no formato especificado.`;
 
