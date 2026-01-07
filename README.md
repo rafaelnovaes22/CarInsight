@@ -1,8 +1,8 @@
-# 🚗 FaciliAuto WhatsApp AI Assistant
+# 🚗 CarInsight WhatsApp AI Assistant
 
 > Assistente inteligente de vendas automotivas via WhatsApp com IA Generativa, RAG e Multi-LLM Routing
 
-[![CI/CD](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/faciliauto-mvp-v2/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/rafaelnovaes22/CarInsight-mvp-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight-mvp-v2/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)](https://www.postgresql.org/)
@@ -250,8 +250,8 @@ model Recommendation {
 
 ```bash
 # Clone o repositório
-git clone https://github.com/rafaelnovaes22/faciliauto-mvp-v2.git
-cd faciliauto-mvp-v2
+git clone https://github.com/rafaelnovaes22/CarInsight-mvp-v2.git
+cd CarInsight-mvp-v2
 
 # Instale as dependências
 npm install
@@ -277,7 +277,7 @@ npm run dev
 
 ```env
 # Database
-DATABASE_URL="postgresql://user:pass@localhost:5432/faciliauto"
+DATABASE_URL="postgresql://user:pass@localhost:5432/CarInsight"
 
 # LLM Providers (com fallback automático)
 OPENAI_API_KEY="sk-proj-..."    # Primário (LLM + Embeddings)
@@ -287,7 +287,7 @@ COHERE_API_KEY="..."            # Fallback Embeddings (opcional)
 # WhatsApp
 META_WHATSAPP_TOKEN="EAA..."
 META_WHATSAPP_PHONE_NUMBER_ID="123..."
-META_WEBHOOK_VERIFY_TOKEN="faciliauto_webhook_2025"
+META_WEBHOOK_VERIFY_TOKEN="CarInsight_webhook_2025"
 
 # Feature Flags
 ENABLE_CONVERSATIONAL_MODE="true"
@@ -334,7 +334,7 @@ npm run benchmark:llms          # Compara performance LLMs
 ## 📁 Estrutura do Projeto
 
 ```
-faciliauto-mvp-v2/
+CarInsight-mvp-v2/
 ├── src/
 │   ├── index.ts                    # Entry point
 │   ├── agents/                     # Agentes especializados
