@@ -129,9 +129,15 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
   const userBudget = extracted.extracted.budget || extracted.extracted.budgetMax;
   const priceRange = calculatePriceRange(referencePrice, userBudget, priceIntent);
 
-  // 3. Infer body type
-  const bodyTypeInfo = inferBodyType(firstVehicle.model, firstVehicle.bodyType);
-  const bodyType = bodyTypeInfo ? bodyTypeInfo.type : '';
+  // 3. Get body type (prefer stored bodyType, otherwise infer)
+  let bodyType = firstVehicle.bodyType || '';
+
+  // If bodyType not stored, try to infer from model/type
+  if (!bodyType) {
+    const bodyTypeInfo = inferBodyType(firstVehicle.model, undefined);
+    bodyType = bodyTypeInfo ? bodyTypeInfo.type : '';
+  }
+
   const category = determineCategory(firstVehicle.model, bodyType, referencePrice);
 
   // 4. Build search query

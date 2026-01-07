@@ -1270,6 +1270,11 @@ export class VehicleExpertAgent {
           availabilityKeywords.some(kw => messageLower.includes(kw)) &&
           vehicleTypeKeywords.some(kw => messageLower.includes(kw));
 
+        logger.info(
+          { userMessage, messageLower, isAvailabilityQuestion },
+          'Vehicle type detection check'
+        );
+
         if (isAvailabilityQuestion) {
           // Detect which vehicle type user is asking about
           const askedBodyType = vehicleTypeKeywords.find(kw => messageLower.includes(kw));
@@ -1386,6 +1391,85 @@ export class VehicleExpertAgent {
               llmUsed: 'gpt-4o-mini',
             },
           };
+        }
+
+        // BEFORE answering as a regular question, check if it's about motos availability
+        // This handles cases like "e moto vc tem?" that might not match the strict availability pattern
+        const motoKeywords = ['moto', 'motocicleta', 'scooter'];
+        const hasMotoMention = motoKeywords.some(kw => messageLower.includes(kw));
+
+        if (hasMotoMention && messageLower.match(/tem|disponível|disponivel|há/i)) {
+          logger.info({ userMessage }, 'Detected moto availability question (fallback)');
+
+          // Search for motos
+          const motoResults = await vehicleSearchAdapter.search('moto', {
+            bodyType: 'moto',
+            limit: 5,
+            excludeMotorcycles: false,
+          });
+
+          if (motoResults.length > 0) {
+            // Format and return moto list with _lastShownVehicles
+            const intro = `Temos ${motoResults.length} moto${motoResults.length > 1 ? 's' : ''} disponível${motoResults.length > 1 ? 'eis' : ''}! 🏍️\n\n`;
+            const vehicleList = motoResults
+              .map((rec, i) => {
+                const v = rec.vehicle;
+                const emoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
+                return (
+                  `${emoji} ${v.brand} ${v.model} ${v.year}\n` +
+                  `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n` +
+                  `   📍 ${v.mileage.toLocaleString('pt-BR')}km`
+                );
+              })
+              .join('\n\n');
+
+            const footer = '\n\n💬 Quer saber mais detalhes de alguma? Me diz qual te interessou!';
+
+            return {
+              response: intro + vehicleList + footer,
+              extractedPreferences: {
+                ...extracted.extracted,
+                bodyType: 'moto',
+                _showedRecommendation: true,
+                _lastSearchType: 'recommendation' as const,
+                _lastShownVehicles: motoResults.map(r => ({
+                  vehicleId: r.vehicleId,
+                  brand: r.vehicle.brand,
+                  model: r.vehicle.model,
+                  year: r.vehicle.year,
+                  price: r.vehicle.price,
+                  bodyType: 'moto', // CRITICAL: Include bodyType for want-others handler
+                })),
+              },
+              needsMoreInfo: [],
+              canRecommend: true,
+              recommendations: motoResults,
+              nextMode: 'recommendation',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.9,
+                llmUsed: 'rule-based',
+              },
+            };
+          } else {
+            // No motos found
+            return {
+              response: `No momento não temos motos disponíveis no estoque. 🏍️\n\nQuer que eu busque outras opções para você?`,
+              extractedPreferences: {
+                ...extracted.extracted,
+                bodyType: 'moto',
+                _waitingForSuggestionResponse: true,
+              },
+              needsMoreInfo: [],
+              canRecommend: false,
+              nextMode: 'clarification',
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.9,
+                llmUsed: 'rule-based',
+              },
+            };
+          }
         }
 
         // Regular question - Answer using RAG
