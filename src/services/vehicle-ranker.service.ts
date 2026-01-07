@@ -73,16 +73,34 @@ REGRAS DE AVALIAÇÃO:
    - Sedans e SUVs são ideais
    - Baixa quilometragem = mais confiável para viagens longas
 
-3. **Para UBER/99:**
+3. **Para UBER/99 (REGRAS OFICIAIS 2026):**
    - PRIORIZAR: SUVs > Sedans > Hatches médios/grandes
    - EVITAR COMPLETAMENTE: Hatches básicos/compactos (Kwid, Uno, Mobi, Gol, Fox, Celta, Palio)
    - TRANSMISSÃO AUTOMÁTICA = GRANDE VANTAGEM (muito mais conforto no trânsito urbano)
-   - UberX: ano >= 2012, 4 portas, ar condicionado, ESPAÇO para passageiros
-   - Comfort: ano >= 2017, OBRIGATÓRIO ser espaçoso (sedan médio ou SUV)
-   - Black: ano >= 2018, sedan executivo ou SUV premium
+
+   **UberX (regra geral 2026):**
+   - Ano MÍNIMO: 2016 ou mais novo (máximo 10 anos de fabricação)
+   - 4 portas, ar condicionado, ESPAÇO para passageiros
+   - Hatches básicos servem MAS são inferiores (baixo score)
+
+   **Comfort (regra 2026):**
+   - Ano MÍNIMO geral: 2017 ou mais novo
+   - EXCLUÍDOS: Renault Kardian, Citroën Basalt, Chery Tiggo 3/3X, Renault Logan
+   - OBRIGATÓRIO: Sedan médio ou SUV espaçoso
+   - Modelos específicos em CAPITAIS têm requisitos MAIS RIGOROSOS:
+     * VW Virtus: somente 2026+
+     * Honda City: somente 2023+
+     * Nivus: somente 2023+
+
+   **Black (regra 2026):**
+   - Ano MÍNIMO: 2018 ou mais novo
+   - EXCLUÍDOS: mesmos do Comfort (Kardian, Basalt, Tiggo 3/3X, Logan)
+   - OBRIGATÓRIO: Sedan executivo ou SUV premium
+   - Modelos específicos seguem mesmas regras do Comfort para ano
+
    - Quilometragem baixa é CRÍTICA (carro vai rodar MUITO mais)
    - Aparência profissional importa (cliente quer conforto e status)
-   - Hatches básicos devem ter score < 50 para Uber (inadequados profissionalmente)
+   - Hatches básicos: score < 50 para qualquer categoria Uber
 
 4. **Para TRABALHO:**
    - Considerar durabilidade, economia, custo de manutenção
@@ -101,12 +119,25 @@ IMPORTANTE:
 - Score de 60-74: Razoável, tem compromissos
 - Score < 60: Não recomendado para este perfil
 
-EXEMPLOS DE SCORES PARA UBER:
-- SUV 2018+ automático, baixa KM = 95-100 (EXCELENTE)
-- Sedan médio 2015+ automático = 85-95 (ÓTIMO)
-- Sedan 2014+ manual = 70-80 (BOM)
-- Hatch médio 2017+ (HB20, Onix) = 60-70 (RAZOÁVEL)
-- Hatch básico (Kwid, Uno, Mobi) = 30-45 (INADEQUADO)
+EXEMPLOS DE SCORES PARA UBER (2026):
+**UberX:**
+- SUV 2018+ automático, baixa KM = 95-100 (EXCELENTE para UberX)
+- Sedan 2016-2017 automático = 80-90 (ÓTIMO para UberX)
+- Hatch médio 2017+ (HB20, Onix) = 65-75 (BOM para UberX)
+- Hatch básico 2016+ (Kwid, Uno) = 40-55 (ACEITÁVEL MAS INFERIOR)
+- Qualquer veículo 2015 ou anterior = 30-40 (NÃO ACEITO - regra 10 anos)
+
+**Comfort:**
+- SUV 2023+ automático = 95-100 (EXCELENTE)
+- Sedan médio 2023+ automático (City, Virtus, Nivus) = 90-95 (ÓTIMO)
+- Sedan 2017-2022 automático = 75-85 (BOM, mas não ideal)
+- Kardian, Basalt, Tiggo 3/3X, Logan qualquer ano = 20-30 (EXCLUÍDOS)
+- Hatch médio ou veículo < 2017 = 35-50 (NÃO ACEITO)
+
+**Black:**
+- Sedan executivo/SUV premium 2023+ = 95-100 (EXCELENTE)
+- Sedan executivo/SUV 2018-2022 = 80-90 (BOM)
+- Veículo < 2018 ou modelos excluídos = 20-35 (NÃO ACEITO)
 
 Retorne APENAS JSON válido no formato especificado.`;
 
