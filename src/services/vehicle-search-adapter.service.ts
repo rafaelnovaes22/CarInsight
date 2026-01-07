@@ -45,9 +45,12 @@ export class VehicleSearchAdapter {
    * **Feature: exact-vehicle-search**
    * Requirements: 1.1, 1.2 - Prioritizes exact model+year searches
    */
-  async search(query: string, filters: SearchFilters = {}): Promise<VehicleRecommendation[]> {
+  async search(
+    query: string,
+    filters: SearchFilters = {}
+  ): Promise<{ recommendations: VehicleRecommendation[]; totalCount: number }> {
     try {
-      const limit = filters.limit || 5;
+      const limit = filters.limit || 50; // Increased default limit from 5 to 50 for smart ranking
 
       // Step 1: Try exact search (model + year) first
       // Requirements: 1.1, 1.2 - Extract filters and prioritize exact matches
@@ -67,7 +70,10 @@ export class VehicleSearchAdapter {
         const exactResult = await this.performExactSearch(extractedFilters, filters, limit);
         if (exactResult.length > 0 || extractedFilters.model) {
           // Return exact results or empty if no matches (let caller handle unavailability)
-          return exactResult;
+          return {
+            recommendations: exactResult,
+            totalCount: exactResult.length,
+          };
         }
       }
 
@@ -89,6 +95,40 @@ export class VehicleSearchAdapter {
         logger.info({ query, filters }, 'Semantic search returned empty, falling back to SQL');
         return this.searchFallbackSQL(filters);
       }
+
+      // Count total matches (without pagination/limit)
+      const count = await prisma.vehicle.count({
+        where: {
+          id: {
+            in: vehicleIds,
+            notIn: filters.excludeIds || [],
+          },
+          disponivel: true,
+          // CRITICAL: Exclude motorcycles when searching for cars
+          ...(filters.excludeMotorcycles && {
+            carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
+          }),
+          // Apply filters
+          ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
+          ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
+          ...(filters.minYear && { ano: { gte: filters.minYear } }),
+          ...(filters.maxKm && { km: { lte: filters.maxKm } }),
+          ...(filters.bodyType && {
+            carroceria: { equals: filters.bodyType, mode: 'insensitive' },
+          }),
+          ...(filters.transmission && {
+            cambio: { equals: filters.transmission, mode: 'insensitive' },
+          }),
+          ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
+          // Uber filters
+          ...(filters.aptoUber && { aptoUber: true }),
+          ...(filters.aptoUberBlack && { aptoUberBlack: true }),
+          // Family filter
+          ...(filters.aptoFamilia && { aptoFamilia: true }),
+          // Work filter
+          ...(filters.aptoTrabalho && { aptoTrabalho: true }),
+        },
+      });
 
       // Fetch full vehicle data
       const vehicles = await prisma.vehicle.findMany({
@@ -142,7 +182,7 @@ export class VehicleSearchAdapter {
 
         if (existsInStock === 0) {
           logger.info({ bodyType: filters.bodyType }, 'Body type not available in stock');
-          return []; // Retorna vazio para trigger "não temos X no estoque"
+          return { recommendations: [], totalCount: 0 }; // Retorna vazio para trigger "não temos X no estoque"
         }
 
         // Se existe no estoque mas não veio da busca semântica, fazer fallback SQL
@@ -150,7 +190,7 @@ export class VehicleSearchAdapter {
       }
 
       // Convert to VehicleRecommendation format
-      return vehicles.map((vehicle, index) => ({
+      const recommendations = vehicles.map((vehicle, index) => ({
         vehicleId: vehicle.id,
         matchScore: Math.max(95 - index * 5, 70), // Simple scoring based on order
         reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
@@ -171,9 +211,14 @@ export class VehicleSearchAdapter {
           detailsUrl: vehicle.url || null,
         },
       }));
+
+      return {
+        recommendations,
+        totalCount: Math.max(count, recommendations.length),
+      };
     } catch (error) {
       logger.error({ error, query, filters }, 'Error searching vehicles');
-      return [];
+      return { recommendations: [], totalCount: 0 };
     }
   }
 
@@ -309,7 +354,9 @@ export class VehicleSearchAdapter {
   /**
    * Busca direta por marca, modelo e/ou categoria (não usa busca semântica)
    */
-  private async searchDirectByFilters(filters: SearchFilters): Promise<VehicleRecommendation[]> {
+  private async searchDirectByFilters(
+    filters: SearchFilters
+  ): Promise<{ recommendations: VehicleRecommendation[]; totalCount: number }> {
     const limit = filters.limit || 5;
 
     // Mapear variações de categoria para busca
@@ -357,7 +404,42 @@ export class VehicleSearchAdapter {
       'Direct filter search results'
     );
 
-    return this.formatVehicleResults(vehicles);
+    // Count total matches
+    const totalCount = await prisma.vehicle.count({
+      where: {
+        disponivel: true,
+        id: { notIn: filters.excludeIds || [] },
+        // CRITICAL: Exclude motorcycles when searching for cars
+        ...(filters.excludeMotorcycles && {
+          carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
+        }),
+        // Filtro de marca (se especificado)
+        ...(filters.brand && { marca: { contains: filters.brand, mode: 'insensitive' } }),
+        // Filtro de modelo (se especificado)
+        ...(filters.model && { modelo: { contains: filters.model, mode: 'insensitive' } }),
+        // Filtro de categoria/carroceria (se especificado) - com variações
+        ...(bodyTypeVariations.length > 0 && {
+          OR: bodyTypeVariations.map(bt => ({
+            carroceria: { contains: bt, mode: 'insensitive' as const },
+          })),
+        }),
+        // Apply other filters
+        ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
+        ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
+        ...(filters.minYear && { ano: { gte: filters.minYear } }),
+        ...(filters.maxKm && { km: { lte: filters.maxKm } }),
+        ...(filters.transmission && {
+          cambio: { equals: filters.transmission, mode: 'insensitive' },
+        }),
+      },
+    });
+
+    const recommendations = this.formatVehicleResults(vehicles);
+
+    return {
+      recommendations,
+      totalCount: Math.max(totalCount, recommendations.length),
+    };
   }
 
   /**
@@ -421,7 +503,9 @@ export class VehicleSearchAdapter {
   /**
    * Busca SQL fallback quando busca semântica não retorna resultados
    */
-  private async searchFallbackSQL(filters: SearchFilters): Promise<VehicleRecommendation[]> {
+  private async searchFallbackSQL(
+    filters: SearchFilters
+  ): Promise<{ recommendations: VehicleRecommendation[]; totalCount: number }> {
     const limit = filters.limit || 5;
 
     const vehicles = await prisma.vehicle.findMany({
@@ -452,7 +536,37 @@ export class VehicleSearchAdapter {
 
     logger.info({ filters, found: vehicles.length }, 'SQL fallback search results');
 
-    return this.formatVehicleResults(vehicles);
+    // Count total matches
+    const totalCount = await prisma.vehicle.count({
+      where: {
+        disponivel: true,
+        id: { notIn: filters.excludeIds || [] },
+        // CRITICAL: Exclude motorcycles when searching for cars
+        ...(filters.excludeMotorcycles && {
+          carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
+        }),
+        ...(filters.maxPrice && { preco: { lte: filters.maxPrice } }),
+        ...(filters.minPrice && { preco: { gte: filters.minPrice } }),
+        ...(filters.minYear && { ano: { gte: filters.minYear } }),
+        ...(filters.maxKm && { km: { lte: filters.maxKm } }),
+        ...(filters.bodyType && { carroceria: { equals: filters.bodyType, mode: 'insensitive' } }),
+        ...(filters.transmission && {
+          cambio: { equals: filters.transmission, mode: 'insensitive' },
+        }),
+        ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
+        ...(filters.aptoUber && { aptoUber: true }),
+        ...(filters.aptoUberBlack && { aptoUberBlack: true }),
+        ...(filters.aptoFamilia && { aptoFamilia: true }),
+        ...(filters.aptoTrabalho && { aptoTrabalho: true }),
+      },
+    });
+
+    const recommendations = this.formatVehicleResults(vehicles);
+
+    return {
+      recommendations,
+      totalCount: Math.max(totalCount, recommendations.length),
+    };
   }
 
   /**

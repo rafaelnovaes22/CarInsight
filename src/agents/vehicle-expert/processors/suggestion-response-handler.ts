@@ -117,7 +117,7 @@ async function handleUberXAlternatives(
   const appCategory = ctx.getAppCategoryName(ctx.updatedProfile, 'x');
   logger.info(`User accepted ${appCategory} alternatives - searching eligible vehicles`);
 
-  const uberXVehicles = await vehicleSearchAdapter.search('', {
+  const { recommendations: uberXVehicles } = await vehicleSearchAdapter.search('', {
     aptoUber: true,
     limit: 10,
   });
@@ -198,7 +198,7 @@ async function handleAlternativeYears(
     'User accepted to see alternative year - showing vehicle directly'
   );
 
-  const results = await vehicleSearchAdapter.search(ctx.searchedItem, {
+  const { recommendations: results } = await vehicleSearchAdapter.search(ctx.searchedItem, {
     model: ctx.searchedItem,
     minYear: firstAvailableYear,
     limit: 5,
@@ -286,7 +286,7 @@ async function handleSevenSeaterAlternative(
       bodyType: 'suv' as const,
     };
 
-    const results = await vehicleSearchAdapter.search('suv espaçoso', {
+    const { recommendations: results } = await vehicleSearchAdapter.search('suv espaçoso', {
       bodyType: 'suv',
       limit: 5,
       maxPrice: existingBudget,

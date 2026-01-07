@@ -27,7 +27,7 @@ export async function answerQuestion(
 ): Promise<string> {
   try {
     // Search relevant vehicles semantically
-    const relevantVehicles = await vehicleSearchAdapter.search(question, {
+    const { recommendations: relevantVehicles } = await vehicleSearchAdapter.search(question, {
       maxPrice: profile.budget,
       bodyType: profile.bodyType,
       minYear: profile.minYear,

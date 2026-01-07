@@ -90,7 +90,7 @@ export async function handleUberBlackQuestion(
   logger.info('UberHandler: Processing Uber Black question');
 
   // Search for Uber Black eligible vehicles
-  const uberBlackVehicles = await vehicleSearchAdapter.search('', {
+  const { recommendations: uberBlackVehicles } = await vehicleSearchAdapter.search('', {
     aptoUberBlack: true,
     limit: 10,
   });
