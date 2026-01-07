@@ -35,6 +35,10 @@ interface SearchFilters {
   excludeIds?: string[];
   // Motorcycle filter - CRITICAL: excludes motorcycles when searching for cars
   excludeMotorcycles?: boolean;
+  // Context for smart scoring
+  useCase?: 'family' | 'uber' | 'work' | 'travel' | 'general';
+  hasCadeirinha?: boolean;
+  minSeats?: number;
 }
 
 export class VehicleSearchAdapter {
