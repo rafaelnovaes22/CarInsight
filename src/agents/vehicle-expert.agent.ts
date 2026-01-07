@@ -153,6 +153,208 @@ export class VehicleExpertAgent {
         extracted.extracted
       );
 
+      // 2.0.-1. CRITICAL: Detect context switch between vehicle types
+      // When user changes from one vehicle type to another, clear the previous context
+      const messageLower = userMessage.toLowerCase();
+      const previousBodyType = context.profile?.bodyType;
+      const previousUsoPrincipal = context.profile?.usoPrincipal;
+
+      // Detect what the user is NOW asking for
+      const detectNewContext = () => {
+        // Moto keywords
+        const motoKeywords = [
+          'moto',
+          'motocicleta',
+          'scooter',
+          'biz',
+          'titan',
+          'fan',
+          'bros',
+          'pcx',
+        ];
+        const isMotoRequest = motoKeywords.some(kw => messageLower.includes(kw));
+
+        // Pickup keywords
+        const pickupKeywords = [
+          'pickup',
+          'picape',
+          'caminhonete',
+          'caçamba',
+          'cacamba',
+          'carga',
+          'obra',
+          'material',
+        ];
+        const isPickupRequest = pickupKeywords.some(kw => messageLower.includes(kw));
+
+        // SUV keywords
+        const suvKeywords = ['suv', 'utilitário', 'utilitario', 'crossover', 'jipe', 'jeep'];
+        const isSuvRequest = suvKeywords.some(kw => messageLower.includes(kw));
+
+        // Sedan keywords
+        const sedanKeywords = ['sedan', 'sedã'];
+        const isSedanRequest = sedanKeywords.some(kw => messageLower.includes(kw));
+
+        // Hatch keywords
+        const hatchKeywords = ['hatch', 'hatchback', 'compacto'];
+        const isHatchRequest = hatchKeywords.some(kw => messageLower.includes(kw));
+
+        // Uber/99 keywords (implies car, not moto)
+        const isUberRequest =
+          extracted.extracted.usoPrincipal === 'uber' ||
+          messageLower.includes('uber') ||
+          messageLower.includes('99') ||
+          messageLower.includes('aplicativo');
+
+        // Family keywords (implies car with space)
+        const isFamilyRequest =
+          extracted.extracted.usoPrincipal === 'familia' ||
+          messageLower.includes('família') ||
+          messageLower.includes('familia') ||
+          messageLower.includes('cadeirinha') ||
+          messageLower.includes('criança') ||
+          messageLower.includes('crianca');
+
+        // Generic car keywords
+        const isGenericCarRequest =
+          messageLower.includes('carro') ||
+          messageLower.includes('veículo') ||
+          messageLower.includes('veiculo') ||
+          messageLower.includes('automóvel') ||
+          messageLower.includes('automovel');
+
+        return {
+          isMotoRequest,
+          isPickupRequest,
+          isSuvRequest,
+          isSedanRequest,
+          isHatchRequest,
+          isUberRequest,
+          isFamilyRequest,
+          isGenericCarRequest,
+          hasNewRequest:
+            isMotoRequest ||
+            isPickupRequest ||
+            isSuvRequest ||
+            isSedanRequest ||
+            isHatchRequest ||
+            isUberRequest ||
+            isFamilyRequest ||
+            isGenericCarRequest,
+        };
+      };
+
+      const newContext = detectNewContext();
+
+      // Check if there's a context switch that requires clearing previous state
+      const shouldClearContext = () => {
+        if (!previousBodyType && !previousUsoPrincipal) return false;
+        if (!newContext.hasNewRequest) return false;
+
+        // If had moto and now asking for any car-related request
+        if (previousBodyType === 'moto') {
+          return (
+            newContext.isPickupRequest ||
+            newContext.isSuvRequest ||
+            newContext.isSedanRequest ||
+            newContext.isHatchRequest ||
+            newContext.isUberRequest ||
+            newContext.isFamilyRequest ||
+            newContext.isGenericCarRequest
+          );
+        }
+
+        // If had pickup and now asking for something else
+        if (previousBodyType === 'pickup') {
+          return (
+            newContext.isMotoRequest ||
+            newContext.isSuvRequest ||
+            newContext.isSedanRequest ||
+            newContext.isHatchRequest ||
+            newContext.isUberRequest ||
+            newContext.isFamilyRequest
+          );
+        }
+
+        // If had SUV and now asking for something different
+        if (previousBodyType === 'suv') {
+          return (
+            newContext.isMotoRequest ||
+            newContext.isPickupRequest ||
+            newContext.isSedanRequest ||
+            newContext.isHatchRequest
+          );
+        }
+
+        // If had sedan and now asking for something different
+        if (previousBodyType === 'sedan') {
+          return (
+            newContext.isMotoRequest ||
+            newContext.isPickupRequest ||
+            newContext.isSuvRequest ||
+            newContext.isHatchRequest
+          );
+        }
+
+        // If had hatch and now asking for something different
+        if (previousBodyType === 'hatch') {
+          return (
+            newContext.isMotoRequest ||
+            newContext.isPickupRequest ||
+            newContext.isSuvRequest ||
+            newContext.isSedanRequest
+          );
+        }
+
+        // If had uber context and now asking for moto or pickup
+        if (previousUsoPrincipal === 'uber') {
+          return newContext.isMotoRequest || newContext.isPickupRequest;
+        }
+
+        // If had family context and now asking for moto
+        if (previousUsoPrincipal === 'familia') {
+          return newContext.isMotoRequest;
+        }
+
+        return false;
+      };
+
+      if (shouldClearContext()) {
+        logger.info(
+          {
+            previousBodyType,
+            previousUsoPrincipal,
+            newContext,
+          },
+          'Context switch detected - clearing previous vehicle context'
+        );
+
+        // Clear previous bodyType
+        updatedProfile.bodyType = undefined;
+
+        // Clear previous usoPrincipal if switching to something incompatible
+        if (
+          (previousUsoPrincipal === 'uber' &&
+            (newContext.isMotoRequest || newContext.isPickupRequest)) ||
+          (previousUsoPrincipal === 'familia' && newContext.isMotoRequest)
+        ) {
+          updatedProfile.usoPrincipal = undefined;
+        }
+
+        // Clear vehicle-type-specific priorities
+        if (updatedProfile.priorities) {
+          const typeSpecificPriorities = ['moto', 'pickup', 'suv', 'sedan', 'hatch', 'apto_uber'];
+          updatedProfile.priorities = updatedProfile.priorities.filter(
+            p => !typeSpecificPriorities.includes(p)
+          );
+        }
+
+        // Clear _lastShownVehicles since context changed
+        updatedProfile._showedRecommendation = false;
+        updatedProfile._lastShownVehicles = undefined;
+        updatedProfile._lastSearchType = undefined;
+      }
+
       // 2.0. Check for Uber Black question (delegated to handler)
       const uberResult = await handleUberBlackQuestion(
         userMessage,
@@ -244,7 +446,7 @@ export class VehicleExpertAgent {
         logger.info('VehicleExpert: Delegating initial trade-in to trade_in node');
         return {
           response: '',
-          extractedPreferences: extracted.extracted,
+          extractedPreferences: { ...extracted.extracted, bodyType: updatedProfile.bodyType },
           needsMoreInfo: [],
           canRecommend: false,
           nextMode: 'trade_in', // New mode
@@ -272,7 +474,7 @@ export class VehicleExpertAgent {
         logger.info('VehicleExpert: Delegating post-selection trade-in to trade_in node');
         return {
           response: '',
-          extractedPreferences: extracted.extracted,
+          extractedPreferences: { ...extracted.extracted, bodyType: updatedProfile.bodyType },
           needsMoreInfo: [],
           canRecommend: false,
           nextMode: 'trade_in',
@@ -1186,7 +1388,13 @@ export class VehicleExpertAgent {
 
         return {
           response: answer,
-          extractedPreferences: extracted.extracted,
+          extractedPreferences: {
+            ...extracted.extracted,
+            // Persist context switch changes
+            bodyType: updatedProfile.bodyType,
+            usoPrincipal: updatedProfile.usoPrincipal,
+            priorities: updatedProfile.priorities,
+          },
           needsMoreInfo: identifyMissingInfoUtil(updatedProfile),
           canRecommend: false,
           nextMode: context.mode, // Stay in current mode
@@ -1402,7 +1610,16 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
       return {
         response: nextQuestion,
-        extractedPreferences: extracted.extracted,
+        extractedPreferences: {
+          ...extracted.extracted,
+          // Persist context switch changes
+          bodyType: updatedProfile.bodyType,
+          usoPrincipal: updatedProfile.usoPrincipal,
+          priorities: updatedProfile.priorities,
+          _showedRecommendation: updatedProfile._showedRecommendation,
+          _lastShownVehicles: updatedProfile._lastShownVehicles,
+          _lastSearchType: updatedProfile._lastSearchType,
+        },
         needsMoreInfo: readiness.missingRequired,
         canRecommend: false,
         nextMode: context.mode === 'discovery' ? 'clarification' : context.mode,
@@ -1517,12 +1734,34 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const hasMotoInText = motoKeywords.some(kw => searchTextLower.includes(kw));
       const hasMotoInPriorities = motoKeywords.some(kw => prioritiesText.includes(kw));
 
-      const wantsMoto = profile.bodyType === 'moto' || hasMotoInText || hasMotoInPriorities;
+      // CRITICAL: If user wants Uber/99, they DON'T want a motorcycle (apps require cars)
+      // This handles the context switch from "moto" to "carro para uber"
+      const isAppTransport = isUberX || isUberBlack || profile.usoPrincipal === 'uber';
+
+      // Also detect if user explicitly mentioned "carro" in current context
+      // This indicates they want a car, not the previous moto context
+      const wantsCarExplicitly =
+        searchTextLower.includes('carro') ||
+        searchTextLower.includes('veiculo') ||
+        searchTextLower.includes('veículo') ||
+        searchTextLower.includes('automovel') ||
+        searchTextLower.includes('automóvel');
+
+      // wantsMoto is true ONLY if:
+      // 1. NOT switching to app transport (Uber/99)
+      // 2. NOT explicitly asking for a car
+      // 3. Has moto in profile, text, or priorities
+      const wantsMoto =
+        !isAppTransport &&
+        !wantsCarExplicitly &&
+        (profile.bodyType === 'moto' || hasMotoInText || hasMotoInPriorities);
 
       logger.info(
         {
           wantsPickup,
           wantsMoto,
+          isAppTransport,
+          wantsCarExplicitly,
           bodyType: profile.bodyType,
           searchTextLower,
           hasPickupInText,
