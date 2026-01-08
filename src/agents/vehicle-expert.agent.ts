@@ -1396,12 +1396,42 @@ export class VehicleExpertAgent {
         // BEFORE answering as a regular question, check if it's about vehicle type availability
         // This handles cases like "e pickup vc tem?", "e SUV vc tem?" that might not match the strict availability pattern
         const vehicleTypeKeywordsFallback = [
-          { keywords: ['moto', 'motocicleta', 'scooter'], type: 'moto', name: 'moto', plural: 'motos', emoji: '🏍️' },
-          { keywords: ['pickup', 'picape', 'caminhonete'], type: 'pickup', name: 'pickup', plural: 'picapes', emoji: '🛻' },
+          {
+            keywords: ['moto', 'motocicleta', 'scooter'],
+            type: 'moto',
+            name: 'moto',
+            plural: 'motos',
+            emoji: '🏍️',
+          },
+          {
+            keywords: ['pickup', 'picape', 'caminhonete'],
+            type: 'pickup',
+            name: 'pickup',
+            plural: 'picapes',
+            emoji: '🛻',
+          },
           { keywords: ['suv'], type: 'suv', name: 'SUV', plural: 'SUVs', emoji: '🚙' },
-          { keywords: ['sedan', 'sedã'], type: 'sedan', name: 'sedan', plural: 'sedans', emoji: '🚗' },
-          { keywords: ['hatch', 'hatchback'], type: 'hatch', name: 'hatch', plural: 'hatches', emoji: '🚗' },
-          { keywords: ['minivan', 'van'], type: 'minivan', name: 'minivan', plural: 'minivans', emoji: '🚐' },
+          {
+            keywords: ['sedan', 'sedã'],
+            type: 'sedan',
+            name: 'sedan',
+            plural: 'sedans',
+            emoji: '🚗',
+          },
+          {
+            keywords: ['hatch', 'hatchback'],
+            type: 'hatch',
+            name: 'hatch',
+            plural: 'hatches',
+            emoji: '🚗',
+          },
+          {
+            keywords: ['minivan', 'van'],
+            type: 'minivan',
+            name: 'minivan',
+            plural: 'minivans',
+            emoji: '🚐',
+          },
         ];
 
         const detectedVehicleType = vehicleTypeKeywordsFallback.find(vt =>

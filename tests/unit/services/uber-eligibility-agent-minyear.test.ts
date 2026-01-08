@@ -35,11 +35,21 @@ describe('UberEligibilityAgent minYear enforcement', () => {
     const minYearDecree = nowYear - 10;
 
     mockRulesGet.mockResolvedValue({
-      meta: { citySlug: 'sao-paulo', sourceUrl: 'u', fetchedAt: new Date().toISOString(), ttlDays: 30 },
+      meta: {
+        citySlug: 'sao-paulo',
+        sourceUrl: 'u',
+        fetchedAt: new Date().toISOString(),
+        ttlDays: 30,
+      },
       rules: {
         uberX: {
           eligible: [
-            { brand: 'Toyota', model: 'Corolla', minYear: minYearDecree + 2, raw: 'Toyota Corolla' },
+            {
+              brand: 'Toyota',
+              model: 'Corolla',
+              minYear: minYearDecree + 2,
+              raw: 'Toyota Corolla',
+            },
           ],
         },
         uberComfort: { eligible: [] },

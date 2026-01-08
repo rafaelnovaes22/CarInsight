@@ -1,4 +1,8 @@
-import { UberEligibilityResult, VehicleInfo, uberEligibilityValidator } from './uber-eligibility-validator.service';
+import {
+  UberEligibilityResult,
+  VehicleInfo,
+  uberEligibilityValidator,
+} from './uber-eligibility-validator.service';
 import { uberRulesProvider, UberCitySlug } from './uber-rules-provider.service';
 
 export interface UberEligibilityAgentResult extends UberEligibilityResult {
@@ -10,7 +14,10 @@ export interface UberEligibilityAgentResult extends UberEligibilityResult {
 }
 
 export class UberEligibilityAgent {
-  async evaluate(vehicle: VehicleInfo, citySlug: UberCitySlug): Promise<UberEligibilityAgentResult> {
+  async evaluate(
+    vehicle: VehicleInfo,
+    citySlug: UberCitySlug
+  ): Promise<UberEligibilityAgentResult> {
     const ruleSet = await uberRulesProvider.get(citySlug);
 
     // Hard gates first (fast and deterministic)
@@ -20,7 +27,8 @@ export class UberEligibilityAgent {
         uberX: false,
         uberComfort: false,
         uberBlack: false,
-        reasoning: 'Reprovado: requisitos b\u00e1sicos (ar-condicionado e 4 portas) n\u00e3o atendidos.',
+        reasoning:
+          'Reprovado: requisitos b\u00e1sicos (ar-condicionado e 4 portas) n\u00e3o atendidos.',
         confidence: 1.0,
         source: {
           citySlug,
@@ -56,7 +64,9 @@ export class UberEligibilityAgent {
     const matchRule = (eligible: any[] | undefined) => {
       if (!eligible || eligible.length === 0) return null;
       return (
-        eligible.find(r => r.brand.toLowerCase() === targetBrand && targetModel.includes(r.model.toLowerCase())) ||
+        eligible.find(
+          r => r.brand.toLowerCase() === targetBrand && targetModel.includes(r.model.toLowerCase())
+        ) ||
         eligible.find(r => targetModel.includes(`${r.brand} ${r.model}`.toLowerCase())) ||
         eligible.find(r => targetModel.includes(r.model.toLowerCase())) ||
         null
@@ -68,7 +78,9 @@ export class UberEligibilityAgent {
     const ruleBlack = matchRule(ruleSet.rules.uberBlack?.eligible);
 
     const minYearX = ruleX ? Math.max(minYearDecree, ruleX.minYear) : minYearDecree;
-    const minYearComfort = ruleComfort ? Math.max(minYearDecree, ruleComfort.minYear) : minYearDecree;
+    const minYearComfort = ruleComfort
+      ? Math.max(minYearDecree, ruleComfort.minYear)
+      : minYearDecree;
     const minYearBlack = ruleBlack ? Math.max(minYearDecree, ruleBlack.minYear) : minYearDecree;
 
     // If we have an explicit eligible list for a modality and the model is NOT present, block it.
@@ -116,9 +128,7 @@ export class UberEligibilityAgent {
         (!hasListComfort || !!ruleComfort) &&
         vehicle.ano >= minYearComfort,
       uberBlack:
-        llmResult.uberBlack &&
-        (!hasListBlack || !!ruleBlack) &&
-        vehicle.ano >= minYearBlack,
+        llmResult.uberBlack && (!hasListBlack || !!ruleBlack) && vehicle.ano >= minYearBlack,
       reasoning: llmResult.reasoning,
       confidence: llmResult.confidence,
     };

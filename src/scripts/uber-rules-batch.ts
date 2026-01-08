@@ -11,11 +11,12 @@ async function main() {
 
   const sourceUrl = `https://www.uber.com/br/pt-br/eligible-vehicles/?city=${citySlug}`;
 
-  const [{ FirecrawlClient }, { uberRulesScraperService }, { uberRulesRepository }] = await Promise.all([
-    import('../services/firecrawl-client.service'),
-    import('../services/uber-rules-scraper.service'),
-    import('../services/uber-rules-repository.service'),
-  ]);
+  const [{ FirecrawlClient }, { uberRulesScraperService }, { uberRulesRepository }] =
+    await Promise.all([
+      import('../services/firecrawl-client.service'),
+      import('../services/uber-rules-scraper.service'),
+      import('../services/uber-rules-repository.service'),
+    ]);
 
   const fc = new FirecrawlClient(firecrawlKey);
   const markdown = await fc.scrape(sourceUrl);

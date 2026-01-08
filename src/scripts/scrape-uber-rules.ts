@@ -20,7 +20,8 @@ async function main() {
     uberBlack: black.length,
   });
 
-  const sample = (arr: any[]) => arr.slice(0, 10).map(r => `${r.brand} ${r.model} (minYear=${r.minYear})`);
+  const sample = (arr: any[]) =>
+    arr.slice(0, 10).map(r => `${r.brand} ${r.model} (minYear=${r.minYear})`);
 
   console.log('\nSample UberX:', sample(x));
   console.log('\nSample Comfort:', sample(comfort));

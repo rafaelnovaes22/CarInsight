@@ -49,15 +49,21 @@ describe('UberRulesScraperService parsing (by modality)', () => {
 
     // Non-ride modalities should also be captured
     expect(rules.envios_carro.eligible).toEqual(
-      expect.arrayContaining([expect.objectContaining({ brand: 'Audi', model: 'A4', minYear: 1996 })])
+      expect.arrayContaining([
+        expect.objectContaining({ brand: 'Audi', model: 'A4', minYear: 1996 }),
+      ])
     );
 
     // Other tags should be slugged
     expect(rules.bag.eligible).toEqual(
-      expect.arrayContaining([expect.objectContaining({ brand: 'Audi', model: 'A4', minYear: 2011 })])
+      expect.arrayContaining([
+        expect.objectContaining({ brand: 'Audi', model: 'A4', minYear: 2011 }),
+      ])
     );
     expect(rules.prioridade.eligible).toEqual(
-      expect.arrayContaining([expect.objectContaining({ brand: 'Audi', model: 'A4', minYear: 2011 })])
+      expect.arrayContaining([
+        expect.objectContaining({ brand: 'Audi', model: 'A4', minYear: 2011 }),
+      ])
     );
   });
 });

@@ -29,8 +29,14 @@ export async function formatRecommendations(
   if (recommendations.length === 0) {
     const wantsAppTransport = profile.usoPrincipal === 'uber';
     if (wantsAppTransport) {
-      const appName = profile.appMencionado === '99' ? '99' : profile.appMencionado === 'uber' ? 'Uber' : 'Uber/99';
-      const category = profile.tipoUber === 'black' ? 'Black' : profile.tipoUber === 'comfort' ? 'Comfort' : 'X';
+      const appName =
+        profile.appMencionado === '99'
+          ? '99'
+          : profile.appMencionado === 'uber'
+            ? 'Uber'
+            : 'Uber/99';
+      const category =
+        profile.tipoUber === 'black' ? 'Black' : profile.tipoUber === 'comfort' ? 'Comfort' : 'X';
       return `No momento não temos veículos *aptos para ${appName} ${category}* disponíveis no estoque.\n\nSe quiser, posso te ajudar a buscar um carro para outro perfil (família, viagem, trabalho) ou você pode ajustar algum critério (orçamento/ano).`;
     }
 

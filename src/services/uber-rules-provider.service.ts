@@ -57,7 +57,12 @@ export class UberRulesProvider {
 
           for (const r of rows) {
             if (!rules[r.category]) rules[r.category] = { eligible: [] };
-            rules[r.category]!.eligible.push({ brand: r.brand, model: r.model, minYear: r.minYear, raw: r.raw });
+            rules[r.category]!.eligible.push({
+              brand: r.brand,
+              model: r.model,
+              minYear: r.minYear,
+              raw: r.raw,
+            });
           }
 
           // Keep legacy normalized keys (compat)

@@ -1,5 +1,9 @@
 import { chromium } from 'playwright';
-import { UberCitySlug, UberRulesByModality, UberEligibleModelRule } from './uber-rules-provider.service';
+import {
+  UberCitySlug,
+  UberRulesByModality,
+  UberEligibleModelRule,
+} from './uber-rules-provider.service';
 import { logger } from '../lib/logger';
 
 export class UberRulesScraperService {
@@ -50,7 +54,10 @@ export class UberRulesScraperService {
     let currentBrand: string | null = null;
 
     for (const line of lines) {
-      const normalized = line.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+      const normalized = line
+        .replace(/\u00a0/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
       // Brand line: appears alone (e.g., "Audi") and is followed by model lines.
       if (this.looksLikeBrandLine(normalized)) {
@@ -108,7 +115,8 @@ export class UberRulesScraperService {
     }
 
     // Brand lines are usually single token(s) and do not contain dash/slash/parentheses.
-    if (line.includes(' - ') || line.includes('/') || line.includes('(') || line.includes(')')) return false;
+    if (line.includes(' - ') || line.includes('/') || line.includes('(') || line.includes(')'))
+      return false;
 
     // Avoid huge phrases.
     if (line.length > 24) return false;
@@ -119,12 +127,18 @@ export class UberRulesScraperService {
     return true;
   }
 
-  private parseModelEntries(line: string): { model: string; entries: Array<{ year: number; categoriesText: string }> } {
+  private parseModelEntries(line: string): {
+    model: string;
+    entries: Array<{ year: number; categoriesText: string }>;
+  } {
     const [modelPart, rest] = line.split(' - ', 2);
     const model = modelPart.trim();
     if (!rest) return { model, entries: [] };
 
-    const chunks = rest.split('/').map(c => c.trim()).filter(Boolean);
+    const chunks = rest
+      .split('/')
+      .map(c => c.trim())
+      .filter(Boolean);
     const entries: Array<{ year: number; categoriesText: string }> = [];
 
     for (const chunk of chunks) {
@@ -162,7 +176,8 @@ export class UberRulesScraperService {
       else if (norm === 'comfort' || norm.startsWith('comfort ')) out.add('uberComfort');
       else if (norm === 'black' || norm.startsWith('black ')) out.add('uberBlack');
       else if (norm.startsWith('black bag')) out.add('uberBlack');
-      else if (norm.includes('uberxl') || norm.includes('uber xl') || norm === 'xl') out.add('uberXL');
+      else if (norm.includes('uberxl') || norm.includes('uber xl') || norm === 'xl')
+        out.add('uberXL');
       else if (norm.includes('envios') && norm.includes('moto')) out.add('envios_moto');
       else if (norm.includes('envios') && norm.includes('carro')) out.add('envios_carro');
       else if (norm.includes('moto')) out.add('moto');
