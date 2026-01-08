@@ -154,7 +154,7 @@ describe('LangGraph Nodes Logic', () => {
 
     it('should search vehicles and return recommendations', async () => {
       const state = createInitialState();
-      state.profile = { budget: 100000, vehicleType: 'SUV' };
+      state.profile = { budget: 100000, bodyType: 'suv' };
 
       mockSearchVehicles.mockResolvedValue([
         {
@@ -176,7 +176,7 @@ describe('LangGraph Nodes Logic', () => {
 
     it('should handle no results', async () => {
       const state = createInitialState();
-      state.profile = { budget: 10000 };
+      state.profile = { budget: 10000, usage: 'cidade' };
       mockSearchVehicles.mockResolvedValue([]);
 
       const result = await searchNode(state);
@@ -236,6 +236,36 @@ describe('LangGraph Nodes Logic', () => {
 
       expect(result.messages?.[0].content).toContain('agendar sua visita');
       expect(result.metadata?.flags).toContain('visit_requested');
+    });
+
+    it('should route to financing when financing intent is detected', async () => {
+      const state = createInitialState();
+      state.messages = [new HumanMessage('Quero financiar com 10 mil de entrada')];
+
+      const result = await recommendationNode(state);
+
+      expect(result.next).toBe('financing');
+      expect(result.messages).toBeUndefined();
+    });
+
+    it('should route to trade_in when trade-in intent is detected', async () => {
+      const state = createInitialState();
+      state.messages = [new HumanMessage('Tenho um carro na troca')];
+
+      const result = await recommendationNode(state);
+
+      expect(result.next).toBe('trade_in');
+      expect(result.messages).toBeUndefined();
+    });
+
+    it('should route to negotiation when interest intent is detected', async () => {
+      const state = createInitialState();
+      state.messages = [new HumanMessage('Gostei, quero esse')];
+
+      const result = await recommendationNode(state);
+
+      expect(result.next).toBe('negotiation');
+      expect(result.messages).toBeUndefined();
     });
   });
 });

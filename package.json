@@ -44,6 +44,8 @@
     "conversations:reset:all": "tsx scripts/reset-conversations.ts --all",
     "vehicles:update-uber": "tsx scripts/update-uber-eligibility.ts",
     "vehicles:update-uber-llm": "tsx scripts/update-uber-eligibility-llm.ts",
+    "uber:scrape": "tsx src/scripts/scrape-uber-rules.ts",
+    "uber:batch": "tsx src/scripts/uber-rules-batch.ts",
     "heroku-status": "heroku ps --app faciliauto-mvp",
     "heroku-logs": "heroku logs --tail --app faciliauto-mvp",
     "heroku-open": "heroku open --app faciliauto-mvp",
@@ -100,7 +102,8 @@
     "supertest": "^7.1.4",
     "typescript": "^5.3.2",
     "typescript-eslint": "^8.49.0",
-    "vitest": "^4.0.10"
+    "vitest": "^4.0.10",
+    "playwright": "^1.50.0"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

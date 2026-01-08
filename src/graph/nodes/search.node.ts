@@ -28,10 +28,12 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
 
   try {
     const criteria: VehicleSearchCriteria = {
-      budget: profile.budget,
-      usage: profile.usagePattern,
-      persons: profile.familySize,
-      bodyType: profile.vehicleType !== 'qualquer' ? profile.vehicleType : undefined,
+      budget: profile.budget ?? profile.orcamento,
+      usage: profile.usage ?? profile.usagePattern ?? profile.usoPrincipal,
+      persons: profile.people ?? profile.familySize,
+      bodyType:
+        (profile.bodyType as any) ??
+        (profile.vehicleType !== 'qualquer' ? (profile.vehicleType as any) : undefined),
       year: profile.minYear,
       mileage: profile.maxKm,
     };

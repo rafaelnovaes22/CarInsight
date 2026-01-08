@@ -23,7 +23,7 @@ export interface VehicleInfo {
   carroceria: string;
   arCondicionado: boolean;
   portas: number;
-  cambio: string;
+  cambio?: string;
   cor?: string;
 }
 

@@ -851,6 +851,10 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           embeddingGeneratedAt: null,
         };
 
+        const { vehicleEligibilityOnCreateService } = await import(
+          '../services/vehicle-eligibility-on-create.service'
+        );
+
         if (existing) {
           await prisma.vehicle.update({
             where: { id: existing.id },
@@ -858,7 +862,8 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           });
           updated++;
         } else {
-          await prisma.vehicle.create({ data: vehicleData });
+          const createdVehicle = await prisma.vehicle.create({ data: vehicleData });
+          await vehicleEligibilityOnCreateService.markDefaultEligibility(createdVehicle.id);
           created++;
         }
       } catch (error) {

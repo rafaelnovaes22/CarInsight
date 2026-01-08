@@ -172,3 +172,23 @@ model system_prompts {
   updatedAt   DateTime
   createdAt   DateTime @default(now())
 }
+
+model UberEligibleVehicleRule {
+  id        String   @id @default(uuid())
+  citySlug  String
+  category  String
+  brand     String
+  model     String
+  minYear   Int
+  raw       String
+  fetchedAt DateTime
+  sourceUrl String
+  createdAt DateTime @default(now())
+
+  @@index([citySlug])
+  @@index([category])
+  @@index([brand])
+  @@index([model])
+  @@index([fetchedAt])
+  @@unique([citySlug, category, brand, model, minYear])
+}

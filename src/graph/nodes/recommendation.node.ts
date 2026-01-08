@@ -177,6 +177,41 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     };
   }
 
+  // Post-recommendation routing (go straight to negotiation/financing/trade-in)
+  // Keep this deterministic and BEFORE re-showing recommendations.
+  if (/financ|parcel|entrada|presta[çc]/i.test(lowerMessage)) {
+    logger.info('RecommendationNode: Financing intent detected');
+    return {
+      next: 'financing',
+      metadata: {
+        ...state.metadata,
+        lastMessageAt: Date.now(),
+      },
+    };
+  }
+
+  if (/troca|meu carro|tenho um|minha|dar na troca/i.test(lowerMessage)) {
+    logger.info('RecommendationNode: Trade-in intent detected');
+    return {
+      next: 'trade_in',
+      metadata: {
+        ...state.metadata,
+        lastMessageAt: Date.now(),
+      },
+    };
+  }
+
+  if (/gostei|interessei|quero esse|quero o|vou levar|fechar|comprar/i.test(lowerMessage)) {
+    logger.info('RecommendationNode: Interest intent detected -> negotiation');
+    return {
+      next: 'negotiation',
+      metadata: {
+        ...state.metadata,
+        lastMessageAt: Date.now(),
+      },
+    };
+  }
+
   // Handle vehicle number selection (1, 2, 3)
   if (/^[1-3]$/.test(lowerMessage.trim())) {
     const vehicleIndex = parseInt(lowerMessage.trim()) - 1;

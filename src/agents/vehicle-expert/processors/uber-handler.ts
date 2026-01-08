@@ -34,6 +34,15 @@ async function getUberEligibilityValidator() {
   return uberValidator;
 }
 
+let uberEligibilityAgentRef: any | null = null;
+async function getUberEligibilityAgent() {
+  if (!uberEligibilityAgentRef) {
+    const module = await import('../../../services/uber-eligibility-agent.service');
+    uberEligibilityAgentRef = module.uberEligibilityAgent;
+  }
+  return uberEligibilityAgentRef;
+}
+
 function isUberEligibilityQuestion(message: string): boolean {
   const m = message.toLowerCase();
 
@@ -256,16 +265,22 @@ export async function handleUberEligibilityQuestion(
     'UberHandler: Answering eligibility question for specific vehicle'
   );
 
-  const validator = await getUberEligibilityValidator();
-  const eligibility = await validator.validateEligibility({
-    marca: dbVehicle.marca,
-    modelo: dbVehicle.modelo,
-    ano: dbVehicle.ano,
-    carroceria: dbVehicle.carroceria,
-    portas: dbVehicle.portas,
-    arCondicionado: dbVehicle.arCondicionado,
-  });
+  const citySlug = updatedProfile.citySlug || context.profile?.citySlug || 'sao-paulo';
 
+  const agent = await getUberEligibilityAgent();
+  const eligibility = await agent.evaluate(
+    {
+      marca: dbVehicle.marca,
+      modelo: dbVehicle.modelo,
+      ano: dbVehicle.ano,
+      carroceria: dbVehicle.carroceria,
+      portas: dbVehicle.portas,
+      arCondicionado: dbVehicle.arCondicionado,
+    },
+    citySlug
+  );
+
+  const validator = await getUberEligibilityValidator();
   const explanation = validator.getExplanation(
     {
       marca: dbVehicle.marca,
@@ -279,8 +294,8 @@ export async function handleUberEligibilityQuestion(
   );
 
   const caveat =
-    `\n\n⚠️ Observação: as regras podem variar por cidade e mudam com o tempo.` +
-    ` Se você me disser sua *cidade/UF* e a categoria (X/Comfort/Black), eu ajusto a orientação pra sua realidade.`;
+    `\n\n📍 Cidade considerada: *${citySlug}*.` +
+    `\n⚠️ Observação: as regras podem variar por cidade e mudam com o tempo.`;
 
   return {
     handled: true,

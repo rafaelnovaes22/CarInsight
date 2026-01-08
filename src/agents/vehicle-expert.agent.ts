@@ -2017,6 +2017,59 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         return { recommendations: sevenSeaterResults.slice(0, 5), requiredSeats };
       }
 
+      // Post-filter: apply city-specific Uber rules when user is NOT in default city (SP)
+      // Keep SQL filtering (aptoUber/aptoUberBlack) as a fast pre-filter.
+      const citySlug = profile.citySlug || 'sao-paulo';
+      if (isAppTransport && citySlug !== 'sao-paulo') {
+        const { uberEligibilityAgent } = await import('../services/uber-eligibility-agent.service');
+        const { prisma } = await import('../lib/prisma');
+
+        // Evaluate only the candidates we already fetched.
+        const ids = rankedResults.map(r => r.vehicleId);
+        const dbVehicles = await prisma.vehicle.findMany({
+          where: { id: { in: ids } },
+          select: {
+            id: true,
+            marca: true,
+            modelo: true,
+            ano: true,
+            carroceria: true,
+            arCondicionado: true,
+            portas: true,
+            cambio: true,
+          },
+        });
+
+        const byId = new Map(dbVehicles.map(v => [v.id, v]));
+
+        const evaluated = await Promise.all(
+          rankedResults.map(async rec => {
+            const v = byId.get(rec.vehicleId);
+            if (!v) return { rec, ok: false };
+
+            const result = await uberEligibilityAgent.evaluate(
+              {
+                marca: v.marca,
+                modelo: v.modelo,
+                ano: v.ano,
+                carroceria: v.carroceria,
+                arCondicionado: v.arCondicionado,
+                portas: v.portas,
+                cambio: v.cambio || undefined,
+              },
+              citySlug
+            );
+
+            const wantsBlackOnly = isUberBlack && !isUberX;
+            const ok = wantsBlackOnly ? result.uberBlack : result.uberX || result.uberComfort;
+
+            return { rec, ok };
+          })
+        );
+
+        rankedResults = evaluated.filter(x => x.ok).map(x => x.rec);
+      }
+
       // Post-filter: apply family-specific rules
       let filteredResults = rankedResults;
       if (isFamily) {
@@ -2159,43 +2212,11 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         'Generated recommendations'
       );
 
-      // Fallback para busca de apps de transporte: se não encontrou com filtro aptoUber,
-      // tentar buscar veículos compatíveis (sedans/hatches de 2012+) sem o filtro rigoroso
+      // Uber/99 MUST be strict: if we don't have eligible vehicles, say we don't have.
+      // Do NOT relax eligibility by removing aptoUber filters.
       if ((isUberX || isUberBlack) && filteredResults.length === 0) {
-        logger.info(
-          { isUberX, isUberBlack },
-          'App transport search found no results, trying fallback without aptoUber filter'
-        );
-
-        // Buscar veículos que seriam aptos para apps (sedan/hatch, 2012+, com ar)
-        // mas que podem não ter o campo aptoUber marcado no banco
-        const fallbackResults = await vehicleSearchAdapter.search('sedan hatch carro', {
-          maxPrice: query.filters.maxPrice,
-          minYear: isUberBlack ? 2018 : 2012, // Uber Black precisa ser 2018+
-          limit: 10,
-          excludeMotorcycles: true, // Uber search excludes motorcycles
-          // NÃO usar filtro aptoUber/aptoUberBlack aqui
-        });
-
-        // Filtrar manualmente por carroceria adequada
-        const compatibleResults = fallbackResults.filter(rec => {
-          const bodyType = (rec.vehicle.bodyType || '').toLowerCase();
-          // Para apps: apenas sedan, hatch ou minivan
-          return (
-            bodyType.includes('sedan') ||
-            bodyType.includes('hatch') ||
-            bodyType.includes('minivan') ||
-            bodyType === ''
-          );
-        });
-
-        if (compatibleResults.length > 0) {
-          logger.info(
-            { count: compatibleResults.length },
-            'Fallback found compatible vehicles for app transport'
-          );
-          return { recommendations: compatibleResults.slice(0, 5), wantsPickup: false };
-        }
+        logger.info({ isUberX, isUberBlack }, 'App transport search returned 0 eligible vehicles');
+        return { recommendations: [], wantsPickup: false };
       }
 
       return { recommendations: filteredResults.slice(0, 5), wantsPickup };

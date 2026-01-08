@@ -30,6 +30,7 @@ export interface CustomerProfile {
   usoPrincipal?: string; // alias for usage (Portuguese)
   tipoUber?: 'uberx' | 'comfort' | 'black'; // Uber category
   appMencionado?: '99' | 'uber' | 'app'; // App de transporte mencionado pelo usuário (preserva o nome original)
+  citySlug?: string; // default 'sao-paulo' (used for city-specific Uber rules)
 
   // People
   people?: number;
