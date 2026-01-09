@@ -1282,8 +1282,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                askedBodyType === 'motocicleta' ||
+                askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1305,8 +1305,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                    askedBodyType === 'motocicleta' ||
-                    askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
@@ -1472,7 +1472,7 @@ export class VehicleExpertAgent {
               response: intro + vehicleList + footer,
               extractedPreferences: {
                 ...extracted.extracted,
-                bodyType: detectedVehicleType.type,
+                bodyType: detectedVehicleType.type as any,
                 _showedRecommendation: true,
                 _lastSearchType: 'recommendation' as const,
                 _lastShownVehicles: typeResults.map(r => ({
@@ -1481,7 +1481,7 @@ export class VehicleExpertAgent {
                   model: r.vehicle.model,
                   year: r.vehicle.year,
                   price: r.vehicle.price,
-                  bodyType: detectedVehicleType.type, // CRITICAL: Include bodyType for want-others handler
+                  bodyType: detectedVehicleType.type as any, // CRITICAL: Include bodyType for want-others handler
                 })),
               },
               needsMoreInfo: [],
@@ -1500,7 +1500,7 @@ export class VehicleExpertAgent {
               response: `No momento não temos ${detectedVehicleType.plural} disponíveis no estoque. ${detectedVehicleType.emoji}\n\nQuer que eu busque outras opções para você?`,
               extractedPreferences: {
                 ...extracted.extracted,
-                bodyType: detectedVehicleType.type,
+                bodyType: detectedVehicleType.type as any,
                 _waitingForSuggestionResponse: true,
               },
               needsMoreInfo: [],
