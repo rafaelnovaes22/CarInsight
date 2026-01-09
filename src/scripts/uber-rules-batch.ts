@@ -54,4 +54,4 @@ main().catch(err => {
   process.exit(1);
 });
 
-export { };
+export {};
