@@ -21,6 +21,22 @@ vi.mock('../../src/agents/preference-extractor.agent', () => ({
   },
 }));
 
+vi.mock('../../src/services/vehicle-ranker.service', () => ({
+  vehicleRanker: {
+    rank: vi.fn(async (vehicles) => ({
+      rankedVehicles: vehicles.map((v: any) => ({
+        vehicleId: v.id,
+        score: 90,
+        reasoning: 'mock',
+        highlights: [],
+        concerns: [],
+      })),
+      summary: 'mock summary',
+      processingTime: 0,
+    })),
+  },
+}));
+
 vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
   vehicleSearchAdapter: {
     search: vi.fn(async (_q: string, filters: any) => {
@@ -78,28 +94,30 @@ vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
 vi.mock('../../src/lib/prisma', () => ({
   prisma: {
     vehicle: {
-      findMany: vi.fn(async () => [
-        {
-          id: 'v1',
-          marca: 'Toyota',
-          modelo: 'Corolla',
-          ano: 2020,
-          carroceria: 'Sedan',
-          arCondicionado: true,
-          portas: 4,
-          cambio: 'Automatico',
-        },
-        {
-          id: 'v2',
-          marca: 'VW',
-          modelo: 'Gol',
-          ano: 2014,
-          carroceria: 'Hatch',
-          arCondicionado: true,
-          portas: 4,
-          cambio: 'Manual',
-        },
-      ]),
+      findMany: vi.fn(async () => {
+        return [
+          {
+            id: 'v1',
+            marca: 'Toyota',
+            modelo: 'Corolla',
+            ano: 2020,
+            carroceria: 'Sedan',
+            arCondicionado: true,
+            portas: 4,
+            cambio: 'Automatico',
+          },
+          {
+            id: 'v2',
+            marca: 'VW',
+            modelo: 'Gol',
+            ano: 2014,
+            carroceria: 'Hatch',
+            arCondicionado: true,
+            portas: 4,
+            cambio: 'Manual',
+          },
+        ]
+      }),
     },
   },
 }));
@@ -145,6 +163,8 @@ describe('VehicleExpertAgent - Uber city post-filter', () => {
         usoPrincipal: 'uber',
         tipoUber: 'uberx',
         citySlug: 'rio-de-janeiro',
+        budget: 50000,
+        usage: 'trabalho',
       },
       metadata: { messageCount: 1 },
     };
