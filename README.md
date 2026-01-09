@@ -14,7 +14,7 @@ Sistema MVP de assistente de vendas para concessionárias via WhatsApp, utilizan
 
 ### ✨ Features Principais
 
-- 🤖 **IA Conversacional** - Atendimento via WhatsApp com Multi-LLM Routing
+- 🤖 **IA Conversacional** - Atendimento via WhatsApp com LangGraph (Multi-Agent)
 - 🎯 **Sistema de Recomendação Inteligente** - LLM avalia adequação ao contexto do usuário
 - 🔍 **Busca Vetorial** - OpenAI Embeddings com fallback Cohere (1536 dim)
 - 📱 **Meta WhatsApp Business API** - Integração oficial
@@ -52,7 +52,8 @@ O sistema utiliza um **router inteligente** com fallback automático e circuit b
 ### Backend & IA
 - **Node.js 20+** com TypeScript 5.3
 - **Express.js** - API REST
-- **State Machine** - Orquestração de conversas em TypeScript puro
+- **LangGraph** - Orquestração de agentes e conversas (novo engine)
+- **State Machine** - Fallback determinístico em TypeScript puro
 - **OpenAI SDK** - GPT-4o-mini (LLM primário) + Embeddings
 - **Groq SDK** - LLaMA 3.1 8B Instant (LLM fallback)
 - **Cohere SDK** - Embeddings multilingual (fallback)
@@ -77,9 +78,11 @@ O sistema utiliza um **router inteligente** com fallback automático e circuit b
 - **Pino** - Structured logging
 - **Husky** - Git hooks (pre-commit)
 
-## 🔄 State Machine - Orquestração de Conversas
+## 🔄 State Machine & LangGraph
 
-O sistema utiliza uma **State Machine em TypeScript puro** para gerenciar o fluxo de estados da conversa:
+
+O sistema adota uma abordagem híbrida: **LangGraph** para o modo conversacional avançado e uma **State Machine em TypeScript puro** como fallback/legado para garantir robustez.
+
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -136,8 +139,8 @@ Cada estado é processado por um **node** especializado:
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
 │              TypeScript State Machine Manager                │
-│  • State machine orchestration                              │
-│  • Transition conditions evaluation                         │
+│  • Primary: LangGraph (Structured Multi-Agent Graph)        │
+│  • Fallback: Legacy Pure TS State Machine                   │
 │  • Node routing (greeting → quiz → recommendation)          │
 └──────────┬──────────┬──────────┬───────────────────────────┘
            │          │          │
