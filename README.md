@@ -2,7 +2,7 @@
 
 > Assistente inteligente de vendas automotivas via WhatsApp com IA Generativa, RAG e Multi-LLM Routing
 
-[![CI/CD](https://github.com/rafaelnovaes22/CarInsight-mvp-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight-mvp-v2/actions/workflows/ci.yml)
+[![CI/CD](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)](https://www.postgresql.org/)
@@ -58,7 +58,13 @@ O sistema utiliza um **router inteligente** com fallback automático e circuit b
 - **Groq SDK** - LLaMA 3.1 8B Instant (LLM fallback)
 - **Cohere SDK** - Embeddings multilingual (fallback)
 - **Prisma ORM** - Type-safe database client
-- **Zod** - Schema validation
+- **Modules** - Zod (Validation), Axios (HTTP), Pino (Logging)
+
+### 🧠 Core Services & AI
+- **VehicleRanker** - Reranking inteligente de resultados com IA
+- **UberEligibility** - Validação automática de regras complexas (UberX, Black, Comfort)
+- **ExactSearchParser** - Conversão de linguagem natural em filtros SQL precisos
+- **Guardrails** - Camada de segurança e validação de input/output
 
 ### Database & Storage
 - **PostgreSQL 14+** - Banco relacional principal
@@ -85,44 +91,39 @@ O sistema adota uma abordagem híbrida: **LangGraph** para o modo conversacional
 
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      TypeScript State Machine                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   START → GREETING → DISCOVERY → CLARIFICATION → RECOMMENDATION │
-│               │           ↑            ↑              │         │
-│               │           │            │              ▼         │
-│               │           └────────────┴────────  FOLLOW_UP     │
-│               │                                       │         │
-│               └──────────────── HANDOFF ◄────────────┘         │
-│                                    │                            │
-│                                   END                           │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          LangGraph Flow (StateGraph)                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  START ──► GREETING ──► DISCOVERY <───► SEARCH ──► RECOMMENDATION           │
+│                            │                               │                │
+│                            │                               ▼                │
+│                            └─────► NEGOTIATION ◄─── FINANCING / TRADE_IN    │
+│                                       │                                     │
+│                                       ▼                                     │
+│                                     END                                     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Estados do Grafo
+### Nodes do Grafo (Agents)
 
-| Estado | Descrição |
-|--------|-----------|
-| **GREETING** | Boas-vindas e coleta de nome do cliente |
-| **DISCOVERY** | Descoberta inicial: o que o cliente busca |
-| **CLARIFICATION** | Perguntas para refinar o perfil (budget, uso, etc) |
-| **RECOMMENDATION** | Apresentação das recomendações de veículos |
-| **FOLLOW_UP** | Acompanhamento pós-recomendação |
-| **HANDOFF** | Transferência para vendedor humano |
+| Node | Responsabilidade |
+|------|------------------|
+| **Greeting** | Boas-vindas, compliance ISO42001 e verificação inicial |
+| **Discovery** | Análise de perfil conversacional (substitui Quiz rígido). Identifica budget, uso e preferências |
+| **Search** | Executa buscas híbridas (Vetorial + Filtros Rígidos) no inventário |
+| **Recommendation** | Formata e apresenta veículos com justificativa (selling points) |
+| **Financing** | Agente especialista em simulações e condições de pagamento |
+| **TradeIn** | Avaliação preliminar de veículo na troca |
+| **Negotiation** | Tira-dúvidas finais e fechamento (handoff para vendedor) |
 
-### Nodes Especializados
+### Persistence & Memory
 
-Cada estado é processado por um **node** especializado:
-
-```typescript
-// src/graph/nodes/
-├── greeting.node.ts      // ISO42001: AI disclosure na primeira mensagem
-├── quiz.node.ts          // Coleta de preferências estruturada
-├── search.node.ts        // Busca vetorial + filtros
-└── recommendation.node.ts // Apresentação com reasoning
-```
+O LangGraph utiliza um **Checkpointer PostgreSQL (Prisma)** para persistir o estado de cada conversa. Isso permite:
+- **Long-term Memory:** O bot "lembra" do contexto mesmo dias depois.
+- **Time Travel:** Capacidade de debugar voltando a estados anteriores.
+- **Human-in-the-loop:** Possibilidade de um humano intervir e aprovar ações (futuro).
 
 ## 🏗️ Arquitetura de Agentes
 
@@ -175,7 +176,9 @@ Cada estado é processado por um **node** especializado:
 | **OrchestratorAgent** | Classificação de intenção e roteamento |
 | **QuizAgent** | Coleta de preferências (8 perguntas) |
 | **RecommendationAgent** | Avaliação de veículos com LLM + busca de modelo específico |
-| **VehicleExpertAgent** | Especialista em detalhes técnicos |
+| **VehicleExpertAgent** | Especialista em detalhes técnicos e comparativos |
+| **FinancingAgent** | Simulação de financiamento e parcelas (Agentic) |
+| **TradeInAgent** | Avaliação preliminar de usados na troca |
 | **PreferenceExtractorAgent** | Extração de preferências de texto livre |
 
 ## 🔒 Segurança & Compliance
@@ -339,47 +342,38 @@ npm run benchmark:llms          # Compara performance LLMs
 ```
 CarInsight-mvp-v2/
 ├── src/
-│   ├── index.ts                    # Entry point
+│   ├── index.ts                    # Entry point & Express App
 │   ├── agents/                     # Agentes especializados
 │   │   ├── orchestrator.agent.ts   # Roteamento e intenção
 │   │   ├── quiz.agent.ts           # Coleta de preferências
 │   │   ├── recommendation.agent.ts # Recomendações com LLM
 │   │   ├── vehicle-expert.agent.ts # Especialista em veículos
+│   │   ├── financing.agent.ts      # Simulação de financiamento
+│   │   ├── trade-in.agent.ts       # Avaliação de troca
 │   │   └── preference-extractor.agent.ts
-│   ├── lib/                        # Bibliotecas core
-│   │   ├── llm-router.ts           # Multi-LLM com fallback
-│   │   ├── embedding-router.ts     # Multi-Embedding com fallback
-│   │   ├── groq.ts                 # Integração Groq
-│   │   ├── embeddings.ts           # Wrapper embeddings
-│   │   ├── openai.ts               # Integração OpenAI
-│   │   ├── prisma.ts               # Database client
-│   │   └── logger.ts               # Pino logger
 │   ├── services/                   # Serviços de negócio
 │   │   ├── guardrails.service.ts   # Segurança e validação
-│   │   ├── in-memory-vector.service.ts  # Vector store
-│   │   ├── message-handler-v2.service.ts
-│   │   ├── whatsapp-meta.service.ts
-│   │   └── vehicle-search-adapter.service.ts
+│   │   ├── uber-eligibility-*.ts   # Regras de Uber (Validator, Scraper)
+│   │   ├── vehicle-ranker.service.ts # IA Reranking
+│   │   ├── exact-search*.ts        # Busca exata e parser
+│   │   └── whatsapp-meta.service.ts
 │   ├── routes/                     # Rotas Express
 │   │   ├── webhook.routes.ts       # WhatsApp webhooks
 │   │   ├── admin.routes.ts         # Admin endpoints
 │   │   └── debug.routes.ts         # Debug endpoints
 │   ├── config/                     # Configurações
-│   │   ├── env.ts                  # Variáveis de ambiente
-│   │   └── disclosure.messages.ts  # ISO42001 disclaimers
-│   └── graph/                      # State Machine (TypeScript puro)
-│       └── conversation-graph.ts
+│   └── graph/                      # State Machine & LangGraph
+│       ├── conversation-graph.ts
+│       └── nodes/                  # Nós do grafo (Discovery, Negotiation, etc)
 ├── prisma/
 │   ├── schema.prisma               # Database schema
-│   └── seed-robustcar.ts           # Seed script
+│   └── seed-*.ts                   # Scripts de seed
 ├── tests/                          # Suite de testes
 │   ├── e2e/                        # Testes end-to-end
 │   ├── integration/                # Testes de integração
 │   ├── unit/                       # Testes unitários
 │   └── agents/                     # Testes de agentes
-├── docs/                           # Documentação técnica
-├── scripts/                        # Scripts utilitários
-└── .github/workflows/              # CI/CD GitHub Actions
+└── docs/                           # Documentação técnica
 ```
 
 ## 🧪 Testes
@@ -412,45 +406,43 @@ npm run test:unit          # Unitários
 | **Unit** | LLM router, embedding router, services |
 | **Agents** | Quiz agent, recommendation agent |
 
-## 🔄 Fluxo de Recomendação
+## 🔄 Fluxo de Recomendação (Agentic)
 
 ```
-1. Usuário envia mensagem
+1. Usuário envia mensagem ("Quero um SUV para família")
          │
-2. Guardrails valida input (injection, rate limit)
+2. LangGraph inicia/carrega estado (thread_id)
          │
-3. Orchestrator classifica intenção
+3. DISCOVERY Node:
+   • Analisa intenção com LLM
+   • Extrai entidades (Budget, Tipo, Uso)
+   • Decide se precisa de mais info ou pode buscar
          │
-4. Se QUALIFICAR → Quiz Agent (8 perguntas)
+4. SEARCH Node (se perfil suficiente):
+   • Converte query natural -> Filtros (ano, km, preço)
+   • Gera embedding da intenção
+   • Busca Híbrida (Vector + SQL)
          │
-5. Quiz completo → Recommendation Agent
+5. RECOMMENDATION Node:
+   • Reranking dos resultados (LLM avalia fit)
+   • Seleciona Top 3
+   • Gera justificativa personalizada ("Bom para família pois tem porta-malas X")
          │
-   ┌─────┴─────┐
-   │           │
-   ▼           ▼
-Modelo      Perfil
-Específico  Geral
-   │           │
-   ▼           ▼
-Busca       Pré-filtra
-Exata       por budget/ano/km
-   │           │
-   ▼           ▼
-Encontrou?  LLM avalia
-   │        adequação
-   │           │
-   └─────┬─────┘
-         │
-6. Top 3 recomendações com reasoning
-         │
-7. Salva no banco + evento
-         │
-8. Formata mensagem WhatsApp
-         │
-9. Guardrails valida output
-         │
-10. Envia para usuário
+6. Resposta enviada ao usuário
 ```
+
+## 🔌 API & Endpoints
+
+O servidor Express expõe endpoints para administração e webhooks:
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/webhooks/whatsapp` | Webhook oficial da Meta Cloud API |
+| `GET` | `/webhooks/whatsapp` | Verificação de token (Meta challenge) |
+| `GET` | `/admin/health` | Healthcheck detalhado do sistema |
+| `GET` | `/stats` | Estatísticas (Conversas, Leads, Veículos) |
+| `POST` | `/api/reset-conversation` | Utilitário de teste (limpa estado de um nº) |
+| `GET` | `/` | Dashboard básico de status |
 
 ## 📚 Documentação
 
