@@ -23,7 +23,7 @@ vi.mock('../../src/agents/preference-extractor.agent', () => ({
 
 vi.mock('../../src/services/vehicle-ranker.service', () => ({
   vehicleRanker: {
-    rank: vi.fn(async (vehicles) => ({
+    rank: vi.fn(async vehicles => ({
       rankedVehicles: vehicles.map((v: any) => ({
         vehicleId: v.id,
         score: 90,
@@ -116,7 +116,7 @@ vi.mock('../../src/lib/prisma', () => ({
             portas: 4,
             cambio: 'Manual',
           },
-        ]
+        ];
       }),
     },
   },
