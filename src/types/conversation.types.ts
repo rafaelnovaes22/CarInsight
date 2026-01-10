@@ -150,6 +150,10 @@ export interface VehicleSearchQuery {
     fuelType?: string[];
     brand?: string[];
     model?: string[]; // Modelo específico (ex: "Compass", "Civic")
+    aptoUber?: boolean;
+    aptoUberBlack?: boolean;
+    aptoFamilia?: boolean;
+    aptoTrabalho?: boolean;
   };
 
   // Soft preferences (for scoring)

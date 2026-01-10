@@ -45,6 +45,9 @@ export function buildSearchQuery(profile: Partial<CustomerProfile>): VehicleSear
       transmission: profile.transmission ? [profile.transmission] : undefined,
       brand: profile.brand ? [profile.brand] : undefined,
       model: profile.model ? [profile.model] : undefined,
+      // Uber filters
+      aptoUber: profile.usoPrincipal === 'uber' || (profile.usage as string) === 'uber' || profile.appMencionado === 'uber' || profile.appMencionado === '99',
+      aptoUberBlack: profile.tipoUber === 'black' || (profile.priorities && profile.priorities.some(p => p.toLowerCase().includes('black'))),
     },
     preferences: {
       usage: profile.usage,
