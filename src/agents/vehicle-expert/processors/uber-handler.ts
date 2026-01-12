@@ -139,7 +139,12 @@ export async function handleUberBlackQuestion(
       const v = rec.vehicle;
       response += `${i + 1}. ${v.brand} ${v.model} ${v.year}\n`;
       response += `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n`;
-      response += `   📍 ${v.mileage.toLocaleString('pt-BR')}km\n\n`;
+      response += `   📍 ${v.mileage.toLocaleString('pt-BR')}km\n`;
+      if (v.url || v.detailUrl) {
+        response += `   🔗 ${v.url || v.detailUrl}\n\n`;
+      } else {
+        response += `\n`;
+      }
     });
     response += `_Quer saber mais sobre algum?_`;
   } else {
