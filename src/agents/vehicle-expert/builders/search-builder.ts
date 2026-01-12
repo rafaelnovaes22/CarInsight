@@ -34,8 +34,14 @@ export function buildSearchQuery(profile: Partial<CustomerProfile>): VehicleSear
   }
 
   // Determine Uber context
-  const isUber = profile.usoPrincipal === 'uber' || (profile.usage as string) === 'uber' || profile.appMencionado === 'uber' || profile.appMencionado === '99';
-  const isUberBlack = profile.tipoUber === 'black' || (profile.priorities && profile.priorities.some(p => p.toLowerCase().includes('black')));
+  const isUber =
+    profile.usoPrincipal === 'uber' ||
+    (profile.usage as string) === 'uber' ||
+    profile.appMencionado === 'uber' ||
+    profile.appMencionado === '99';
+  const isUberBlack =
+    profile.tipoUber === 'black' ||
+    (profile.priorities && profile.priorities.some(p => p.toLowerCase().includes('black')));
 
   // Calculate dynamic minYear based on Uber rules (2026 baseline)
   const currentYear = new Date().getFullYear();
@@ -44,7 +50,9 @@ export function buildSearchQuery(profile: Partial<CustomerProfile>): VehicleSear
   if (isUberBlack) {
     // Uber Black: Max 6 years (e.g., in 2026 -> 2020+)
     const minBlackYear = currentYear - 6;
-    calculatedMinYear = calculatedMinYear ? Math.max(calculatedMinYear, minBlackYear) : minBlackYear;
+    calculatedMinYear = calculatedMinYear
+      ? Math.max(calculatedMinYear, minBlackYear)
+      : minBlackYear;
   } else if (isUber) {
     // Uber X: Max 10 years (e.g., in 2026 -> 2016+)
     const minXYear = currentYear - 10;
