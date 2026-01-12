@@ -121,6 +121,11 @@ class InMemoryVectorStore {
       return [];
     }
 
+    if (!queryText || queryText.trim() === '') {
+      console.warn('⚠️  Busca vetorial chamada com string vazia. Retornando [].');
+      return [];
+    }
+
     const queryEmbedding = await generateEmbedding(queryText);
 
     const results = this.embeddings.map(item => ({

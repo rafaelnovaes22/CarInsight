@@ -66,8 +66,9 @@ CRITÉRIOS POR CATEGORIA (FOCO SÃO PAULO - SP):
    - Max 6 anos (2019+).
    - Cores sóbrias (Preto, Prata, Cinza, Branco, Azul-marinho).
    - **SOMENTE SEDANS MÉDIOS+**: Corolla, Civic, Sentra, Cerato, Cruze, Jetta.
-   - **SUVs SELECIONADOS**: Compass, Kicks, Creta, HR-V, T-Cross, Renegade.
-   - **JAMAIS**: Carros populares, compactos ou "sedans de entrada" (ver lista de exclusão acima).
+   - **SUVs SELECIONADOS**: Compass, Kicks, Creta, HR-V, T-Cross, Renegade, Tracker, Sportage, Tucson, Tiguan, Equinox, Taos, Corolla Cross.
+   - **JAMAIS**: Carros populares, compactos "de entrada" (Mobi, Kwid) ou modelos muito antigos.
+   - **OBS**: SUVs Compactos modernos (2020+) como Tracker e T-Cross em versões topo de linha são aceitos em algumas categorias Black/Comfort. Na dúvida, se for 2019+ e SUV, considere apto.
 
 ---
 

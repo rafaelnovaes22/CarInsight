@@ -1,6 +1,6 @@
 {
   "name": "faciliauto-mvp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MVP - Assistente de Vendas WhatsApp com IA para Concessionárias",
   "main": "dist/index.js",
   "scripts": {
