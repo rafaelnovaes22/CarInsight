@@ -98,6 +98,25 @@ export async function handleUberBlackQuestion(
 
   logger.info('UberHandler: Processing Uber Black question');
 
+  // CRITICAL FIX: If the user is asking about a SPECIFIC vehicle ("esse corolla", "o carro", or mentioning a model),
+  // we must return handled: false so it falls through to handleUberEligibilityQuestion.
+  // Otherwise, we'll give a generic list of Uber Black cars instead of validating the one they asked about.
+  const isSpecificVehicleRequest =
+    lowerMessage.includes('esse') ||
+    lowerMessage.includes('desse') ||
+    lowerMessage.includes('este') ||
+    lowerMessage.includes('deste') ||
+    lowerMessage.includes('o carro') ||
+    lowerMessage.includes('o veiculo') ||
+    lowerMessage.includes('ele serve') ||
+    // If we have a model in context and the user mentions it
+    (updatedProfile.model && lowerMessage.includes(updatedProfile.model.toLowerCase()));
+
+  if (isSpecificVehicleRequest) {
+    logger.info('UberHandler: Specific vehicle request detected, delegating to eligibility handler');
+    return { handled: false };
+  }
+
   // Search for Uber Black eligible vehicles
   const uberBlackVehicles = await vehicleSearchAdapter.search('', {
     aptoUberBlack: true,

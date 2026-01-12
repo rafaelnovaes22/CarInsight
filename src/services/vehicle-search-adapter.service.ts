@@ -86,11 +86,18 @@ export class VehicleSearchAdapter {
       }
 
       // Get vehicle IDs from semantic search
-      const vehicleIds = await inMemoryVectorStore.search(query, limit * 2); // Get more to filter
+      let vehicleIds: string[] = [];
 
-      // Se busca semântica não retornou nada, fazer fallback para busca SQL
+      // CRITICAL FIX: Don't run semantic search for empty queries - it throws "Erro ao gerar embedding"
+      if (query && query.trim().length > 0) {
+        vehicleIds = await inMemoryVectorStore.search(query, limit * 2); // Get more to filter
+      } else {
+        logger.info('Empty query for semantic search, skipping to SQL fallback');
+      }
+
+      // Se busca semântica não retornou nada (ou foi pulada), fazer fallback para busca SQL
       if (vehicleIds.length === 0) {
-        logger.info({ query, filters }, 'Semantic search returned empty, falling back to SQL');
+        logger.info({ query, filters }, 'Semantic search returned empty (or skipped), falling back to SQL');
         return this.searchFallbackSQL(filters);
       }
 
