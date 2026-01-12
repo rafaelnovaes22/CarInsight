@@ -60,7 +60,7 @@ Me diz o que prefere!`;
     const vehiclesList = vehiclesToShow
       .map((rec, i) => {
         const v = rec.vehicle;
-        const link = v.detailsUrl || v.url;
+        const link = v.url || v.detailUrl;
 
         // Só mostrar % match em recomendações personalizadas
         const matchScore = showMatchScore && rec.matchScore ? `${Math.round(rec.matchScore)}%` : '';
@@ -77,7 +77,7 @@ Me diz o que prefere!`;
    🚗 ${v.bodyType || 'N/A'}${v.transmission ? ` | ${v.transmission}` : ''}`;
 
         if (link) {
-          item += `\n   🔗 ${link}`;
+          item += `\n   🔗 ${link}\n`;
         }
 
         return item;
