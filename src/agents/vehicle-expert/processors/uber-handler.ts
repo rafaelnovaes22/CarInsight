@@ -113,7 +113,9 @@ export async function handleUberBlackQuestion(
     (updatedProfile.model && lowerMessage.includes(updatedProfile.model.toLowerCase()));
 
   if (isSpecificVehicleRequest) {
-    logger.info('UberHandler: Specific vehicle request detected, delegating to eligibility handler');
+    logger.info(
+      'UberHandler: Specific vehicle request detected, delegating to eligibility handler'
+    );
     return { handled: false };
   }
 

@@ -97,7 +97,10 @@ export class VehicleSearchAdapter {
 
       // Se busca semântica não retornou nada (ou foi pulada), fazer fallback para busca SQL
       if (vehicleIds.length === 0) {
-        logger.info({ query, filters }, 'Semantic search returned empty (or skipped), falling back to SQL');
+        logger.info(
+          { query, filters },
+          'Semantic search returned empty (or skipped), falling back to SQL'
+        );
         return this.searchFallbackSQL(filters);
       }
 
