@@ -129,6 +129,44 @@ export async function handleUberBlackQuestion(
     return { handled: false };
   }
 
+  // CRITICAL: Check for budget before searching
+  // If user hasn't provided a budget, we should ask for it instead of showing random expensive cars.
+  if (!updatedProfile.budget && !updatedProfile.budgetMax) {
+    logger.info('UberHandler: No budget found, asking user for budget preference');
+
+    let response = `🚖 *Critérios para Uber Black:*\n\n`;
+    response += `• Ano: 2018 ou mais recente\n`;
+    response += `• Tipo: Sedan Médio/Premium e SUVs\n`;
+    response += `• Portas: 4\n`;
+    response += `• Ar-condicionado: Obrigatório\n`;
+    response += `• Interior: Couro (preferencial)\n`;
+    response += `• Cor: Preto (preferencial)\n\n`;
+
+    response += `Para selecionar as melhores opções no seu perfil, *qual seria seu orçamento aproximado?* 💰`;
+
+    return {
+      handled: true,
+      response: {
+        response,
+        extractedPreferences: {
+          ...extracted.extracted,
+          // Mark that we are waiting for budget to avoid looping
+          _waitingForBudget: true,
+          usoPrincipal: 'uber',
+          tipoUber: 'black'
+        },
+        needsMoreInfo: ['budget'],
+        canRecommend: false,
+        nextMode: 'discovery', // Stay in discovery to capture budget
+        metadata: {
+          processingTime: Date.now() - startTime,
+          confidence: 1.0,
+          llmUsed: 'rule-based',
+        },
+      },
+    };
+  }
+
   // Search for Uber Black eligible vehicles
   const uberBlackVehicles = await vehicleSearchAdapter.search('', {
     aptoUberBlack: true,
@@ -137,6 +175,7 @@ export async function handleUberBlackQuestion(
     minYear: updatedProfile.minYear,
     maxKm: updatedProfile.maxKm,
     minSeats: updatedProfile.minSeats,
+    useCase: 'uber' // Hint for sorting strategy
   });
 
   let criteriaText = `🚖 *Critérios para Uber Black:*\n\n`;
@@ -181,16 +220,16 @@ export async function handleUberBlackQuestion(
         // Persist recommendation state if vehicles found
         ...(canRecommend
           ? {
-              _showedRecommendation: true,
-              _lastShownVehicles: uberBlackVehicles.slice(0, 5).map(r => ({
-                vehicleId: r.vehicleId,
-                brand: r.vehicle.brand,
-                model: r.vehicle.model,
-                year: r.vehicle.year,
-                price: r.vehicle.price,
-                bodyType: r.vehicle.bodyType,
-              })),
-            }
+            _showedRecommendation: true,
+            _lastShownVehicles: uberBlackVehicles.slice(0, 5).map(r => ({
+              vehicleId: r.vehicleId,
+              brand: r.vehicle.brand,
+              model: r.vehicle.model,
+              year: r.vehicle.year,
+              price: r.vehicle.price,
+              bodyType: r.vehicle.bodyType,
+            })),
+          }
           : {}),
       },
       needsMoreInfo: [],

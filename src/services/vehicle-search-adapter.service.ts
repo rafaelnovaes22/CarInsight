@@ -137,12 +137,32 @@ export class VehicleSearchAdapter {
           ...(filters.aptoTrabalho && { aptoTrabalho: true }),
         },
         take: limit,
-        orderBy: [
-          { preco: 'desc' }, // Mais caro primeiro
-          { km: 'asc' }, // Menos rodado
-          { ano: 'desc' }, // Mais novo
-        ],
+        orderBy: this.getSortStrategy(filters),
       });
+
+      // IN-MEMORY SORTING FOR UBER/WORK (Efficiency)
+      // Since specific efficiency data is a string/mixed, we refine the sort here.
+      if (filters.useCase === 'uber' || filters.useCase === 'work' || filters.aptoUber || filters.aptoTrabalho) {
+        vehicles.sort((a, b) => {
+          // 1. Year Priority (Hard constraint for Uber often, but we already sorted query by Year)
+          // 2. Efficiency (Higher km/l is better)
+          const effA = this.parseConsumption(a.economiaCombustivel);
+          const effB = this.parseConsumption(b.economiaCombustivel);
+
+          if (effA !== effB) {
+            return effB - effA; // Descending efficiency (14km/l > 10km/l)
+          }
+
+          // 3. Fallback to Engine Size Proxy if data missing (lower engine ~ better efficiency)
+          const engineA = this.extractEngineSize(a.versao);
+          const engineB = this.extractEngineSize(b.versao);
+          if (engineA !== engineB) {
+            return engineA - engineB; // Ascending engine size (1.0 < 2.0)
+          }
+
+          return 0; // Maintain previous sort (Year/Km/Price)
+        });
+      }
 
       // Se filtrou por bodyType e não encontrou nada, buscar SEM o filtro de IDs
       // para verificar se existem veículos desse tipo no estoque
@@ -525,6 +545,38 @@ export class VehicleSearchAdapter {
     }
 
     return highlights.slice(0, 3); // Max 3 highlights
+  }
+
+  /**
+   * Determine sort strategy based on filters and use case
+   */
+  private getSortStrategy(filters: SearchFilters): any[] {
+    // GLOBAL DEFAULT: Efficiency/Rationality Focus
+    // We prioritize newer cars (better chance of good efficiency/tech) from DB,
+    // then refine with in-memory efficiency sort.
+    return [
+      { ano: 'desc' },    // Newer cars (Better tech/lifespan)
+      { km: 'asc' },      // Reliability
+      { preco: 'asc' },   // ROI (Cheaper is better for same year/km)
+    ];
+  }
+
+  /**
+   * Helper to parse consumption string "10.5 km/l" to float 10.5
+   */
+  private parseConsumption(value: string | null): number {
+    if (!value) return 0;
+    const match = value.match(/[\d\.]+/);
+    return match ? parseFloat(match[0]) : 0;
+  }
+
+  /**
+   * Extract engine size from version string (e.g. "1.0", "1.6")
+   */
+  private extractEngineSize(version: string | null): number {
+    if (!version) return 9.9; // Penalty for unknown
+    const match = version.match(/(\d\.\d)/);
+    return match ? parseFloat(match[0]) : 9.9;
   }
 }
 
