@@ -45,7 +45,7 @@ describe('uberEligibilityAgent', () => {
     expect(result.uberComfort).toBe(false);
     expect(result.uberBlack).toBe(false);
     // Confidence might vary based on validator logic, but usually 1.0 if hard fail
-    // expect(result.confidence).toBe(1.0); 
+    // expect(result.confidence).toBe(1.0);
   });
 
   it('enforces SP minYear for UberX (2014)', async () => {
