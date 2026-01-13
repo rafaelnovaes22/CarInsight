@@ -24,6 +24,8 @@ vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
 
 describe('Uber Black Validation Fix', () => {
   const mockContext: ConversationContext = {
+    conversationId: 'test-session',
+    phoneNumber: '5511999999999',
     profile: {
       name: 'Test User',
       model: 'Corolla', // User has interested in Corolla
@@ -38,9 +40,8 @@ describe('Uber Black Validation Fix', () => {
       questionsAsked: 0,
       userQuestions: 0,
     },
-    sessionId: 'test-session',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+
+
   };
 
   const mockGetAppCategoryName = vi.fn().mockReturnValue('Uber Black');
@@ -75,7 +76,7 @@ describe('Uber Black Validation Fix', () => {
     const userMessage = 'quais carros para uber black?';
 
     const extracted = { extracted: {} };
-    const updatedProfile: Partial<CustomerProfile> = {};
+    const updatedProfile: Partial<CustomerProfile> = { budget: 90000 };
 
     // Mock search result for generic flow
     (vehicleSearchAdapter.search as any).mockResolvedValue([

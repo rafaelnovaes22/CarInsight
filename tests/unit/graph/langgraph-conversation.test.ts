@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { LangGraphConversation } from '../../../src/graph/langgraph-conversation';
 import { ConversationState } from '../../../src/types/state.types';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
@@ -28,6 +28,11 @@ describe('LangGraphConversation Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     langGraph = new LangGraphConversation();
+    vi.spyOn(console, 'error').mockImplementation(() => { });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   const createMockState = (): ConversationState => ({

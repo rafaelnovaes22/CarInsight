@@ -153,7 +153,7 @@ export async function handleUberBlackQuestion(
           // Mark that we are waiting for budget to avoid looping
           _waitingForBudget: true,
           usoPrincipal: 'uber',
-          tipoUber: 'black'
+          tipoUber: 'black',
         },
         needsMoreInfo: ['budget'],
         canRecommend: false,
@@ -175,7 +175,7 @@ export async function handleUberBlackQuestion(
     minYear: updatedProfile.minYear,
     maxKm: updatedProfile.maxKm,
     minSeats: updatedProfile.minSeats,
-    useCase: 'uber' // Hint for sorting strategy
+    useCase: 'uber', // Hint for sorting strategy
   });
 
   let criteriaText = `🚖 *Critérios para Uber Black:*\n\n`;
@@ -220,16 +220,16 @@ export async function handleUberBlackQuestion(
         // Persist recommendation state if vehicles found
         ...(canRecommend
           ? {
-            _showedRecommendation: true,
-            _lastShownVehicles: uberBlackVehicles.slice(0, 5).map(r => ({
-              vehicleId: r.vehicleId,
-              brand: r.vehicle.brand,
-              model: r.vehicle.model,
-              year: r.vehicle.year,
-              price: r.vehicle.price,
-              bodyType: r.vehicle.bodyType,
-            })),
-          }
+              _showedRecommendation: true,
+              _lastShownVehicles: uberBlackVehicles.slice(0, 5).map(r => ({
+                vehicleId: r.vehicleId,
+                brand: r.vehicle.brand,
+                model: r.vehicle.model,
+                year: r.vehicle.year,
+                price: r.vehicle.price,
+                bodyType: r.vehicle.bodyType,
+              })),
+            }
           : {}),
       },
       needsMoreInfo: [],

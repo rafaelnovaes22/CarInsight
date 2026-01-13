@@ -142,7 +142,12 @@ export class VehicleSearchAdapter {
 
       // IN-MEMORY SORTING FOR UBER/WORK (Efficiency)
       // Since specific efficiency data is a string/mixed, we refine the sort here.
-      if (filters.useCase === 'uber' || filters.useCase === 'work' || filters.aptoUber || filters.aptoTrabalho) {
+      if (
+        filters.useCase === 'uber' ||
+        filters.useCase === 'work' ||
+        filters.aptoUber ||
+        filters.aptoTrabalho
+      ) {
         vehicles.sort((a, b) => {
           // 1. Year Priority (Hard constraint for Uber often, but we already sorted query by Year)
           // 2. Efficiency (Higher km/l is better)
@@ -555,9 +560,9 @@ export class VehicleSearchAdapter {
     // We prioritize newer cars (better chance of good efficiency/tech) from DB,
     // then refine with in-memory efficiency sort.
     return [
-      { ano: 'desc' },    // Newer cars (Better tech/lifespan)
-      { km: 'asc' },      // Reliability
-      { preco: 'asc' },   // ROI (Cheaper is better for same year/km)
+      { ano: 'desc' }, // Newer cars (Better tech/lifespan)
+      { km: 'asc' }, // Reliability
+      { preco: 'asc' }, // ROI (Cheaper is better for same year/km)
     ];
   }
 
@@ -566,7 +571,7 @@ export class VehicleSearchAdapter {
    */
   private parseConsumption(value: string | null): number {
     if (!value) return 0;
-    const match = value.match(/[\d\.]+/);
+    const match = value.match(/[\d.]+/);
     return match ? parseFloat(match[0]) : 0;
   }
 
