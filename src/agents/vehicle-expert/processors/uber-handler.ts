@@ -59,6 +59,17 @@ function isUberEligibilityQuestion(message: string): boolean {
 
   if (!mentionsApp) return false;
 
+  // CRITICAL: If the user explicitly says "quero", "comprar", "busco", "preciso", "interessa",
+  // assume it's a SEARCH request, not just an eligibility question.
+  // Exception: "quero saber se serve" (still eligibility)
+  const searchKeywords = ['quero', 'comprar', 'busco', 'preciso', 'interessa', 'procura'];
+  const isSearchIntent = searchKeywords.some(kw => m.includes(kw));
+  const isQuestionAboutRule = m.includes('saber se') || m.includes('serve');
+
+  if (isSearchIntent && !isQuestionAboutRule) {
+    return false; // Let it fall through to VehicleExpertAgent main search flow
+  }
+
   // Eligibility framing
   return (
     /\bserve\b/.test(m) ||
