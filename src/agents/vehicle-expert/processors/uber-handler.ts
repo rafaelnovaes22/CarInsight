@@ -179,17 +179,19 @@ export async function handleUberBlackQuestion(
         ...extracted.extracted,
         _waitingForUberXAlternatives: true,
         // Persist recommendation state if vehicles found
-        ...(canRecommend ? {
-          _showedRecommendation: true,
-          _lastShownVehicles: uberBlackVehicles.slice(0, 5).map(r => ({
-            vehicleId: r.vehicleId,
-            brand: r.vehicle.brand,
-            model: r.vehicle.model,
-            year: r.vehicle.year,
-            price: r.vehicle.price,
-            bodyType: r.vehicle.bodyType
-          }))
-        } : {})
+        ...(canRecommend
+          ? {
+              _showedRecommendation: true,
+              _lastShownVehicles: uberBlackVehicles.slice(0, 5).map(r => ({
+                vehicleId: r.vehicleId,
+                brand: r.vehicle.brand,
+                model: r.vehicle.model,
+                year: r.vehicle.year,
+                price: r.vehicle.price,
+                bodyType: r.vehicle.bodyType,
+              })),
+            }
+          : {}),
       },
       needsMoreInfo: [],
       canRecommend,
