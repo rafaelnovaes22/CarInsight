@@ -9,6 +9,7 @@ import { exactSearchParser } from '../../../services/exact-search-parser.service
 import { vehicleSearchAdapter } from '../../../services/vehicle-search-adapter.service';
 import { CustomerProfile } from '../../../types/state.types';
 import { ConversationContext, ConversationResponse } from '../../../types/conversation.types';
+import { formatRecommendations } from '../formatters/recommendation-formatter';
 
 export interface UberHandlerResult {
   handled: boolean;
@@ -90,6 +91,7 @@ function isUberEligibilityQuestion(message: string): boolean {
 /**
  * Handle Uber Black specific questions
  */
+
 export async function handleUberBlackQuestion(
   userMessage: string,
   context: ConversationContext,
@@ -101,6 +103,7 @@ export async function handleUberBlackQuestion(
     category: 'x' | 'black' | 'comfort'
   ) => string
 ): Promise<UberHandlerResult> {
+  // ... existing check logic ...
   const lowerMessage = userMessage.toLowerCase();
 
   if (!lowerMessage.includes('uber black') && !lowerMessage.includes('uberblack')) {
@@ -109,9 +112,6 @@ export async function handleUberBlackQuestion(
 
   logger.info('UberHandler: Processing Uber Black question');
 
-  // CRITICAL FIX: If the user is asking about a SPECIFIC vehicle ("esse corolla", "o carro", or mentioning a model),
-  // we must return handled: false so it falls through to handleUberEligibilityQuestion.
-  // Otherwise, we'll give a generic list of Uber Black cars instead of validating the one they asked about.
   const isSpecificVehicleRequest =
     lowerMessage.includes('esse') ||
     lowerMessage.includes('desse') ||
@@ -120,7 +120,6 @@ export async function handleUberBlackQuestion(
     lowerMessage.includes('o carro') ||
     lowerMessage.includes('o veiculo') ||
     lowerMessage.includes('ele serve') ||
-    // If we have a model in context and the user mentions it
     (updatedProfile.model && lowerMessage.includes(updatedProfile.model.toLowerCase()));
 
   if (isSpecificVehicleRequest) {
@@ -140,31 +139,35 @@ export async function handleUberBlackQuestion(
     minSeats: updatedProfile.minSeats,
   });
 
-  let response = `🚖 *Critérios para Uber Black:*\n\n`;
-  response += `• Ano: 2018 ou mais recente\n`;
-  response += `• Tipo: Sedan Médio/Premium e SUVs\n`;
-  response += `• Portas: 4\n`;
-  response += `• Ar-condicionado: Obrigatório\n`;
-  response += `• Interior: Couro (preferencial)\n`;
-  response += `• Cor: Preto (preferencial)\n\n`;
+  let criteriaText = `🚖 *Critérios para Uber Black:*\n\n`;
+  criteriaText += `• Ano: 2018 ou mais recente\n`;
+  criteriaText += `• Tipo: Sedan Médio/Premium e SUVs\n`;
+  criteriaText += `• Portas: 4\n`;
+  criteriaText += `• Ar-condicionado: Obrigatório\n`;
+  criteriaText += `• Interior: Couro (preferencial)\n`;
+  criteriaText += `• Cor: Preto (preferencial)\n\n`;
+
+  let response: string;
+  let canRecommend = false;
+  let nextMode = context.mode;
 
   if (uberBlackVehicles.length > 0) {
-    response += `✅ *Temos ${uberBlackVehicles.length} veículos aptos para Uber Black${updatedProfile.budget ? ' no seu orçamento' : ''}:*\n\n`;
-    uberBlackVehicles.slice(0, 5).forEach((rec, i) => {
-      const v = rec.vehicle;
-      response += `${i + 1}. ${v.brand} ${v.model} ${v.year}\n`;
-      response += `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n`;
-      response += `   📍 ${v.mileage.toLocaleString('pt-BR')}km\n`;
-      if (v.detailsUrl) {
-        response += `   🔗 ${v.detailsUrl}\n\n`;
-      } else {
-        response += `\n`;
-      }
-    });
-    response += `_Quer saber mais sobre algum?_`;
+    // Standard format for recommendations
+    const recText = await formatRecommendations(
+      uberBlackVehicles,
+      updatedProfile,
+      'recommendation'
+    );
+
+    // Combine criteria with standard recommendation text
+    response = `${criteriaText}${recText}`;
+
+    // Enable state transition to recommendation flow
+    canRecommend = true;
+    nextMode = 'recommendation';
   } else {
     const altCategory = getAppCategoryName(updatedProfile, 'x');
-    response += `❌ No momento não temos veículos aptos para Uber Black no estoque.\n\n`;
+    response = `${criteriaText}❌ No momento não temos veículos aptos para Uber Black no estoque.\n\n`;
     response += `Mas temos veículos aptos para ${altCategory}. Quer ver?`;
   }
 
@@ -175,10 +178,23 @@ export async function handleUberBlackQuestion(
       extractedPreferences: {
         ...extracted.extracted,
         _waitingForUberXAlternatives: true,
+        // Persist recommendation state if vehicles found
+        ...(canRecommend ? {
+          _showedRecommendation: true,
+          _lastShownVehicles: uberBlackVehicles.slice(0, 5).map(r => ({
+            vehicleId: r.vehicleId,
+            brand: r.vehicle.brand,
+            model: r.vehicle.model,
+            year: r.vehicle.year,
+            price: r.vehicle.price,
+            bodyType: r.vehicle.bodyType
+          }))
+        } : {})
       },
       needsMoreInfo: [],
-      canRecommend: false,
-      nextMode: context.mode,
+      canRecommend,
+      recommendations: canRecommend ? uberBlackVehicles : [],
+      nextMode,
       metadata: {
         processingTime: Date.now() - startTime,
         confidence: 1.0,
