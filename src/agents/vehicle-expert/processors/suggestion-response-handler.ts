@@ -182,7 +182,12 @@ async function handleAlternativeYears(
   ctx: SuggestionResponseContext
 ): Promise<SuggestionHandlerResult> {
   const userAccepts = detectAffirmativeResponse(ctx.userMessage);
-  if (!userAccepts) {
+  const wantsDetails =
+    /detalhe/i.test(ctx.userMessage) ||
+    /fale mais/i.test(ctx.userMessage) ||
+    /saber mais/i.test(ctx.userMessage);
+
+  if (!userAccepts && !wantsDetails) {
     return { handled: false };
   }
 

@@ -127,7 +127,7 @@ export async function handleUberBlackQuestion(
 
   let response = `🚖 *Critérios para Uber Black:*\n\n`;
   response += `• Ano: 2018 ou mais recente\n`;
-  response += `• Tipo: APENAS Sedan PREMIUM\n`;
+  response += `• Tipo: Sedan Médio/Premium e SUVs\n`;
   response += `• Portas: 4\n`;
   response += `• Ar-condicionado: Obrigatório\n`;
   response += `• Interior: Couro (preferencial)\n`;

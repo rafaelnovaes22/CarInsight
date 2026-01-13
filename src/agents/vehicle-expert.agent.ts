@@ -524,21 +524,8 @@ export class VehicleExpertAgent {
 
         const isPostRecommendationIntent =
           alreadyShowedRecommendation &&
-          // Financiamento
-          (extracted.extracted.wantsFinancing ||
-            /financ|parcel|entrada|presta[çc]/i.test(userMessage) ||
-            // Troca de veículo
-            extracted.extracted.hasTradeIn ||
-            /troca|meu carro|tenho um|minha/i.test(userMessage) ||
-            // Agendamento / Vendedor
-            /agendar|visita|vendedor|ver pessoal|ir a[íi]/i.test(userMessage) ||
-            // Interesse / Gostei (agora inclui quando menciona modelo já mostrado)
-            /gostei|interessei|curti|quero esse|esse (mesmo|a[íi])/i.test(userMessage) ||
-            mentionedShownVehicleModel ||
-            // Perguntas sobre o veículo mostrado
-            /mais (info|detalhe)|quilometr|km|opcional|documento|vers[ãa]o|motor|diesel|turbo|combust[íi]vel|cor|ano|c[âa]mbio/i.test(
-              userMessage
-            ));
+          (isPostRecommendationResponse(userMessage, extracted.extracted) ||
+            mentionedShownVehicleModel);
 
         if (
           !isTradeInMention &&

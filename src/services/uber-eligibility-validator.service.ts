@@ -172,7 +172,7 @@ Retorne APENAS o JSON, sem texto adicional:`;
     const uberComfort = (isSedan || isMinivan || isSUV) && vehicle.ano >= 2015;
 
     // Uber Black: Only sedan, 2018+
-    const uberBlack = isSedan && !isMinivan && !isSUV && vehicle.ano >= 2018;
+    const uberBlack = (isSedan || isSUV) && !isMinivan && vehicle.ano >= 2018;
 
     return {
       uberX,

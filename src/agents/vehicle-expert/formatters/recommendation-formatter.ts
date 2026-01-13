@@ -60,7 +60,7 @@ Me diz o que prefere!`;
     const vehiclesList = vehiclesToShow
       .map((rec, i) => {
         const v = rec.vehicle;
-        const link = v.url || v.detailUrl;
+        const link = v.url || v.detailsUrl;
 
         // Só mostrar % match em recomendações personalizadas
         const matchScore = showMatchScore && rec.matchScore ? `${Math.round(rec.matchScore)}%` : '';
