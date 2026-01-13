@@ -123,6 +123,10 @@ export async function handleUberBlackQuestion(
   const uberBlackVehicles = await vehicleSearchAdapter.search('', {
     aptoUberBlack: true,
     limit: 10,
+    maxPrice: updatedProfile.budget || updatedProfile.budgetMax,
+    minYear: updatedProfile.minYear,
+    maxKm: updatedProfile.maxKm,
+    minSeats: updatedProfile.minSeats,
   });
 
   let response = `🚖 *Critérios para Uber Black:*\n\n`;
@@ -134,14 +138,14 @@ export async function handleUberBlackQuestion(
   response += `• Cor: Preto (preferencial)\n\n`;
 
   if (uberBlackVehicles.length > 0) {
-    response += `✅ *Temos ${uberBlackVehicles.length} veículos aptos para Uber Black:*\n\n`;
+    response += `✅ *Temos ${uberBlackVehicles.length} veículos aptos para Uber Black${updatedProfile.budget ? ' no seu orçamento' : ''}:*\n\n`;
     uberBlackVehicles.slice(0, 5).forEach((rec, i) => {
       const v = rec.vehicle;
       response += `${i + 1}. ${v.brand} ${v.model} ${v.year}\n`;
       response += `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n`;
       response += `   📍 ${v.mileage.toLocaleString('pt-BR')}km\n`;
-      if (v.url || v.detailUrl) {
-        response += `   🔗 ${v.url || v.detailUrl}\n\n`;
+      if (v.detailsUrl) {
+        response += `   🔗 ${v.detailsUrl}\n\n`;
       } else {
         response += `\n`;
       }
