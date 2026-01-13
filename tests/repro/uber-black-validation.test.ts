@@ -40,8 +40,6 @@ describe('Uber Black Validation Fix', () => {
       questionsAsked: 0,
       userQuestions: 0,
     },
-
-
   };
 
   const mockGetAppCategoryName = vi.fn().mockReturnValue('Uber Black');

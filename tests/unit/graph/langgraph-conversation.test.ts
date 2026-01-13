@@ -28,7 +28,7 @@ describe('LangGraphConversation Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     langGraph = new LangGraphConversation();
-    vi.spyOn(console, 'error').mockImplementation(() => { });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
