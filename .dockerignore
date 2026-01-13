@@ -20,3 +20,11 @@ logs
 *.swp
 *.swo
 *~
+dist
+tests
+docs
+scripts
+.github
+.husky
+verify_output.txt
+url_audit.txt
