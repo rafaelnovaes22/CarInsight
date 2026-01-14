@@ -137,6 +137,36 @@ describe('LangGraph Nodes Logic', () => {
 
       expect(result.next).toBe('recommendation');
     });
+
+    it('should set handoff_requested flag when vendedor is mentioned', async () => {
+      const state = createInitialState();
+      state.messages = [new HumanMessage('vendedor')];
+
+      mockChat.mockResolvedValue({
+        extractedPreferences: {},
+        response: 'Vou conectar você com um vendedor.',
+        canRecommend: false,
+      });
+
+      const result = await discoveryNode(state);
+
+      expect(result.metadata?.flags).toContain('handoff_requested');
+    });
+
+    it('should set handoff_requested flag when humano is mentioned', async () => {
+      const state = createInitialState();
+      state.messages = [new HumanMessage('quero falar com alguém humano')];
+
+      mockChat.mockResolvedValue({
+        extractedPreferences: {},
+        response: 'Vou transferir você.',
+        canRecommend: false,
+      });
+
+      const result = await discoveryNode(state);
+
+      expect(result.metadata?.flags).toContain('handoff_requested');
+    });
   });
 
   // ============================================

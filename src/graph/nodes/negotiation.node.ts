@@ -19,7 +19,14 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
   const messageContent = lastMessage.content;
   logger.info({ messageLength: messageContent.length }, 'NegotiationNode: Processing message');
 
-  // 1. Map messages
+  // 1. Detect handoff request (vendedor, humano, atendente)
+  const lowerMessage = messageContent.toLowerCase();
+  const isHandoffRequest =
+    lowerMessage.includes('vendedor') ||
+    lowerMessage.includes('humano') ||
+    lowerMessage.includes('atendente');
+
+  // 2. Map messages
   const mappedMessages = state.messages.map(m => {
     let role = 'assistant';
     if (typeof m._getType === 'function') {
@@ -33,7 +40,7 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
     };
   });
 
-  // 2. Context with mode='negotiation'
+  // 3. Context with mode='negotiation'
   const context: ConversationContext = {
     conversationId: 'graph-execution',
     phoneNumber: state.phoneNumber || 'unknown',
@@ -50,18 +57,18 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
     },
   };
 
-  // 3. Call Vehicle Expert
+  // 4. Call Vehicle Expert
   // The expert will handle "vendedor" logic, specific vehicle questions, etc.
   // It delegates 'financing' and 'trade_in' intents back to us via nextMode.
   const response = await vehicleExpert.chat(messageContent, context);
 
-  // 4. Update State
+  // 5. Update State
   const updatedProfile = {
     ...state.profile,
     ...response.extractedPreferences,
   };
 
-  // 5. Determine Next Node
+  // 6. Determine Next Node
   // Default to staying in negotiation unless expert says otherwise
   const next = response.nextMode || 'negotiation';
 
@@ -69,11 +76,24 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
   // But usually we stay here to answer questions.
   // If nextMode is 'financing' or 'trade_in', the router will handle it.
 
-  return {
+  const result: Partial<IGraphState> = {
     next,
     profile: updatedProfile,
     // Update recommendations if changed? Usually they persist unless filtered
     recommendations: response.recommendations || state.recommendations,
     messages: [new AIMessage(response.response)],
   };
+
+  // Propagate handoff_requested flag if detected
+  if (isHandoffRequest) {
+    result.metadata = {
+      ...state.metadata,
+      lastMessageAt: Date.now(),
+      flags: state.metadata.flags.includes('handoff_requested')
+        ? state.metadata.flags
+        : [...state.metadata.flags, 'handoff_requested'],
+    };
+  }
+
+  return result;
 }

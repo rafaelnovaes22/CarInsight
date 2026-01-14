@@ -18,6 +18,13 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
   const messageContent = lastMessage.content;
   logger.info({ messageLength: messageContent.length }, 'DiscoveryNode: Processing message');
 
+  // 1. Detect handoff request (vendedor, humano, atendente)
+  const lowerMessage = messageContent.toLowerCase();
+  const isHandoffRequest =
+    lowerMessage.includes('vendedor') ||
+    lowerMessage.includes('humano') ||
+    lowerMessage.includes('atendente');
+
   // 2. Build Context for Vehicle Expert
   // We need to map LangChain messages to the format expected by VehicleExpert (Role/Content)
   // or update VehicleExpert to accept BaseMessage[]. For now, mapping is safer.
@@ -87,6 +94,17 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
     profile: updatedProfile,
     recommendations: response.recommendations || [],
   };
+
+  // Propagate handoff_requested flag if detected
+  if (isHandoffRequest) {
+    result.metadata = {
+      ...state.metadata,
+      lastMessageAt: Date.now(),
+      flags: state.metadata.flags.includes('handoff_requested')
+        ? state.metadata.flags
+        : [...state.metadata.flags, 'handoff_requested'],
+    };
+  }
 
   // Only add message if there is actual content
   // If response is empty (delegation), we don't add AIMessage so the Router
