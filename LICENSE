@@ -1,0 +1,39 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright (c) 2024-2026 Rafael Novaes. All rights reserved.
+
+-------------------------------------------------------------------
+                    NOTICE FOR RECRUITERS
+-------------------------------------------------------------------
+
+This repository is intentionally made visible as a PORTFOLIO SAMPLE 
+for technical recruiting purposes ONLY.
+
+You are permitted to:
+  ✓ View and evaluate the code quality
+  ✓ Assess architectural decisions
+  ✓ Discuss this work in interview contexts
+
+You are NOT permitted to:
+  ✗ Copy, clone, or download this code for commercial use
+  ✗ Use any part of this codebase in production systems
+  ✗ Redistribute or share the code with third parties
+  ✗ Extract AI prompts, business logic, or algorithms
+
+-------------------------------------------------------------------
+
+CONFIDENTIAL COMPONENTS:
+This repository contains proprietary AI prompts, multi-agent 
+orchestration logic, and business rules that represent trade secrets.
+
+INQUIRIES:
+For licensing inquiries or collaboration opportunities, 
+contact: rafael.novaes@email.com | linkedin.com/in/rafaelnovaes22
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+OR OTHER DEALINGS IN THE SOFTWARE.

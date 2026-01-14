@@ -2,11 +2,14 @@
 
 > Assistente inteligente de vendas automotivas via WhatsApp com IA Generativa, RAG e Multi-LLM Routing
 
+> [!IMPORTANT]
+> **📋 PORTFOLIO SAMPLE** - This repository is made public for technical recruiting purposes only. See [NOTICE.md](NOTICE.md) for usage terms.
+
 [![CI/CD](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-blue)](https://www.postgresql.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 
 ## 📋 Sobre o Projeto
 
@@ -465,7 +468,8 @@ Contribuições são bem-vindas! Por favor:
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja [LICENSE](LICENSE) para mais detalhes.
+Este é um **software proprietário** disponibilizado para fins de avaliação técnica por recrutadores.  
+Veja [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md) para termos de uso.
 
 ## 👨‍💻 Autor
 
