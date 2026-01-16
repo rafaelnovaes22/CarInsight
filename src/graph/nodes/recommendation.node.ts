@@ -1,5 +1,6 @@
 import { IGraphState } from '../../types/graph.types';
 import { CustomerProfile } from '../../types/state.types';
+import { createNodeTimer } from '../../lib/node-metrics';
 import { logger } from '../../lib/logger';
 import { AIMessage } from '@langchain/core/messages';
 
@@ -104,19 +105,20 @@ function formatRecommendations(recommendations: any[]): string {
  * RecommendationNode - Present recommendations to customer
  */
 export async function recommendationNode(state: IGraphState): Promise<Partial<IGraphState>> {
-  logger.info(
-    {
-      recommendationsCount: state.recommendations.length,
-    },
-    'RecommendationNode: Formatting recommendations'
-  );
+  const timer = createNodeTimer('recommendation');
 
   // Check if messages exist
-  if (!state.messages.length) return {};
+  if (!state.messages.length) {
+    timer.logSuccess(state, {});
+    return {};
+  }
 
   const lastMessage = state.messages[state.messages.length - 1];
 
-  if (typeof lastMessage.content !== 'string') return {};
+  if (typeof lastMessage.content !== 'string') {
+    timer.logSuccess(state, {});
+    return {};
+  }
 
   const lowerMessage = lastMessage.content.toLowerCase();
 

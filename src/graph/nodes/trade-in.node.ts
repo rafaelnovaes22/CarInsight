@@ -1,11 +1,11 @@
 import { IGraphState } from '../../types/graph.types';
 import { tradeInAgent } from '../../agents/trade-in.agent';
 import { AIMessage } from '@langchain/core/messages';
-import { logger } from '../../lib/logger';
+import { createNodeTimer } from '../../lib/node-metrics';
 import { ConversationContext } from '../../types/conversation.types';
 
 export async function tradeInNode(state: IGraphState): Promise<Partial<IGraphState>> {
-  logger.info('TradeInNode: Processing message');
+  const timer = createNodeTimer('tradeIn');
 
   const lastMessage = state.messages[state.messages.length - 1];
   const userMessage = lastMessage.content.toString();
@@ -23,7 +23,7 @@ export async function tradeInNode(state: IGraphState): Promise<Partial<IGraphSta
   const response = await tradeInAgent.processTradeIn(userMessage, context);
 
   if (response) {
-    return {
+    const result = {
       messages: [new AIMessage(response.response)],
       profile: {
         ...state.profile,
@@ -35,8 +35,11 @@ export async function tradeInNode(state: IGraphState): Promise<Partial<IGraphSta
         lastMessageAt: Date.now(),
       },
     };
+    timer.logSuccess(state, result);
+    return result;
   }
 
+  timer.logSuccess(state, { next: 'negotiation' });
   return {
     next: 'negotiation',
   };

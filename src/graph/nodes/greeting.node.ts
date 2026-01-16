@@ -1,3 +1,4 @@
+import { createNodeTimer } from '../../lib/node-metrics';
 import { logger } from '../../lib/logger';
 import { vehicleExpert } from '../../agents/vehicle-expert.agent';
 import { exactSearchParser } from '../../services/exact-search-parser.service';
@@ -12,17 +13,16 @@ import { HumanMessage, AIMessage } from '@langchain/core/messages';
  * Handles initial interaction, name extraction, and early intent detection
  */
 export async function greetingNode(state: IGraphState): Promise<Partial<IGraphState>> {
+  const timer = createNodeTimer('greeting');
   const lastMessage = state.messages[state.messages.length - 1];
 
   // Guard clause: ensure we have a message to process
   if (!lastMessage || typeof lastMessage.content !== 'string') {
-    logger.warn('GreetingNode: No valid last message found');
+    timer.logSuccess(state, {});
     return {};
   }
 
   const message = lastMessage.content;
-
-  logger.info({ messageCount: state.messages.length }, 'GreetingNode: Processing message');
 
   // Check if it's a greeting
   const isGreeting = /^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|hello|hi|e aí|eai)/i.test(

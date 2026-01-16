@@ -2,21 +2,23 @@ import { vehicleExpert } from '../../agents/vehicle-expert.agent';
 import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
-import { logger } from '../../lib/logger';
+import { createNodeTimer } from '../../lib/node-metrics';
 
 /**
  * Discovery Node
  * Analyzes user input to understand vehicle preferences
  */
 export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphState>> {
+  const timer = createNodeTimer('discovery');
+
   const lastMessage = state.messages[state.messages.length - 1];
 
   if (!lastMessage || typeof lastMessage.content !== 'string') {
+    timer.logSuccess(state, {});
     return {};
   }
 
   const messageContent = lastMessage.content;
-  logger.info({ messageLength: messageContent.length }, 'DiscoveryNode: Processing message');
 
   // 1. Detect handoff request (vendedor, humano, atendente)
   const lowerMessage = messageContent.toLowerCase();
@@ -113,5 +115,6 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
     result.messages = [new AIMessage(response.response)];
   }
 
+  timer.logSuccess(state, result);
   return result;
 }

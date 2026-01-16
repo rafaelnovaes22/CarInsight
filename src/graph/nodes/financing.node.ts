@@ -1,11 +1,11 @@
 import { IGraphState } from '../../types/graph.types';
 import { financingAgent } from '../../agents/financing.agent';
 import { AIMessage } from '@langchain/core/messages';
-import { logger } from '../../lib/logger';
+import { createNodeTimer } from '../../lib/node-metrics';
 import { ConversationContext, ConversationResponse } from '../../types/conversation.types';
 
 export async function financingNode(state: IGraphState): Promise<Partial<IGraphState>> {
-  logger.info('FinancingNode: Processing message');
+  const timer = createNodeTimer('financing');
 
   const lastMessage = state.messages[state.messages.length - 1];
   const userMessage = lastMessage.content.toString();
@@ -23,7 +23,7 @@ export async function financingNode(state: IGraphState): Promise<Partial<IGraphS
   const response = await financingAgent.processReference(userMessage, context);
 
   if (response) {
-    return {
+    const result = {
       messages: [new AIMessage(response.response)],
       profile: {
         ...state.profile,
@@ -35,9 +35,12 @@ export async function financingNode(state: IGraphState): Promise<Partial<IGraphS
         lastMessageAt: Date.now(),
       },
     };
+    timer.logSuccess(state, result);
+    return result;
   }
 
   // Fallback if not handled (shouldn't happen if routed correctly, or maybe user said something unrelated)
+  timer.logSuccess(state, { next: 'negotiation' });
   return {
     next: 'negotiation', // default fallthrough
   };

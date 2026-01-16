@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { execSync } from 'child_process';
 import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
-// Build timestamp: 2025-11-28T19:25:00Z
+import { metricsService, MetricsPeriod } from '../services/metrics.service';
 
 const router = Router();
 
@@ -745,11 +745,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-                priceMatch[1]
-                  .replace(/R\$|\./g, '')
-                  .replace(',', '.')
-                  .trim()
-              ) || null
+              priceMatch[1]
+                .replace(/R\$|\./g, '')
+                .replace(',', '.')
+                .trim()
+            ) || null
             : null;
 
           vehicles.push({
@@ -1167,6 +1167,40 @@ router.get('/debug-env', async (req, res) => {
     res.status(500).json({
       error: error.message,
       stack: error.stack,
+    });
+  }
+});
+
+/**
+ * GET /admin/metrics
+ * Returns aggregated business metrics for dashboard
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '24h')
+ */
+router.get('/metrics', requireSecret, async (req, res) => {
+  try {
+    const period = (req.query.period as MetricsPeriod) || '24h';
+
+    if (!['24h', '7d', '30d'].includes(period)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid period. Use: 24h, 7d, or 30d',
+      });
+    }
+
+    logger.info({ period }, 'Admin: Getting metrics');
+    const metrics = await metricsService.getMetrics(period);
+
+    res.json({
+      success: true,
+      ...metrics,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get metrics');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get metrics',
+      details: error.message,
     });
   }
 });

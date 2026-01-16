@@ -2,7 +2,7 @@ import { vehicleExpert } from '../../agents/vehicle-expert.agent';
 import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
 import { AIMessage } from '@langchain/core/messages';
-import { logger } from '../../lib/logger';
+import { createNodeTimer } from '../../lib/node-metrics';
 
 /**
  * Negotiation Node
@@ -10,14 +10,16 @@ import { logger } from '../../lib/logger';
  * including logic for "vendedor", financing details, and trade-in.
  */
 export async function negotiationNode(state: IGraphState): Promise<Partial<IGraphState>> {
+  const timer = createNodeTimer('negotiation');
+
   const lastMessage = state.messages[state.messages.length - 1];
 
   if (!lastMessage || typeof lastMessage.content !== 'string') {
+    timer.logSuccess(state, {});
     return {};
   }
 
   const messageContent = lastMessage.content;
-  logger.info({ messageLength: messageContent.length }, 'NegotiationNode: Processing message');
 
   // 1. Detect handoff request (vendedor, humano, atendente)
   const lowerMessage = messageContent.toLowerCase();
@@ -95,5 +97,6 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
     };
   }
 
+  timer.logSuccess(state, result);
   return result;
 }

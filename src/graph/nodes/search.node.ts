@@ -1,5 +1,6 @@
 import { IGraphState } from '../../types/graph.types';
 import { AIMessage } from '@langchain/core/messages';
+import { createNodeTimer } from '../../lib/node-metrics';
 import { logger } from '../../lib/logger';
 import { VectorSearchService, VehicleSearchCriteria } from '../../services/vector-search.service';
 
@@ -9,11 +10,10 @@ const vectorSearchService = new VectorSearchService();
  * SearchNode - Find vehicles matching customer profile using vector search
  */
 export async function searchNode(state: IGraphState): Promise<Partial<IGraphState>> {
-  logger.info({ profile: state.profile }, 'SearchNode: Searching vehicles');
+  const timer = createNodeTimer('search');
 
   if (!state.profile) {
-    logger.error('SearchNode: No profile available');
-    return {
+    const result = {
       messages: [new AIMessage('Ops! Algo deu errado. Vamos recomeçar?')],
       metadata: {
         ...state.metadata,
@@ -22,6 +22,8 @@ export async function searchNode(state: IGraphState): Promise<Partial<IGraphStat
       },
       next: 'greeting',
     };
+    timer.logError(state, 'No profile available');
+    return result;
   }
 
   const profile = state.profile;
