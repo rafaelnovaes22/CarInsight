@@ -14,8 +14,7 @@ import { ConversationState } from '../../src/types/state.types';
 // Skip integration tests if no valid DATABASE_URL (CI environment without DB service)
 const databaseUrl = process.env.DATABASE_URL;
 const hasDatabase =
-  databaseUrl &&
-  (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'));
+  databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'));
 const describeIfDatabase = hasDatabase ? describe : describe.skip;
 
 if (!hasDatabase) {
