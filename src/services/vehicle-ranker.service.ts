@@ -62,10 +62,13 @@ Sua tarefa é RANQUEAR uma lista de veículos com base no contexto e necessidade
 
 REGRAS DE AVALIAÇÃO:
 
-1. **Para FAMÍLIA com crianças/cadeirinhas:**
-   - PRIORIZAR: SUVs, Minivans, Sedans grandes (espaço traseiro é CRÍTICO)
-   - EVITAR: Hatches compactos (Mobi, Kwid, Up, HB20 hatch) - espaço insuficiente
-   - Considerar: portas traseiras amplas, porta-malas, ISOFIX, segurança
+1. **Para FAMÍLIA com crianças/cadeirinhas (CRÍTICO):**
+   - **ESPECIFICAÇÕES OBRIGATÓRIAS**: Espaço interno traseiro amplo e porta-malas generoso.
+   - **PRIORIDADE MÁXIMA (Score 90-100)**: SUVs Médios/Grandes, Minivans (Spin), Sedans Médios (Corolla, Civic).
+   - **ACEITÁVEL (Score 70-85)**: Sedans Compactos espaçosos (Versa, Cobalt, Cronos), SUVs Compactos.
+   - **PENALIDADE SEVERA (Max Score 60)**: Hatches Compactos/Subcompactos (Mobi, Kwid, Up, HB20 hatch, Gol, Argo).
+     * MOTIVO: Não cabem duas cadeirinhas confortavelmente + carrinho no porta-malas.
+   - Considerar: Segurança (Isofix, Airbags) e Facilidade de acesso.
    - Ano mais recente = mais seguro (airbags, controle de estabilidade)
 
 2. **Para VIAGEM:**

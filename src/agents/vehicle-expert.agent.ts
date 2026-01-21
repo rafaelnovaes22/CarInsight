@@ -1909,8 +1909,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         // Apply Uber filters
         aptoUber: isUberX || undefined,
         aptoUberBlack: isUberBlack || undefined,
-        // Apply family filter (only if family, not for pickup/work/moto)
-        aptoFamilia: (isFamily && !wantsPickup && !wantsMoto) || undefined,
+        // Apply family filter - REMOVED strict DB filter to rely on semantic search/ranking
+        // This prevents excluding valid family cars (SUVs) that are missing the flag
+        aptoFamilia: undefined,
         // Apply work filter
         aptoTrabalho: isWork || undefined,
       });
