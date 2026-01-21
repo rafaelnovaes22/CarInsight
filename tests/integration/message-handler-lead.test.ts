@@ -11,6 +11,19 @@ import { cache } from '../../src/lib/redis';
 import { MessageHandlerV2 } from '../../src/services/message-handler-v2.service';
 import { ConversationState } from '../../src/types/state.types';
 
+// Skip integration tests if no valid DATABASE_URL (CI environment without DB service)
+const databaseUrl = process.env.DATABASE_URL;
+const hasDatabase =
+  databaseUrl &&
+  (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'));
+const describeIfDatabase = hasDatabase ? describe : describe.skip;
+
+if (!hasDatabase) {
+  console.warn(
+    '⚠️ Skipping MessageHandlerV2 Integration Tests: DATABASE_URL not configured or invalid'
+  );
+}
+
 // Mock LLM router to avoid real API calls
 vi.mock('../../src/lib/llm-router', () => ({
   chatCompletion: vi.fn(async () => {
@@ -73,7 +86,7 @@ vi.mock('../../src/lib/feature-flags', () => ({
   },
 }));
 
-describe('MessageHandlerV2 Lead Creation Flow', () => {
+describeIfDatabase('MessageHandlerV2 Lead Creation Flow', () => {
   let messageHandler: MessageHandlerV2;
   const TEST_PHONE = '5511999990001';
 
@@ -98,8 +111,8 @@ describe('MessageHandlerV2 Lead Creation Flow', () => {
       mockLangGraphState = {
         profile: {
           budget: 80000,
-          bodyType: 'SUV',
-          usage: 'family',
+          bodyType: 'suv',
+          usage: 'misto',
           customerName: 'João Test',
         },
         quiz: { currentQuestion: 1, progress: 0, answers: {}, isComplete: false },
@@ -190,10 +203,10 @@ describe('MessageHandlerV2 Lead Creation Flow', () => {
       mockLangGraphState = {
         profile: {
           budget: 100000,
-          usage: 'uber',
+          usage: 'trabalho',
           people: 4,
           hasTradeIn: true,
-          urgency: '1 semana',
+          urgency: 'imediato',
           customerName: 'Maria Silva',
         },
         quiz: {
@@ -201,7 +214,7 @@ describe('MessageHandlerV2 Lead Creation Flow', () => {
           progress: 100,
           answers: {
             budget: 100000,
-            usage: 'uber',
+            usage: 'trabalho',
             people: 4,
           },
           isComplete: true,
@@ -229,10 +242,10 @@ describe('MessageHandlerV2 Lead Creation Flow', () => {
 
       expect(lead).toBeTruthy();
       expect(lead?.budget).toBe(100000);
-      expect(lead?.usage).toBe('uber');
+      expect(lead?.usage).toBe('trabalho');
       expect(lead?.people).toBe(4);
       expect(lead?.hasTradeIn).toBe(true);
-      expect(lead?.urgency).toBe('1 semana');
+      expect(lead?.urgency).toBe('imediato');
     });
   });
 
