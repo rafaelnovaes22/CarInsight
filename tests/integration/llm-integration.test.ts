@@ -173,6 +173,38 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
         result.extracted.brand !== undefined || result.extracted.model !== undefined;
       expect(hasModelInfo).toBe(true);
     }, 30000);
+
+    it('deve extrair uso diário com prioridades de conforto/economia', async () => {
+      const message = 'Preciso de um carro para trabalhar diariamente, uso intenso';
+      const result = await extractor.extract(message);
+
+      console.log(`   Extraído (Uso Diário): ${JSON.stringify(result.extracted)}`);
+
+      // Verifica se mapeou para trabalho/diario
+      const validUsage = ['trabalho', 'diario', 'misto'];
+      const extractedUsage = result.extracted.usage || result.extracted.usoPrincipal;
+      expect(validUsage).toContain(extractedUsage);
+
+      // Verifica se adicionou prioridades de economia/conforto/durabilidade
+      const priorities = result.extracted.priorities || [];
+      const hasPriorities = priorities.some(p => ['economico', 'conforto', 'duravel'].includes(p));
+      expect(hasPriorities).toBe(true);
+    }, 30000);
+
+    it('deve extrair uso para obra como picape', async () => {
+      const message = 'Carro pra obra e carregar material';
+      const result = await extractor.extract(message);
+
+      console.log(`   Extraído (Obra): ${JSON.stringify(result.extracted)}`);
+
+      // Deve reconhecer como pickup
+      expect(result.extracted.bodyType).toBe('pickup');
+
+      // Deve ter prioridade de pickup ou carga
+      const priorities = result.extracted.priorities || [];
+      const hasWorkPriority = priorities.some(p => ['pickup', 'carga'].includes(p));
+      expect(hasWorkPriority).toBe(true);
+    }, 30000);
   });
 
   describe('Smoke Tests - Fluxo Crítico', () => {

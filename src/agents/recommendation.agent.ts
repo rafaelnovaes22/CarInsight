@@ -627,7 +627,8 @@ IMPORTANTE: Analise o CONTEXTO DE USO do cliente para determinar adequação:
 - Se o cliente menciona "obra", "construção", "carga", "material", "campo", "fazenda", "rural" → PRIORIZE picapes e utilitários
 - Se o cliente menciona "família", "crianças", "viagem" → PRIORIZE sedans, SUVs espaçosos
 - Se o cliente menciona "cidade", "urbano", "economia" → PRIORIZE hatches compactos
-- Se o cliente menciona "trabalho", "visitas", "clientes" → PRIORIZE sedans, hatches confortáveis
+- Se o cliente menciona "trabalho" (carga/obra) → PRIORIZE picapes/utilitários
+- Se o cliente menciona "uso diário", "dia a dia", "trabalhar todo dia" (deslocamento) → PRIORIZE conforto, economia e durabilidade (sedans médios, hatches premium)
 - Se o cliente menciona "Uber", "app", "99" → PRIORIZE sedans 4 portas com ar-condicionado
 
 Retorne APENAS um JSON válido no formato:

@@ -53,8 +53,8 @@ IMPORTANTE - VALORES POR EXTENSO E ERROS DE TRANSCRIÇÃO:
 - Se a mensagem parece um valor mal transcrito, interprete a intenção!
 - people: number (passageiros + motorista)
 - minSeats: number (número MÍNIMO de lugares, ex: "7 lugares" → minSeats: 7)
-- usage: "cidade" | "viagem" | "trabalho" | "misto"
-- usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "outro"
+- usage: "cidade" | "viagem" | "trabalho" | "misto" | "diario"
+- usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "diario" | "outro"
 - tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
 - appMencionado: "99" | "uber" | "app" (IMPORTANTE: preserve EXATAMENTE o nome do app que o usuário mencionou - se disse "99", use "99", se disse "Uber", use "uber")
 - bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan" | "moto"
@@ -93,6 +93,10 @@ REGRAS ESPECIAIS:
   - "Marcas", "Marcos" (em contexto de carro pequeno) → interpretar como "March" (Nissan) ou ignorar se ambíguo
   - "Mobi" → Fiat Mobi
   - Se o usuário disser "não servem" ou "não gosto", adicionar esses modelos em dealBreakers
+- Se mencionar "dia a dia", "uso diário", "ir trabalhar", "trabalhar todo dia" (sem mencionar carga/app):
+  - usoPrincipal: "diario" ou "trabalho"
+  - priorities: adicionar "economico", "conforto", "duravel"
+  - evitar "pickup" (a menos que especifique carga)
 
 CONTEXTO DE CONVERSA (IMPORTANTE):
 - Se a ÚLTIMA MENSAGEM do assistente foi perguntando sobre "carro na troca", "troca", "seu carro atual":
