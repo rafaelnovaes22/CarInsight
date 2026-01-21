@@ -1,6 +1,6 @@
 /**
  * Brand Matcher Service Tests
- * 
+ *
  * Tests fuzzy matching functionality for brand and model names
  */
 

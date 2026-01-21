@@ -265,9 +265,6 @@ Para começar, qual é o seu nome?`;
         'Routing decision'
       );
 
-      let newState: ConversationState;
-      let response: string;
-
       // Use integrated LangGraph + VehicleExpertAgent
       logger.debug(
         { conversationId: conversation.id },
@@ -281,8 +278,8 @@ Para começar, qual é o seu nome?`;
 
       const langGraph = new LangGraphConversation();
       const result = await langGraph.processMessage(sanitizedMessage, currentState);
-      newState = result.newState;
-      response = result.response;
+      const newState = result.newState;
+      const response = result.response;
 
       // 🛡️ GUARDRAIL: Validate output
       const outputValidation = guardrails.validateOutput(response);
