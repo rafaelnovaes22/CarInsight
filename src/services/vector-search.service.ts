@@ -110,10 +110,10 @@ export class VectorSearchService {
           vehicle: v,
         }))
         .filter(v => v.embedding !== null) as Array<{
-        id: string;
-        embedding: number[];
-        vehicle: any;
-      }>;
+          id: string;
+          embedding: number[];
+          vehicle: any;
+        }>;
 
       if (vehiclesWithEmbeddings.length === 0) {
         logger.warn('Nenhum embedding válido encontrado');
@@ -301,17 +301,30 @@ export class VectorSearchService {
     let score = 0;
     let totalWeight = 0;
 
-    // Orçamento (peso 30%)
+    // Orçamento (peso 30%) - Priorizar veículos que utilizam melhor o orçamento
     if (criteria.budget) {
       const budgetWeight = 0.3;
       totalWeight += budgetWeight;
 
       if (vehicle.preco <= criteria.budget) {
-        score += budgetWeight;
+        // Calcular quão próximo está do orçamento (quanto mais perto, melhor)
+        const budgetUtilization = vehicle.preco / criteria.budget;
+
+        // Veículos entre 60-100% do orçamento recebem score proporcional
+        // Veículos muito baratos (<60% do budget) recebem penalização
+        if (budgetUtilization >= 0.6) {
+          // Score proporcional: R$60k com budget R$75k = 80% = score 0.24
+          score += budgetWeight * budgetUtilization;
+        } else {
+          // Penaliza veículos muito abaixo do orçamento (pode não atender expectativas)
+          score += budgetWeight * 0.4;
+        }
       } else if (vehicle.preco <= criteria.budget * 1.1) {
-        score += budgetWeight * 0.7;
+        // Até 10% acima: ainda bom, mas com pequena penalização
+        score += budgetWeight * 0.85;
       } else if (vehicle.preco <= criteria.budget * 1.2) {
-        score += budgetWeight * 0.4;
+        // Até 20% acima: aceitável se o cliente puder esticar
+        score += budgetWeight * 0.6;
       }
     }
 
