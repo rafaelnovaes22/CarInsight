@@ -8,8 +8,15 @@
  * Feature: trade-in-detection
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import { ExactSearchParser } from '../../src/services/exact-search-parser.service';
+
+// Mock BrandMatcher to avoid DB dependencies
+vi.mock('../../src/services/brand-matcher.service', () => ({
+  brandMatcher: {
+    matchBrandAndModel: vi.fn().mockResolvedValue({}),
+  },
+}));
 
 describe('Trade-In Detection', () => {
   let parser: ExactSearchParser;
@@ -86,19 +93,19 @@ describe('Trade-In Detection', () => {
   });
 
   describe('parse with trade-in context', () => {
-    it('should extract vehicle from trade-in message', () => {
+    it('should extract vehicle from trade-in message', async () => {
       const message = 'quero trocar meu Polo 2020 por um carro mais novo';
-      const result = parser.parse(message);
+      const result = await parser.parse(message);
 
       expect(result.model).toBe('Polo');
       expect(result.year).toBe(2020);
     });
 
-    it('should distinguish trade-in vehicle when checking context', () => {
+    it('should distinguish trade-in vehicle when checking context', async () => {
       const message = 'Me chamo Écio, quero trocar meu Polo 2020 por um carro mais novo';
 
       // Parser extracts the vehicle (doesn't know context)
-      const parseResult = parser.parse(message);
+      const parseResult = await parser.parse(message);
       expect(parseResult.model).toBe('Polo');
       expect(parseResult.year).toBe(2020);
 
@@ -109,7 +116,7 @@ describe('Trade-In Detection', () => {
   });
 
   describe('complex trade-in scenarios', () => {
-    it('should handle message with both trade-in and desired vehicle', () => {
+    it('should handle message with both trade-in and desired vehicle', async () => {
       const message = 'quero trocar meu Polo 2020 por um Civic';
 
       const isTradeIn = parser.isTradeInContext(message);
@@ -117,7 +124,7 @@ describe('Trade-In Detection', () => {
 
       // Note: The parser extracts the first model found
       // The application logic should handle the context
-      const parseResult = parser.parse(message);
+      const parseResult = await parser.parse(message);
       expect(parseResult.model).not.toBeNull();
     });
 
@@ -128,13 +135,13 @@ describe('Trade-In Detection', () => {
       expect(isTradeIn).toBe(true);
     });
 
-    it('should handle trade-in with km information', () => {
+    it('should handle trade-in with km information', async () => {
       const message = 'possuo um Civic 2019 com 50 mil km, quero trocar';
 
       const isTradeIn = parser.isTradeInContext(message);
       expect(isTradeIn).toBe(true);
 
-      const parseResult = parser.parse(message);
+      const parseResult = await parser.parse(message);
       expect(parseResult.model?.toLowerCase()).toBe('civic');
       expect(parseResult.year).toBe(2019);
     });

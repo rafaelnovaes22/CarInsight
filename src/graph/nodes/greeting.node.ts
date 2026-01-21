@@ -39,7 +39,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   }
 
   // 2. Early Intent Detection (Exact Search & Trade-in)
-  const exactMatch = exactSearchParser.parse(message);
+  const exactMatch = await exactSearchParser.parse(message);
   const earlyProfileUpdate: Partial<CustomerProfile> = {};
   const isTradeInContext = exactSearchParser.isTradeInContext(message);
 

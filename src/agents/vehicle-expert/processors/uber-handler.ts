@@ -299,7 +299,7 @@ export async function handleUberEligibilityQuestion(
   }
 
   if (!dbVehicle) {
-    const exact = exactSearchParser.parse(userMessage);
+    const exact = await exactSearchParser.parse(userMessage);
     const model = exact.model || updatedProfile.model || extracted.extracted.model || null;
     const year = exact.year || null;
 
@@ -329,10 +329,8 @@ export async function handleUberEligibilityQuestion(
   }
 
   if (!dbVehicle) {
-    const askedModel =
-      exactSearchParser.parse(userMessage).model ||
-      extracted.extracted.model ||
-      updatedProfile.model;
+    const exactResult = await exactSearchParser.parse(userMessage);
+    const askedModel = exactResult.model || extracted.extracted.model || updatedProfile.model;
     const modelText = askedModel ? ` do ${askedModel}` : '';
     const appName = is99 ? '99' : 'Uber';
 

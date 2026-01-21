@@ -324,13 +324,40 @@ export class ExactSearchParser {
 
   /**
    * Parse a user query and extract model and year filters
+   * Now includes fuzzy matching for brands to handle typos
    */
-  parse(query: string): ExtractedFilters {
+  async parse(query: string): Promise<ExtractedFilters> {
     const normalizedQuery = this.normalizeQuery(query);
 
-    const model = this.extractModel(normalizedQuery);
-    const yearRange = this.extractYearRange(normalizedQuery);
-    const year = yearRange ? null : this.extractYear(normalizedQuery);
+    // NEW: Try fuzzy brand/model matching first to handle typos
+    const { brandMatcher } = await import('./brand-matcher.service');
+    const fuzzyMatch = await brandMatcher.matchBrandAndModel(query);
+
+    // If we got a fuzzy match with lower confidence, we'll use the suggestion
+    // but still extract year normally
+    let processedQuery = normalizedQuery;
+    if (fuzzyMatch.brand?.suggestion && fuzzyMatch.brand.confidence < 1.0) {
+      // Replace the original brand with the corrected one
+      processedQuery = processedQuery.replace(
+        new RegExp(fuzzyMatch.brand.original, 'gi'),
+        fuzzyMatch.brand.suggestion
+      );
+
+      if (logger) {
+        logger.debug(
+          {
+            original: fuzzyMatch.brand.original,
+            suggestion: fuzzyMatch.brand.suggestion,
+            confidence: fuzzyMatch.brand.confidence,
+          },
+          'ExactSearchParser: applied fuzzy brand correction'
+        );
+      }
+    }
+
+    const model = this.extractModel(processedQuery);
+    const yearRange = this.extractYearRange(processedQuery);
+    const year = yearRange ? null : this.extractYear(processedQuery);
 
     const result: ExtractedFilters = {
       model,

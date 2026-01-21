@@ -28,8 +28,8 @@ export default defineConfig({
       branches: 80,
       statements: 80,
     },
-    testTimeout: 30000,
-    hookTimeout: 30000,
+    testTimeout: 60000, // Increased to 60s for E2E tests with LLM calls
+    hookTimeout: 60000,
     setupFiles: ['./tests/setup.ts'],
   },
   resolve: {

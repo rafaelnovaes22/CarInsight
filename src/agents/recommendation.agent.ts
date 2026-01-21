@@ -193,7 +193,7 @@ export class RecommendationAgent {
     ].join(' ');
 
     // Use ExactSearchParser to extract model and year
-    const extractedFilters = exactSearchParser.parse(userText);
+    const extractedFilters = await exactSearchParser.parse(userText);
 
     // If no model detected by parser, try LLM detection as fallback
     let requestedModel = extractedFilters.model;
