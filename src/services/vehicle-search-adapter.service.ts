@@ -31,6 +31,9 @@ interface SearchFilters {
   aptoFamilia?: boolean;
   // Work filter
   aptoTrabalho?: boolean;
+  aptoCarga?: boolean;
+  aptoUsoDiario?: boolean;
+  aptoEntrega?: boolean;
   // Exclude specific IDs
   excludeIds?: string[];
   // Motorcycle filter - CRITICAL: excludes motorcycles when searching for cars
@@ -135,6 +138,9 @@ export class VehicleSearchAdapter {
           ...(filters.aptoFamilia && { aptoFamilia: true }),
           // Work filter
           ...(filters.aptoTrabalho && { aptoTrabalho: true }),
+          ...(filters.aptoCarga && { aptoCarga: true }),
+          ...(filters.aptoUsoDiario && { aptoUsoDiario: true }),
+          ...(filters.aptoEntrega && { aptoEntrega: true }),
         },
         take: limit,
         orderBy: this.getSortStrategy(filters),
@@ -484,6 +490,9 @@ export class VehicleSearchAdapter {
         ...(filters.aptoUberBlack && { aptoUberBlack: true }),
         ...(filters.aptoFamilia && { aptoFamilia: true }),
         ...(filters.aptoTrabalho && { aptoTrabalho: true }),
+        ...(filters.aptoCarga && { aptoCarga: true }),
+        ...(filters.aptoUsoDiario && { aptoUsoDiario: true }),
+        ...(filters.aptoEntrega && { aptoEntrega: true }),
       },
       take: limit,
       orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],

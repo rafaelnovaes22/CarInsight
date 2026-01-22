@@ -43,7 +43,10 @@ model Vehicle {
   aptoUber             Boolean          @default(false)
   aptoUberBlack        Boolean          @default(false)
   aptoFamilia          Boolean          @default(true)
-  aptoTrabalho         Boolean          @default(true)
+  aptoTrabalho         Boolean          @default(true) // Legacy: Generic "Work"
+  aptoCarga            Boolean          @default(false) // Work: Heavy Duty / Cargo (Pickup, Van)
+  aptoUsoDiario        Boolean          @default(false) // Work: Commute / Daily Use (Economy + AC)
+  aptoEntrega          Boolean          @default(false) // Work: Delivery Apps (Mercado Livre, Lalamove)
   economiaCombustivel  String?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt

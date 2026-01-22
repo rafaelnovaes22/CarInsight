@@ -74,6 +74,13 @@ export function buildSearchQuery(profile: Partial<CustomerProfile>): VehicleSear
       // Uber filters
       aptoUber: isUber,
       aptoUberBlack: isUberBlack,
+      // Specific use-case filters
+      aptoFamilia: profile.usoPrincipal === 'familia',
+      aptoCarga:
+        profile.usoPrincipal === 'carga' ||
+        !!(profile.priorities && profile.priorities.includes('carga')),
+      aptoEntrega: profile.usoPrincipal === 'entrega',
+      aptoUsoDiario: profile.usoPrincipal === 'diario',
     },
     preferences: {
       usage: profile.usage,

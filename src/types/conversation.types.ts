@@ -154,6 +154,9 @@ export interface VehicleSearchQuery {
     aptoUberBlack?: boolean;
     aptoFamilia?: boolean;
     aptoTrabalho?: boolean;
+    aptoCarga?: boolean;
+    aptoUsoDiario?: boolean;
+    aptoEntrega?: boolean;
   };
 
   // Soft preferences (for scoring)

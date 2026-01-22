@@ -54,7 +54,7 @@ IMPORTANTE - VALORES POR EXTENSO E ERROS DE TRANSCRIÇÃO:
 - people: number (passageiros + motorista)
 - minSeats: number (número MÍNIMO de lugares, ex: "7 lugares" → minSeats: 7)
 - usage: "cidade" | "viagem" | "trabalho" | "misto" | "diario"
-- usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "diario" | "outro"
+- usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "diario" | "carga" | "entrega" | "outro"
 - tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
 - appMencionado: "99" | "uber" | "app" (IMPORTANTE: preserve EXATAMENTE o nome do app que o usuário mencionou - se disse "99", use "99", se disse "Uber", use "uber")
 - bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan" | "moto"
@@ -77,13 +77,14 @@ IMPORTANTE - VALORES POR EXTENSO E ERROS DE TRANSCRIÇÃO:
 REGRAS ESPECIAIS:
 - Se mencionar "cadeirinha", "bebê conforto", "criança", "filho", "filhos" → usoPrincipal: "familia", priorities: ["cadeirinha", "espaco_traseiro"]
 - Para família com crianças, NUNCA recomendar hatch pequeno (Mobi, Kwid, Up, Uno)
-- Se mencionar "picape", "pickup", "caminhonete", "caçamba", "carga pesada", "obra", "material" → bodyType: "pickup", priorities incluir "pickup"
+- Se mencionar "picape", "pickup", "caminhonete", "caçamba", "carga pesada", "obra", "material", "peso" → usoPrincipal: "carga", bodyType: "pickup", priorities incluir "pickup", "carga"
+- Se mencionar "entrega", "mercado livre", "shopee", "lalamove", "loggi", "entregas", "uber flash" → usoPrincipal: "entrega"
 - Se mencionar "moto", "motocicleta", "scooter", "biz", "titan", "fan", "bros" → bodyType: "moto", priorities incluir "moto"
 - Modelos de pickup conhecidos: Strada, S10, Hilux, Ranger, Saveiro, Toro, L200, Amarok → bodyType: "pickup"
 - IMPORTANTE: Se mencionar "X lugares" (ex: "7 lugares", "5 lugares") → minSeats: X (número inteiro)
 - Modelos conhecidos de 7 lugares: Spin, SW4, Pajero, Outlander, Commander, Taos, Tiggo 8, Captiva → minSeats: 7
 - Modelos conhecidos de 5 lugares são a maioria dos carros, não precisa especificar minSeats
-- Se usuário pedir "carro versátil", "econômico", "dia a dia" e "viagem" (sem mencionar carga/trabalho) → preferir bodyType: "hatch" ou "sedan" (evite pickup para uso pessoal puramente econômico) (PRIORIDADE ALTA, não sugerir PICKUP se não for para carga)
+- Se usuário pedir "carro versátil", "econômico", "dia a dia" e "viagem" (sem mencionar carga/trabalho pesado) → preferir bodyType: "hatch" ou "sedan" (evite pickup para uso pessoal puramente econômico) (PRIORIDADE ALTA, não sugerir PICKUP se não for para carga)
 - Se mencionar características físicas como "sou grande", "sou alto", "tenho 1,80", "1.90" ou similar:
   - Adicionar "espaco_interno" e "conforto" em priorities
   - Adicionar "hatch_pequeno" ou "compacto" em dealBreakers (evitar carros apertados)
@@ -93,8 +94,8 @@ REGRAS ESPECIAIS:
   - "Marcas", "Marcos" (em contexto de carro pequeno) → interpretar como "March" (Nissan) ou ignorar se ambíguo
   - "Mobi" → Fiat Mobi
   - Se o usuário disser "não servem" ou "não gosto", adicionar esses modelos em dealBreakers
-- Se mencionar "dia a dia", "uso diário", "ir trabalhar", "trabalhar todo dia" (sem mencionar carga/app):
-  - usoPrincipal: "diario" ou "trabalho"
+- Se mencionar "dia a dia", "uso diário", "ir trabalhar", "trabalhar todo dia" (sem mencionar carga/app/entrega):
+  - usoPrincipal: "diario"
   - priorities: adicionar "economico", "conforto", "duravel"
   - evitar "pickup" (a menos que especifique carga)
 
