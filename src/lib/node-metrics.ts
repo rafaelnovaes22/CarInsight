@@ -52,9 +52,10 @@ export class NodeTimer {
    * Log successful node execution with metrics
    */
   logSuccess(state: IGraphState, result: Partial<IGraphState>): void {
+    const latencyMs = this.getElapsedMs();
     const metrics: NodeMetrics = {
       node: this.nodeName,
-      latencyMs: this.getElapsedMs(),
+      latencyMs,
       phoneNumber: this.maskPhone(state.phoneNumber),
       flags: result.metadata?.flags || state.metadata?.flags || [],
       nextNode: result.next,
@@ -63,6 +64,14 @@ export class NodeTimer {
     };
 
     logger.info(metrics, `${this.nodeName}Node: Execution complete`);
+
+    // Auto-alert for slow nodes (>3s threshold)
+    if (latencyMs > 3000) {
+      // Dynamic import to avoid circular dependency
+      import('./alerts').then(({ alerts }) => {
+        alerts.slowNode(this.nodeName, latencyMs);
+      });
+    }
   }
 
   /**

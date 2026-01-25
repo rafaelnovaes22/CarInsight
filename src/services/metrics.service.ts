@@ -180,9 +180,9 @@ export async function getMetrics(period: MetricsPeriod = '24h'): Promise<Metrics
   const avgDuration =
     conversationsWithDuration.length > 0
       ? conversationsWithDuration.reduce((sum, c) => {
-          const duration = (c.lastMessageAt.getTime() - c.startedAt.getTime()) / (1000 * 60);
-          return sum + duration;
-        }, 0) / conversationsWithDuration.length
+        const duration = (c.lastMessageAt.getTime() - c.startedAt.getTime()) / (1000 * 60);
+        return sum + duration;
+      }, 0) / conversationsWithDuration.length
       : 0;
 
   const metrics: MetricsResponse = {
@@ -225,4 +225,96 @@ export async function getMetrics(period: MetricsPeriod = '24h'): Promise<Metrics
  */
 export const metricsService = {
   getMetrics,
+
+  /**
+   * Get current performance/health metrics
+   */
+  async getPerformanceMetrics() {
+    const [vehiclesInStock, vehiclesWithEmbeddings, activeConversations, pendingLeads] =
+      await Promise.all([
+        // Total vehicles available
+        prisma.vehicle.count({
+          where: { disponivel: true },
+        }),
+
+        // Vehicles with embeddings generated
+        prisma.vehicle.count({
+          where: {
+            disponivel: true,
+            embedding: { not: null },
+          },
+        }),
+
+        // Active conversations (last 24h)
+        prisma.conversation.count({
+          where: {
+            status: 'active',
+            lastMessageAt: {
+              gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+
+        // Pending leads (not contacted yet)
+        prisma.lead.count({
+          where: { status: 'new' },
+        }),
+      ]);
+
+    const embeddingCoverage =
+      vehiclesInStock > 0 ? (vehiclesWithEmbeddings / vehiclesInStock) * 100 : 0;
+
+    return {
+      vehiclesInStock,
+      vehiclesWithEmbeddings,
+      embeddingCoverage: embeddingCoverage.toFixed(1) + '%',
+      activeConversations,
+      pendingLeads,
+    };
+  },
+
+  /**
+   * Get daily metrics trend for the last N days
+   */
+  async getDailyTrend(days: number = 7) {
+    const result: Array<{ date: string; conversations: number; leads: number; messages: number }> =
+      [];
+
+    for (let i = days - 1; i >= 0; i--) {
+      const dayStart = new Date();
+      dayStart.setDate(dayStart.getDate() - i);
+      dayStart.setHours(0, 0, 0, 0);
+
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const [conversations, leads, messages] = await Promise.all([
+        prisma.conversation.count({
+          where: {
+            startedAt: { gte: dayStart, lte: dayEnd },
+          },
+        }),
+        prisma.lead.count({
+          where: {
+            createdAt: { gte: dayStart, lte: dayEnd },
+          },
+        }),
+        prisma.message.count({
+          where: {
+            timestamp: { gte: dayStart, lte: dayEnd },
+          },
+        }),
+      ]);
+
+      result.push({
+        date: dayStart.toISOString().split('T')[0],
+        conversations,
+        leads,
+        messages,
+      });
+    }
+
+    return result;
+  },
 };
+

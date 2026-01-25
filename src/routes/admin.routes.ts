@@ -745,11 +745,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-                priceMatch[1]
-                  .replace(/R\$|\./g, '')
-                  .replace(',', '.')
-                  .trim()
-              ) || null
+              priceMatch[1]
+                .replace(/R\$|\./g, '')
+                .replace(',', '.')
+                .trim()
+            ) || null
             : null;
 
           vehicles.push({
@@ -1205,4 +1205,151 @@ router.get('/metrics', requireSecret, async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/metrics/performance
+ * Returns performance and health metrics (vehicles, embeddings, active conversations)
+ */
+router.get('/metrics/performance', requireSecret, async (req, res) => {
+  try {
+    const performance = await metricsService.getPerformanceMetrics();
+
+    res.json({
+      success: true,
+      generatedAt: new Date().toISOString(),
+      ...performance,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get performance metrics');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get performance metrics',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/metrics/trend
+ * Returns daily metrics trend for the last N days
+ * Query params:
+ *   - days: number (default: 7)
+ */
+router.get('/metrics/trend', requireSecret, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days as string) || 7;
+    const trend = await metricsService.getDailyTrend(days);
+
+    res.json({
+      success: true,
+      days,
+      trend,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get daily trend');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get daily trend',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/health
+ * System health check endpoint
+ */
+router.get('/health', async (req, res) => {
+  const checks: Record<string, { status: string; details?: any }> = {};
+  let overallStatus = 'healthy';
+
+  // Check database
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = { status: 'ok' };
+  } catch (error: any) {
+    checks.database = { status: 'error', details: error.message };
+    overallStatus = 'unhealthy';
+  }
+
+  // Check vehicles count
+  try {
+    const vehiclesCount = await prisma.vehicle.count({ where: { disponivel: true } });
+    const vehiclesWithEmbeddings = await prisma.vehicle.count({
+      where: { disponivel: true, embedding: { not: null } },
+    });
+    checks.vehicles = {
+      status: vehiclesCount > 0 ? 'ok' : 'warning',
+      details: {
+        available: vehiclesCount,
+        withEmbeddings: vehiclesWithEmbeddings,
+        coverage: vehiclesCount > 0 ? `${((vehiclesWithEmbeddings / vehiclesCount) * 100).toFixed(1)}%` : '0%',
+      },
+    };
+  } catch (error: any) {
+    checks.vehicles = { status: 'error', details: error.message };
+  }
+
+  // Check LLM providers configuration
+  checks.llm = {
+    status: process.env.OPENAI_API_KEY ? 'ok' : 'warning',
+    details: {
+      primary: process.env.OPENAI_API_KEY ? 'configured' : 'missing',
+      fallback: process.env.GROQ_API_KEY ? 'configured' : 'missing',
+    },
+  };
+
+  // Check WhatsApp configuration
+  checks.whatsapp = {
+    status: process.env.META_WHATSAPP_TOKEN ? 'ok' : 'warning',
+    details: {
+      metaToken: process.env.META_WHATSAPP_TOKEN ? 'configured' : 'missing',
+      phoneNumberId: process.env.META_WHATSAPP_PHONE_NUMBER_ID ? 'configured' : 'missing',
+    },
+  };
+
+  res.status(overallStatus === 'healthy' ? 200 : 503).json({
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    checks,
+  });
+});
+
+/**
+ * GET /admin/alerts
+ * Returns recent alerts from the alerting system
+ * Query params:
+ *   - limit: number (default: 20)
+ *   - severity: 'info' | 'warning' | 'critical' (optional filter)
+ */
+router.get('/alerts', requireSecret, async (req, res) => {
+  try {
+    const { AlertService } = await import('../lib/alerts');
+    const limit = parseInt(req.query.limit as string) || 20;
+    const severity = req.query.severity as string;
+
+    let alerts;
+    if (severity && ['info', 'warning', 'critical'].includes(severity)) {
+      alerts = AlertService.getBySeverity(severity as 'info' | 'warning' | 'critical');
+    } else {
+      alerts = AlertService.getRecent(limit);
+    }
+
+    const counts = AlertService.getCounts();
+
+    res.json({
+      success: true,
+      counts,
+      alerts,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get alerts');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get alerts',
+      details: error.message,
+    });
+  }
+});
+
 export default router;
+
