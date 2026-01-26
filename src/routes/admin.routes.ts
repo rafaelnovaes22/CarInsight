@@ -1354,4 +1354,134 @@ router.get('/alerts', requireSecret, async (req, res) => {
   }
 });
 
+// ============================================================================
+// Recommendation Accuracy Endpoints
+// ============================================================================
+
+/**
+ * GET /admin/recommendations/accuracy
+ * Returns recommendation accuracy metrics (Precision@K, CTR, MRR, etc)
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ */
+router.get('/recommendations/accuracy', requireSecret, async (req, res) => {
+  try {
+    const { recommendationMetrics } = await import('../services/recommendation-metrics.service');
+    const period = (req.query.period as '24h' | '7d' | '30d') || '7d';
+
+    if (!['24h', '7d', '30d'].includes(period)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid period. Use: 24h, 7d, or 30d',
+      });
+    }
+
+    const metrics = await recommendationMetrics.calculateMetrics(period);
+
+    res.json({
+      success: true,
+      ...metrics,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get recommendation accuracy');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get recommendation accuracy',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/recommendations/worst
+ * Returns worst performing recommendations for analysis
+ * Query params:
+ *   - limit: number (default: 10)
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ */
+router.get('/recommendations/worst', requireSecret, async (req, res) => {
+  try {
+    const { recommendationMetrics } = await import('../services/recommendation-metrics.service');
+    const limit = parseInt(req.query.limit as string) || 10;
+    const period = (req.query.period as '24h' | '7d' | '30d') || '7d';
+
+    const worst = await recommendationMetrics.getWorstPerformingRecommendations(limit, period);
+
+    res.json({
+      success: true,
+      count: worst.length,
+      recommendations: worst,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get worst recommendations');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get worst recommendations',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/recommendations/score-analysis
+ * Analyzes correlation between matchScore and actual engagement
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ */
+router.get('/recommendations/score-analysis', requireSecret, async (req, res) => {
+  try {
+    const { recommendationMetrics } = await import('../services/recommendation-metrics.service');
+    const period = (req.query.period as '24h' | '7d' | '30d') || '7d';
+
+    const analysis = await recommendationMetrics.analyzeScoreAccuracy(period);
+
+    res.json({
+      success: true,
+      period,
+      analysis,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to analyze score accuracy');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to analyze score accuracy',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/recommendations/by-segment
+ * Returns metrics by use-case segment (uber, family, travel, work)
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ */
+router.get('/recommendations/by-segment', requireSecret, async (req, res) => {
+  try {
+    const { recommendationMetrics } = await import('../services/recommendation-metrics.service');
+    const period = (req.query.period as '24h' | '7d' | '30d') || '7d';
+
+    const segments = ['uber', 'familia', 'viagem', 'trabalho', 'geral'];
+    const results = await Promise.all(
+      segments.map(async segment => ({
+        segment,
+        metrics: await recommendationMetrics.calculateMetricsBySegment(segment, period),
+      }))
+    );
+
+    res.json({
+      success: true,
+      period,
+      segments: results,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get metrics by segment');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get metrics by segment',
+      details: error.message,
+    });
+  }
+});
+
 export default router;
