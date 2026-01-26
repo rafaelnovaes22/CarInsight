@@ -745,11 +745,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-              priceMatch[1]
-                .replace(/R\$|\./g, '')
-                .replace(',', '.')
-                .trim()
-            ) || null
+                priceMatch[1]
+                  .replace(/R\$|\./g, '')
+                  .replace(',', '.')
+                  .trim()
+              ) || null
             : null;
 
           vehicles.push({
@@ -1282,7 +1282,10 @@ router.get('/health', async (req, res) => {
       details: {
         available: vehiclesCount,
         withEmbeddings: vehiclesWithEmbeddings,
-        coverage: vehiclesCount > 0 ? `${((vehiclesWithEmbeddings / vehiclesCount) * 100).toFixed(1)}%` : '0%',
+        coverage:
+          vehiclesCount > 0
+            ? `${((vehiclesWithEmbeddings / vehiclesCount) * 100).toFixed(1)}%`
+            : '0%',
       },
     };
   } catch (error: any) {
@@ -1352,4 +1355,3 @@ router.get('/alerts', requireSecret, async (req, res) => {
 });
 
 export default router;
-

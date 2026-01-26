@@ -180,9 +180,9 @@ export async function getMetrics(period: MetricsPeriod = '24h'): Promise<Metrics
   const avgDuration =
     conversationsWithDuration.length > 0
       ? conversationsWithDuration.reduce((sum, c) => {
-        const duration = (c.lastMessageAt.getTime() - c.startedAt.getTime()) / (1000 * 60);
-        return sum + duration;
-      }, 0) / conversationsWithDuration.length
+          const duration = (c.lastMessageAt.getTime() - c.startedAt.getTime()) / (1000 * 60);
+          return sum + duration;
+        }, 0) / conversationsWithDuration.length
       : 0;
 
   const metrics: MetricsResponse = {
@@ -317,4 +317,3 @@ export const metricsService = {
     return result;
   },
 };
-

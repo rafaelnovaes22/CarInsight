@@ -93,11 +93,29 @@ model Recommendation {
   clicked        Boolean      @default(false)
   interested     Boolean      @default(false)
   createdAt      DateTime     @default(now())
+  
+  // Feedback explícito
+  userRating     Int?         // 1-5 estrelas (opcional)
+  userFeedback   String?      // Texto livre: "muito caro", "não gostei da cor"
+  feedbackType   String?      // 'positive' | 'negative' | 'neutral'
+  feedbackAt     DateTime?    // Quando o feedback foi dado
+  
+  // Sinais implícitos expandidos
+  viewedAt       DateTime?    // Quando usuário viu detalhes do veículo
+  viewDurationSec Int?        // Tempo em segundos olhando detalhes
+  askedQuestions Boolean      @default(false) // Fez perguntas sobre este veículo
+  requestedContact Boolean    @default(false) // Pediu para falar com vendedor
+  
+  // Contexto de rejeição
+  rejectionReason String?     // "caro demais", "muito antigo", etc
+  wasSkipped     Boolean      @default(false) // Usuário ignorou esta recomendação
+  
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   vehicle        Vehicle      @relation(fields: [vehicleId], references: [id])
 
   @@index([conversationId])
   @@index([matchScore])
+  @@index([feedbackType])
 }
 
 model Lead {

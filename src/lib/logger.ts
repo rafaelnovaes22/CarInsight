@@ -123,4 +123,3 @@ export const logEvent = {
 };
 
 export default logger;
-
