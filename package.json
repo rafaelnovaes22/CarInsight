@@ -58,7 +58,9 @@
     "verify:strict": "npm run format:check && npm run lint && npm run test:run",
     "push:safe": "npm run verify && git push origin main && git push novais main",
     "push:origin": "npm run verify && git push origin main",
-    "push:novais": "npm run verify && git push novais main"
+    "push:novais": "npm run verify && git push novais main",
+    "benchmark": "tsx src/evaluation/run-benchmark.ts",
+    "benchmark:single": "tsx -e \"require('./src/evaluation/benchmark-runner').benchmarkRunner.runSingle(process.argv[2]).then(r => console.log(JSON.stringify(r, null, 2)))\""
   },
   "keywords": [
     "whatsapp",
