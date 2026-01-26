@@ -1484,4 +1484,128 @@ router.get('/recommendations/by-segment', requireSecret, async (req, res) => {
   }
 });
 
+// ============================================================================
+// Failure Analysis Endpoints
+// ============================================================================
+
+/**
+ * GET /admin/recommendations/failure-patterns
+ * Detects recurring failure patterns in recommendations
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ */
+router.get('/recommendations/failure-patterns', requireSecret, async (req, res) => {
+  try {
+    const { recommendationAnalysis } = await import('../services/recommendation-analysis.service');
+    const period = (req.query.period as '24h' | '7d' | '30d') || '7d';
+
+    const patterns = await recommendationAnalysis.detectFailurePatterns(period);
+
+    res.json({
+      success: true,
+      period,
+      count: patterns.length,
+      patterns,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get failure patterns');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get failure patterns',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/recommendations/suggestions
+ * Returns improvement suggestions based on failure patterns
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ */
+router.get('/recommendations/suggestions', requireSecret, async (req, res) => {
+  try {
+    const { recommendationAnalysis } = await import('../services/recommendation-analysis.service');
+    const period = (req.query.period as '24h' | '7d' | '30d') || '7d';
+
+    const suggestions = await recommendationAnalysis.suggestImprovements(period);
+
+    res.json({
+      success: true,
+      period,
+      count: suggestions.length,
+      suggestions,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get suggestions');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get suggestions',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/recommendations/compare
+ * Compares recommendation metrics between two dates
+ * Query params:
+ *   - beforeDate: ISO date string
+ *   - afterDate: ISO date string
+ */
+router.get('/recommendations/compare', requireSecret, async (req, res) => {
+  try {
+    const { recommendationAnalysis } = await import('../services/recommendation-analysis.service');
+
+    const beforeDate = req.query.beforeDate
+      ? new Date(req.query.beforeDate as string)
+      : new Date(Date.now() - 14 * 24 * 60 * 60 * 1000); // 14 days ago
+
+    const afterDate = req.query.afterDate
+      ? new Date(req.query.afterDate as string)
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+
+    const comparison = await recommendationAnalysis.compareVersions(beforeDate, afterDate);
+
+    res.json({
+      success: true,
+      comparison,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to compare versions');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to compare versions',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * GET /admin/recommendations/report
+ * Generates comprehensive analysis report
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ */
+router.get('/recommendations/report', requireSecret, async (req, res) => {
+  try {
+    const { recommendationAnalysis } = await import('../services/recommendation-analysis.service');
+    const period = (req.query.period as '24h' | '7d' | '30d') || '7d';
+
+    const report = await recommendationAnalysis.generateReport(period);
+
+    res.json({
+      success: true,
+      report,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to generate report');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate report',
+      details: error.message,
+    });
+  }
+});
+
 export default router;
