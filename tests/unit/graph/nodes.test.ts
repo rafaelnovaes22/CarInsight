@@ -254,17 +254,36 @@ describe('LangGraph Nodes Logic', () => {
 
       const result = await recommendationNode(state);
 
-      expect(result.messages?.[0].content).toContain('conectar você');
+      // Check for keywords common in all variations OR check the flag
+      const msgContent = result.messages?.[0].content;
+      const content = typeof msgContent === 'string' ? msgContent.toLowerCase() : '';
+
+      const hasHandoffKeyword =
+        content.includes('vendedor') ||
+        content.includes('conectar') ||
+        content.includes('consultor') ||
+        content.includes('equipe');
+
+      expect(hasHandoffKeyword).toBe(true);
       expect(result.metadata?.flags).toContain('handoff_requested');
     });
 
     it('should handle schedule request', async () => {
       const state = createInitialState();
-      state.messages = [new HumanMessage('Quero agendar visita')];
+      const stateWithProfile = {
+        ...state,
+        profile: { customerName: 'Test' },
+      };
+      stateWithProfile.messages = [new HumanMessage('Quero agendar visita')];
 
-      const result = await recommendationNode(state);
+      const result = await recommendationNode(stateWithProfile);
 
-      expect(result.messages?.[0].content).toContain('agendar sua visita');
+      const msgContent = result.messages?.[0].content;
+      const content = typeof msgContent === 'string' ? msgContent.toLowerCase() : '';
+
+      const hasScheduleKeyword = content.includes('agendar') || content.includes('visita');
+
+      expect(hasScheduleKeyword).toBe(true);
       expect(result.metadata?.flags).toContain('visit_requested');
     });
 

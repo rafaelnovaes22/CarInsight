@@ -3,6 +3,12 @@ import { CustomerProfile } from '../../types/state.types';
 import { createNodeTimer } from '../../lib/node-metrics';
 import { logger } from '../../lib/logger';
 import { AIMessage } from '@langchain/core/messages';
+import {
+  getRandomVariation,
+  getVehicleIntroMessage,
+  getVehicleClosingMessage,
+  getHandoffMessage,
+} from '../../config/conversation-style';
 
 /**
  * Formata número de telefone para exibição
@@ -47,56 +53,64 @@ function generateWhatsAppLink(
 }
 
 /**
- * Format recommendations into WhatsApp message
+ * Formata preço de forma amigável
+ */
+function formatPrice(price: number | string | null): string {
+  if (!price) return 'Consulte';
+  const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+  if (isNaN(numPrice)) return 'Consulte';
+
+  // Formato mais curto: R$ 89.900
+  return numPrice.toLocaleString('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+}
+
+/**
+ * Format recommendations into WhatsApp message - ESTILO NATURAL
  */
 function formatRecommendations(recommendations: any[]): string {
   if (recommendations.length === 0) {
-    return 'Desculpe, não encontrei veículos disponíveis no momento.\n\nDigite "vendedor" para falar com nossa equipe.';
+    return getRandomVariation([
+      'Poxa, não encontrei nada disponível agora. Quer que eu chame um vendedor pra te ajudar?',
+      'Hmm, não achei opções no momento. Posso te passar pra nossa equipe!',
+      'Não tem nada assim agora, mas posso procurar algo parecido ou chamar um vendedor.',
+    ]);
   }
 
-  let message = `🎯 Encontrei ${recommendations.length} veículos perfeitos para você!\n\n`;
+  // Intro natural (sem emoji excessivo)
+  let message = `${getVehicleIntroMessage()}\n\n`;
 
   recommendations.forEach((rec, index) => {
     const vehicle = rec.vehicle;
     if (!vehicle) return;
 
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `${index + 1}️⃣ Match Score: ${rec.matchScore}/100 ⭐\n\n`;
-    message += `🚗 ${vehicle.marca || ''} ${vehicle.modelo || ''} ${vehicle.versao || ''}\n`;
+    const num = index + 1;
+    const ano = vehicle.ano || '';
+    const km = vehicle.km ? `${Math.round(vehicle.km / 1000)}mil km` : '';
+    const price = formatPrice(vehicle.preco);
 
-    const ano = vehicle.ano || 'N/D';
-    const km =
-      vehicle.km !== undefined && vehicle.km !== null ? vehicle.km.toLocaleString('pt-BR') : 'N/D';
-    message += `📅 Ano: ${ano} | 🛣️ ${km} km\n`;
+    // Formato compacto e natural
+    message += `*${num}. ${vehicle.marca} ${vehicle.modelo}* ${ano}\n`;
+    message += `   ${km} • R$ ${price}`;
 
-    let priceFormatted = 'Consulte';
-    if (vehicle.preco) {
-      try {
-        priceFormatted = `R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      } catch (e) {
-        priceFormatted = 'R$ ' + vehicle.preco; // Fallback
-      }
+    // Cor só se relevante
+    if (vehicle.cor && vehicle.cor.toLowerCase() !== 'não informada') {
+      message += ` • ${vehicle.cor}`;
+    }
+    message += `\n`;
+
+    // Reasoning curto e natural
+    if (rec.reasoning) {
+      message += `   _${rec.reasoning}_\n`;
     }
 
-    message += `💰 ${priceFormatted}\n`;
-    message += `🎨 Cor: ${vehicle.cor || 'Não informada'}\n`;
-
-    if (vehicle.combustivel) {
-      message += `⛽ ${vehicle.combustivel}`;
-      if (vehicle.cambio) {
-        message += ` | 🔧 ${vehicle.cambio}`;
-      }
-      message += `\n`;
-    }
-
-    message += `\n💡 ${rec.reasoning || 'Recomendado para você.'}\n\n`;
+    message += `\n`;
   });
 
-  message += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
-  message += `📱 O que você gostaria de fazer?\n\n`;
-  message += `• Digite o número do carro para ver mais detalhes\n`;
-  message += `• Digite "agendar" para marcar uma visita 📅\n`;
-  message += `• Digite "vendedor" para falar com nossa equipe`;
+  // Fechamento natural (sem menu estruturado)
+  message += getVehicleClosingMessage();
 
   return message;
 }
@@ -137,7 +151,7 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     return {
       messages: [
         new AIMessage(
-          `Ótimo! 🎉\n\nVou transferir você para nossa equipe de vendas para agendar sua visita.${linkMessage}\n\n_Nosso consultor confirmará o dia e horário com você!_\n\nObrigado por escolher o CarInsight! 🚗`
+          `${getRandomVariation(['Ótimo!', 'Maravilha!', 'Excelente!'])} 🎉\n\nVou pedir pro nosso consultor agendar sua visita rapidinho.${linkMessage}\n\n_Ele confirma o horário com você, tá bom?_\n\nObrigado por escolher o CarInsight! 🚗`
         ),
       ],
       metadata: {
@@ -166,7 +180,7 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     return {
       messages: [
         new AIMessage(
-          `Entendi! 👍\n\nVou conectar você com um de nossos vendedores especialistas.${linkMessage}\n\n_Ele já recebeu todas as informações sobre seu interesse!_`
+          `${getHandoffMessage()}${linkMessage}\n\n_Já passei suas informações pra ele!_`
         ),
       ],
       metadata: {
@@ -221,25 +235,24 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
       const rec = state.recommendations[vehicleIndex];
       const vehicle = rec.vehicle;
 
-      let detailsMessage = `📋 Detalhes completos:\n\n`;
-      detailsMessage += `🚗 ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}\n`;
+      let detailsMessage = `📋 *${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}*\n\n`;
       detailsMessage += `📅 Ano: ${vehicle.ano}\n`;
-      detailsMessage += `🛣️ Quilometragem: ${vehicle.km.toLocaleString('pt-BR')} km\n`;
-      detailsMessage += `💰 Preço: R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+      detailsMessage += `🛣️ ${vehicle.km.toLocaleString('pt-BR')} km\n`;
+      detailsMessage += `💰 R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
       detailsMessage += `🎨 Cor: ${vehicle.cor}\n`;
 
-      if (vehicle.combustivel) detailsMessage += `⛽ Combustível: ${vehicle.combustivel}\n`;
-      if (vehicle.cambio) detailsMessage += `🔧 Câmbio: ${vehicle.cambio}\n`;
-      if (vehicle.portas) detailsMessage += `🚪 Portas: ${vehicle.portas}\n`;
+      if (vehicle.combustivel) detailsMessage += `⛽ ${vehicle.combustivel}`;
+      if (vehicle.cambio) detailsMessage += ` • 🔧 ${vehicle.cambio}`;
+      detailsMessage += `\n`;
 
       if (vehicle.descricao) {
-        detailsMessage += `\n📝 ${vehicle.descricao}\n`;
+        detailsMessage += `\n_${vehicle.descricao}_\n`;
       }
 
       detailsMessage += `\n━━━━━━━━━━━━━━━━━━━━━\n\n`;
-      detailsMessage += `Gostou? Digite:\n`;
-      detailsMessage += `• "agendar" para visitar 📅\n`;
-      detailsMessage += `• "vendedor" para tirar dúvidas`;
+      detailsMessage += `${getRandomVariation(['Curtiu o carro? Você pode:', 'Se gostou, me diz:'])}`;
+      detailsMessage += `\n• "Agendar visita" pra ver de perto`;
+      detailsMessage += `\n• "Falar com vendedor" pra negociar`;
 
       return {
         messages: [new AIMessage(detailsMessage)],
@@ -276,7 +289,13 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
   // Fallback
   return {
     messages: [
-      new AIMessage('Como posso ajudar mais?\n\nDigite "vendedor" para falar com nossa equipe.'),
+      new AIMessage(
+        getRandomVariation([
+          'Posso te ajudar com algo mais? Se quiser, chamo um vendedor!',
+          'Quer ver mais alguma coisa? Ou prefere falar com alguém da equipe?',
+          'Tô por aqui se precisar de algo mais, ou posso chamar um atendente humano.',
+        ])
+      ),
     ],
     metadata: {
       ...state.metadata,
