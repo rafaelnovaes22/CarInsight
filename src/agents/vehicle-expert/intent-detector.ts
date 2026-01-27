@@ -90,6 +90,11 @@ export const SHORT_AFFIRMATIVES: readonly string[] = [
   'certeza',
   'pf',
   'pfv',
+  'envia',
+  'envie',
+  'traz',
+  'sugestões',
+  'sugestoes',
 ];
 
 /**
@@ -114,6 +119,16 @@ export const AFFIRMATIVE_PATTERNS: RegExp[] = [
   /por favor/i,
   /tenho interesse/i,
   /interessado/i,
+  // Patterns for accepting suggestions
+  /sugest[ãõo]es?/i, // "sugestões", "sugestão"
+  /envi[ae]\s*(sugest)?/i, // "envie", "envia", "envie sugestões"
+  /me\s*manda/i, // "me manda"
+  /traz\s*(a[íi])?/i, // "traz", "traz aí"
+  /t[oô]\s*aberto/i, // "to aberto", "tô aberto"
+  /estou\s*aberto/i, // "estou aberto"
+  /voc[êe]\s*escolh[ae]/i, // "você escolhe"
+  /pode\s*escolher/i, // "pode escolher"
+  /fica\s*a\s*seu\s*crit[ée]rio/i, // "fica a seu critério"
 ];
 
 /**
