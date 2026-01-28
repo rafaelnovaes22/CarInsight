@@ -1525,6 +1525,29 @@ export class VehicleExpertAgent {
         };
       }
 
+      // 5.5. Detect if user is accepting suggestions when asked about preference
+      // This handles cases like "envie sugestões", "pode sugerir", "tô aberto"
+      // when user has budget + usage but no bodyType yet
+      const hasBudgetAndUsage =
+        updatedProfile.budget && (updatedProfile.usage || updatedProfile.usoPrincipal);
+      const noBodyType = !updatedProfile.bodyType;
+      const isSuggestionAcceptance =
+        hasBudgetAndUsage &&
+        noBodyType &&
+        detectAffirmativeResponse(userMessage) &&
+        (/sugest/i.test(messageLower) ||
+          /aberto/i.test(messageLower) ||
+          /escolh[ae]/i.test(messageLower) ||
+          /fica.*crit[ée]rio/i.test(messageLower));
+
+      if (isSuggestionAcceptance) {
+        logger.info(
+          { userMessage, hasBudgetAndUsage, noBodyType },
+          'User accepted suggestions - marking _acceptsSuggestions'
+        );
+        updatedProfile._acceptsSuggestions = true;
+      }
+
       // 6. Assess if we're ready to recommend
       const readiness = assessReadinessUtil(updatedProfile, context);
 

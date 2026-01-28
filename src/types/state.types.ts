@@ -97,6 +97,7 @@ export interface CustomerProfile {
   // Financing/Trade-in flow control
   _awaitingFinancingDetails?: boolean; // Aguardando detalhes de financiamento (entrada, troca)
   _awaitingTradeInDetails?: boolean; // Aguardando detalhes do veículo de troca
+  _acceptsSuggestions?: boolean; // Usuário aceitou receber sugestões (respondeu "sugestões" quando perguntado sobre preferência)
   tradeInKm?: number; // Km do veículo na troca
 }
 

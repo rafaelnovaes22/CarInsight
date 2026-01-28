@@ -35,20 +35,16 @@ export function assessReadiness(
     };
   }
 
-  // SPECIAL CASE: Budget + usage defined - ready for recommendations
-  // When user has defined budget AND usage, we can recommend without bodyType
-  // This handles cases like "carro para uber com orçamento de 75k" where user accepts suggestions
-  const hasBudget = !!profile.budget;
-  const hasUsage = !!(profile.usage || profile.usoPrincipal);
-
-  if (hasBudget && hasUsage) {
+  // SPECIAL CASE: User explicitly accepted suggestions (responded "sugestões" when asked about preference)
+  // This allows recommending without bodyType when user says "envie sugestões", "pode sugerir", etc.
+  if (profile._acceptsSuggestions && profile.budget) {
     return {
       canRecommend: true,
-      confidence: 80,
+      confidence: 85,
       missingRequired: [],
       missingOptional: ['bodyType', 'minYear'].filter(f => !(profile as any)[f]),
       action: 'recommend_now',
-      reasoning: `Orçamento e uso definidos - suficiente para recomendar`,
+      reasoning: 'Usuário aceitou receber sugestões',
     };
   }
 
