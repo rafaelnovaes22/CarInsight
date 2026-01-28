@@ -44,6 +44,46 @@ async function getUberEligibilityAgent() {
   return uberEligibilityAgentRef;
 }
 
+/**
+ * Models that are NEVER allowed for Uber Black - hard exclusion list.
+ * This serves as a fast fallback before LLM validation.
+ * Based on official Uber guidelines for Brazil (2025).
+ */
+const UBER_BLACK_NEVER_ALLOWED = [
+  // Hyundai compactos
+  'hb20',
+  'hb20s',
+  // Chevrolet compactos
+  'onix',
+  'prisma',
+  // Fiat compactos
+  'cronos',
+  'siena',
+  'grand siena',
+  'argo',
+  'mobi',
+  // VW compactos (Virtus só Exclusive/GTS em algumas cidades)
+  'voyage',
+  'fox',
+  'gol',
+  'up',
+  // Ford compacto
+  'ka',
+  // Toyota compactos
+  'yaris',
+  'etios',
+  // Nissan compactos
+  'versa',
+  'v-drive',
+  'march',
+  // Honda compacto (City não é Civic)
+  'city',
+  // Renault compactos
+  'logan',
+  'sandero',
+  'kwid',
+];
+
 function isUberEligibilityQuestion(message: string): boolean {
   const m = message.toLowerCase();
 
@@ -168,7 +208,7 @@ export async function handleUberBlackQuestion(
   }
 
   // Search for Uber Black eligible vehicles
-  const uberBlackVehicles = await vehicleSearchAdapter.search('', {
+  const uberBlackVehiclesRaw = await vehicleSearchAdapter.search('', {
     aptoUberBlack: true,
     limit: 10,
     maxPrice: updatedProfile.budget || updatedProfile.budgetMax,
@@ -176,6 +216,20 @@ export async function handleUberBlackQuestion(
     maxKm: updatedProfile.maxKm,
     minSeats: updatedProfile.minSeats,
     useCase: 'uber', // Hint for sorting strategy
+  });
+
+  // CRITICAL: Filter out models that are NEVER allowed for Uber Black
+  // This is a fast fallback before any LLM validation
+  const uberBlackVehicles = uberBlackVehiclesRaw.filter(v => {
+    const modelLower = v.vehicle.model.toLowerCase();
+    const isExcluded = UBER_BLACK_NEVER_ALLOWED.some(excluded => modelLower.includes(excluded));
+    if (isExcluded) {
+      logger.info(
+        { model: v.vehicle.model, brand: v.vehicle.brand },
+        'UberHandler: Filtering out excluded model from Uber Black results'
+      );
+    }
+    return !isExcluded;
   });
 
   let criteriaText = `🚖 *Critérios para Uber Black:*\n\n`;

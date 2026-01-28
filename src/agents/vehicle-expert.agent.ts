@@ -2058,10 +2058,12 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         return { recommendations: sevenSeaterResults.slice(0, 5), requiredSeats };
       }
 
-      // Post-filter: apply city-specific Uber rules when user is NOT in default city (SP)
+      // Post-filter: apply Uber rules validation
       // Keep SQL filtering (aptoUber/aptoUberBlack) as a fast pre-filter.
+      // CRITICAL FIX: Always apply LLM post-filter for Uber Black to prevent invalid models (e.g., HB20S)
+      // Previously this only ran for non-SP cities, allowing excluded models to slip through.
       const citySlug = profile.citySlug || 'sao-paulo';
-      if (isAppTransport && citySlug !== 'sao-paulo') {
+      if (isAppTransport && (isUberBlack || citySlug !== 'sao-paulo')) {
         const { uberEligibilityAgent } = await import('../services/uber-eligibility-agent.service');
         const { prisma } = await import('../lib/prisma');
 

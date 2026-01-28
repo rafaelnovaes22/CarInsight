@@ -35,14 +35,29 @@ const UBER_X_MODELS: Record<string, string[]> = {
 };
 
 const UBER_BLACK_MODELS: Record<string, string[]> = {
+  // Premium sedans - médios/grandes
   honda: ['civic'],
   toyota: ['corolla'],
   chevrolet: ['cruze'],
   volkswagen: ['jetta', 'passat'],
   nissan: ['sentra'],
+  kia: ['cerato'],
 };
 
-const UBER_NEVER_ALLOWED_TYPES = ['suv', 'pickup', 'picape', 'minivan', 'van', 'furgão', 'furgao'];
+// SUVs premium aceitos para Uber Black
+const UBER_BLACK_SUVS: Record<string, string[]> = {
+  jeep: ['compass', 'renegade', 'commander'],
+  hyundai: ['creta', 'tucson'],
+  honda: ['hr-v', 'hrv'],
+  toyota: ['corolla cross', 'sw4', 'rav4'],
+  volkswagen: ['t-cross', 'tcross', 'tiguan', 'taos'],
+  chevrolet: ['tracker', 'equinox', 'trailblazer'],
+  nissan: ['kicks'],
+  mitsubishi: ['outlander', 'asx'],
+  // NOTE: Hyundai HB20/HB20S NÃO estão aqui - são explicitamente excluídos
+};
+
+const UBER_NEVER_ALLOWED_TYPES = ['pickup', 'picape', 'minivan', 'van', 'furgão', 'furgao'];
 
 export class VehicleClassifierService {
   static classify(vehicle: Vehicle): VehicleClassification {
@@ -71,13 +86,24 @@ export class VehicleClassifierService {
       vehicle.portas >= 4 &&
       this.isModelInWhitelist(vehicle.marca, vehicle.modelo, UBER_X_MODELS);
 
-    const isUberBlack =
+    const isUberBlackSedan =
       !isNeverAllowedUber &&
       vehicle.ano >= 2018 &&
       vehicle.arCondicionado === true &&
       vehicle.portas === 4 &&
       carroceriaNorm.includes('sedan') &&
       this.isModelInWhitelist(vehicle.marca, vehicle.modelo, UBER_BLACK_MODELS);
+
+    // SUVs premium também são aceitos para Uber Black (ano >= 2019)
+    const isUberBlackSuv =
+      !isNeverAllowedUber &&
+      vehicle.ano >= 2019 &&
+      vehicle.arCondicionado === true &&
+      vehicle.portas >= 4 &&
+      carroceriaNorm.includes('suv') &&
+      this.isModelInWhitelist(vehicle.marca, vehicle.modelo, UBER_BLACK_SUVS);
+
+    const isUberBlack = isUberBlackSedan || isUberBlackSuv;
 
     // 3. Classificação FAMÍLIA (Nova lógica estrita)
     // Regra: 4 portas + (SUV, Sedan, Minivan, Perua)
