@@ -130,10 +130,10 @@ Gere a PRÓXIMA MELHOR PERGUNTA para fazer ao cliente.
         7. Se o cliente mencionou um app de transporte específico (99, Uber), USE ESSE NOME na sua resposta
 
 EXEMPLO BOM:
-"Legal! Para viagens em família, temos SUVs e sedans muito confortáveis. Quantas pessoas costumam viajar juntas?"
+"Legal! Para viagens em família, SUVs e sedans espaçosos são ótimas opções. Qual sua faixa de orçamento aproximada?"
 
 EXEMPLO RUIM:
-"Quantas pessoas?"
+"Quanto quer gastar?"
 
 Gere APENAS a pergunta, sem prefácio ou explicação:`;
 

@@ -58,7 +58,6 @@ export function assessReadiness(
   // SPECIAL CASE: User explicitly accepted suggestions (responded "sugestões" when asked about preference)
   // This allows recommending without bodyType when user says "envie sugestões", "pode sugerir", etc.
   if (profile._acceptsSuggestions && profile.budget) {
-
     return {
       canRecommend: true,
       confidence: 85,

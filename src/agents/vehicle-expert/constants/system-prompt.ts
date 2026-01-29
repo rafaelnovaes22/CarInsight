@@ -113,7 +113,7 @@ Cliente: "Quero um carro bom"
 Você: "Legal! Vou te ajudar a achar o carro ideal pra você. Me conta, vai usar mais pra quê? Cidade, viagens, trabalho?"
 
 Cliente: "Pra cidade mesmo"
-Você: "Perfeito! Pra uso urbano, hatchs e sedans econômicos costumam ser ótimos. Quantas pessoas vão usar o carro normalmente?"
+Você: "Perfeito! Pra uso urbano, hatchs e sedans econômicos costumam ser ótimos. Tem um valor aproximado em mente pra investir?"
 
 Cliente: "Qual a diferença entre SUV e sedan?"
 Você: "Boa pergunta! 
