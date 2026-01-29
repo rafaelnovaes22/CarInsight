@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:\\\\Users\\\\Rafael\\\\projetos\\\\carinsight\" log --oneline)",
+      "Bash(find:*)",
+      "Bash(sort:*)",
+      "Bash(wc:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm test:*)"
+    ]
+  }
+}

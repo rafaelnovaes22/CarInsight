@@ -1269,8 +1269,8 @@ export class VehicleExpertAgent {
             askedBodyType === 'picape' || askedBodyType === 'caminhonete'
               ? 'pickup'
               : askedBodyType === 'moto' ||
-                  askedBodyType === 'motocicleta' ||
-                  askedBodyType === 'scooter'
+                askedBodyType === 'motocicleta' ||
+                askedBodyType === 'scooter'
                 ? 'moto'
                 : askedBodyType
           ) as 'sedan' | 'hatch' | 'suv' | 'pickup' | 'minivan' | 'moto' | undefined;
@@ -1292,8 +1292,8 @@ export class VehicleExpertAgent {
               askedBodyType === 'pickup' || askedBodyType === 'picape'
                 ? 'picapes'
                 : askedBodyType === 'moto' ||
-                    askedBodyType === 'motocicleta' ||
-                    askedBodyType === 'scooter'
+                  askedBodyType === 'motocicleta' ||
+                  askedBodyType === 'scooter'
                   ? 'motos'
                   : askedBodyType === 'suv'
                     ? 'SUVs'
@@ -1926,7 +1926,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
         brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
         model: query.filters.model?.[0], // Filtrar por modelo quando especificado
-        limit: 15, // Get more candidates for AI ranking
+        limit: 7, // Reduced for faster AI ranking (eligibility is pre-filtered via DB flags)
         // CRITICAL: Exclude motorcycles when searching for cars
         excludeMotorcycles: !wantsMoto,
         // Apply Uber filters
@@ -2058,60 +2058,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         return { recommendations: sevenSeaterResults.slice(0, 5), requiredSeats };
       }
 
-      // Post-filter: apply Uber rules validation
-      // Keep SQL filtering (aptoUber/aptoUberBlack) as a fast pre-filter.
-      // CRITICAL FIX: Always apply LLM post-filter for Uber Black to prevent invalid models (e.g., HB20S)
-      // Previously this only ran for non-SP cities, allowing excluded models to slip through.
-      const citySlug = profile.citySlug || 'sao-paulo';
-      if (isAppTransport && (isUberBlack || citySlug !== 'sao-paulo')) {
-        const { uberEligibilityAgent } = await import('../services/uber-eligibility-agent.service');
-        const { prisma } = await import('../lib/prisma');
-
-        // Evaluate only the candidates we already fetched.
-        const ids = rankedResults.map(r => r.vehicleId);
-        const dbVehicles = await prisma.vehicle.findMany({
-          where: { id: { in: ids } },
-          select: {
-            id: true,
-            marca: true,
-            modelo: true,
-            ano: true,
-            carroceria: true,
-            arCondicionado: true,
-            portas: true,
-            cambio: true,
-          },
-        });
-
-        const byId = new Map(dbVehicles.map(v => [v.id, v]));
-
-        const evaluated = await Promise.all(
-          rankedResults.map(async rec => {
-            const v = byId.get(rec.vehicleId);
-            if (!v) return { rec, ok: false };
-
-            const result = await uberEligibilityAgent.evaluate(
-              {
-                marca: v.marca,
-                modelo: v.modelo,
-                ano: v.ano,
-                carroceria: v.carroceria,
-                arCondicionado: v.arCondicionado,
-                portas: v.portas,
-                cambio: v.cambio || undefined,
-              },
-              citySlug
-            );
-
-            const wantsBlackOnly = isUberBlack && !isUberX;
-            const ok = wantsBlackOnly ? result.uberBlack : result.uberX || result.uberComfort;
-
-            return { rec, ok };
-          })
-        );
-
-        rankedResults = evaluated.filter(x => x.ok).map(x => x.rec);
-      }
+      // Uber eligibility is pre-filtered in search via aptoUber/aptoUberBlack flags
+      // These flags are set when vehicles are added to DB (VehicleClassifierService)
+      // No need for runtime LLM validation - DB flags are authoritative
 
       // Post-filter: apply family-specific rules
       let filteredResults = rankedResults;
