@@ -35,9 +35,30 @@ export function assessReadiness(
     };
   }
 
+  // SPECIAL CASE: Uber (X, Comfort, Black) - only need budget to recommend
+  // Quantity of people is irrelevant because all Uber-eligible vehicles are 5-seaters
+  // Exception: only ask about seats if user explicitly requests:
+  //   - 7+ seats (minivan, SUV grande)
+  //   - 2 seats (esportivo/cupê, pickup cabine simples)
+  const isUberSearch = profile.usoPrincipal === 'uber';
+  const hasExtremeSeatsRequest = profile.people && (profile.people >= 7 || profile.people <= 2);
+
+  if (isUberSearch && profile.budget && !hasExtremeSeatsRequest) {
+    const uberType = profile.tipoUber || 'X';
+    return {
+      canRecommend: true,
+      confidence: 90, // High confidence - Uber has clear criteria
+      missingRequired: [],
+      missingOptional: ['minYear'].filter(f => !(profile as any)[f]),
+      action: 'recommend_now',
+      reasoning: `Uber ${uberType} com orçamento definido - ir direto para recomendações`,
+    };
+  }
+
   // SPECIAL CASE: User explicitly accepted suggestions (responded "sugestões" when asked about preference)
   // This allows recommending without bodyType when user says "envie sugestões", "pode sugerir", etc.
   if (profile._acceptsSuggestions && profile.budget) {
+
     return {
       canRecommend: true,
       confidence: 85,
