@@ -47,6 +47,7 @@ model Vehicle {
   aptoCarga            Boolean          @default(false) // Work: Heavy Duty / Cargo (Pickup, Van)
   aptoUsoDiario        Boolean          @default(false) // Work: Commute / Daily Use (Economy + AC)
   aptoEntrega          Boolean          @default(false) // Work: Delivery Apps (Mercado Livre, Lalamove)
+  aptoViagem           Boolean          @default(false) // Viagens longas/estrada
   economiaCombustivel  String?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
