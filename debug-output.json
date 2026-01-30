@@ -1,0 +1,48 @@
+{
+  "blackListSize": 32,
+  "renegadeInList": false,
+  "first5BlackRules": [
+    {
+      "brand": "Audi",
+      "model": "A3 Sedan",
+      "minYear": 2016,
+      "raw": "Seeded"
+    },
+    {
+      "brand": "Audi",
+      "model": "A4",
+      "minYear": 2016,
+      "raw": "Seeded"
+    },
+    {
+      "brand": "Audi",
+      "model": "Q3",
+      "minYear": 2016,
+      "raw": "Seeded"
+    },
+    {
+      "brand": "BMW",
+      "model": "320i",
+      "minYear": 2016,
+      "raw": "Seeded"
+    },
+    {
+      "brand": "BMW",
+      "model": "X1",
+      "minYear": 2016,
+      "raw": "Seeded"
+    }
+  ],
+  "result": {
+    "uberX": true,
+    "uberComfort": true,
+    "uberBlack": false,
+    "reasoning": "Renegade é um SUV moderno, aceito no Black. Tem 4 portas e ar-condicionado.",
+    "confidence": 1,
+    "source": {
+      "citySlug": "sao-paulo",
+      "sourceUrl": "manual_seed_v1",
+      "fetchedAt": "2026-01-30T11:57:39.434Z"
+    }
+  }
+}

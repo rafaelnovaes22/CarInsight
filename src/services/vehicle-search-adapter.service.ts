@@ -34,6 +34,8 @@ interface SearchFilters {
   aptoCarga?: boolean;
   aptoUsoDiario?: boolean;
   aptoEntrega?: boolean;
+  // Travel filter
+  aptoViagem?: boolean;
   // Exclude specific IDs
   excludeIds?: string[];
   // Motorcycle filter - CRITICAL: excludes motorcycles when searching for cars
@@ -141,6 +143,8 @@ export class VehicleSearchAdapter {
           ...(filters.aptoCarga && { aptoCarga: true }),
           ...(filters.aptoUsoDiario && { aptoUsoDiario: true }),
           ...(filters.aptoEntrega && { aptoEntrega: true }),
+          // Travel filter
+          ...(filters.aptoViagem && { aptoViagem: true }),
         },
         take: limit,
         orderBy: this.getSortStrategy(filters),
@@ -493,6 +497,8 @@ export class VehicleSearchAdapter {
         ...(filters.aptoCarga && { aptoCarga: true }),
         ...(filters.aptoUsoDiario && { aptoUsoDiario: true }),
         ...(filters.aptoEntrega && { aptoEntrega: true }),
+        // Travel filter
+        ...(filters.aptoViagem && { aptoViagem: true }),
       },
       take: limit,
       orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],

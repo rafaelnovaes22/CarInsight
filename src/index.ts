@@ -5,6 +5,7 @@ import { logger } from './lib/logger';
 import { prisma } from './lib/prisma';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
 import webhookRoutes from './routes/webhook.routes';
+import evolutionWebhookRoutes from './routes/webhook-evolution.routes';
 import adminRoutes from './routes/admin.routes';
 import debugRoutes from './routes/debug.routes';
 
@@ -15,6 +16,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Webhook routes for Meta Cloud API
 app.use('/webhooks', webhookRoutes);
+
+// Webhook routes for Evolution API
+app.use('/webhooks', evolutionWebhookRoutes);
 
 // Admin routes (seed, management)
 app.use('/admin', adminRoutes);

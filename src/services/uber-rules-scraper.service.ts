@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { firecrawlService } from './firecrawl.service';
 import {
   UberCitySlug,
   UberRulesByModality,
@@ -9,34 +10,87 @@ import { logger } from '../lib/logger';
 export class UberRulesScraperService {
   async scrape(citySlug: UberCitySlug): Promise<{ rules: UberRulesByModality; sourceUrl: string }> {
     const sourceUrl = `https://www.uber.com/br/pt-br/eligible-vehicles/?city=${citySlug}`;
+    let bodyText = '';
 
-    const browser = await chromium.launch({ headless: true });
-    try {
-      const page = await browser.newPage();
-      await page.goto(sourceUrl, { waitUntil: 'networkidle' });
+    // 1. Try Firecrawl first
+    const firecrawlResult = await firecrawlService.scrape(sourceUrl);
+    if (firecrawlResult.success && firecrawlResult.markdown) {
+      logger.info('Using Firecrawl result');
+      bodyText = firecrawlResult.markdown;
 
-      const bodyText = await page.locator('body').innerText();
+      // Firecrawl markdown might differ slightly from innerText.
+      // innerText: "Audi\nA3 Sedan - 2016 (...)"
+      // Markdown: "## Audi\n\n* A3 Sedan - 2016 (...)"
+      // We might need to clean markdown symbols like '*', '#'.
+      bodyText = bodyText.replace(/[*#]/g, '').replace(/\n\n/g, '\n');
+    } else {
+      // 2. Fallback to Playwright (with cookie bypass) if Firecrawl fails
+      logger.warn('Firecrawl failed or inactive, falling back to Playwright');
+      const browser = await chromium.launch({ headless: true });
+      // Use a real User-Agent to avoid immediate bot detection
+      const context = await browser.newContext({
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      });
 
-      const rules = this.extractEligibleModelRules(bodyText);
+      try {
+        const page = await context.newPage();
+        await page.goto(sourceUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
-      if (
-        (rules.uberX?.eligible.length ?? 0) === 0 &&
-        (rules.uberComfort?.eligible.length ?? 0) === 0 &&
-        (rules.uberBlack?.eligible.length ?? 0) === 0
-      ) {
-        logger.warn(
-          {
-            citySlug,
-            bodyTextSample: bodyText.slice(0, 1200),
-          },
-          'UberRulesScraper: empty parse result (check headings/selectors)'
-        );
+        // --- Cookie Wall Bypass Strategy ---
+        try {
+          await page.waitForTimeout(2000);
+          const title = await page.title();
+          const bodyPreview = await page.textContent('body');
+          const isCookiePage =
+            (title && title.toLowerCase().includes('cookie')) ||
+            (bodyPreview && bodyPreview.toLowerCase().includes('usamos cookies'));
+
+          if (isCookiePage) {
+            logger.info({ citySlug }, 'Cookie wall detected. Hunting for Accept button...');
+            const buttons = await page.getByRole('button').all();
+            for (const btn of buttons) {
+              const text = (await btn.textContent())?.toLowerCase() || '';
+              if (text.includes('aceitar') || text.includes('ok') || text.includes('yes')) {
+                await btn.click();
+                await page.waitForTimeout(3000);
+                break;
+              }
+            }
+          }
+        } catch (err) { /* ignore */ }
+
+        // Wait for content
+        try {
+          // @ts-ignore
+          await page.waitForFunction(() => document.body.innerText.length > 5000, null, { timeout: 15000 });
+        } catch (e) { /* ignore */ }
+
+        bodyText = await page.locator('body').innerText();
+      } finally {
+        await browser.close();
       }
-
-      return { rules, sourceUrl };
-    } finally {
-      await browser.close();
     }
+
+    console.log(`[DEBUG] Final Body Length: ${bodyText.length}`);
+    require('fs').writeFileSync('last_scrape.txt', bodyText);
+    const rules = this.extractEligibleModelRules(bodyText);
+
+    if (
+      (rules.uberX?.eligible.length ?? 0) === 0 &&
+      (rules.uberComfort?.eligible.length ?? 0) === 0 &&
+      (rules.uberBlack?.eligible.length ?? 0) === 0
+    ) {
+      logger.warn(
+        {
+          citySlug,
+          bodyTextSample: bodyText.slice(0, 1000),
+        },
+        'UberRulesScraper: empty parse result'
+      );
+    }
+
+    return { rules, sourceUrl };
   }
 
   private extractEligibleModelRules(text: string): UberRulesByModality {

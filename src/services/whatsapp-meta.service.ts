@@ -1,8 +1,10 @@
+
 import axios from 'axios';
 import { logger } from '../lib/logger';
 import { env } from '../config/env';
 import { MessageHandlerV2 } from './message-handler-v2.service';
 import { AudioTranscriptionService, TranscriptionResult } from './audio-transcription.service';
+import { IWhatsAppService, SendMessageOptions } from '../interfaces/whatsapp-service.interface';
 
 interface MetaWebhookMessage {
   from: string;
@@ -47,7 +49,6 @@ interface MetaWebhookEntry {
 
 /**
  * Error messages for audio processing failures
- * Requirements: 3.1, 3.2, 3.3, 3.4
  */
 const AUDIO_ERROR_MESSAGES: Record<string, string> = {
   DOWNLOAD_FAILED:
@@ -61,7 +62,7 @@ const AUDIO_ERROR_MESSAGES: Record<string, string> = {
   DISABLED: 'No momento não estou conseguindo ouvir áudios. Pode digitar sua mensagem, por favor?',
 };
 
-export class WhatsAppMetaService {
+export class WhatsAppMetaService implements IWhatsAppService {
   private messageHandler: MessageHandlerV2;
   private audioTranscriptionService: AudioTranscriptionService;
   private apiUrl: string;
@@ -133,8 +134,6 @@ export class WhatsAppMetaService {
 
   /**
    * Handle incoming message
-   * Routes to appropriate handler based on message type
-   * Requirements: 1.1
    */
   private async handleIncomingMessage(message: MetaWebhookMessage): Promise<void> {
     try {
@@ -196,8 +195,6 @@ export class WhatsAppMetaService {
 
   /**
    * Handle audio message
-   * Extracts media_id, transcribes audio, and processes as text
-   * Requirements: 1.1, 1.4, 1.5, 2.1, 2.2, 3.1, 3.2, 3.3, 3.4
    */
   async handleAudioMessage(message: MetaWebhookMessage): Promise<void> {
     const phoneNumber = message.from;
@@ -217,10 +214,10 @@ export class WhatsAppMetaService {
       mimeType: message.audio?.mime_type,
     });
 
-    // Step 1: Mark message as read immediately (Requirement 2.1)
+    // Step 1: Mark message as read immediately
     await this.markMessageAsRead(message.id);
 
-    // Step 2: Send acknowledgment/typing indicator (Requirement 2.2)
+    // Step 2: Send acknowledgment/typing indicator
     await this.sendTypingIndicator(phoneNumber);
 
     // Step 3: Transcribe audio
@@ -229,7 +226,6 @@ export class WhatsAppMetaService {
 
     // Step 4: Handle transcription result
     if (!transcriptionResult.success) {
-      // Send error message to user (Requirements 3.1, 3.2, 3.3, 3.4)
       const errorMessage = this.getAudioErrorMessage(transcriptionResult.errorCode);
       await this.sendMessage(phoneNumber, errorMessage);
 
@@ -253,8 +249,7 @@ export class WhatsAppMetaService {
       language: transcriptionResult.language,
     });
 
-    // Step 5: Process transcribed text with message handler (Requirement 1.4, 5.4)
-    // Pass mediaId for audio message persistence
+    // Step 5: Process transcribed text with message handler
     logger.info('🤖 Processing transcribed text with bot...');
     const response = await this.messageHandler.handleMessage(phoneNumber, transcribedText, {
       mediaId,
@@ -266,7 +261,7 @@ export class WhatsAppMetaService {
       responsePreview: response.substring(0, 100),
     });
 
-    // Step 6: Send response back to user (Requirement 1.5)
+    // Step 6: Send response back to user
     await this.sendMessage(phoneNumber, response);
 
     logger.info('✅ Audio response sent successfully', {
@@ -275,10 +270,6 @@ export class WhatsAppMetaService {
     });
   }
 
-  /**
-   * Get user-friendly error message for audio processing failures
-   * Requirements: 3.1, 3.2, 3.3, 3.4
-   */
   getAudioErrorMessage(errorCode?: string): string {
     if (!errorCode) {
       return AUDIO_ERROR_MESSAGES.TRANSCRIPTION_FAILED;
@@ -287,23 +278,18 @@ export class WhatsAppMetaService {
   }
 
   /**
-   * Send typing indicator to show processing
-   * Requirement: 2.2
+   * Send typing indicator
    */
-  private async sendTypingIndicator(to: string): Promise<void> {
+  async sendTypingIndicator(to: string): Promise<void> {
     try {
-      // WhatsApp doesn't have a direct typing indicator API
-      // We send a reaction or use the "typing" status if available
-      // For now, we'll just log this - the read receipt serves as acknowledgment
       logger.debug('📝 Typing indicator sent', { to });
     } catch (error) {
-      // Non-critical, just log
       logger.debug({ error, to }, 'Failed to send typing indicator');
     }
   }
 
   /**
-   * Handle status updates (delivered, read, etc)
+   * Handle status updates
    */
   private handleStatusUpdate(status: any): void {
     logger.debug('📊 Status update', {
@@ -313,9 +299,9 @@ export class WhatsAppMetaService {
   }
 
   /**
-   * Send text message
+   * Send text message (Implementation of IWhatsAppService)
    */
-  async sendMessage(to: string, text: string): Promise<void> {
+  async sendMessage(to: string, text: string, options?: SendMessageOptions): Promise<void> {
     try {
       console.log('🔄 SENDING TO:', to);
       console.log('📝 MESSAGE:', text.substring(0, 150));
@@ -338,16 +324,17 @@ export class WhatsAppMetaService {
           to: to,
           type: 'text',
           text: {
-            preview_url: false,
+            preview_url: options?.previewUrl ?? false,
             body: text,
           },
+          context: options?.quotedMessageId ? { message_id: options.quotedMessageId } : undefined,
         },
         {
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
           },
-          timeout: 10000, // 10 seconds timeout
+          timeout: 10000,
         }
       );
 
@@ -373,7 +360,7 @@ export class WhatsAppMetaService {
   }
 
   /**
-   * Send message with buttons (interactive)
+   * Send message with buttons
    */
   async sendButtonMessage(
     to: string,
@@ -398,7 +385,7 @@ export class WhatsAppMetaService {
                 type: 'reply',
                 reply: {
                   id: btn.id,
-                  title: btn.title.substring(0, 20), // Max 20 chars
+                  title: btn.title.substring(0, 20),
                 },
               })),
             },
@@ -412,7 +399,7 @@ export class WhatsAppMetaService {
         }
       );
 
-      logger.debug('✅ Button message sent', {
+      logger.info('✅ Button message sent', {
         messageId: response.data.messages?.[0]?.id,
       });
     } catch (error: any) {
@@ -429,7 +416,7 @@ export class WhatsAppMetaService {
   /**
    * Mark message as read
    */
-  private async markMessageAsRead(messageId: string): Promise<void> {
+  async markMessageAsRead(messageId: string): Promise<void> {
     try {
       await axios.post(
         this.apiUrl,
@@ -446,13 +433,12 @@ export class WhatsAppMetaService {
         }
       );
     } catch (error) {
-      // Non-critical, just log
       logger.debug({ error, messageId }, 'Failed to mark message as read');
     }
   }
 
   /**
-   * Send template message (requires pre-approved templates)
+   * Send template message (not part of interface, specific to Meta)
    */
   async sendTemplate(
     to: string,
@@ -461,6 +447,7 @@ export class WhatsAppMetaService {
     components?: any[]
   ): Promise<void> {
     try {
+      // ... implementation unchanged
       const response = await axios.post(
         this.apiUrl,
         {
@@ -500,7 +487,7 @@ export class WhatsAppMetaService {
   }
 
   /**
-   * Get Media URL (for images, videos, documents)
+   * Get Media URL (Implementation of IWhatsAppService)
    */
   async getMediaUrl(mediaId: string): Promise<string> {
     try {

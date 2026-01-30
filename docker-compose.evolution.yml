@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  evolution_api:
+    image: atendai/evolution-api:v2.1.1
+    container_name: carinsight_evolution_api
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8080
+      - DOCKER_ENV=true
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY:-carinsight_secret_key_123}
+      - AUTHENTICATION_EXPOSE_IN_URL=false
+      # Redis Configuration
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/1
+      - CACHE_REDIS_PREFIX=evolution:
+      # Database (using SQLite for simplicity in MVP, can switch to Postgres)
+      - DATABASE_ENABLED=false 
+      # Logging
+      - LOG_LEVEL=ERROR
+      # Webhook defaults (can be set per instance too)
+      - WEBHOOK_GLOBAL_ENABLED=false
+    volumes:
+      - ./evolution_store:/evolution/store
+    depends_on:
+      - redis
+    networks:
+      - carinsight_net
+
+  redis:
+    image: redis:alpine
+    container_name: carinsight_redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - carinsight_net
+
+networks:
+  carinsight_net:
+    driver: bridge
+
+volumes:
+  redis_data:

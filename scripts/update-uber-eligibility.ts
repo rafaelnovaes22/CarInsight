@@ -10,12 +10,13 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { CategoryClassifierService } from '../src/services/category-classifier.service';
 import { VehicleClassifierService } from '../src/services/vehicle-classifier.service';
 
 const prisma = new PrismaClient();
 
 async function updateVehicleClassification() {
-  console.log('🔄 Iniciando reclassificação de veículos...\n');
+  console.log('🔄 Iniciando reclassificação de veículos (via RAG/Neural)...\n');
 
   try {
     const vehicles = await prisma.vehicle.findMany();
@@ -31,8 +32,9 @@ async function updateVehicleClassification() {
     };
 
     for (const vehicle of vehicles) {
-      // Classificar usando serviço centralizado
-      const classification = VehicleClassifierService.classify(vehicle);
+      // Classificar usando serviço RAG (CategoryClassifierService)
+      // Adapting Prisma Vehicle to VehicleData interface if needed, but classifyAll handles it.
+      const classification = await CategoryClassifierService.classifyAll(vehicle as any, 'sao-paulo');
 
       // Atualizar estatísticas
       if (classification.aptoUber) stats.uberX++;
@@ -54,7 +56,7 @@ async function updateVehicleClassification() {
           aptoEntrega: classification.aptoEntrega,
           // Atualiza legado para ser a união das novas categorias de trabalho
           aptoTrabalho: classification.aptoCarga || classification.aptoUsoDiario,
-          economiaCombustivel: classification.economiaCombustivel
+          economiaCombustivel: VehicleClassifierService.classify(vehicle).economiaCombustivel
         }
       });
 

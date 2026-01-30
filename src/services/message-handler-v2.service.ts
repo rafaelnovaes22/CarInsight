@@ -536,8 +536,8 @@ Para começar, qual é o seu nome?`;
           const message = `🚨 *NOVO LEAD QUENTE!* 🔥\n\n${details.join('\n')}\n\n👉 *Ação:* Entrar em contato IMEDIATAMENTE!`;
 
           // Dynamic import to avoid circular dependency
-          const { WhatsAppMetaService } = await import('./whatsapp-meta.service');
-          const whatsappService = new WhatsAppMetaService();
+          const { WhatsAppServiceFactory } = await import('./whatsapp-factory');
+          const whatsappService = WhatsAppServiceFactory.getInstance();
           logger.info(
             {
               salesPhone,

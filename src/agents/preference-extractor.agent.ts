@@ -98,6 +98,10 @@ REGRAS ESPECIAIS:
   - usoPrincipal: "diario"
   - priorities: adicionar "economico", "conforto", "duravel"
   - evitar "pickup" (a menos que especifique carga)
+- Se mencionar "carro maior", "mais espaço", "ficou pequeno" ou "quero trocar por um maior":
+  - priorities: adicionar "espaco_interno", "porta_malas_grande"
+  - dealBreakers: adicionar "hatch_pequeno", "compacto"
+  - Se não houver bodyType definido, sugerir bodyType: "suv" ou "sedan" (médio)
 
 CONTEXTO DE CONVERSA (IMPORTANTE):
 - Se a ÚLTIMA MENSAGEM do assistente foi perguntando sobre "carro na troca", "troca", "seu carro atual":

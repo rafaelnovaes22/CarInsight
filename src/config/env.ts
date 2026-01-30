@@ -24,6 +24,11 @@ const envSchema = z.object({
   META_WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().optional(),
   META_WEBHOOK_VERIFY_TOKEN: z.string().optional().default('faciliauto_webhook_2025'),
 
+  // Evolution API (Alternative WhatsApp Gateway)
+  EVOLUTION_API_URL: z.string().optional(),
+  EVOLUTION_API_KEY: z.string().optional(),
+  EVOLUTION_INSTANCE_NAME: z.string().default('carinsight'),
+
   // Feature Flags
   ENABLE_CONVERSATIONAL_MODE: z
     .string()

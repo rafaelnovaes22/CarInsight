@@ -1919,6 +1919,13 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         profile.usage === 'trabalho' ||
         profile.priorities?.includes('trabalho');
 
+      // Detect travel requirements
+      const isViagem =
+        profile.usage === 'viagem' ||
+        profile.priorities?.includes('viagem') ||
+        profile.priorities?.includes('estrada') ||
+        profile.priorities?.includes('road trip');
+
       // Search vehicles - include brand/model filter for specific requests
       const results = await vehicleSearchAdapter.search(query.searchText, {
         maxPrice: query.filters.maxPrice,
@@ -1937,6 +1944,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         aptoFamilia: undefined,
         // Apply work filter
         aptoTrabalho: isWork || undefined,
+        // Apply travel filter
+        aptoViagem: isViagem || undefined,
       });
 
       // Se não encontrou motos e o usuário quer moto, informar
