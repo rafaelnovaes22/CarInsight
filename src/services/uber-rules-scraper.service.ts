@@ -58,13 +58,19 @@ export class UberRulesScraperService {
               }
             }
           }
-        } catch (err) { /* ignore */ }
+        } catch (err) {
+          /* ignore */
+        }
 
         // Wait for content
         try {
-          // @ts-ignore
-          await page.waitForFunction(() => document.body.innerText.length > 5000, null, { timeout: 15000 });
-        } catch (e) { /* ignore */ }
+          // @ts-expect-error - Document is available in browser context
+          await page.waitForFunction(() => document.body.innerText.length > 5000, null, {
+            timeout: 15000,
+          });
+        } catch (e) {
+          /* ignore */
+        }
 
         bodyText = await page.locator('body').innerText();
       } finally {
