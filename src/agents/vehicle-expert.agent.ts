@@ -9,11 +9,7 @@
 import { chatCompletion } from '../lib/llm-router';
 import { logger } from '../lib/logger';
 import { vehicleSearchAdapter } from '../services/vehicle-search-adapter.service';
-import {
-  vehicleRanker,
-  VehicleForRanking,
-  RankingContext,
-} from '../services/vehicle-ranker.service';
+import { UseCase } from '../services/deterministic-ranker.service';
 import { preferenceExtractor } from './preference-extractor.agent';
 import { exactSearchParser } from '../services/exact-search-parser.service';
 import { CustomerProfile, VehicleRecommendation } from '../types/state.types';
@@ -1926,27 +1922,59 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         profile.priorities?.includes('estrada') ||
         profile.priorities?.includes('road trip');
 
-      // Search vehicles - include brand/model filter for specific requests
-      const results = await vehicleSearchAdapter.search(query.searchText, {
-        maxPrice: query.filters.maxPrice,
-        minYear: query.filters.minYear,
-        bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
-        brand: query.filters.brand?.[0], // Filtrar por marca quando especificada
-        model: query.filters.model?.[0], // Filtrar por modelo quando especificado
-        limit: 7, // Reduced for faster AI ranking (eligibility is pre-filtered via DB flags)
-        // CRITICAL: Exclude motorcycles when searching for cars
-        excludeMotorcycles: !wantsMoto,
-        // Apply Uber filters
-        aptoUber: isUberX || undefined,
-        aptoUberBlack: isUberBlack || undefined,
-        // Apply family filter - REMOVED strict DB filter to rely on semantic search/ranking
-        // This prevents excluding valid family cars (SUVs) that are missing the flag
-        aptoFamilia: undefined,
-        // Apply work filter
-        aptoTrabalho: isWork || undefined,
-        // Apply travel filter
-        aptoViagem: isViagem || undefined,
-      });
+      // **DETERMINISTIC RANKING (latency-optimization)**
+      // Use pre-calculated aptitude fields for fast SQL filtering (< 5s)
+      // This replaces LLM-based ranking to reduce latency from ~60s to < 5s
+      // Requirements: 5.1-5.5
+      
+      // Determine use case for DeterministicRanker
+      const useCase = this.mapProfileToUseCase(
+        profile,
+        !!isFamily,
+        !!isUberX,
+        !!isUberBlack,
+        !!isWork,
+        !!isViagem
+      );
+
+      // Check if we should use DeterministicRanker (use-case-based search)
+      // Use it when we have a clear use case and no specific model/brand search
+      const hasSpecificSearch = query.filters.brand?.[0] || query.filters.model?.[0];
+      const shouldUseDeterministicRanker = useCase && !hasSpecificSearch && !wantsMoto && !wantsPickup;
+
+      let results: VehicleRecommendation[];
+
+      if (shouldUseDeterministicRanker) {
+        // Use DeterministicRanker for use-case-based queries (fast SQL filtering)
+        logger.info(
+          { useCase, budget: query.filters.maxPrice },
+          'Using DeterministicRanker for fast SQL-based search'
+        );
+
+        results = await vehicleSearchAdapter.searchByUseCase(useCase, {
+          maxPrice: query.filters.maxPrice,
+          minYear: query.filters.minYear,
+          bodyType: query.filters.bodyType?.[0],
+          limit: 7,
+          excludeMotorcycles: true,
+        });
+      } else {
+        // Fallback to semantic search for specific model/brand searches or special cases
+        results = await vehicleSearchAdapter.search(query.searchText, {
+          maxPrice: query.filters.maxPrice,
+          minYear: query.filters.minYear,
+          bodyType: wantsMoto ? 'moto' : wantsPickup ? 'pickup' : query.filters.bodyType?.[0],
+          brand: query.filters.brand?.[0],
+          model: query.filters.model?.[0],
+          limit: 7,
+          excludeMotorcycles: !wantsMoto,
+          aptoUber: isUberX || undefined,
+          aptoUberBlack: isUberBlack || undefined,
+          aptoFamilia: undefined,
+          aptoTrabalho: isWork || undefined,
+          aptoViagem: isViagem || undefined,
+        });
+      }
 
       // Se não encontrou motos e o usuário quer moto, informar
       if (wantsMoto && results.length === 0) {
@@ -1960,80 +1988,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         return { recommendations: [], noPickupsFound: true, wantsPickup: true };
       }
 
-      // **SMART AI RANKING**
-      // Use SLM to intelligently rank vehicles based on customer context
-      // This replaces hardcoded business rules with flexible AI evaluation
-      let rankedResults = results;
-
-      if (results.length > 1) {
-        try {
-          // Build context for the ranker
-          const rankingContext = this.buildRankingContext(
-            profile,
-            !!isFamily,
-            !!isUberX,
-            !!isUberBlack,
-            !!isWork
-          );
-
-          // Convert to format expected by ranker
-          const vehiclesForRanking: VehicleForRanking[] = results.map(r => ({
-            id: r.vehicleId,
-            brand: r.vehicle.brand,
-            model: r.vehicle.model,
-            year: r.vehicle.year,
-            price: r.vehicle.price,
-            mileage: r.vehicle.mileage,
-            bodyType: r.vehicle.bodyType,
-            transmission: r.vehicle.transmission,
-            fuelType: r.vehicle.fuelType,
-            color: r.vehicle.color,
-          }));
-
-          logger.info(
-            {
-              vehicleCount: vehiclesForRanking.length,
-              context: rankingContext.useCase,
-            },
-            'Calling AI ranker for smart scoring'
-          );
-
-          // Call the ranker
-          const rankingResult = await vehicleRanker.rank(vehiclesForRanking, rankingContext);
-
-          // Map ranked vehicles back to recommendations
-          rankedResults = rankingResult.rankedVehicles
-            .map(ranked => {
-              const original = results.find(r => r.vehicleId === ranked.vehicleId);
-              if (!original) return null;
-
-              return {
-                ...original,
-                matchScore: ranked.score,
-                reasoning: ranked.reasoning,
-                highlights: ranked.highlights.length > 0 ? ranked.highlights : original.highlights,
-                concerns: ranked.concerns,
-              };
-            })
-            .filter((r): r is VehicleRecommendation => r !== null);
-
-          logger.info(
-            {
-              originalCount: results.length,
-              rankedCount: rankedResults.length,
-              topScore: rankedResults[0]?.matchScore,
-              topVehicle: `${rankedResults[0]?.vehicle.brand} ${rankedResults[0]?.vehicle.model}`,
-              rankingSummary: rankingResult.summary,
-              processingTime: rankingResult.processingTime,
-            },
-            'AI ranking completed'
-          );
-        } catch (error) {
-          logger.error({ error }, 'AI ranking failed, using original results');
-          // Fallback: use original results if ranking fails
-          rankedResults = results;
-        }
-      }
+      // Results are already ranked by DeterministicRanker using pre-calculated scores
+      // No need for LLM-based ranking - this reduces latency from ~60s to < 5s
+      const rankedResults = results;
 
       // Post-filter: apply minimum seats requirement (RIGOROSO)
       const requiredSeats = profile.minSeats;
@@ -2228,78 +2185,49 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
   }
 
   /**
-   * Build ranking context from customer profile
-   * Converts structured profile data into natural language context for AI ranker
+   * Map customer profile to a UseCase for DeterministicRanker
+   * Returns the appropriate UseCase based on profile flags
+   *
+   * **Feature: latency-optimization**
+   * Requirements: 5.1-5.5
    */
-  private buildRankingContext(
+  private mapProfileToUseCase(
     profile: Partial<CustomerProfile>,
     isFamily: boolean,
     isUberX: boolean,
     isUberBlack: boolean,
-    isWork: boolean
-  ): RankingContext {
-    // Determine primary use case
-    let useCase = '';
-    const priorities: string[] = [...(profile.priorities || [])];
-    const restrictions: string[] = [...(profile.dealBreakers || [])];
-
-    // Build use case description
+    isWork: boolean,
+    isViagem: boolean
+  ): UseCase {
+    // Priority order: Uber Black > Uber Comfort > Uber X > Family > Travel > Work > Daily Use
+    
+    if (isUberBlack) {
+      return 'uberBlack';
+    }
+    
+    // Check for Uber Comfort (tipoUber === 'comfort')
+    if (profile.usoPrincipal === 'uber' && profile.tipoUber === 'comfort') {
+      return 'uberComfort';
+    }
+    
+    if (isUberX) {
+      return 'uberX';
+    }
+    
     if (isFamily) {
-      const hasCadeirinha =
-        profile.priorities?.includes('cadeirinha') || profile.priorities?.includes('crianca');
-      const peopleCount = profile.people || 4;
-
-      if (hasCadeirinha) {
-        useCase = `família com ${peopleCount} pessoas e cadeirinhas para crianças`;
-        priorities.push('espaço traseiro', 'segurança', 'ISOFIX');
-      } else {
-        useCase = `família com ${peopleCount} pessoas`;
-        priorities.push('espaço', 'conforto');
-      }
-
-      if (profile.usage === 'viagem') {
-        useCase += ', com foco em viagens longas';
-        priorities.push('conforto para viagens', 'porta-malas grande');
-      }
-    } else if (isUberBlack) {
-      useCase = 'trabalho como motorista Uber Black';
-      priorities.push('veículo executivo', 'ano recente', 'conforto premium');
-      restrictions.push('hatches', 'carros muito rodados');
-    } else if (isUberX) {
-      useCase = 'trabalho como motorista Uber X ou 99';
-      priorities.push('economia', 'baixa quilometragem', 'confiabilidade');
-      restrictions.push('carros antigos', 'alta quilometragem');
-    } else if (isWork) {
-      useCase = 'trabalho e uso profissional';
-      priorities.push('durabilidade', 'custo-benefício');
-    } else if (profile.usage === 'viagem') {
-      useCase = 'viagens e passeios';
-      priorities.push('conforto', 'economia de combustível', 'espaço para bagagem');
-    } else if (profile.usage === 'cidade') {
-      useCase = 'uso urbano no dia a dia';
-      priorities.push('economia', 'fácil estacionamento', 'manobrável');
-    } else {
-      useCase = 'uso geral';
+      return 'familia';
     }
-
-    // Add bodyType preferences
-    if (profile.bodyType) {
-      useCase += `, preferência por ${profile.bodyType}`;
+    
+    if (isViagem) {
+      return 'viagem';
     }
-
-    // Add transmission preference
-    if (profile.transmission === 'automatico') {
-      priorities.push('câmbio automático');
+    
+    if (isWork) {
+      return 'trabalho';
     }
-
-    return {
-      useCase,
-      budget: profile.budgetMax || profile.budget,
-      priorities: [...new Set(priorities)], // Remove duplicates
-      restrictions: [...new Set(restrictions)],
-      numberOfPeople: profile.people,
-      additionalInfo: profile.minSeats ? `Precisa de ${profile.minSeats} lugares` : undefined,
-    };
+    
+    // Default to daily use
+    return 'usoDiario';
   }
 }
 

@@ -1,11 +1,17 @@
 import { prisma } from '../lib/prisma';
 import { chatCompletion, ChatMessage } from '../lib/groq';
-import { logger } from '../lib/logger';
+import { logger, logEvent } from '../lib/logger';
 import { exactSearchParser } from '../services/exact-search-parser.service';
 import { exactSearchService, ExactSearchResult, Vehicle } from '../services/exact-search.service';
 import { FallbackService } from '../services/fallback.service';
 import { FallbackResponseFormatter } from '../services/fallback-response-formatter.service';
 import { FallbackResult } from '../services/fallback.types';
+import {
+  performanceMetrics,
+  measureTime,
+  measureLLMCall,
+  RecommendationStage,
+} from '../services/performance-metrics.service';
 
 interface VehicleMatch {
   vehicle: any;
@@ -48,19 +54,38 @@ export class RecommendationAgent {
     conversationId: string,
     answers: Record<string, any>
   ): Promise<VehicleMatch[]> {
+    // Start performance tracking
+    // **Feature: latency-optimization** - Requirements: 6.3, 6.4
+    const requestId = performanceMetrics.startRequest(conversationId);
+    let llmCallCount = 0;
+
     try {
+      // Track vehicle search stage
+      performanceMetrics.startStage(requestId, 'vehicle_search');
+
       // Get all available vehicles
       const vehicles = await prisma.vehicle.findMany({
         where: { disponivel: true },
       });
 
+      performanceMetrics.endStage(requestId, 'vehicle_search', true, {
+        vehiclesFound: vehicles.length,
+      });
+
       if (vehicles.length === 0) {
         logger.warn('No vehicles available for recommendation');
+        performanceMetrics.endRequest(requestId);
         return [];
       }
 
       // 1. Verificar se o usuário pediu um modelo específico
+      // Track preference extraction stage
+      performanceMetrics.startStage(requestId, 'preference_extraction');
       const specificModelResult = await this.handleSpecificModelRequest(vehicles, answers);
+      performanceMetrics.endStage(requestId, 'preference_extraction', true, {
+        requestedModel: specificModelResult.requestedModel,
+        resultType: specificModelResult.resultType,
+      });
 
       if (specificModelResult.requestedModel) {
         logger.info(
@@ -84,6 +109,8 @@ export class RecommendationAgent {
           }));
 
           await this.saveRecommendations(conversationId, matches);
+          performanceMetrics.updateVehicleCounts(requestId, vehicles.length, matches.length);
+          performanceMetrics.endRequest(requestId);
           return matches;
         }
 
@@ -101,26 +128,44 @@ export class RecommendationAgent {
           }));
 
           await this.saveRecommendations(conversationId, matches);
+          performanceMetrics.updateVehicleCounts(requestId, vehicles.length, matches.length);
+          performanceMetrics.endRequest(requestId);
           return matches;
         }
 
         // Se não encontrou, retornar sugestões similares
         if (specificModelResult.similarSuggestions.length > 0) {
           await this.saveRecommendations(conversationId, specificModelResult.similarSuggestions);
+          performanceMetrics.updateVehicleCounts(requestId, vehicles.length, specificModelResult.similarSuggestions.length);
+          performanceMetrics.endRequest(requestId);
           return specificModelResult.similarSuggestions;
         }
       }
 
       // 2. Fluxo normal: pré-filtrar e avaliar com LLM
+      performanceMetrics.startStage(requestId, 'deterministic_ranking');
       const filteredVehicles = this.preFilterVehicles(vehicles, answers);
+      performanceMetrics.endStage(requestId, 'deterministic_ranking', true, {
+        filteredCount: filteredVehicles.length,
+      });
 
       if (filteredVehicles.length === 0) {
         logger.warn('No vehicles passed pre-filter');
+        performanceMetrics.endRequest(requestId);
         return [];
       }
 
       // Usar LLM para avaliar adequação ao contexto do usuário
+      // Track LLM evaluation stage
+      performanceMetrics.startStage(requestId, 'response_generation');
+      const llmStartTime = Date.now();
       const evaluatedVehicles = await this.evaluateVehiclesWithLLM(filteredVehicles, answers);
+      const llmDuration = Date.now() - llmStartTime;
+      performanceMetrics.recordLLMCall(requestId, llmDuration, { purpose: 'vehicle_evaluation' });
+      llmCallCount++;
+      performanceMetrics.endStage(requestId, 'response_generation', true, {
+        evaluatedCount: evaluatedVehicles.length,
+      });
 
       // Filtrar apenas veículos adequados e ordenar por score
       const matches: VehicleMatch[] = evaluatedVehicles
@@ -138,8 +183,30 @@ export class RecommendationAgent {
         .filter(m => m.vehicle);
 
       await this.saveRecommendations(conversationId, matches);
+
+      // End performance tracking and log summary
+      // **Feature: latency-optimization** - Requirements: 6.3, 6.4
+      performanceMetrics.updateVehicleCounts(requestId, vehicles.length, matches.length);
+      const summary = performanceMetrics.endRequest(requestId);
+
+      // Log recommendation completion event
+      if (summary) {
+        logEvent.recommendationCompleted({
+          conversationId,
+          requestId,
+          totalDurationMs: summary.totalDurationMs,
+          llmCallCount: summary.llmCallCount,
+          llmTotalTimeMs: summary.llmTotalTimeMs,
+          vehiclesProcessed: summary.vehiclesProcessed,
+          vehiclesReturned: summary.vehiclesReturned,
+          stages: summary.stages,
+        });
+      }
+
       return matches;
     } catch (error) {
+      // End performance tracking on error
+      performanceMetrics.endRequest(requestId);
       logger.error({ error, conversationId }, 'Error generating recommendations');
       return [];
     }

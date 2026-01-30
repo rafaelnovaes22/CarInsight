@@ -120,6 +120,89 @@ export const logEvent = {
   handoffRequested: (data: { conversationId: string; phoneNumber: string; reason?: string }) => {
     logger.info({ event: 'handoff_requested', ...data });
   },
+
+  // ============================================================================
+  // Performance Metrics Events (Feature: latency-optimization)
+  // Requirements: 6.3, 6.4 - Performance monitoring and alerting
+  // ============================================================================
+
+  /**
+   * Log recommendation flow stage timing
+   */
+  recommendationStage: (data: {
+    conversationId: string;
+    requestId: string;
+    stage: string;
+    durationMs: number;
+    success: boolean;
+    metadata?: Record<string, unknown>;
+  }) => {
+    logger.info({ event: 'recommendation_stage', ...data });
+  },
+
+  /**
+   * Log recommendation flow completion with total metrics
+   */
+  recommendationCompleted: (data: {
+    conversationId: string;
+    requestId: string;
+    totalDurationMs: number;
+    llmCallCount: number;
+    llmTotalTimeMs: number;
+    vehiclesProcessed: number;
+    vehiclesReturned: number;
+    stages: { stage: string; durationMs: number; success: boolean }[];
+  }) => {
+    logger.info({ event: 'recommendation_completed', ...data });
+  },
+
+  /**
+   * Log latency alert when recommendation exceeds threshold (5s)
+   * **Feature: latency-optimization** - Requirements: 6.4
+   */
+  latencyAlert: (data: {
+    conversationId: string;
+    requestId: string;
+    totalDurationMs: number;
+    thresholdMs: number;
+    llmCallCount: number;
+    slowestStage?: string;
+    slowestStageDurationMs?: number;
+  }) => {
+    logger.warn({ event: 'latency_alert', ...data });
+  },
+
+  /**
+   * Log deterministic ranking execution
+   */
+  deterministicRanking: (data: {
+    conversationId?: string;
+    useCase: string;
+    filterTimeMs: number;
+    vehiclesFound: number;
+    vehiclesReturned: number;
+    budget?: number;
+  }) => {
+    logger.info({ event: 'deterministic_ranking', ...data });
+  },
+
+  /**
+   * Log LLM call with timing for performance tracking
+   * **Feature: latency-optimization** - Requirements: 6.3
+   */
+  llmCallTimed: (data: {
+    conversationId?: string;
+    requestId?: string;
+    purpose: 'preference_extraction' | 'response_generation' | 'classification' | 'other';
+    provider: string;
+    model: string;
+    durationMs: number;
+    success: boolean;
+    tokensUsed?: number;
+    error?: string;
+  }) => {
+    logger.info({ event: 'llm_call_timed', ...data });
+  },
 };
 
 export default logger;

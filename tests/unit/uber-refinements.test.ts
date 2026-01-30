@@ -75,10 +75,11 @@ describe('Uber Flow Refinements', () => {
       const adapter = vehicleSearchAdapter as any;
       const strategy = adapter.getSortStrategy({ useCase: 'uber' });
 
+      // Updated for latency-optimization: now uses pre-calculated scores
       expect(strategy).toHaveLength(3);
       expect(strategy[0]).toEqual({ ano: 'desc' });
       expect(strategy[1]).toEqual({ km: 'asc' });
-      expect(strategy[2]).toEqual({ preco: 'asc' }); // Logic changed to ASC for ROI
+      expect(strategy[2]).toEqual({ scoreEconomia: 'desc' }); // Changed from preco to scoreEconomia for latency-optimization
     });
 
     it('should return Default sort strategy when no useCase', () => {

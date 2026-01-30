@@ -476,8 +476,8 @@ export function getVehicleProfile(model: string): VehicleProfile | undefined {
     .replace(/[-\s]/g, '') // Remove dashes and spaces
     .trim();
 
-  // Direct lookup
-  if (VEHICLE_PROFILES[normalizedModel]) {
+  // Direct lookup - use Object.hasOwn to avoid prototype pollution (e.g., "constructor")
+  if (Object.hasOwn(VEHICLE_PROFILES, normalizedModel)) {
     return VEHICLE_PROFILES[normalizedModel];
   }
 

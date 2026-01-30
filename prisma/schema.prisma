@@ -40,6 +40,8 @@ model Vehicle {
   embeddingModel       String?          @default("text-embedding-3-small")
   embeddingGeneratedAt DateTime?
   disponivel           Boolean          @default(true)
+  
+  // Campos de aptidão existentes
   aptoUber             Boolean          @default(false)
   aptoUberBlack        Boolean          @default(false)
   aptoFamilia          Boolean          @default(true)
@@ -48,10 +50,43 @@ model Vehicle {
   aptoUsoDiario        Boolean          @default(false) // Work: Commute / Daily Use (Economy + AC)
   aptoEntrega          Boolean          @default(false) // Work: Delivery Apps (Mercado Livre, Lalamove)
   aptoViagem           Boolean          @default(false) // Viagens longas/estrada
+  
+  // Novos campos de aptidão (Uber 2026)
+  aptoUberX            Boolean          @default(false)
+  aptoUberComfort      Boolean          @default(false)
+  
+  // Scores numéricos pré-calculados (1-10)
+  scoreConforto        Int?             @db.SmallInt
+  scoreEconomia        Int?             @db.SmallInt
+  scoreEspaco          Int?             @db.SmallInt
+  scoreSeguranca       Int?             @db.SmallInt
+  scoreCustoBeneficio  Int?             @db.SmallInt
+  
+  // Categorização do veículo
+  categoriaVeiculo     String?          // SUV, Sedan, Hatch, Pickup, etc.
+  segmentoPreco        String?          // economico, intermediario, premium
+  
+  // Metadados de classificação
+  classifiedAt         DateTime?
+  classificationVersion Int             @default(1)
+  
   economiaCombustivel  String?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   recommendations      Recommendation[]
+  
+  // Índices para otimização de queries
+  @@index([aptoFamilia])
+  @@index([aptoUberX])
+  @@index([aptoUberComfort])
+  @@index([aptoUberBlack])
+  @@index([aptoTrabalho])
+  @@index([aptoViagem])
+  @@index([scoreConforto])
+  @@index([scoreEconomia])
+  @@index([scoreEspaco])
+  @@index([categoriaVeiculo])
+  @@index([segmentoPreco])
 }
 
 model Conversation {

@@ -8,16 +8,25 @@
  *
  * **Feature: vehicle-fallback-recommendations**
  * Requirements: 5.1, 5.5
+ *
+ * **Feature: latency-optimization**
+ * Requirements: 4.1-4.7, 5.1-5.5
  */
 
 import { inMemoryVectorStore } from './in-memory-vector.service';
 import { prisma } from '../lib/prisma';
 import { VehicleRecommendation } from '../types/state.types';
-import { logger } from '../lib/logger';
+import { logger, logEvent } from '../lib/logger';
 import { exactSearchParser, ExtractedFilters } from './exact-search-parser.service';
 import { exactSearchService, ExactSearchResult, Vehicle } from './exact-search.service';
 import { FallbackService } from './fallback.service';
 import { FallbackResult, FallbackVehicleMatch } from './fallback.types';
+import {
+  deterministicRanker,
+  UseCase,
+  RankingContext,
+  DeterministicRankingResult,
+} from './deterministic-ranker.service';
 
 interface SearchFilters {
   maxPrice?: number;
@@ -32,6 +41,9 @@ interface SearchFilters {
   // Uber filters
   aptoUber?: boolean;
   aptoUberBlack?: boolean;
+  // New Uber 2026 filters (latency-optimization)
+  aptoUberX?: boolean;
+  aptoUberComfort?: boolean;
   // Family filter
   aptoFamilia?: boolean;
   // Work filter
@@ -46,9 +58,18 @@ interface SearchFilters {
   // Motorcycle filter - CRITICAL: excludes motorcycles when searching for cars
   excludeMotorcycles?: boolean;
   // Context for smart scoring
-  useCase?: 'family' | 'uber' | 'work' | 'travel' | 'general';
+  useCase?: 'family' | 'uber' | 'uberX' | 'uberComfort' | 'uberBlack' | 'work' | 'travel' | 'general';
   hasCadeirinha?: boolean;
   minSeats?: number;
+  // New category filters (latency-optimization)
+  categoriaVeiculo?: string; // SUV, Sedan, Hatch, Pickup, etc.
+  segmentoPreco?: string; // economico, intermediario, premium
+  // Score-based filters (latency-optimization)
+  minScoreConforto?: number;
+  minScoreEconomia?: number;
+  minScoreEspaco?: number;
+  minScoreSeguranca?: number;
+  minScoreCustoBeneficio?: number;
 }
 
 export class VehicleSearchAdapter {
@@ -56,6 +77,111 @@ export class VehicleSearchAdapter {
 
   constructor() {
     this.fallbackService = new FallbackService();
+  }
+
+  /**
+   * Search vehicles using DeterministicRanker for use-case-based queries
+   * Uses pre-calculated aptitude fields for fast SQL filtering (< 5s)
+   *
+   * **Feature: latency-optimization**
+   * Requirements: 4.1-4.7, 5.1-5.5
+   */
+  async searchByUseCase(
+    useCase: UseCase,
+    filters: SearchFilters = {}
+  ): Promise<VehicleRecommendation[]> {
+    const limit = filters.limit || 5;
+    const startTime = Date.now();
+
+    try {
+      logger.info(
+        { useCase, filters },
+        'Searching vehicles using DeterministicRanker'
+      );
+
+      // Build ranking context from filters
+      const context: RankingContext = {
+        useCase,
+        budget: filters.maxPrice,
+        minYear: filters.minYear,
+        maxKm: filters.maxKm,
+        bodyTypes: filters.bodyType ? [filters.bodyType] : undefined,
+        transmission: filters.transmission as 'Automático' | 'Manual' | undefined,
+      };
+
+      // Use DeterministicRanker for fast SQL-based ranking
+      const result = await deterministicRanker.rank(context, limit);
+
+      const totalTime = Date.now() - startTime;
+
+      // Log performance metrics
+      // **Feature: latency-optimization** - Requirements: 6.3, 6.4
+      logEvent.vehicleSearched({
+        conversationId: 'use-case-search',
+        query: useCase,
+        searchType: 'direct',
+        resultsCount: result.vehicles.length,
+        latencyMs: totalTime,
+        filters: {
+          useCase,
+          budget: filters.maxPrice,
+          minYear: filters.minYear,
+          maxKm: filters.maxKm,
+          filterTime: result.filterTime,
+        },
+      });
+
+      // Alert if search exceeds 5 seconds
+      if (totalTime > 5000) {
+        logEvent.latencyAlert({
+          conversationId: 'use-case-search',
+          requestId: `search_${Date.now()}`,
+          totalDurationMs: totalTime,
+          thresholdMs: 5000,
+          llmCallCount: 0,
+          slowestStage: 'deterministic_ranking',
+          slowestStageDurationMs: result.filterTime,
+        });
+      }
+
+      logger.info(
+        {
+          useCase,
+          totalFound: result.totalCount,
+          returned: result.vehicles.length,
+          filterTime: result.filterTime,
+          totalTime,
+        },
+        'DeterministicRanker search completed'
+      );
+
+      // Convert to VehicleRecommendation format
+      return result.vehicles.map(vehicle => ({
+        vehicleId: vehicle.id,
+        matchScore: vehicle.score,
+        reasoning: vehicle.reasoning,
+        highlights: vehicle.highlights,
+        concerns: vehicle.concerns,
+        vehicle: {
+          id: vehicle.id,
+          brand: vehicle.marca,
+          model: vehicle.modelo,
+          year: vehicle.ano,
+          price: vehicle.preco,
+          mileage: vehicle.km,
+          bodyType: vehicle.carroceria,
+          transmission: vehicle.cambio,
+          fuelType: null, // Not returned by DeterministicRanker
+          color: null, // Not returned by DeterministicRanker
+          imageUrl: null,
+          detailsUrl: null,
+        },
+      }));
+    } catch (error) {
+      logger.error({ error, useCase, filters }, 'Error in searchByUseCase');
+      // Fallback to regular search if DeterministicRanker fails
+      return this.search('', filters);
+    }
   }
 
   /**
@@ -147,9 +273,12 @@ export class VehicleSearchAdapter {
             cambio: { equals: filters.transmission, mode: 'insensitive' },
           }),
           ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
-          // Uber filters
+          // Legacy Uber filters
           ...(filters.aptoUber && { aptoUber: true }),
           ...(filters.aptoUberBlack && { aptoUberBlack: true }),
+          // New Uber 2026 filters (latency-optimization)
+          ...(filters.aptoUberX && { aptoUberX: true }),
+          ...(filters.aptoUberComfort && { aptoUberComfort: true }),
           // Family filter
           ...(filters.aptoFamilia && { aptoFamilia: true }),
           // Work filter
@@ -159,6 +288,19 @@ export class VehicleSearchAdapter {
           ...(filters.aptoEntrega && { aptoEntrega: true }),
           // Travel filter
           ...(filters.aptoViagem && { aptoViagem: true }),
+          // Category filters (latency-optimization)
+          ...(filters.categoriaVeiculo && {
+            categoriaVeiculo: { equals: filters.categoriaVeiculo, mode: 'insensitive' },
+          }),
+          ...(filters.segmentoPreco && {
+            segmentoPreco: { equals: filters.segmentoPreco, mode: 'insensitive' },
+          }),
+          // Score-based filters (latency-optimization)
+          ...(filters.minScoreConforto && { scoreConforto: { gte: filters.minScoreConforto } }),
+          ...(filters.minScoreEconomia && { scoreEconomia: { gte: filters.minScoreEconomia } }),
+          ...(filters.minScoreEspaco && { scoreEspaco: { gte: filters.minScoreEspaco } }),
+          ...(filters.minScoreSeguranca && { scoreSeguranca: { gte: filters.minScoreSeguranca } }),
+          ...(filters.minScoreCustoBeneficio && { scoreCustoBeneficio: { gte: filters.minScoreCustoBeneficio } }),
         },
         take: limit,
         orderBy: this.getSortStrategy(filters),
@@ -572,6 +714,10 @@ export class VehicleSearchAdapter {
 
   /**
    * Busca SQL fallback quando busca semântica não retorna resultados
+   * Updated to support new aptitude filters (latency-optimization)
+   *
+   * **Feature: latency-optimization**
+   * Requirements: 4.1-4.7
    */
   private async searchFallbackSQL(filters: SearchFilters): Promise<VehicleRecommendation[]> {
     const limit = filters.limit || 5;
@@ -593,18 +739,35 @@ export class VehicleSearchAdapter {
           cambio: { equals: filters.transmission, mode: 'insensitive' },
         }),
         ...(filters.brand && { marca: { equals: filters.brand, mode: 'insensitive' } }),
+        // Legacy Uber filters
         ...(filters.aptoUber && { aptoUber: true }),
         ...(filters.aptoUberBlack && { aptoUberBlack: true }),
+        // New Uber 2026 filters (latency-optimization)
+        ...(filters.aptoUberX && { aptoUberX: true }),
+        ...(filters.aptoUberComfort && { aptoUberComfort: true }),
+        // Other aptitude filters
         ...(filters.aptoFamilia && { aptoFamilia: true }),
         ...(filters.aptoTrabalho && { aptoTrabalho: true }),
         ...(filters.aptoCarga && { aptoCarga: true }),
         ...(filters.aptoUsoDiario && { aptoUsoDiario: true }),
         ...(filters.aptoEntrega && { aptoEntrega: true }),
-        // Travel filter
         ...(filters.aptoViagem && { aptoViagem: true }),
+        // Category filters (latency-optimization)
+        ...(filters.categoriaVeiculo && {
+          categoriaVeiculo: { equals: filters.categoriaVeiculo, mode: 'insensitive' },
+        }),
+        ...(filters.segmentoPreco && {
+          segmentoPreco: { equals: filters.segmentoPreco, mode: 'insensitive' },
+        }),
+        // Score-based filters (latency-optimization)
+        ...(filters.minScoreConforto && { scoreConforto: { gte: filters.minScoreConforto } }),
+        ...(filters.minScoreEconomia && { scoreEconomia: { gte: filters.minScoreEconomia } }),
+        ...(filters.minScoreEspaco && { scoreEspaco: { gte: filters.minScoreEspaco } }),
+        ...(filters.minScoreSeguranca && { scoreSeguranca: { gte: filters.minScoreSeguranca } }),
+        ...(filters.minScoreCustoBeneficio && { scoreCustoBeneficio: { gte: filters.minScoreCustoBeneficio } }),
       },
       take: limit,
-      orderBy: [{ preco: 'desc' }, { km: 'asc' }, { ano: 'desc' }],
+      orderBy: this.getOrderByForFilters(filters),
     });
 
     logger.info({ filters, found: vehicles.length }, 'SQL fallback search results');
@@ -672,16 +835,137 @@ export class VehicleSearchAdapter {
 
   /**
    * Determine sort strategy based on filters and use case
+   * Updated to use pre-calculated scores for better ordering (latency-optimization)
+   *
+   * **Feature: latency-optimization**
+   * Requirements: 4.3
    */
   private getSortStrategy(filters: SearchFilters): any[] {
+    // Use case-specific ordering using pre-calculated scores
+    const useCase = filters.useCase;
+
+    if (useCase === 'family') {
+      return [
+        { scoreEspaco: 'desc' },
+        { scoreConforto: 'desc' },
+        { scoreSeguranca: 'desc' },
+        { ano: 'desc' },
+      ];
+    }
+
+    if (useCase === 'uber' || useCase === 'uberX') {
+      return [
+        { ano: 'desc' },
+        { km: 'asc' },
+        { scoreEconomia: 'desc' },
+      ];
+    }
+
+    if (useCase === 'uberComfort' || useCase === 'uberBlack') {
+      return [
+        { ano: 'desc' },
+        { scoreConforto: 'desc' },
+        { km: 'asc' },
+      ];
+    }
+
+    if (useCase === 'work') {
+      return [
+        { scoreEconomia: 'desc' },
+        { scoreCustoBeneficio: 'desc' },
+        { preco: 'asc' },
+      ];
+    }
+
+    if (useCase === 'travel') {
+      return [
+        { scoreConforto: 'desc' },
+        { scoreEconomia: 'desc' },
+        { km: 'asc' },
+      ];
+    }
+
     // GLOBAL DEFAULT: Efficiency/Rationality Focus
-    // We prioritize newer cars (better chance of good efficiency/tech) from DB,
-    // then refine with in-memory efficiency sort.
     return [
       { ano: 'desc' }, // Newer cars (Better tech/lifespan)
       { km: 'asc' }, // Reliability
       { preco: 'asc' }, // ROI (Cheaper is better for same year/km)
     ];
+  }
+
+  /**
+   * Get order by clause based on filters
+   * Uses pre-calculated scores for use-case-specific ordering
+   *
+   * **Feature: latency-optimization**
+   * Requirements: 4.3
+   */
+  private getOrderByForFilters(filters: SearchFilters): any[] {
+    // If specific aptitude filters are set, use appropriate ordering
+    if (filters.aptoFamilia) {
+      return [
+        { scoreEspaco: 'desc' },
+        { scoreConforto: 'desc' },
+        { scoreSeguranca: 'desc' },
+      ];
+    }
+
+    if (filters.aptoUberComfort) {
+      return [
+        { ano: 'desc' },
+        { scoreConforto: 'desc' },
+        { km: 'asc' },
+      ];
+    }
+
+    if (filters.aptoUberBlack) {
+      return [
+        { ano: 'desc' },
+        { scoreConforto: 'desc' },
+        { km: 'asc' },
+      ];
+    }
+
+    if (filters.aptoUberX || filters.aptoUber) {
+      return [
+        { ano: 'desc' },
+        { km: 'asc' },
+        { scoreEconomia: 'desc' },
+      ];
+    }
+
+    if (filters.aptoTrabalho || filters.aptoUsoDiario) {
+      return [
+        { scoreEconomia: 'desc' },
+        { scoreCustoBeneficio: 'desc' },
+        { preco: 'asc' },
+      ];
+    }
+
+    if (filters.aptoViagem) {
+      return [
+        { scoreConforto: 'desc' },
+        { scoreEconomia: 'desc' },
+        { km: 'asc' },
+      ];
+    }
+
+    if (filters.aptoCarga) {
+      return [
+        { scoreEspaco: 'desc' },
+        { scoreCustoBeneficio: 'desc' },
+      ];
+    }
+
+    if (filters.aptoEntrega) {
+      return [
+        { scoreEconomia: 'desc' },
+        { km: 'asc' },
+      ];
+    }
+
+    // Default ordering based on useCase if provided
+    return this.getSortStrategy(filters);
   }
 
   /**

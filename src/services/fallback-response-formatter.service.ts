@@ -78,9 +78,10 @@ export class FallbackResponseFormatter {
     const yearDisplay = year ? ` ${year}` : '';
 
     switch (fallbackType) {
-      case 'year_alternative':
+      case 'year_alternative': {
         const yearsStr = availableYears?.join(', ') || '';
         return `Não temos o ${modelDisplay}${yearDisplay} disponível, mas temos o mesmo modelo nos anos: ${yearsStr}`;
+      }
 
       case 'same_brand':
         return `Não temos o ${modelDisplay}${yearDisplay} disponível, mas temos outras opções da mesma marca na mesma categoria.`;
