@@ -6,9 +6,13 @@
  *
  * **Feature: exact-vehicle-search**
  * Requirements: 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4
+ *
+ * **Feature: vehicle-fallback-recommendations**
+ * Requirements: 5.2 - Uses FallbackService for similar suggestions
  */
 
 import { ExtractedFilters } from './exact-search-parser.service';
+import { FallbackService } from './fallback.service';
 
 /**
  * Simplified Vehicle interface for search operations
@@ -62,6 +66,12 @@ export interface ExactSearchResult {
  * Handles exact vehicle searches with prioritization logic
  */
 export class ExactSearchService {
+  private fallbackService: FallbackService;
+
+  constructor() {
+    this.fallbackService = new FallbackService();
+  }
+
   /**
    * Main search method - coordinates the search flow
    */
@@ -253,7 +263,10 @@ export class ExactSearchService {
 
   /**
    * Find similar vehicles when the requested model doesn't exist in inventory.
-   * Matches by: similar body type, price range (±30%), year (±3 years)
+   * Uses FallbackService for intelligent alternative recommendations.
+   *
+   * **Feature: vehicle-fallback-recommendations**
+   * Requirements: 5.2 - Refactored to use FallbackService
    *
    * Requirements: 4.1, 4.2, 4.3, 4.4
    */
@@ -263,41 +276,16 @@ export class ExactSearchService {
     inventory: Vehicle[],
     referencePrice?: number
   ): ExactSearchResult {
-    // Get typical body type for the requested model
-    const typicalBodyType = this.getTypicalBodyType(model);
+    // Use FallbackService for intelligent fallback recommendations
+    const fallbackResult = this.fallbackService.findAlternatives(
+      model,
+      year,
+      inventory,
+      referencePrice
+    );
 
-    // Calculate reference price (use provided or estimate based on model)
-    const basePrice = referencePrice ?? this.estimateModelPrice(model, year);
-    const minPrice = basePrice * 0.7; // -30%
-    const maxPrice = basePrice * 1.3; // +30%
-
-    // Year range: ±3 years
-    const minYear = year - 3;
-    const maxYear = year + 3;
-
-    // Find vehicles matching similarity criteria
-    const suggestions = inventory.filter(vehicle => {
-      // Must be different model (we're looking for alternatives)
-      const vehicleModel = this.normalizeModelName(vehicle.modelo);
-      const searchModel = this.normalizeModelName(model);
-      if (vehicleModel.includes(searchModel) || searchModel.includes(vehicleModel)) {
-        return false;
-      }
-
-      // Check body type match
-      const bodyTypeMatches = vehicle.carroceria.toLowerCase() === typicalBodyType.toLowerCase();
-
-      // Check price range
-      const priceInRange = vehicle.preco >= minPrice && vehicle.preco <= maxPrice;
-
-      // Check year range
-      const yearInRange = vehicle.ano >= minYear && vehicle.ano <= maxYear;
-
-      // Must match at least body type AND (price OR year)
-      return bodyTypeMatches && (priceInRange || yearInRange);
-    });
-
-    if (suggestions.length === 0) {
+    // Convert FallbackResult to ExactSearchResult format for backward compatibility
+    if (fallbackResult.vehicles.length === 0) {
       return {
         type: 'suggestions',
         vehicles: [],
@@ -307,50 +295,18 @@ export class ExactSearchService {
       };
     }
 
-    // Sort suggestions by relevance (more criteria matched = higher score)
-    const scoredSuggestions = suggestions.map(vehicle => {
-      const bodyTypeMatches = vehicle.carroceria.toLowerCase() === typicalBodyType.toLowerCase();
-      const priceInRange = vehicle.preco >= minPrice && vehicle.preco <= maxPrice;
-      const yearInRange = vehicle.ano >= minYear && vehicle.ano <= maxYear;
-
-      // Calculate score based on criteria matched
-      let score = 0;
-      if (bodyTypeMatches) score += 40;
-      if (priceInRange) score += 30;
-      if (yearInRange) score += 30;
-
-      // Generate reasoning
-      const reasons: string[] = [];
-      if (bodyTypeMatches) {
-        reasons.push(`mesmo tipo de carroceria (${vehicle.carroceria})`);
-      }
-      if (priceInRange) {
-        reasons.push(`faixa de preço similar`);
-      }
-      if (yearInRange) {
-        reasons.push(`ano próximo (${vehicle.ano})`);
-      }
-
-      const reasoning = `${vehicle.marca} ${vehicle.modelo} ${vehicle.ano} - ${reasons.join(', ')}`;
-
-      return {
-        vehicle,
-        matchScore: score,
-        reasoning,
-        matchType: 'suggestion' as const,
-      };
-    });
-
-    // Sort by score descending, then by price descending
-    scoredSuggestions.sort((a, b) => {
-      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
-      return b.vehicle.preco - a.vehicle.preco;
-    });
+    // Map fallback vehicles to VehicleMatch format
+    const vehicleMatches: VehicleMatch[] = fallbackResult.vehicles.map(match => ({
+      vehicle: match.vehicle,
+      matchScore: match.similarityScore,
+      reasoning: match.reasoning,
+      matchType: 'suggestion' as const,
+    }));
 
     return {
       type: 'suggestions',
-      vehicles: scoredSuggestions,
-      message: `Não encontramos ${model} disponível, mas temos veículos similares. Gostaria de ver?`,
+      vehicles: vehicleMatches,
+      message: fallbackResult.message,
       requestedModel: model,
       requestedYear: year,
     };

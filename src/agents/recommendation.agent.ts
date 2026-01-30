@@ -3,6 +3,9 @@ import { chatCompletion, ChatMessage } from '../lib/groq';
 import { logger } from '../lib/logger';
 import { exactSearchParser } from '../services/exact-search-parser.service';
 import { exactSearchService, ExactSearchResult, Vehicle } from '../services/exact-search.service';
+import { FallbackService } from '../services/fallback.service';
+import { FallbackResponseFormatter } from '../services/fallback-response-formatter.service';
+import { FallbackResult } from '../services/fallback.types';
 
 interface VehicleMatch {
   vehicle: any;
@@ -33,6 +36,14 @@ interface SpecificModelResult {
 const capitalize = (str: string) => (str ? str.charAt(0).toUpperCase() + str.slice(1) : str);
 
 export class RecommendationAgent {
+  private fallbackService: FallbackService;
+  private fallbackFormatter: FallbackResponseFormatter;
+
+  constructor() {
+    this.fallbackService = new FallbackService();
+    this.fallbackFormatter = new FallbackResponseFormatter();
+  }
+
   async generateRecommendations(
     conversationId: string,
     answers: Record<string, any>
@@ -176,9 +187,13 @@ export class RecommendationAgent {
 
   /**
    * Detecta e processa pedido de modelo específico
+   * Usa FallbackService para alternativas inteligentes quando modelo não encontrado
    *
    * **Feature: exact-vehicle-search**
    * Requirements: 2.1, 3.1, 4.1 - Handle exact search results with year alternatives and suggestions
+   *
+   * **Feature: vehicle-fallback-recommendations**
+   * Requirements: 5.4 - Uses FallbackResponseFormatter for WhatsApp-friendly messages
    */
   private async handleSpecificModelRequest(
     vehicles: any[],
@@ -248,6 +263,31 @@ export class RecommendationAgent {
         'ExactSearchService result in recommendation agent'
       );
 
+      // If no exact results, use FallbackService for intelligent alternatives
+      if (exactResult.vehicles.length === 0 && exactResult.type === 'unavailable') {
+        const requestedYear = extractedFilters.year ?? 
+          (extractedFilters.yearRange ? extractedFilters.yearRange.min : null);
+        const referencePrice = answers.budget;
+
+        logger.info(
+          {
+            model: extractedFilters.model,
+            year: requestedYear,
+            referencePrice,
+          },
+          'Using FallbackService for alternatives in recommendation agent'
+        );
+
+        const fallbackResult = this.fallbackService.findAlternatives(
+          extractedFilters.model,
+          requestedYear,
+          inventory,
+          referencePrice
+        );
+
+        return this.convertFallbackResultToSpecificModelResult(fallbackResult, vehicles);
+      }
+
       return this.convertExactSearchResult(exactResult, vehicles);
     }
 
@@ -267,19 +307,97 @@ export class RecommendationAgent {
       };
     }
 
-    // Não encontrou - buscar sugestões similares via LLM
-    const similarSuggestions = await this.findSimilarModels(vehicles, requestedModel, answers);
-
-    return {
-      found: false,
+    // Não encontrou - usar FallbackService para alternativas inteligentes
+    // **Feature: vehicle-fallback-recommendations** - Requirements: 5.4
+    const referencePrice = answers.budget;
+    const fallbackResult = this.fallbackService.findAlternatives(
       requestedModel,
-      requestedYear: null,
-      exactMatches: [],
-      yearAlternatives: [],
-      similarSuggestions,
-      message: `Infelizmente não temos ${capitalize(requestedModel)} disponível no momento.`,
-      resultType: 'suggestions',
-    };
+      null,
+      inventory,
+      referencePrice
+    );
+
+    logger.info(
+      {
+        fallbackType: fallbackResult.type,
+        vehiclesFound: fallbackResult.vehicles.length,
+        message: fallbackResult.message,
+      },
+      'FallbackService result for model-only search'
+    );
+
+    return this.convertFallbackResultToSpecificModelResult(fallbackResult, vehicles);
+  }
+
+  /**
+   * Convert FallbackResult to SpecificModelResult
+   *
+   * **Feature: vehicle-fallback-recommendations**
+   * Requirements: 5.4 - Formats fallback results for WhatsApp display
+   */
+  private convertFallbackResultToSpecificModelResult(
+    result: FallbackResult,
+    originalVehicles: any[]
+  ): SpecificModelResult {
+    // Map vehicle IDs back to original vehicle objects
+    const getOriginalVehicle = (id: string) => originalVehicles.find(v => v.id === id);
+
+    // Format the response for WhatsApp
+    const formattedResponse = this.fallbackFormatter.format(result);
+
+    switch (result.type) {
+      case 'year_alternative':
+        return {
+          found: false,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          exactMatches: [],
+          yearAlternatives: result.vehicles
+            .map(m => ({
+              vehicle: getOriginalVehicle(m.vehicle.id),
+              matchScore: m.similarityScore,
+              reasoning: `📅 ${m.reasoning}`,
+            }))
+            .filter(m => m.vehicle),
+          similarSuggestions: [],
+          availableYears: result.availableYears,
+          message: formattedResponse.acknowledgment,
+          resultType: 'year_alternatives',
+        };
+
+      case 'same_brand':
+      case 'same_category':
+      case 'price_range':
+        return {
+          found: false,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          exactMatches: [],
+          yearAlternatives: [],
+          similarSuggestions: result.vehicles
+            .map(m => ({
+              vehicle: getOriginalVehicle(m.vehicle.id),
+              matchScore: m.similarityScore,
+              reasoning: `⚠️ ${formattedResponse.acknowledgment} ${m.reasoning}`,
+            }))
+            .filter(m => m.vehicle),
+          message: formattedResponse.acknowledgment,
+          resultType: 'suggestions',
+        };
+
+      case 'no_results':
+      default:
+        return {
+          found: false,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          exactMatches: [],
+          yearAlternatives: [],
+          similarSuggestions: [],
+          message: formattedResponse.acknowledgment,
+          resultType: 'unavailable',
+        };
+    }
   }
 
   /**

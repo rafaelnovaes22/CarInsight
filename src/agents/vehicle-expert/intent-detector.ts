@@ -373,6 +373,51 @@ export const ACKNOWLEDGMENT_PATTERNS: RegExp[] = [
 ];
 
 /**
+ * Patterns for explicit recommendation requests
+ * These indicate the user wants to see vehicle options/suggestions
+ * Requirements: 2.3, 4.1
+ */
+export const EXPLICIT_RECOMMENDATION_PATTERNS: RegExp[] = [
+  // Direct requests
+  /\b(mostra|mostrar|ver|veja)\b.*\b(carro|veículo|opç|sugest)/i,
+  /\bquero\s+ver\b/i,
+  /\bme\s+(indica|sugere|mostra|recomenda)/i,
+  /\b(indica|sugere|recomenda)\s+(um|uma|algum)/i,
+
+  // Questions about availability
+  /\bo\s+que\s+(tem|vocês\s+tem|voc[êe]s?\s+tem)/i,
+  /\btem\s+algum/i,
+  /\b(qual|quais)\s+(opç|carro|veículo)/i,
+  /\bpode\s+mostrar/i,
+
+  // Affirmative to "want to see options?"
+  /^(sim|pode|quero|mostra|manda|beleza|ok|claro)/i,
+
+  // Specific vehicle requests - "quero um Civic", "procuro Hilux", "tem HB20?"
+  /\b(quero|procuro|busco|preciso)\s+(um|uma|de)?\s*[A-Z][a-zA-Z0-9]+/i,
+  /\btem\s+[A-Z][a-zA-Z0-9]+\??/i,
+  /\b(civic|corolla|hb20|onix|polo|gol|hilux|ranger|s10|compass|renegade|creta|kicks|tracker|t-cross|nivus|pulse|argo|mobi|kwid|sandero|logan|duster|captur|tiggo|caoa|chery|byd|dolphin|song|han|seal|yuan)/i,
+];
+
+/**
+ * Patterns for information provision (budget/usage)
+ * These indicate the user is providing information, NOT requesting recommendations
+ * Requirements: 4.3, 4.4
+ */
+export const INFORMATION_PROVISION_PATTERNS: RegExp[] = [
+  // Pure budget values
+  /^\d+(\s*(mil|k|reais|r\$))?$/i,
+  /^(até|ate)\s*\d+/i,
+  /^(entre|de)\s*\d+\s*(e|a)\s*\d+/i,
+
+  // Single-word usage descriptions
+  /^(trabalho|família|familia|lazer|viagem|uber|99|app|dia\s*a\s*dia)$/i,
+
+  // Short descriptive answers
+  /^(suv|sedan|hatch|pickup|picape)$/i,
+];
+
+/**
  * Patterns for post-recommendation intents (financing, trade-in, etc.)
  * Used in the main chat flow to skip exact search when user is responding about shown vehicle
  */
@@ -625,4 +670,32 @@ export const isRecommendationRequest = (message: string): boolean => {
   ];
 
   return keywords.some(p => p.test(normalized));
+};
+
+/**
+ * Detect if the message is an explicit request to see vehicle recommendations
+ * This is used to determine when to transition from discovery to recommendation state
+ *
+ * Requirements: 2.3, 4.1
+ *
+ * @param message - User message
+ * @returns true if the user is explicitly requesting to see vehicle options
+ */
+export const detectExplicitRecommendationRequest = (message: string): boolean => {
+  const normalized = normalize(message);
+  return EXPLICIT_RECOMMENDATION_PATTERNS.some(pattern => pattern.test(normalized));
+};
+
+/**
+ * Detect if the message is purely information provision (budget, usage, body type)
+ * These messages should NOT trigger recommendations automatically
+ *
+ * Requirements: 4.3, 4.4
+ *
+ * @param message - User message
+ * @returns true if the message is pure information provision
+ */
+export const isInformationProvision = (message: string): boolean => {
+  const normalized = normalize(message);
+  return INFORMATION_PROVISION_PATTERNS.some(pattern => pattern.test(normalized));
 };

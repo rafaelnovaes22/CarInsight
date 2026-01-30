@@ -3,6 +3,7 @@ import { logger } from '../../lib/logger';
 import { vehicleExpert } from '../../agents/vehicle-expert.agent';
 import { exactSearchParser } from '../../services/exact-search-parser.service';
 import { extractName } from '../langgraph/extractors';
+import { detectNameCorrection } from '../langgraph/extractors/name-correction-detector';
 import { CustomerProfile } from '../../types/state.types';
 import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
@@ -24,12 +25,45 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
 
   const message = lastMessage.content;
 
+  // Check for name correction FIRST if we already have a name
+  // Requirements: 1.2, 1.3, 1.4, 1.5
+  if (state.profile?.customerName) {
+    const correctionResult = detectNameCorrection(message, {
+      existingName: state.profile.customerName,
+    });
+
+    if (correctionResult.isCorrection && correctionResult.correctedName) {
+      const firstName = correctionResult.correctedName.split(' ')[0];
+      logger.info(
+        {
+          oldName: state.profile.customerName,
+          newName: correctionResult.correctedName,
+        },
+        'GreetingNode: Name correction detected'
+      );
+
+      const correctionResult2 = {
+        next: 'greeting' as const, // Stay in current state (Requirement 1.4, 1.5)
+        profile: {
+          ...state.profile,
+          customerName: correctionResult.correctedName, // Update profile (Requirement 1.2)
+        },
+        messages: [
+          new AIMessage(
+            `Desculpa, ${firstName}! 😊 Como posso te ajudar hoje?` // Acknowledgment (Requirement 1.3)
+          ),
+        ],
+      };
+      timer.logSuccess(state, correctionResult2);
+      return correctionResult2;
+    }
+  }
+
   // Check if it's a greeting
   const isGreeting = /^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|hello|hi|e aí|eai)/i.test(
     message.trim()
   );
 
-  // 1. If we already have a name, we shouldn't be here ideally, but if we are, move to discovery
   // 1. If we already have a name, we shouldn't be here ideally, but if we are, move to discovery
   if (state.profile?.customerName) {
     logger.info('GreetingNode: Name exists, passing to discovery');

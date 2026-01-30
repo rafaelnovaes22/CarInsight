@@ -5,6 +5,9 @@
  *
  * **Feature: exact-vehicle-search**
  * Requirements: 1.1, 1.2
+ *
+ * **Feature: vehicle-fallback-recommendations**
+ * Requirements: 5.1, 5.5
  */
 
 import { inMemoryVectorStore } from './in-memory-vector.service';
@@ -13,6 +16,8 @@ import { VehicleRecommendation } from '../types/state.types';
 import { logger } from '../lib/logger';
 import { exactSearchParser, ExtractedFilters } from './exact-search-parser.service';
 import { exactSearchService, ExactSearchResult, Vehicle } from './exact-search.service';
+import { FallbackService } from './fallback.service';
+import { FallbackResult, FallbackVehicleMatch } from './fallback.types';
 
 interface SearchFilters {
   maxPrice?: number;
@@ -47,12 +52,21 @@ interface SearchFilters {
 }
 
 export class VehicleSearchAdapter {
+  private fallbackService: FallbackService;
+
+  constructor() {
+    this.fallbackService = new FallbackService();
+  }
+
   /**
    * Search vehicles using semantic search + filters
    * When brand is specified, does DIRECT database search (not semantic)
    *
    * **Feature: exact-vehicle-search**
    * Requirements: 1.1, 1.2 - Prioritizes exact model+year searches
+   *
+   * **Feature: vehicle-fallback-recommendations**
+   * Requirements: 5.1 - Invokes FallbackService when no exact results
    */
   async search(query: string, filters: SearchFilters = {}): Promise<VehicleRecommendation[]> {
     try {
@@ -229,9 +243,13 @@ export class VehicleSearchAdapter {
   /**
    * Perform exact search using ExactSearchService
    * Fetches inventory from database and delegates to ExactSearchService
+   * When no exact results found, invokes FallbackService for alternatives
    *
    * **Feature: exact-vehicle-search**
    * Requirements: 1.1, 1.2 - Extract filters and prioritize exact matches
+   *
+   * **Feature: vehicle-fallback-recommendations**
+   * Requirements: 5.1 - Automatic fallback invocation when no exact results
    */
   private async performExactSearch(
     extractedFilters: ExtractedFilters,
@@ -286,12 +304,97 @@ export class VehicleSearchAdapter {
         'ExactSearchService result'
       );
 
-      // Convert ExactSearchResult to VehicleRecommendation[]
+      // If exact search found results, return them
+      if (result.vehicles.length > 0) {
+        return this.convertExactResultToRecommendations(result, limit);
+      }
+
+      // No exact results - invoke FallbackService for alternatives
+      // **Feature: vehicle-fallback-recommendations** - Requirements: 5.1
+      if (extractedFilters.model) {
+        const requestedYear = extractedFilters.year ?? 
+          (extractedFilters.yearRange ? extractedFilters.yearRange.min : null);
+        
+        const referencePrice = searchFilters.maxPrice ?? searchFilters.minPrice;
+
+        logger.info(
+          {
+            model: extractedFilters.model,
+            year: requestedYear,
+            referencePrice,
+          },
+          'Invoking FallbackService for alternatives'
+        );
+
+        const fallbackResult = this.fallbackService.findAlternatives(
+          extractedFilters.model,
+          requestedYear,
+          inventory,
+          referencePrice
+        );
+
+        logger.info(
+          {
+            fallbackType: fallbackResult.type,
+            vehiclesFound: fallbackResult.vehicles.length,
+            message: fallbackResult.message,
+          },
+          'FallbackService result'
+        );
+
+        // Convert fallback results to recommendations
+        if (fallbackResult.vehicles.length > 0) {
+          return this.convertFallbackResultToRecommendations(fallbackResult, limit);
+        }
+      }
+
+      // No results from either service
       return this.convertExactResultToRecommendations(result, limit);
     } catch (error) {
       logger.error({ error, extractedFilters }, 'Error in performExactSearch');
       return [];
     }
+  }
+
+  /**
+   * Convert FallbackResult to VehicleRecommendation format
+   *
+   * **Feature: vehicle-fallback-recommendations**
+   * Requirements: 5.1, 5.5
+   */
+  private convertFallbackResultToRecommendations(
+    result: FallbackResult,
+    limit: number
+  ): VehicleRecommendation[] {
+    return result.vehicles.slice(0, limit).map((match: FallbackVehicleMatch) => ({
+      vehicleId: match.vehicle.id,
+      matchScore: match.similarityScore,
+      reasoning: match.reasoning,
+      highlights: this.generateHighlightsFromVehicle(match.vehicle),
+      concerns: [],
+      vehicle: {
+        id: match.vehicle.id,
+        brand: match.vehicle.marca,
+        model: match.vehicle.modelo,
+        year: match.vehicle.ano,
+        price: match.vehicle.preco,
+        mileage: match.vehicle.km,
+        bodyType: match.vehicle.carroceria,
+        transmission: match.vehicle.cambio,
+        fuelType: match.vehicle.combustivel,
+        color: match.vehicle.cor,
+        imageUrl: match.vehicle.fotoUrl || null,
+        detailsUrl: match.vehicle.url || null,
+      },
+      // Include fallback metadata for downstream processing
+      fallbackMetadata: {
+        type: result.type,
+        message: result.message,
+        availableYears: result.availableYears,
+        requestedModel: result.requestedModel,
+        requestedYear: result.requestedYear,
+      },
+    }));
   }
 
   /**
