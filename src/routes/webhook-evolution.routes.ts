@@ -36,7 +36,6 @@ router.post('/evolution', async (req, res) => {
     // Extrair texto
     let content = '';
     let isAudio = false;
-    let mediaData = null;
 
     if (messageType === 'conversation') {
       content = message.conversation;
