@@ -59,11 +59,16 @@ async function checkOrCreateInstance(headers: any) {
     try {
         const fetchRes = await axios.get(`${API_URL}/instance/fetchInstances`, { headers });
         const instances = fetchRes.data;
-        const instance = instances.find((i: any) => i.instance.instanceName === INSTANCE_NAME);
+        console.log('Instances encontradas:', JSON.stringify(instances, null, 2));
+
+        // Evolution v2 return array of objects, v1 sometimes return array of strings or different structure
+        const instance = Array.isArray(instances)
+            ? instances.find((i: any) => i.instance?.instanceName === INSTANCE_NAME || i.name === INSTANCE_NAME)
+            : null;
 
         if (instance) {
             console.log(`✅ Instância '${INSTANCE_NAME}' encontrada.`);
-            if (instance.instance.status === 'open') {
+            if (instance.connectionStatus === 'open') {  // Correct property for v2
                 console.log('✅ Instância JÁ CONECTADA! 🎉');
                 process.exit(0);
             }
@@ -126,30 +131,35 @@ async function connectViaQrCode(headers: any) {
 async function connectViaPairingCode(headers: any, number: string) {
     console.log(`🔐 Solicitando Pairing Code para ${number}...`);
 
-    // Tentativa 1: Endpoint GET /instance/connect/{instance}/{number}
-    try {
-        const res = await axios.get(`${API_URL}/instance/connect/${INSTANCE_NAME}/${number}`, { headers });
-        const code = res.data.code || res.data.pairingCode;
+    const queries = [
+        { number: number },
+        { phoneNumber: number },
+        { number: number, pairingCode: 'true' },
+        { number: number, usePairingCode: 'true' },
+        { number: number, method: 'pairing' }
+    ];
 
-        if (code) {
-            printPairingCode(code);
-            return;
+    for (const [i, query] of queries.entries()) {
+        try {
+            const queryString = new URLSearchParams(query as any).toString();
+            console.log(`Tentativa ${i + 1} (GET): /instance/connect/${INSTANCE_NAME}?${queryString}`);
+
+            const res = await axios.get(`${API_URL}/instance/connect/${INSTANCE_NAME}?${queryString}`, { headers });
+
+            console.log(`Resposta Tentativa ${i + 1}:`, JSON.stringify(res.data, null, 2));
+
+            const code = res.data.code || res.data.pairingCode;
+            if (code) {
+                printPairingCode(code);
+                return;
+            }
+        } catch (e: any) {
+            console.log(`Tentativa ${i + 1} falhou:`, e.response?.data || e.message);
         }
-    } catch (e) { }
-
-    // Tentativa 2: POST /instance/connect/{instance} { number: "..." }
-    try {
-        const res = await axios.post(`${API_URL}/instance/connect/${INSTANCE_NAME}`, { number }, { headers });
-        const code = res.data.code || res.data.pairingCode;
-
-        if (code) {
-            printPairingCode(code);
-            return;
-        }
-    } catch (e) { }
+    }
 
     console.error('❌ Não foi possível obter o Código de Pareamento.');
-    console.error('Verifique se o container da Evolution API está rodando na versão v2.0+.');
+    console.error('Verifique os logs do container para ver detalhes do erro.');
 }
 
 function printPairingCode(code: string) {

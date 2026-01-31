@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   evolution_api:
-    image: atendai/evolution-api:v2.1.1
+    image: evoapicloud/evolution-api:latest
     container_name: carinsight_evolution_api
     restart: always
     ports:
@@ -16,17 +16,37 @@ services:
       # Redis Configuration
       - CACHE_REDIS_ENABLED=true
       - CACHE_REDIS_URI=redis://redis:6379/1
-      - CACHE_REDIS_PREFIX=evolution:
-      # Database (using SQLite for simplicity in MVP, can switch to Postgres)
-      - DATABASE_ENABLED=false 
+      - "CACHE_REDIS_PREFIX=evolution:"
+      # Database
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution@postgres:5432/evolution
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_exchange
       # Logging
-      - LOG_LEVEL=ERROR
-      # Webhook defaults (can be set per instance too)
+      - LOG_LEVEL=DEBUG
+      # Webhook defaults
       - WEBHOOK_GLOBAL_ENABLED=false
+      # Baileys Configuration
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#000000
     volumes:
       - ./evolution_store:/evolution/store
     depends_on:
       - redis
+      - postgres
+    networks:
+      - carinsight_net
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: carinsight_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolution
+      - POSTGRES_DB=evolution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - carinsight_net
 
@@ -46,3 +66,4 @@ networks:
 
 volumes:
   redis_data:
+  postgres_data:
