@@ -102,7 +102,11 @@ export class PerformanceMetricsService {
   /**
    * Start tracking a specific stage
    */
-  startStage(requestId: string, stage: RecommendationStage, metadata?: Record<string, unknown>): void {
+  startStage(
+    requestId: string,
+    stage: RecommendationStage,
+    metadata?: Record<string, unknown>
+  ): void {
     const metrics = this.activeRequests.get(requestId);
     if (!metrics) {
       logger.warn({ requestId, stage }, 'Attempted to start stage for unknown request');

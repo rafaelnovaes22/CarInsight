@@ -19,7 +19,13 @@ import { VehicleCategory } from '../../src/services/vehicle-profiles';
 /**
  * Generator for valid vehicle categories
  */
-const categoryGenerator = fc.constantFrom<VehicleCategory>('sedan', 'suv', 'hatch', 'pickup', 'minivan');
+const categoryGenerator = fc.constantFrom<VehicleCategory>(
+  'sedan',
+  'suv',
+  'hatch',
+  'pickup',
+  'minivan'
+);
 
 /**
  * Generator for valid brands
@@ -95,14 +101,16 @@ function categoryToBodyType(category: VehicleCategory): string {
 /**
  * Generator for a single vehicle
  */
-const vehicleGenerator = (overrides?: Partial<{
-  model: string;
-  brand: string;
-  year: number;
-  price: number;
-  category: VehicleCategory;
-  mileage: number;
-}>): fc.Arbitrary<Vehicle> =>
+const vehicleGenerator = (
+  overrides?: Partial<{
+    model: string;
+    brand: string;
+    year: number;
+    price: number;
+    category: VehicleCategory;
+    mileage: number;
+  }>
+): fc.Arbitrary<Vehicle> =>
   fc.record({
     id: fc.uuid(),
     marca: overrides?.brand ? fc.constant(overrides.brand) : brandGenerator,
@@ -112,7 +120,7 @@ const vehicleGenerator = (overrides?: Partial<{
     km: overrides?.mileage !== undefined ? fc.constant(overrides.mileage) : mileageGenerator,
     preco: overrides?.price !== undefined ? fc.constant(overrides.price) : priceGenerator,
     cor: fc.constantFrom('Branco', 'Preto', 'Prata', 'Vermelho'),
-    carroceria: overrides?.category 
+    carroceria: overrides?.category
       ? fc.constant(categoryToBodyType(overrides.category))
       : categoryGenerator.map(categoryToBodyType),
     combustivel: fuelGenerator,
@@ -163,8 +171,12 @@ describe('FallbackService Property Tests', () => {
             const furtherOffset = closerOffset + furtherOffsetDelta;
 
             // Calculate actual years
-            const closerYear = closerNewer ? requestedYear + closerOffset : requestedYear - closerOffset;
-            const furtherYear = furtherNewer ? requestedYear + furtherOffset : requestedYear - furtherOffset;
+            const closerYear = closerNewer
+              ? requestedYear + closerOffset
+              : requestedYear - closerOffset;
+            const furtherYear = furtherNewer
+              ? requestedYear + furtherOffset
+              : requestedYear - furtherOffset;
 
             // Skip if years are the same (edge case)
             if (closerYear === furtherYear) return true;
@@ -203,57 +215,49 @@ describe('FallbackService Property Tests', () => {
 
     it('year proximity score is always between 0 and 100', () => {
       fc.assert(
-        fc.property(
-          yearGenerator,
-          yearGenerator,
-          (vehicleYear, requestedYear) => {
-            const score = service.calculateYearProximityScore(vehicleYear, requestedYear);
+        fc.property(yearGenerator, yearGenerator, (vehicleYear, requestedYear) => {
+          const score = service.calculateYearProximityScore(vehicleYear, requestedYear);
 
-            expect(score).toBeGreaterThanOrEqual(0);
-            expect(score).toBeLessThanOrEqual(100);
-          }
-        ),
+          expect(score).toBeGreaterThanOrEqual(0);
+          expect(score).toBeLessThanOrEqual(100);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('exact year match produces maximum score of 100', () => {
       fc.assert(
-        fc.property(
-          yearGenerator,
-          (year) => {
-            const score = service.calculateYearProximityScore(year, year);
-            expect(score).toBe(100);
-          }
-        ),
+        fc.property(yearGenerator, year => {
+          const score = service.calculateYearProximityScore(year, year);
+          expect(score).toBe(100);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('score decreases monotonically with year distance', () => {
       fc.assert(
-        fc.property(
-          fc.integer({ min: 2018, max: 2023 }),
-          (requestedYear) => {
-            const scores: number[] = [];
+        fc.property(fc.integer({ min: 2018, max: 2023 }), requestedYear => {
+          const scores: number[] = [];
 
-            // Calculate scores for years 0-5 away
-            for (let offset = 0; offset <= 5; offset++) {
-              const score = service.calculateYearProximityScore(requestedYear + offset, requestedYear);
-              scores.push(score);
-            }
-
-            // Each score should be <= the previous one
-            for (let i = 1; i < scores.length; i++) {
-              expect(scores[i]).toBeLessThanOrEqual(scores[i - 1]);
-            }
+          // Calculate scores for years 0-5 away
+          for (let offset = 0; offset <= 5; offset++) {
+            const score = service.calculateYearProximityScore(
+              requestedYear + offset,
+              requestedYear
+            );
+            scores.push(score);
           }
-        ),
+
+          // Each score should be <= the previous one
+          for (let i = 1; i < scores.length; i++) {
+            expect(scores[i]).toBeLessThanOrEqual(scores[i - 1]);
+          }
+        }),
         { numRuns: 100 }
       );
     });
   });
-
 
   // ============================================================================
   // Property 2: Year Alternatives Sorting
@@ -279,10 +283,38 @@ describe('FallbackService Property Tests', () => {
           (model, brand, requestedYear, category) => {
             // Create inventory with same model but different years
             const inventory: Vehicle[] = [
-              createVehicle({ model, brand, year: requestedYear - 3, category, price: 100000, mileage: 50000 }),
-              createVehicle({ model, brand, year: requestedYear + 1, category, price: 100000, mileage: 50000 }),
-              createVehicle({ model, brand, year: requestedYear - 1, category, price: 100000, mileage: 50000 }),
-              createVehicle({ model, brand, year: requestedYear + 2, category, price: 100000, mileage: 50000 }),
+              createVehicle({
+                model,
+                brand,
+                year: requestedYear - 3,
+                category,
+                price: 100000,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model,
+                brand,
+                year: requestedYear + 1,
+                category,
+                price: 100000,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model,
+                brand,
+                year: requestedYear - 1,
+                category,
+                price: 100000,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model,
+                brand,
+                year: requestedYear + 2,
+                category,
+                price: 100000,
+                mileage: 50000,
+              }),
             ];
 
             const results = service.findYearAlternatives(model, requestedYear, inventory);
@@ -311,7 +343,14 @@ describe('FallbackService Property Tests', () => {
             // Create inventory with same model and year but different prices
             const alternativeYear = requestedYear + 1;
             const inventory: Vehicle[] = prices.map((price, i) =>
-              createVehicle({ model, brand, year: alternativeYear, category, price, mileage: 50000 + i * 1000 })
+              createVehicle({
+                model,
+                brand,
+                year: alternativeYear,
+                category,
+                price,
+                mileage: 50000 + i * 1000,
+              })
             );
 
             const results = service.findYearAlternatives(model, requestedYear, inventory);
@@ -319,7 +358,9 @@ describe('FallbackService Property Tests', () => {
             // All results should be same year, sorted by price descending
             for (let i = 1; i < results.length; i++) {
               if (results[i - 1].vehicle.ano === results[i].vehicle.ano) {
-                expect(results[i - 1].vehicle.preco).toBeGreaterThanOrEqual(results[i].vehicle.preco);
+                expect(results[i - 1].vehicle.preco).toBeGreaterThanOrEqual(
+                  results[i].vehicle.preco
+                );
               }
             }
           }
@@ -341,15 +382,24 @@ describe('FallbackService Property Tests', () => {
             const alternativeYear = requestedYear + 1;
             const fixedPrice = 100000;
             const inventory: Vehicle[] = mileages.map(mileage =>
-              createVehicle({ model, brand, year: alternativeYear, category, price: fixedPrice, mileage })
+              createVehicle({
+                model,
+                brand,
+                year: alternativeYear,
+                category,
+                price: fixedPrice,
+                mileage,
+              })
             );
 
             const results = service.findYearAlternatives(model, requestedYear, inventory);
 
             // All results should be same year and price, sorted by mileage ascending
             for (let i = 1; i < results.length; i++) {
-              if (results[i - 1].vehicle.ano === results[i].vehicle.ano &&
-                  results[i - 1].vehicle.preco === results[i].vehicle.preco) {
+              if (
+                results[i - 1].vehicle.ano === results[i].vehicle.ano &&
+                results[i - 1].vehicle.preco === results[i].vehicle.preco
+              ) {
                 expect(results[i - 1].vehicle.km).toBeLessThanOrEqual(results[i].vehicle.km);
               }
             }
@@ -359,7 +409,6 @@ describe('FallbackService Property Tests', () => {
       );
     });
   });
-
 
   // ============================================================================
   // Property 3: Maximum Results Invariant
@@ -419,14 +468,16 @@ describe('FallbackService Property Tests', () => {
             // Create inventory with fewer vehicles than maxResults
             const inventory: Vehicle[] = [];
             for (let i = 0; i < numVehicles; i++) {
-              inventory.push(createVehicle({
-                model,
-                brand,
-                year: requestedYear + i + 1,
-                category,
-                price: 100000,
-                mileage: 50000,
-              }));
+              inventory.push(
+                createVehicle({
+                  model,
+                  brand,
+                  year: requestedYear + i + 1,
+                  category,
+                  price: 100000,
+                  mileage: 50000,
+                })
+              );
             }
 
             const results = service.findYearAlternatives(model, requestedYear, inventory);
@@ -439,7 +490,6 @@ describe('FallbackService Property Tests', () => {
       );
     });
   });
-
 
   // ============================================================================
   // Property 4: Similar Profile Filtering
@@ -491,7 +541,7 @@ describe('FallbackService Property Tests', () => {
               referencePrice
             );
 
-            const tolerance = referencePrice * 0.20;
+            const tolerance = referencePrice * 0.2;
             const minPrice = referencePrice - tolerance;
             const maxPrice = referencePrice + tolerance;
 
@@ -536,7 +586,6 @@ describe('FallbackService Property Tests', () => {
     });
   });
 
-
   // ============================================================================
   // Property 5: Brand Priority in Similar Profiles
   // ============================================================================
@@ -563,11 +612,39 @@ describe('FallbackService Property Tests', () => {
 
             const inventory: Vehicle[] = [
               // Same brand vehicles
-              createVehicle({ model: 'Model1', brand: targetBrand, year: 2022, category, price: referencePrice, mileage: 50000 }),
-              createVehicle({ model: 'Model2', brand: targetBrand, year: 2022, category, price: referencePrice, mileage: 50000 }),
+              createVehicle({
+                model: 'Model1',
+                brand: targetBrand,
+                year: 2022,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'Model2',
+                brand: targetBrand,
+                year: 2022,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              }),
               // Different brand vehicles
-              createVehicle({ model: 'Model3', brand: otherBrand, year: 2022, category, price: referencePrice, mileage: 50000 }),
-              createVehicle({ model: 'Model4', brand: otherBrand, year: 2022, category, price: referencePrice, mileage: 50000 }),
+              createVehicle({
+                model: 'Model3',
+                brand: otherBrand,
+                year: 2022,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'Model4',
+                brand: otherBrand,
+                year: 2022,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              }),
             ];
 
             const sameBrandResults = service.findSameBrandAlternatives(
@@ -600,13 +677,43 @@ describe('FallbackService Property Tests', () => {
 
             // Create inventory with same-brand vehicles (but different model)
             const inventory: Vehicle[] = [
-              createVehicle({ model: 'DifferentModel1', brand: targetBrand, year: 2022, category, price: referencePrice, mileage: 50000 }),
-              createVehicle({ model: 'DifferentModel2', brand: targetBrand, year: 2022, category, price: referencePrice, mileage: 50000 }),
-              createVehicle({ model: 'DifferentModel3', brand: otherBrand, year: 2022, category, price: referencePrice, mileage: 50000 }),
+              createVehicle({
+                model: 'DifferentModel1',
+                brand: targetBrand,
+                year: 2022,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'DifferentModel2',
+                brand: targetBrand,
+                year: 2022,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'DifferentModel3',
+                brand: otherBrand,
+                year: 2022,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              }),
             ];
 
             // Add a vehicle with the target brand to help extract brand
-            inventory.push(createVehicle({ model, brand: targetBrand, year: 2020, category, price: referencePrice, mileage: 50000 }));
+            inventory.push(
+              createVehicle({
+                model,
+                brand: targetBrand,
+                year: 2020,
+                category,
+                price: referencePrice,
+                mileage: 50000,
+              })
+            );
 
             const result = service.findAlternatives(model, 2022, inventory, referencePrice);
 
@@ -620,7 +727,6 @@ describe('FallbackService Property Tests', () => {
       );
     });
   });
-
 
   // ============================================================================
   // Property 7: Similarity Score Sorting
@@ -649,7 +755,9 @@ describe('FallbackService Property Tests', () => {
 
             // Results should be sorted by similarity score descending
             for (let i = 1; i < results.length; i++) {
-              expect(results[i - 1].similarityScore).toBeGreaterThanOrEqual(results[i].similarityScore);
+              expect(results[i - 1].similarityScore).toBeGreaterThanOrEqual(
+                results[i].similarityScore
+              );
             }
           }
         ),
@@ -676,7 +784,9 @@ describe('FallbackService Property Tests', () => {
 
             // Results should be sorted by similarity score descending
             for (let i = 1; i < results.length; i++) {
-              expect(results[i - 1].similarityScore).toBeGreaterThanOrEqual(results[i].similarityScore);
+              expect(results[i - 1].similarityScore).toBeGreaterThanOrEqual(
+                results[i].similarityScore
+              );
             }
           }
         ),
@@ -694,7 +804,9 @@ describe('FallbackService Property Tests', () => {
 
             // Results should be sorted by similarity score descending
             for (let i = 1; i < results.length; i++) {
-              expect(results[i - 1].similarityScore).toBeGreaterThanOrEqual(results[i].similarityScore);
+              expect(results[i - 1].similarityScore).toBeGreaterThanOrEqual(
+                results[i].similarityScore
+              );
             }
           }
         ),
@@ -702,7 +814,6 @@ describe('FallbackService Property Tests', () => {
       );
     });
   });
-
 
   // ============================================================================
   // Property 8: Fallback Priority Chain
@@ -730,10 +841,31 @@ describe('FallbackService Property Tests', () => {
           (model, brand, requestedYear, category, price) => {
             // Create inventory with year alternatives
             const inventory: Vehicle[] = [
-              createVehicle({ model, brand, year: requestedYear + 1, category, price, mileage: 50000 }),
-              createVehicle({ model, brand, year: requestedYear - 1, category, price, mileage: 50000 }),
+              createVehicle({
+                model,
+                brand,
+                year: requestedYear + 1,
+                category,
+                price,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model,
+                brand,
+                year: requestedYear - 1,
+                category,
+                price,
+                mileage: 50000,
+              }),
               // Also add same brand different model (should be ignored)
-              createVehicle({ model: 'OtherModel', brand, year: requestedYear, category, price, mileage: 50000 }),
+              createVehicle({
+                model: 'OtherModel',
+                brand,
+                year: requestedYear,
+                category,
+                price,
+                mileage: 50000,
+              }),
             ];
 
             const result = service.findAlternatives(model, requestedYear, inventory, price);
@@ -761,10 +893,31 @@ describe('FallbackService Property Tests', () => {
               // Add a vehicle with the model to establish brand association
               createVehicle({ model, brand, year: 2018, category, price, mileage: 50000 }),
               // Same brand, different model
-              createVehicle({ model: 'DifferentModel1', brand, year: 2022, category, price, mileage: 50000 }),
-              createVehicle({ model: 'DifferentModel2', brand, year: 2022, category, price, mileage: 50000 }),
+              createVehicle({
+                model: 'DifferentModel1',
+                brand,
+                year: 2022,
+                category,
+                price,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'DifferentModel2',
+                brand,
+                year: 2022,
+                category,
+                price,
+                mileage: 50000,
+              }),
               // Different brand (should be lower priority)
-              createVehicle({ model: 'OtherBrandModel', brand: otherBrand, year: 2022, category, price, mileage: 50000 }),
+              createVehicle({
+                model: 'OtherBrandModel',
+                brand: otherBrand,
+                year: 2022,
+                category,
+                price,
+                mileage: 50000,
+              }),
             ];
 
             const result = service.findAlternatives(model, 2022, inventory, price);
@@ -781,16 +934,37 @@ describe('FallbackService Property Tests', () => {
       fc.assert(
         fc.property(
           priceGenerator.filter(p => p >= 80000 && p <= 200000),
-          (price) => {
+          price => {
             const model = 'CompletelyUnknownModel';
             // Unknown models default to 'hatch' category, so we use 'hatch' for the inventory
             const category: VehicleCategory = 'hatch';
 
             // Create inventory with only same category vehicles (different brands)
             const inventory: Vehicle[] = [
-              createVehicle({ model: 'Model1', brand: 'Honda', year: 2022, category, price, mileage: 50000 }),
-              createVehicle({ model: 'Model2', brand: 'Toyota', year: 2022, category, price, mileage: 50000 }),
-              createVehicle({ model: 'Model3', brand: 'Chevrolet', year: 2022, category, price, mileage: 50000 }),
+              createVehicle({
+                model: 'Model1',
+                brand: 'Honda',
+                year: 2022,
+                category,
+                price,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'Model2',
+                brand: 'Toyota',
+                year: 2022,
+                category,
+                price,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'Model3',
+                brand: 'Chevrolet',
+                year: 2022,
+                category,
+                price,
+                mileage: 50000,
+              }),
             ];
 
             const result = service.findAlternatives(model, 2022, inventory, price);
@@ -807,14 +981,28 @@ describe('FallbackService Property Tests', () => {
       fc.assert(
         fc.property(
           priceGenerator.filter(p => p >= 80000 && p <= 200000),
-          (price) => {
+          price => {
             const model = 'CompletelyUnknownModel';
 
             // Create inventory with only price-matching vehicles (different categories)
             // Use a category that won't match the default 'hatch'
             const inventory: Vehicle[] = [
-              createVehicle({ model: 'Model1', brand: 'Honda', year: 2022, category: 'pickup', price, mileage: 50000 }),
-              createVehicle({ model: 'Model2', brand: 'Toyota', year: 2022, category: 'pickup', price, mileage: 50000 }),
+              createVehicle({
+                model: 'Model1',
+                brand: 'Honda',
+                year: 2022,
+                category: 'pickup',
+                price,
+                mileage: 50000,
+              }),
+              createVehicle({
+                model: 'Model2',
+                brand: 'Toyota',
+                year: 2022,
+                category: 'pickup',
+                price,
+                mileage: 50000,
+              }),
             ];
 
             const result = service.findAlternatives(model, 2022, inventory, price);
@@ -829,19 +1017,15 @@ describe('FallbackService Property Tests', () => {
 
     it('returns no_results when no alternatives found', () => {
       fc.assert(
-        fc.property(
-          modelGenerator,
-          yearGenerator,
-          (model, year) => {
-            // Empty inventory
-            const inventory: Vehicle[] = [];
+        fc.property(modelGenerator, yearGenerator, (model, year) => {
+          // Empty inventory
+          const inventory: Vehicle[] = [];
 
-            const result = service.findAlternatives(model, year, inventory);
+          const result = service.findAlternatives(model, year, inventory);
 
-            expect(result.type).toBe('no_results');
-            expect(result.vehicles).toHaveLength(0);
-          }
-        ),
+          expect(result.type).toBe('no_results');
+          expect(result.vehicles).toHaveLength(0);
+        }),
         { numRuns: 100 }
       );
     });
@@ -861,9 +1045,23 @@ describe('FallbackService Property Tests', () => {
         // Same brand alternative
         createVehicle({ model: 'Accord', brand, year: 2022, category, price, mileage: 50000 }),
         // Same category alternative
-        createVehicle({ model: 'Corolla', brand: 'Toyota', year: 2022, category, price, mileage: 50000 }),
+        createVehicle({
+          model: 'Corolla',
+          brand: 'Toyota',
+          year: 2022,
+          category,
+          price,
+          mileage: 50000,
+        }),
         // Price range alternative
-        createVehicle({ model: 'Tracker', brand: 'Chevrolet', year: 2022, category: 'suv', price, mileage: 50000 }),
+        createVehicle({
+          model: 'Tracker',
+          brand: 'Chevrolet',
+          year: 2022,
+          category: 'suv',
+          price,
+          mileage: 50000,
+        }),
       ];
 
       const result = service.findAlternatives(model, requestedYear, fullInventory, price);
@@ -872,7 +1070,6 @@ describe('FallbackService Property Tests', () => {
       expect(result.type).toBe('year_alternative');
     });
   });
-
 });
 
 // ============================================================================
@@ -913,16 +1110,16 @@ function createVehicle(params: {
  */
 function normalizeCategory(category: string): string {
   const mapping: Record<string, string> = {
-    'Sedan': 'sedan',
-    'sedan': 'sedan',
-    'SUV': 'suv',
-    'suv': 'suv',
-    'Hatch': 'hatch',
-    'hatch': 'hatch',
-    'Pickup': 'pickup',
-    'pickup': 'pickup',
-    'Minivan': 'minivan',
-    'minivan': 'minivan',
+    Sedan: 'sedan',
+    sedan: 'sedan',
+    SUV: 'suv',
+    suv: 'suv',
+    Hatch: 'hatch',
+    hatch: 'hatch',
+    Pickup: 'pickup',
+    pickup: 'pickup',
+    Minivan: 'minivan',
+    minivan: 'minivan',
   };
   return mapping[category] || category.toLowerCase();
 }

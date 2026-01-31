@@ -316,7 +316,7 @@ describe('VehicleAptitudeClassifier', () => {
      */
     it('scores devem estar no intervalo [1, 10] para qualquer veículo', () => {
       fc.assert(
-        fc.property(vehicleArbitrary, (vehicle) => {
+        fc.property(vehicleArbitrary, vehicle => {
           const result = getDeterministicClassification(vehicle as VehicleForClassification);
 
           expect(result.scoreConforto).toBeGreaterThanOrEqual(1);
@@ -355,7 +355,7 @@ describe('VehicleAptitudeClassifier', () => {
       ];
 
       fc.assert(
-        fc.property(vehicleArbitrary, (vehicle) => {
+        fc.property(vehicleArbitrary, vehicle => {
           const result = getDeterministicClassification(vehicle as VehicleForClassification);
           expect(validCategories).toContain(result.categoriaVeiculo);
         }),
@@ -371,7 +371,7 @@ describe('VehicleAptitudeClassifier', () => {
       const validSegments = ['economico', 'intermediario', 'premium'];
 
       fc.assert(
-        fc.property(vehicleArbitrary, (vehicle) => {
+        fc.property(vehicleArbitrary, vehicle => {
           const result = getDeterministicClassification(vehicle as VehicleForClassification);
           expect(validSegments).toContain(result.segmentoPreco);
         }),
@@ -385,7 +385,7 @@ describe('VehicleAptitudeClassifier', () => {
      */
     it('veículos com ano < 2016 ou sem ar-condicionado devem ter aptoUberX = false', () => {
       fc.assert(
-        fc.property(vehicleArbitrary, (vehicle) => {
+        fc.property(vehicleArbitrary, vehicle => {
           const v = vehicle as VehicleForClassification;
           const result = getDeterministicClassification(v);
 
@@ -418,7 +418,7 @@ describe('VehicleAptitudeClassifier', () => {
             portas: fc.constant(4),
             arCondicionado: fc.constant(true),
           }),
-          (vehicle) => {
+          vehicle => {
             const result = getDeterministicClassification(vehicle as VehicleForClassification);
             expect(result.aptoUberComfort).toBe(false);
           }
@@ -432,7 +432,7 @@ describe('VehicleAptitudeClassifier', () => {
      */
     it('todos os campos de aptidão devem ser booleanos', () => {
       fc.assert(
-        fc.property(vehicleArbitrary, (vehicle) => {
+        fc.property(vehicleArbitrary, vehicle => {
           const result = getDeterministicClassification(vehicle as VehicleForClassification);
 
           expect(typeof result.aptoFamilia).toBe('boolean');

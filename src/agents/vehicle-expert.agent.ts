@@ -1926,7 +1926,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       // Use pre-calculated aptitude fields for fast SQL filtering (< 5s)
       // This replaces LLM-based ranking to reduce latency from ~60s to < 5s
       // Requirements: 5.1-5.5
-      
+
       // Determine use case for DeterministicRanker
       const useCase = this.mapProfileToUseCase(
         profile,
@@ -1940,7 +1940,8 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       // Check if we should use DeterministicRanker (use-case-based search)
       // Use it when we have a clear use case and no specific model/brand search
       const hasSpecificSearch = query.filters.brand?.[0] || query.filters.model?.[0];
-      const shouldUseDeterministicRanker = useCase && !hasSpecificSearch && !wantsMoto && !wantsPickup;
+      const shouldUseDeterministicRanker =
+        useCase && !hasSpecificSearch && !wantsMoto && !wantsPickup;
 
       let results: VehicleRecommendation[];
 
@@ -2200,32 +2201,32 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
     isViagem: boolean
   ): UseCase {
     // Priority order: Uber Black > Uber Comfort > Uber X > Family > Travel > Work > Daily Use
-    
+
     if (isUberBlack) {
       return 'uberBlack';
     }
-    
+
     // Check for Uber Comfort (tipoUber === 'comfort')
     if (profile.usoPrincipal === 'uber' && profile.tipoUber === 'comfort') {
       return 'uberComfort';
     }
-    
+
     if (isUberX) {
       return 'uberX';
     }
-    
+
     if (isFamily) {
       return 'familia';
     }
-    
+
     if (isViagem) {
       return 'viagem';
     }
-    
+
     if (isWork) {
       return 'trabalho';
     }
-    
+
     // Default to daily use
     return 'usoDiario';
   }

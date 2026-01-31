@@ -89,18 +89,37 @@ const USE_CASE_ORDER: Record<UseCase, Prisma.VehicleOrderByWithRelationInput[]> 
 
 // Pesos para cálculo de score total por caso de uso
 const USE_CASE_WEIGHTS: Record<UseCase, Record<string, number>> = {
-  familia: { scoreEspaco: 0.35, scoreConforto: 0.3, scoreSeguranca: 0.25, scoreCustoBeneficio: 0.1 },
+  familia: {
+    scoreEspaco: 0.35,
+    scoreConforto: 0.3,
+    scoreSeguranca: 0.25,
+    scoreCustoBeneficio: 0.1,
+  },
   uberX: { scoreEconomia: 0.4, scoreCustoBeneficio: 0.3, scoreConforto: 0.2, scoreSeguranca: 0.1 },
-  uberComfort: { scoreConforto: 0.4, scoreEspaco: 0.25, scoreEconomia: 0.2, scoreCustoBeneficio: 0.15 },
-  uberBlack: { scoreConforto: 0.5, scoreEspaco: 0.25, scoreSeguranca: 0.15, scoreCustoBeneficio: 0.1 },
+  uberComfort: {
+    scoreConforto: 0.4,
+    scoreEspaco: 0.25,
+    scoreEconomia: 0.2,
+    scoreCustoBeneficio: 0.15,
+  },
+  uberBlack: {
+    scoreConforto: 0.5,
+    scoreEspaco: 0.25,
+    scoreSeguranca: 0.15,
+    scoreCustoBeneficio: 0.1,
+  },
   uber: { scoreEconomia: 0.4, scoreCustoBeneficio: 0.3, scoreConforto: 0.2, scoreSeguranca: 0.1 },
-  trabalho: { scoreEconomia: 0.4, scoreCustoBeneficio: 0.35, scoreConforto: 0.15, scoreSeguranca: 0.1 },
+  trabalho: {
+    scoreEconomia: 0.4,
+    scoreCustoBeneficio: 0.35,
+    scoreConforto: 0.15,
+    scoreSeguranca: 0.1,
+  },
   viagem: { scoreConforto: 0.35, scoreEconomia: 0.3, scoreEspaco: 0.2, scoreSeguranca: 0.15 },
   carga: { scoreEspaco: 0.5, scoreCustoBeneficio: 0.3, scoreEconomia: 0.2 },
   usoDiario: { scoreEconomia: 0.4, scoreCustoBeneficio: 0.35, scoreConforto: 0.25 },
   entrega: { scoreEconomia: 0.5, scoreCustoBeneficio: 0.3, scoreConforto: 0.2 },
 };
-
 
 export class DeterministicRankerService {
   /**
@@ -197,12 +216,33 @@ export class DeterministicRankerService {
     // Mapeamentos de sinônimos
     if (normalized.includes('uber') && normalized.includes('black')) return 'uberBlack';
     if (normalized.includes('uber') && normalized.includes('comfort')) return 'uberComfort';
-    if (normalized.includes('uber') || normalized.includes('99') || normalized.includes('app')) return 'uberX';
-    if (normalized.includes('famil') || normalized.includes('criança') || normalized.includes('cadeirinha')) return 'familia';
-    if (normalized.includes('viag') || normalized.includes('estrada') || normalized.includes('rodovia')) return 'viagem';
-    if (normalized.includes('carg') || normalized.includes('frete') || normalized.includes('mudança')) return 'carga';
+    if (normalized.includes('uber') || normalized.includes('99') || normalized.includes('app'))
+      return 'uberX';
+    if (
+      normalized.includes('famil') ||
+      normalized.includes('criança') ||
+      normalized.includes('cadeirinha')
+    )
+      return 'familia';
+    if (
+      normalized.includes('viag') ||
+      normalized.includes('estrada') ||
+      normalized.includes('rodovia')
+    )
+      return 'viagem';
+    if (
+      normalized.includes('carg') ||
+      normalized.includes('frete') ||
+      normalized.includes('mudança')
+    )
+      return 'carga';
     if (normalized.includes('entreg') || normalized.includes('delivery')) return 'entrega';
-    if (normalized.includes('diário') || normalized.includes('commute') || normalized.includes('dia a dia')) return 'usoDiario';
+    if (
+      normalized.includes('diário') ||
+      normalized.includes('commute') ||
+      normalized.includes('dia a dia')
+    )
+      return 'usoDiario';
     if (normalized.includes('trabalh') || normalized.includes('profissional')) return 'trabalho';
 
     return 'usoDiario'; // default

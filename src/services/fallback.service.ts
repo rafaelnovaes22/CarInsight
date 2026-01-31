@@ -78,12 +78,7 @@ export class FallbackService {
 
     // Handle empty model name
     if (!requestedModel || requestedModel.trim() === '') {
-      return this.createNoResultsResponse(
-        '',
-        requestedYear,
-        'Modelo não especificado',
-        startTime
-      );
+      return this.createNoResultsResponse('', requestedYear, 'Modelo não especificado', startTime);
     }
 
     // Handle empty inventory
@@ -132,7 +127,11 @@ export class FallbackService {
         return {
           type: 'year_alternative',
           vehicles: limitedResults,
-          message: this.generateYearAlternativeMessage(requestedModel, requestedYear, availableYears),
+          message: this.generateYearAlternativeMessage(
+            requestedModel,
+            requestedYear,
+            availableYears
+          ),
           requestedModel,
           requestedYear,
           availableYears,
@@ -232,17 +231,19 @@ export class FallbackService {
     // Find vehicles of the same model
     const sameModelVehicles = inventory.filter(v => {
       const vehicleModel = this.normalizeModelName(v.modelo);
-      return vehicleModel === normalizedModel || 
-             vehicleModel.includes(normalizedModel) || 
-             normalizedModel.includes(vehicleModel);
+      return (
+        vehicleModel === normalizedModel ||
+        vehicleModel.includes(normalizedModel) ||
+        normalizedModel.includes(vehicleModel)
+      );
     });
 
     // Filter out vehicles of the exact requested year (we want alternatives)
     const alternativeYearVehicles = sameModelVehicles.filter(v => v.ano !== requestedYear);
 
     // Filter by max year distance
-    const withinYearDistance = alternativeYearVehicles.filter(v => 
-      Math.abs(v.ano - requestedYear) <= this.config.maxYearDistance
+    const withinYearDistance = alternativeYearVehicles.filter(
+      v => Math.abs(v.ano - requestedYear) <= this.config.maxYearDistance
     );
 
     // Calculate year proximity scores and create matches
@@ -288,7 +289,7 @@ export class FallbackService {
 
     // Same year = 100, decreases by 20 per year difference
     // At maxYearDistance (5), score would be 0
-    const score = Math.max(0, 100 - (yearDifference * (100 / this.config.maxYearDistance)));
+    const score = Math.max(0, 100 - yearDifference * (100 / this.config.maxYearDistance));
 
     return Math.round(score);
   }
@@ -325,11 +326,13 @@ export class FallbackService {
       const vehicleCategory = normalizeCategory(v.carroceria);
       const vehicleModel = this.normalizeModelName(v.modelo);
 
-      return vehicleBrand === normalizedBrand &&
-             vehicleCategory === normalizedCategory &&
-             v.preco >= minPrice &&
-             v.preco <= maxPrice &&
-             vehicleModel !== normalizedRequestedModel;
+      return (
+        vehicleBrand === normalizedBrand &&
+        vehicleCategory === normalizedCategory &&
+        v.preco >= minPrice &&
+        v.preco <= maxPrice &&
+        vehicleModel !== normalizedRequestedModel
+      );
     });
 
     // Calculate similarity scores
@@ -380,9 +383,7 @@ export class FallbackService {
     const candidates = inventory.filter(v => {
       const vehicleCategory = normalizeCategory(v.carroceria);
 
-      return vehicleCategory === normalizedCategory &&
-             v.preco >= minPrice &&
-             v.preco <= maxPrice;
+      return vehicleCategory === normalizedCategory && v.preco >= minPrice && v.preco <= maxPrice;
     });
 
     // Calculate similarity scores
@@ -415,19 +416,14 @@ export class FallbackService {
    * @param referencePrice - The reference price for filtering
    * @returns Array of FallbackVehicleMatch sorted by similarity score
    */
-  findPriceRangeAlternatives(
-    inventory: Vehicle[],
-    referencePrice: number
-  ): FallbackVehicleMatch[] {
+  findPriceRangeAlternatives(inventory: Vehicle[], referencePrice: number): FallbackVehicleMatch[] {
     // Calculate price tolerance
     const tolerance = referencePrice * (this.config.priceTolerancePercent / 100);
     const minPrice = referencePrice - tolerance;
     const maxPrice = referencePrice + tolerance;
 
     // Filter vehicles: within price range only
-    const candidates = inventory.filter(v => 
-      v.preco >= minPrice && v.preco <= maxPrice
-    );
+    const candidates = inventory.filter(v => v.preco >= minPrice && v.preco <= maxPrice);
 
     // Calculate similarity scores (price-based only)
     const criteria: SimilarityCriteria = {
@@ -508,9 +504,11 @@ export class FallbackService {
     // Try to find a vehicle with this model to get the brand
     const matchingVehicle = inventory.find(v => {
       const vehicleModel = this.normalizeModelName(v.modelo);
-      return vehicleModel === normalizedModel ||
-             vehicleModel.includes(normalizedModel) ||
-             normalizedModel.includes(vehicleModel);
+      return (
+        vehicleModel === normalizedModel ||
+        vehicleModel.includes(normalizedModel) ||
+        normalizedModel.includes(vehicleModel)
+      );
     });
 
     return matchingVehicle?.marca;
@@ -525,9 +523,11 @@ export class FallbackService {
     const years = inventory
       .filter(v => {
         const vehicleModel = this.normalizeModelName(v.modelo);
-        return vehicleModel === normalizedModel ||
-               vehicleModel.includes(normalizedModel) ||
-               normalizedModel.includes(vehicleModel);
+        return (
+          vehicleModel === normalizedModel ||
+          vehicleModel.includes(normalizedModel) ||
+          normalizedModel.includes(vehicleModel)
+        );
       })
       .map(v => v.ano);
 

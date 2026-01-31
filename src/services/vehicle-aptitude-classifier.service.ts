@@ -146,15 +146,8 @@ Sua tarefa é analisar um veículo e determinar sua aptidão para diferentes cas
 
 Retorne APENAS JSON válido no formato especificado.`;
 
-
 // Modelos excluídos do Uber Comfort/Black
-const EXCLUDED_COMFORT_MODELS = [
-  'kardian',
-  'basalt',
-  'tiggo 3',
-  'tiggo 3x',
-  'logan',
-];
+const EXCLUDED_COMFORT_MODELS = ['kardian', 'basalt', 'tiggo 3', 'tiggo 3x', 'logan'];
 
 // Modelos com regras especiais de ano em capitais
 const SPECIAL_YEAR_RULES: Record<string, number> = {
@@ -187,7 +180,16 @@ export function getDeterministicClassification(
   const isCompactHatch = isHatch && compactHatches.some(h => modelo.includes(h));
 
   // Detectar se é sedan médio
-  const mediumSedans = ['corolla', 'civic', 'versa', 'cobalt', 'cronos', 'virtus', 'city', 'sentra'];
+  const mediumSedans = [
+    'corolla',
+    'civic',
+    'versa',
+    'cobalt',
+    'cronos',
+    'virtus',
+    'city',
+    'sentra',
+  ];
   const isMediumSedan = isSedan && mediumSedans.some(s => modelo.includes(s));
 
   // Detectar modelos excluídos do Comfort
@@ -205,11 +207,7 @@ export function getDeterministicClassification(
   // Calcular aptidões
   const aptoFamilia = (isSUV || isMediumSedan || isMinivan) && vehicle.portas >= 4;
   const aptoUberX =
-    vehicle.ano >= 2016 &&
-    vehicle.portas >= 4 &&
-    vehicle.arCondicionado &&
-    !isPickup &&
-    !isVan;
+    vehicle.ano >= 2016 && vehicle.portas >= 4 && vehicle.arCondicionado && !isPickup && !isVan;
   const aptoUberComfort =
     vehicle.ano >= Math.max(2017, specialMinYear) &&
     (isSUV || isMediumSedan) &&
@@ -227,15 +225,7 @@ export function getDeterministicClassification(
   const aptoEntrega = isCompactHatch || isVan;
 
   // Calcular scores
-  const scoreConforto = isSUV
-    ? 7
-    : isMediumSedan
-      ? 6
-      : isSedan
-        ? 5
-        : isHatch
-          ? 4
-          : 3;
+  const scoreConforto = isSUV ? 7 : isMediumSedan ? 6 : isSedan ? 5 : isHatch ? 4 : 3;
   const scoreEconomia = isCompactHatch
     ? 8
     : isHatch
@@ -247,17 +237,7 @@ export function getDeterministicClassification(
           : isPickup
             ? 3
             : 5;
-  const scoreEspaco = isMinivan
-    ? 9
-    : isSUV
-      ? 8
-      : isMediumSedan
-        ? 6
-        : isSedan
-          ? 5
-          : isHatch
-            ? 4
-            : 3;
+  const scoreEspaco = isMinivan ? 9 : isSUV ? 8 : isMediumSedan ? 6 : isSedan ? 5 : isHatch ? 4 : 3;
   const scoreSeguranca =
     vehicle.airbag && vehicle.abs ? 7 : vehicle.airbag ? 5 : vehicle.abs ? 4 : 3;
   const scoreCustoBeneficio =
@@ -276,8 +256,7 @@ export function getDeterministicClassification(
 
   // Segmento de preço
   const preco = vehicle.preco || 0;
-  const segmentoPreco =
-    preco > 120000 ? 'premium' : preco > 60000 ? 'intermediario' : 'economico';
+  const segmentoPreco = preco > 120000 ? 'premium' : preco > 60000 ? 'intermediario' : 'economico';
 
   return {
     aptoFamilia,

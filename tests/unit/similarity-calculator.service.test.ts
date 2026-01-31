@@ -7,7 +7,10 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { SimilarityCalculator, SimilarityResult } from '../../src/services/similarity-calculator.service';
+import {
+  SimilarityCalculator,
+  SimilarityResult,
+} from '../../src/services/similarity-calculator.service';
 import { Vehicle } from '../../src/services/exact-search.service';
 import { SimilarityCriteria, SimilarityWeights } from '../../src/services/fallback.types';
 import { VehicleCategory } from '../../src/services/vehicle-profiles';
@@ -19,7 +22,13 @@ import { VehicleCategory } from '../../src/services/vehicle-profiles';
 /**
  * Generator for valid vehicle categories
  */
-const categoryGenerator = fc.constantFrom<VehicleCategory>('sedan', 'suv', 'hatch', 'pickup', 'minivan');
+const categoryGenerator = fc.constantFrom<VehicleCategory>(
+  'sedan',
+  'suv',
+  'hatch',
+  'pickup',
+  'minivan'
+);
 
 /**
  * Generator for valid brands
@@ -95,13 +104,15 @@ function categoryToBodyType(category: VehicleCategory): string {
 /**
  * Generator for a single vehicle with specific attributes
  */
-const vehicleGenerator = (overrides?: Partial<{
-  category: VehicleCategory;
-  brand: string;
-  price: number;
-  transmission: string;
-  fuel: string;
-}>): fc.Arbitrary<Vehicle> =>
+const vehicleGenerator = (
+  overrides?: Partial<{
+    category: VehicleCategory;
+    brand: string;
+    price: number;
+    transmission: string;
+    fuel: string;
+  }>
+): fc.Arbitrary<Vehicle> =>
   fc.record({
     id: fc.uuid(),
     marca: overrides?.brand ? fc.constant(overrides.brand) : brandGenerator,
@@ -111,7 +122,7 @@ const vehicleGenerator = (overrides?: Partial<{
     km: mileageGenerator,
     preco: overrides?.price !== undefined ? fc.constant(overrides.price) : priceGenerator,
     cor: fc.constantFrom('Branco', 'Preto', 'Prata', 'Vermelho'),
-    carroceria: overrides?.category 
+    carroceria: overrides?.category
       ? fc.constant(categoryToBodyType(overrides.category))
       : categoryGenerator.map(categoryToBodyType),
     combustivel: overrides?.fuel ? fc.constant(overrides.fuel) : fuelGenerator,
@@ -124,24 +135,28 @@ const vehicleGenerator = (overrides?: Partial<{
 /**
  * Generator for similarity criteria
  */
-const criteriaGenerator = (overrides?: Partial<SimilarityCriteria>): fc.Arbitrary<SimilarityCriteria> =>
+const criteriaGenerator = (
+  overrides?: Partial<SimilarityCriteria>
+): fc.Arbitrary<SimilarityCriteria> =>
   fc.record({
-    targetCategory: overrides?.targetCategory 
-      ? fc.constant(overrides.targetCategory) 
+    targetCategory: overrides?.targetCategory
+      ? fc.constant(overrides.targetCategory)
       : categoryGenerator,
-    targetBrand: overrides?.targetBrand !== undefined
-      ? fc.constant(overrides.targetBrand)
-      : fc.option(brandGenerator, { nil: undefined }),
-    targetPrice: overrides?.targetPrice !== undefined
-      ? fc.constant(overrides.targetPrice)
-      : priceGenerator,
+    targetBrand:
+      overrides?.targetBrand !== undefined
+        ? fc.constant(overrides.targetBrand)
+        : fc.option(brandGenerator, { nil: undefined }),
+    targetPrice:
+      overrides?.targetPrice !== undefined ? fc.constant(overrides.targetPrice) : priceGenerator,
     targetYear: fc.option(yearGenerator, { nil: undefined }),
-    targetTransmission: overrides?.targetTransmission !== undefined
-      ? fc.constant(overrides.targetTransmission)
-      : fc.option(transmissionGenerator, { nil: undefined }),
-    targetFuel: overrides?.targetFuel !== undefined
-      ? fc.constant(overrides.targetFuel)
-      : fc.option(fuelGenerator, { nil: undefined }),
+    targetTransmission:
+      overrides?.targetTransmission !== undefined
+        ? fc.constant(overrides.targetTransmission)
+        : fc.option(transmissionGenerator, { nil: undefined }),
+    targetFuel:
+      overrides?.targetFuel !== undefined
+        ? fc.constant(overrides.targetFuel)
+        : fc.option(fuelGenerator, { nil: undefined }),
   });
 
 /**
@@ -482,16 +497,12 @@ describe('SimilarityCalculator Property Tests', () => {
 
     it('score is always between 0 and 100', () => {
       fc.assert(
-        fc.property(
-          vehicleGenerator(),
-          criteriaGenerator(),
-          (vehicle, criteria) => {
-            const result = calculator.calculate(vehicle, criteria);
+        fc.property(vehicleGenerator(), criteriaGenerator(), (vehicle, criteria) => {
+          const result = calculator.calculate(vehicle, criteria);
 
-            expect(result.score).toBeGreaterThanOrEqual(0);
-            expect(result.score).toBeLessThanOrEqual(100);
-          }
-        ),
+          expect(result.score).toBeGreaterThanOrEqual(0);
+          expect(result.score).toBeLessThanOrEqual(100);
+        }),
         { numRuns: 100 }
       );
     });
@@ -537,8 +548,8 @@ describe('SimilarityCalculator Property Tests', () => {
               { targetCategory, targetPrice, targetBrand, targetTransmission, targetFuel },
             ];
 
-            const scores = criteriaLevels.map(criteria => 
-              calculator.calculate(vehicle, criteria).score
+            const scores = criteriaLevels.map(
+              criteria => calculator.calculate(vehicle, criteria).score
             );
 
             // Each level should have score >= previous level
@@ -678,7 +689,9 @@ describe('SimilarityCalculator Property Tests', () => {
       const result = calculator.calculate(vehicle, criteria);
 
       // Transmission should match (CVT is automatic)
-      const transmissionCriterion = result.matchingCriteria.find(c => c.criterion === 'transmission');
+      const transmissionCriterion = result.matchingCriteria.find(
+        c => c.criterion === 'transmission'
+      );
       expect(transmissionCriterion?.matched).toBe(true);
     });
 

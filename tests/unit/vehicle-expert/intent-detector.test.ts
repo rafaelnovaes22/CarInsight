@@ -307,22 +307,12 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
   /**
    * Generator for action verbs used in recommendation requests
    */
-  const actionVerbGenerator = fc.constantFrom(
-    'mostra',
-    'mostrar',
-    'ver',
-    'veja'
-  );
+  const actionVerbGenerator = fc.constantFrom('mostra', 'mostrar', 'ver', 'veja');
 
   /**
    * Generator for recommendation request verbs
    */
-  const recommendationVerbGenerator = fc.constantFrom(
-    'indica',
-    'sugere',
-    'mostra',
-    'recomenda'
-  );
+  const recommendationVerbGenerator = fc.constantFrom('indica', 'sugere', 'mostra', 'recomenda');
 
   /**
    * Generator for affirmative words that trigger recommendations
@@ -366,13 +356,7 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
   /**
    * Generator for body type descriptions
    */
-  const bodyTypeGenerator = fc.constantFrom(
-    'suv',
-    'sedan',
-    'hatch',
-    'pickup',
-    'picape'
-  );
+  const bodyTypeGenerator = fc.constantFrom('suv', 'sedan', 'hatch', 'pickup', 'picape');
 
   // ============================================================================
   // Property 6: Explicit Recommendation Request Detection
@@ -389,15 +373,11 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
   describe('Property 6: Explicit Recommendation Request Detection', () => {
     it('detects "[verb] [vehicle noun]" pattern as recommendation request (Requirement 4.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          actionVerbGenerator,
-          vehicleNounGenerator,
-          async (verb, noun) => {
-            const message = `${verb} ${noun}`;
-            const result = detectExplicitRecommendationRequest(message);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(actionVerbGenerator, vehicleNounGenerator, async (verb, noun) => {
+          const message = `${verb} ${noun}`;
+          const result = detectExplicitRecommendationRequest(message);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
@@ -405,8 +385,14 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
     it('detects "quero ver" pattern as recommendation request (Requirement 4.1)', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.constantFrom('quero ver', 'Quero ver', 'QUERO VER', 'quero ver opções', 'quero ver carros'),
-          async (message) => {
+          fc.constantFrom(
+            'quero ver',
+            'Quero ver',
+            'QUERO VER',
+            'quero ver opções',
+            'quero ver carros'
+          ),
+          async message => {
             const result = detectExplicitRecommendationRequest(message);
             expect(result).toBe(true);
           }
@@ -417,14 +403,11 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
 
     it('detects "me [recommendation verb]" pattern as recommendation request (Requirement 4.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          recommendationVerbGenerator,
-          async (verb) => {
-            const message = `me ${verb}`;
-            const result = detectExplicitRecommendationRequest(message);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(recommendationVerbGenerator, async verb => {
+          const message = `me ${verb}`;
+          const result = detectExplicitRecommendationRequest(message);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
@@ -448,7 +431,7 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.constantFrom('o que tem', 'o que vocês tem', 'o que voces tem', 'o que você tem'),
-          async (message) => {
+          async message => {
             const result = detectExplicitRecommendationRequest(message);
             expect(result).toBe(true);
           }
@@ -461,7 +444,7 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.constantFrom('tem algum', 'tem algum carro', 'tem algum suv', 'Tem algum disponível'),
-          async (message) => {
+          async message => {
             const result = detectExplicitRecommendationRequest(message);
             expect(result).toBe(true);
           }
@@ -473,8 +456,14 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
     it('detects "quais opções/carros/veículos" pattern as recommendation request (Requirement 4.1)', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.constantFrom('quais opções', 'quais carros', 'quais veículos', 'qual opção', 'qual carro'),
-          async (message) => {
+          fc.constantFrom(
+            'quais opções',
+            'quais carros',
+            'quais veículos',
+            'qual opção',
+            'qual carro'
+          ),
+          async message => {
             const result = detectExplicitRecommendationRequest(message);
             expect(result).toBe(true);
           }
@@ -486,8 +475,13 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
     it('detects "pode mostrar" pattern as recommendation request (Requirement 4.1)', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.constantFrom('pode mostrar', 'Pode mostrar', 'pode mostrar opções', 'pode mostrar carros'),
-          async (message) => {
+          fc.constantFrom(
+            'pode mostrar',
+            'Pode mostrar',
+            'pode mostrar opções',
+            'pode mostrar carros'
+          ),
+          async message => {
             const result = detectExplicitRecommendationRequest(message);
             expect(result).toBe(true);
           }
@@ -498,13 +492,10 @@ describe('Explicit Recommendation Request Detection Property Tests', () => {
 
     it('detects affirmative responses as recommendation request (Requirement 2.3)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          affirmativeWordGenerator,
-          async (word) => {
-            const result = detectExplicitRecommendationRequest(word);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(affirmativeWordGenerator, async word => {
+          const result = detectExplicitRecommendationRequest(word);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
@@ -549,13 +540,7 @@ describe('Information Provision Classification Property Tests', () => {
   /**
    * Generator for body type descriptions
    */
-  const bodyTypeGenerator = fc.constantFrom(
-    'suv',
-    'sedan',
-    'hatch',
-    'pickup',
-    'picape'
-  );
+  const bodyTypeGenerator = fc.constantFrom('suv', 'sedan', 'hatch', 'pickup', 'picape');
 
   // ============================================================================
   // Property 5: Information Provision Does Not Trigger Recommendations
@@ -572,120 +557,95 @@ describe('Information Provision Classification Property Tests', () => {
   describe('Property 5: Information Provision Does Not Trigger Recommendations', () => {
     it('classifies pure budget numbers as information provision (Requirement 2.1, 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          budgetValueGenerator,
-          async (budget) => {
-            const message = budget.toString();
-            const result = isInformationProvision(message);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(budgetValueGenerator, async budget => {
+          const message = budget.toString();
+          const result = isInformationProvision(message);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('classifies budget with suffix as information provision (Requirement 2.1, 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          budgetValueGenerator,
-          budgetSuffixGenerator,
-          async (budget, suffix) => {
-            // Only test non-empty suffixes to avoid duplicate with pure numbers
-            if (suffix === '') return;
-            const message = `${budget}${suffix}`;
-            const result = isInformationProvision(message);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(budgetValueGenerator, budgetSuffixGenerator, async (budget, suffix) => {
+          // Only test non-empty suffixes to avoid duplicate with pure numbers
+          if (suffix === '') return;
+          const message = `${budget}${suffix}`;
+          const result = isInformationProvision(message);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('classifies "até [number]" as information provision (Requirement 2.1, 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          budgetValueGenerator,
-          async (budget) => {
-            const message = `até ${budget}`;
-            const result = isInformationProvision(message);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(budgetValueGenerator, async budget => {
+          const message = `até ${budget}`;
+          const result = isInformationProvision(message);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('classifies "ate [number]" (without accent) as information provision (Requirement 2.1, 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          budgetValueGenerator,
-          async (budget) => {
-            const message = `ate ${budget}`;
-            const result = isInformationProvision(message);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(budgetValueGenerator, async budget => {
+          const message = `ate ${budget}`;
+          const result = isInformationProvision(message);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('classifies usage descriptions as information provision (Requirement 2.2, 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          usageDescriptionGenerator,
-          async (usage) => {
-            const result = isInformationProvision(usage);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(usageDescriptionGenerator, async usage => {
+          const result = isInformationProvision(usage);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('classifies body type descriptions as information provision (Requirement 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          bodyTypeGenerator,
-          async (bodyType) => {
-            const result = isInformationProvision(bodyType);
-            expect(result).toBe(true);
-          }
-        ),
+        fc.asyncProperty(bodyTypeGenerator, async bodyType => {
+          const result = isInformationProvision(bodyType);
+          expect(result).toBe(true);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('information provision messages are NOT explicit recommendation requests (Requirement 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          budgetValueGenerator,
-          async (budget) => {
-            const message = budget.toString();
-            // Pure budget should be info provision
-            const isInfo = isInformationProvision(message);
-            // Pure budget should NOT be a recommendation request
-            const isRequest = detectExplicitRecommendationRequest(message);
-            
-            expect(isInfo).toBe(true);
-            expect(isRequest).toBe(false);
-          }
-        ),
+        fc.asyncProperty(budgetValueGenerator, async budget => {
+          const message = budget.toString();
+          // Pure budget should be info provision
+          const isInfo = isInformationProvision(message);
+          // Pure budget should NOT be a recommendation request
+          const isRequest = detectExplicitRecommendationRequest(message);
+
+          expect(isInfo).toBe(true);
+          expect(isRequest).toBe(false);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('usage descriptions are NOT explicit recommendation requests (Requirement 4.2)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          usageDescriptionGenerator,
-          async (usage) => {
-            const isInfo = isInformationProvision(usage);
-            const isRequest = detectExplicitRecommendationRequest(usage);
-            
-            expect(isInfo).toBe(true);
-            expect(isRequest).toBe(false);
-          }
-        ),
+        fc.asyncProperty(usageDescriptionGenerator, async usage => {
+          const isInfo = isInformationProvision(usage);
+          const isRequest = detectExplicitRecommendationRequest(usage);
+
+          expect(isInfo).toBe(true);
+          expect(isRequest).toBe(false);
+        }),
         { numRuns: 100 }
       );
     });
@@ -725,13 +685,7 @@ describe('Message Intent Classification Property Tests', () => {
   /**
    * Generator for body type descriptions
    */
-  const bodyTypeGenerator = fc.constantFrom(
-    'suv',
-    'sedan',
-    'hatch',
-    'pickup',
-    'picape'
-  );
+  const bodyTypeGenerator = fc.constantFrom('suv', 'sedan', 'hatch', 'pickup', 'picape');
 
   /**
    * Generator for explicit recommendation request messages
@@ -764,74 +718,62 @@ describe('Message Intent Classification Property Tests', () => {
   describe('Property 11: Message Intent Classification Accuracy', () => {
     it('correctly classifies budget values as information provision, not recommendation request (Requirement 4.3, 4.4)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          budgetValueGenerator,
-          async (budget) => {
-            const message = budget.toString();
-            
-            const isInfo = isInformationProvision(message);
-            const isRequest = detectExplicitRecommendationRequest(message);
-            
-            // Budget values should be info provision
-            expect(isInfo).toBe(true);
-            // Budget values should NOT be recommendation requests
-            expect(isRequest).toBe(false);
-          }
-        ),
+        fc.asyncProperty(budgetValueGenerator, async budget => {
+          const message = budget.toString();
+
+          const isInfo = isInformationProvision(message);
+          const isRequest = detectExplicitRecommendationRequest(message);
+
+          // Budget values should be info provision
+          expect(isInfo).toBe(true);
+          // Budget values should NOT be recommendation requests
+          expect(isRequest).toBe(false);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('correctly classifies usage descriptions as information provision, not recommendation request (Requirement 4.3, 4.4)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          usageDescriptionGenerator,
-          async (usage) => {
-            const isInfo = isInformationProvision(usage);
-            const isRequest = detectExplicitRecommendationRequest(usage);
-            
-            // Usage descriptions should be info provision
-            expect(isInfo).toBe(true);
-            // Usage descriptions should NOT be recommendation requests
-            expect(isRequest).toBe(false);
-          }
-        ),
+        fc.asyncProperty(usageDescriptionGenerator, async usage => {
+          const isInfo = isInformationProvision(usage);
+          const isRequest = detectExplicitRecommendationRequest(usage);
+
+          // Usage descriptions should be info provision
+          expect(isInfo).toBe(true);
+          // Usage descriptions should NOT be recommendation requests
+          expect(isRequest).toBe(false);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('correctly classifies body types as information provision, not recommendation request (Requirement 4.3, 4.4)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          bodyTypeGenerator,
-          async (bodyType) => {
-            const isInfo = isInformationProvision(bodyType);
-            const isRequest = detectExplicitRecommendationRequest(bodyType);
-            
-            // Body types should be info provision
-            expect(isInfo).toBe(true);
-            // Body types should NOT be recommendation requests
-            expect(isRequest).toBe(false);
-          }
-        ),
+        fc.asyncProperty(bodyTypeGenerator, async bodyType => {
+          const isInfo = isInformationProvision(bodyType);
+          const isRequest = detectExplicitRecommendationRequest(bodyType);
+
+          // Body types should be info provision
+          expect(isInfo).toBe(true);
+          // Body types should NOT be recommendation requests
+          expect(isRequest).toBe(false);
+        }),
         { numRuns: 100 }
       );
     });
 
     it('correctly classifies explicit requests as recommendation requests, not information provision (Requirement 4.3, 4.4)', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          explicitRequestGenerator,
-          async (request) => {
-            const isRequest = detectExplicitRecommendationRequest(request);
-            const isInfo = isInformationProvision(request);
-            
-            // Explicit requests should be recommendation requests
-            expect(isRequest).toBe(true);
-            // Explicit requests should NOT be info provision
-            expect(isInfo).toBe(false);
-          }
-        ),
+        fc.asyncProperty(explicitRequestGenerator, async request => {
+          const isRequest = detectExplicitRecommendationRequest(request);
+          const isInfo = isInformationProvision(request);
+
+          // Explicit requests should be recommendation requests
+          expect(isRequest).toBe(true);
+          // Explicit requests should NOT be info provision
+          expect(isInfo).toBe(false);
+        }),
         { numRuns: 100 }
       );
     });
@@ -843,10 +785,10 @@ describe('Message Intent Classification Property Tests', () => {
           fc.constantFrom('', ' mil', ' k'),
           async (budget, suffix) => {
             const message = `${budget}${suffix}`;
-            
+
             const isInfo = isInformationProvision(message);
             const isRequest = detectExplicitRecommendationRequest(message);
-            
+
             // Should not be both at the same time
             expect(isInfo && isRequest).toBe(false);
           }
@@ -859,12 +801,12 @@ describe('Message Intent Classification Property Tests', () => {
       // Test that the classification is consistent
       const infoMessages = ['100000', '50 mil', 'trabalho', 'família', 'suv', 'sedan'];
       const requestMessages = ['mostra carros', 'quero ver', 'me indica', 'o que tem'];
-      
+
       for (const msg of infoMessages) {
         expect(isInformationProvision(msg)).toBe(true);
         expect(detectExplicitRecommendationRequest(msg)).toBe(false);
       }
-      
+
       for (const msg of requestMessages) {
         expect(detectExplicitRecommendationRequest(msg)).toBe(true);
         expect(isInformationProvision(msg)).toBe(false);

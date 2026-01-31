@@ -24,11 +24,25 @@ import { Vehicle } from '../../src/services/exact-search.service';
 // ============================================================================
 
 const brandArbitrary = fc.constantFrom(
-  'Honda', 'Toyota', 'Chevrolet', 'Volkswagen', 'Fiat', 'Hyundai', 'Jeep', 'Ford'
+  'Honda',
+  'Toyota',
+  'Chevrolet',
+  'Volkswagen',
+  'Fiat',
+  'Hyundai',
+  'Jeep',
+  'Ford'
 );
 
 const modelArbitrary = fc.constantFrom(
-  'Civic', 'Corolla', 'Onix', 'Polo', 'Argo', 'Creta', 'Compass', 'Ranger'
+  'Civic',
+  'Corolla',
+  'Onix',
+  'Polo',
+  'Argo',
+  'Creta',
+  'Compass',
+  'Ranger'
 );
 
 const bodyTypeArbitrary = fc.constantFrom('Sedan', 'Hatch', 'SUV', 'Pickup');
@@ -55,7 +69,12 @@ const vehicleArbitrary: fc.Arbitrary<Vehicle> = fc.record({
 });
 
 const criterionTypeArbitrary = fc.constantFrom(
-  'year', 'brand', 'category', 'price', 'transmission', 'fuel'
+  'year',
+  'brand',
+  'category',
+  'price',
+  'transmission',
+  'fuel'
 ) as fc.Arbitrary<MatchingCriterion['criterion']>;
 
 const matchingCriterionArbitrary: fc.Arbitrary<MatchingCriterion> = fc.record({
@@ -72,7 +91,11 @@ const fallbackVehicleMatchArbitrary: fc.Arbitrary<FallbackVehicleMatch> = fc.rec
 });
 
 const fallbackTypeArbitrary: fc.Arbitrary<FallbackType> = fc.constantFrom(
-  'year_alternative', 'same_brand', 'same_category', 'price_range', 'no_results'
+  'year_alternative',
+  'same_brand',
+  'same_category',
+  'price_range',
+  'no_results'
 );
 
 const fallbackResultArbitrary: fc.Arbitrary<FallbackResult> = fc.record({
@@ -109,7 +132,12 @@ const yearAlternativeResultArbitrary: fc.Arbitrary<FallbackResult> = fc.record({
 
 // Result with vehicles generator
 const resultWithVehiclesArbitrary: fc.Arbitrary<FallbackResult> = fc.record({
-  type: fc.constantFrom('year_alternative', 'same_brand', 'same_category', 'price_range') as fc.Arbitrary<FallbackType>,
+  type: fc.constantFrom(
+    'year_alternative',
+    'same_brand',
+    'same_category',
+    'price_range'
+  ) as fc.Arbitrary<FallbackType>,
   vehicles: fc.array(fallbackVehicleMatchArbitrary, { minLength: 1, maxLength: 5 }),
   message: fc.string({ minLength: 10, maxLength: 200 }),
   requestedModel: fc.string({ minLength: 2, maxLength: 20 }),
@@ -119,7 +147,12 @@ const resultWithVehiclesArbitrary: fc.Arbitrary<FallbackResult> = fc.record({
     { nil: undefined }
   ),
   metadata: fc.record({
-    strategyUsed: fc.constantFrom('year_alternative', 'same_brand', 'same_category', 'price_range') as fc.Arbitrary<FallbackType>,
+    strategyUsed: fc.constantFrom(
+      'year_alternative',
+      'same_brand',
+      'same_category',
+      'price_range'
+    ) as fc.Arbitrary<FallbackType>,
     totalCandidates: fc.integer({ min: 1, max: 100 }),
     processingTimeMs: fc.integer({ min: 0, max: 1000 }),
   }),
@@ -144,7 +177,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('response includes acknowledgment message for any result', () => {
       fc.assert(
-        fc.property(fallbackResultArbitrary, (result) => {
+        fc.property(fallbackResultArbitrary, result => {
           const response = formatter.format(result);
 
           // Acknowledgment must be a non-empty string
@@ -158,7 +191,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('response includes formatted alternatives for each vehicle', () => {
       fc.assert(
-        fc.property(resultWithVehiclesArbitrary, (result) => {
+        fc.property(resultWithVehiclesArbitrary, result => {
           const response = formatter.format(result);
 
           // Number of alternatives matches number of vehicles
@@ -184,7 +217,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('response includes summary message', () => {
       fc.assert(
-        fc.property(fallbackResultArbitrary, (result) => {
+        fc.property(fallbackResultArbitrary, result => {
           const response = formatter.format(result);
 
           // Summary must be a non-empty string
@@ -198,7 +231,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('acknowledgment mentions unavailability for results with vehicles', () => {
       fc.assert(
-        fc.property(resultWithVehiclesArbitrary, (result) => {
+        fc.property(resultWithVehiclesArbitrary, result => {
           const response = formatter.format(result);
 
           // Acknowledgment should indicate unavailability
@@ -216,7 +249,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('vehicle description includes brand, model, year, and price', () => {
       fc.assert(
-        fc.property(resultWithVehiclesArbitrary, (result) => {
+        fc.property(resultWithVehiclesArbitrary, result => {
           const response = formatter.format(result);
 
           for (let i = 0; i < response.alternatives.length; i++) {
@@ -244,7 +277,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('year alternative acknowledgment includes available years', () => {
       fc.assert(
-        fc.property(yearAlternativeResultArbitrary, (result) => {
+        fc.property(yearAlternativeResultArbitrary, result => {
           const response = formatter.format(result);
 
           // Acknowledgment should mention available years
@@ -262,7 +295,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('year alternative acknowledgment mentions same model different year', () => {
       fc.assert(
-        fc.property(yearAlternativeResultArbitrary, (result) => {
+        fc.property(yearAlternativeResultArbitrary, result => {
           const response = formatter.format(result);
 
           // Should indicate same model is available in other years
@@ -289,7 +322,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('highlights array never exceeds 3 items', () => {
       fc.assert(
-        fc.property(resultWithVehiclesArbitrary, (result) => {
+        fc.property(resultWithVehiclesArbitrary, result => {
           const response = formatter.format(result);
 
           for (const alt of response.alternatives) {
@@ -302,7 +335,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
     it('relevance explanation contains at most 3 reasons', () => {
       fc.assert(
-        fc.property(resultWithVehiclesArbitrary, (result) => {
+        fc.property(resultWithVehiclesArbitrary, result => {
           const response = formatter.format(result);
 
           for (const alt of response.alternatives) {
@@ -328,7 +361,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
       ];
 
       fc.assert(
-        fc.property(vehicleArbitrary, (vehicle) => {
+        fc.property(vehicleArbitrary, vehicle => {
           const match: FallbackVehicleMatch = {
             vehicle,
             similarityScore: 90,
@@ -409,18 +442,26 @@ describe('FallbackResponseFormatter Property Tests', () => {
       fc.assert(
         fc.property(
           fc.record({
-            type: fc.constantFrom('same_brand', 'same_category', 'price_range') as fc.Arbitrary<FallbackType>,
+            type: fc.constantFrom(
+              'same_brand',
+              'same_category',
+              'price_range'
+            ) as fc.Arbitrary<FallbackType>,
             vehicles: fc.array(fallbackVehicleMatchArbitrary, { minLength: 1, maxLength: 3 }),
             message: fc.string({ minLength: 10, maxLength: 100 }),
             requestedModel: fc.string({ minLength: 2, maxLength: 20 }),
             requestedYear: fc.constant(null),
             metadata: fc.record({
-              strategyUsed: fc.constantFrom('same_brand', 'same_category', 'price_range') as fc.Arbitrary<FallbackType>,
+              strategyUsed: fc.constantFrom(
+                'same_brand',
+                'same_category',
+                'price_range'
+              ) as fc.Arbitrary<FallbackType>,
               totalCandidates: fc.integer({ min: 1, max: 50 }),
               processingTimeMs: fc.integer({ min: 0, max: 500 }),
             }),
           }),
-          (result) => {
+          result => {
             const response = formatter.format(result);
 
             // Should not throw and should produce valid output
@@ -439,7 +480,7 @@ describe('FallbackResponseFormatter Property Tests', () => {
       ];
 
       fc.assert(
-        fc.property(vehicleArbitrary, (vehicle) => {
+        fc.property(vehicleArbitrary, vehicle => {
           const match: FallbackVehicleMatch = {
             vehicle,
             similarityScore: 40,

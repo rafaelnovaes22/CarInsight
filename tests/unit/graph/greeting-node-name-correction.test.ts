@@ -147,7 +147,9 @@ describe('Greeting Node Name Correction Property Tests', () => {
             // The profile should be updated with the corrected name
             expect(result.profile).toBeDefined();
             expect(result.profile?.customerName).toBeDefined();
-            expect(result.profile?.customerName?.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+            expect(result.profile?.customerName?.toLowerCase()).toBe(
+              expectedExtracted.toLowerCase()
+            );
           }
         ),
         { numRuns: 100 }
@@ -190,7 +192,6 @@ describe('Greeting Node Name Correction Property Tests', () => {
       );
     });
   });
-
 
   /**
    * **Property 3: Acknowledgment Response Contains Corrected Name**

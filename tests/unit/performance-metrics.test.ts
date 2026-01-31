@@ -239,14 +239,10 @@ describe('measureTime helper', () => {
   it('should measure async function execution time', async () => {
     const requestId = performanceMetrics.startRequest('conv-123');
 
-    const { result, durationMs } = await measureTime(
-      requestId,
-      'vehicle_search',
-      async () => {
-        await new Promise(resolve => setTimeout(resolve, 50));
-        return 'test-result';
-      }
-    );
+    const { result, durationMs } = await measureTime(requestId, 'vehicle_search', async () => {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      return 'test-result';
+    });
 
     expect(result).toBe('test-result');
     expect(durationMs).toBeGreaterThanOrEqual(50);

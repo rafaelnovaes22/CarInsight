@@ -78,140 +78,168 @@ describe('Name Correction Detector Property Tests', () => {
 
     it('detects "na verdade é [Name]" pattern as correction (Requirement 3.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const message = `na verdade é ${correctedName}`;
-          const result = detectNameCorrection(message, { existingName });
+            const message = `na verdade é ${correctedName}`;
+            const result = detectNameCorrection(message, { existingName });
 
-          expect(result.isCorrection).toBe(true);
-          expect(result.correctedName).not.toBeNull();
-          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-        }),
+            expect(result.isCorrection).toBe(true);
+            expect(result.correctedName).not.toBeNull();
+            expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('detects "não, é [Name]" pattern as correction (Requirement 3.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const message = `não, é ${correctedName}`;
-          const result = detectNameCorrection(message, { existingName });
+            const message = `não, é ${correctedName}`;
+            const result = detectNameCorrection(message, { existingName });
 
-          expect(result.isCorrection).toBe(true);
-          expect(result.correctedName).not.toBeNull();
-          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-        }),
+            expect(result.isCorrection).toBe(true);
+            expect(result.correctedName).not.toBeNull();
+            expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('detects "meu nome é [Name]" pattern as correction when name exists (Requirement 3.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const message = `meu nome é ${correctedName}`;
-          const result = detectNameCorrection(message, { existingName });
+            const message = `meu nome é ${correctedName}`;
+            const result = detectNameCorrection(message, { existingName });
 
-          expect(result.isCorrection).toBe(true);
-          expect(result.correctedName).not.toBeNull();
-          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-        }),
+            expect(result.isCorrection).toBe(true);
+            expect(result.correctedName).not.toBeNull();
+            expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('detects "me chama de [Name]" pattern as correction (Requirement 3.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const message = `me chama de ${correctedName}`;
-          const result = detectNameCorrection(message, { existingName });
+            const message = `me chama de ${correctedName}`;
+            const result = detectNameCorrection(message, { existingName });
 
-          expect(result.isCorrection).toBe(true);
-          expect(result.correctedName).not.toBeNull();
-          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-        }),
+            expect(result.isCorrection).toBe(true);
+            expect(result.correctedName).not.toBeNull();
+            expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('detects "pode me chamar de [Name]" pattern as correction (Requirement 3.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const message = `pode me chamar de ${correctedName}`;
-          const result = detectNameCorrection(message, { existingName });
+            const message = `pode me chamar de ${correctedName}`;
+            const result = detectNameCorrection(message, { existingName });
 
-          expect(result.isCorrection).toBe(true);
-          expect(result.correctedName).not.toBeNull();
-          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-        }),
+            expect(result.isCorrection).toBe(true);
+            expect(result.correctedName).not.toBeNull();
+            expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('detects "o nome é [Name]" pattern as correction (Requirement 3.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const message = `o nome é ${correctedName}`;
-          const result = detectNameCorrection(message, { existingName });
+            const message = `o nome é ${correctedName}`;
+            const result = detectNameCorrection(message, { existingName });
 
-          expect(result.isCorrection).toBe(true);
-          expect(result.correctedName).not.toBeNull();
-          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-        }),
+            expect(result.isCorrection).toBe(true);
+            expect(result.correctedName).not.toBeNull();
+            expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+          }
+        ),
         { numRuns: 100 }
       );
     });
 
     it('detects "errou, é [Name]" pattern as correction (Requirement 3.1)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const message = `errou, é ${correctedName}`;
-          const result = detectNameCorrection(message, { existingName });
+            const message = `errou, é ${correctedName}`;
+            const result = detectNameCorrection(message, { existingName });
 
-          expect(result.isCorrection).toBe(true);
-          expect(result.correctedName).not.toBeNull();
-          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-        }),
+            expect(result.isCorrection).toBe(true);
+            expect(result.correctedName).not.toBeNull();
+            expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+          }
+        ),
         { numRuns: 100 }
       );
     });
@@ -249,7 +277,6 @@ describe('Name Correction Detector Property Tests', () => {
   });
 });
 
-
 describe('Property 9: Name Extraction From Correction Messages', () => {
   /**
    * **Property 9: Name Extraction From Correction Messages**
@@ -260,85 +287,102 @@ describe('Property 9: Name Extraction From Correction Messages', () => {
    */
   it('extracts name correctly from "é [Name] na verdade" pattern (Requirement 3.2)', async () => {
     await fc.assert(
-      fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-        // Skip if names are the same
-        if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+      fc.asyncProperty(
+        brazilianNameGenerator,
+        brazilianNameGenerator,
+        async (correctedName, existingName) => {
+          // Skip if names are the same
+          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-        const expectedExtracted = extractName(correctedName);
-        if (!expectedExtracted) return;
+          const expectedExtracted = extractName(correctedName);
+          if (!expectedExtracted) return;
 
-        const message = `é ${correctedName} na verdade`;
-        const result = detectNameCorrection(message, { existingName });
+          const message = `é ${correctedName} na verdade`;
+          const result = detectNameCorrection(message, { existingName });
 
-        expect(result.isCorrection).toBe(true);
-        // The extracted name should match what extractName returns for the input name
-        expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-      }),
+          expect(result.isCorrection).toBe(true);
+          // The extracted name should match what extractName returns for the input name
+          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+        }
+      ),
       { numRuns: 100 }
     );
   });
 
   it('extracts name correctly from "não, é [Name]" pattern (Requirement 3.2)', async () => {
     await fc.assert(
-      fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-        // Skip if names are the same
-        if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+      fc.asyncProperty(
+        brazilianNameGenerator,
+        brazilianNameGenerator,
+        async (correctedName, existingName) => {
+          // Skip if names are the same
+          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-        const expectedExtracted = extractName(correctedName);
-        if (!expectedExtracted) return;
+          const expectedExtracted = extractName(correctedName);
+          if (!expectedExtracted) return;
 
-        const message = `não, é ${correctedName}`;
-        const result = detectNameCorrection(message, { existingName });
+          const message = `não, é ${correctedName}`;
+          const result = detectNameCorrection(message, { existingName });
 
-        expect(result.isCorrection).toBe(true);
-        expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-      }),
+          expect(result.isCorrection).toBe(true);
+          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+        }
+      ),
       { numRuns: 100 }
     );
   });
 
   it('extracts name correctly from "meu nome é [Name]" pattern (Requirement 3.2)', async () => {
     await fc.assert(
-      fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-        // Skip if names are the same
-        if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+      fc.asyncProperty(
+        brazilianNameGenerator,
+        brazilianNameGenerator,
+        async (correctedName, existingName) => {
+          // Skip if names are the same
+          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-        const expectedExtracted = extractName(correctedName);
-        if (!expectedExtracted) return;
+          const expectedExtracted = extractName(correctedName);
+          if (!expectedExtracted) return;
 
-        const message = `meu nome é ${correctedName}`;
-        const result = detectNameCorrection(message, { existingName });
+          const message = `meu nome é ${correctedName}`;
+          const result = detectNameCorrection(message, { existingName });
 
-        expect(result.isCorrection).toBe(true);
-        expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
-      }),
+          expect(result.isCorrection).toBe(true);
+          expect(result.correctedName!.toLowerCase()).toBe(expectedExtracted.toLowerCase());
+        }
+      ),
       { numRuns: 100 }
     );
   });
 
   it('extracts name with proper capitalization (Requirement 3.2)', async () => {
     await fc.assert(
-      fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-        // Skip if names are the same
-        if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+      fc.asyncProperty(
+        brazilianNameGenerator,
+        brazilianNameGenerator,
+        async (correctedName, existingName) => {
+          // Skip if names are the same
+          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-        const expectedExtracted = extractName(correctedName);
-        if (!expectedExtracted) return;
+          const expectedExtracted = extractName(correctedName);
+          if (!expectedExtracted) return;
 
-        // Test with lowercase input
-        const message = `é ${correctedName.toLowerCase()} na verdade`;
-        const result = detectNameCorrection(message, { existingName });
+          // Test with lowercase input
+          const message = `é ${correctedName.toLowerCase()} na verdade`;
+          const result = detectNameCorrection(message, { existingName });
 
-        if (result.isCorrection && result.correctedName) {
-          // Name should be properly capitalized (first letter uppercase)
-          expect(result.correctedName.charAt(0)).toBe(result.correctedName.charAt(0).toUpperCase());
+          if (result.isCorrection && result.correctedName) {
+            // Name should be properly capitalized (first letter uppercase)
+            expect(result.correctedName.charAt(0)).toBe(
+              result.correctedName.charAt(0).toUpperCase()
+            );
+          }
         }
-      }),
+      ),
       { numRuns: 100 }
     );
   });
 });
-
 
 describe('Property 10: Transcription Error Handling', () => {
   /**

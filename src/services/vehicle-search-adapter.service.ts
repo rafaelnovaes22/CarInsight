@@ -58,7 +58,15 @@ interface SearchFilters {
   // Motorcycle filter - CRITICAL: excludes motorcycles when searching for cars
   excludeMotorcycles?: boolean;
   // Context for smart scoring
-  useCase?: 'family' | 'uber' | 'uberX' | 'uberComfort' | 'uberBlack' | 'work' | 'travel' | 'general';
+  useCase?:
+    | 'family'
+    | 'uber'
+    | 'uberX'
+    | 'uberComfort'
+    | 'uberBlack'
+    | 'work'
+    | 'travel'
+    | 'general';
   hasCadeirinha?: boolean;
   minSeats?: number;
   // New category filters (latency-optimization)
@@ -94,10 +102,7 @@ export class VehicleSearchAdapter {
     const startTime = Date.now();
 
     try {
-      logger.info(
-        { useCase, filters },
-        'Searching vehicles using DeterministicRanker'
-      );
+      logger.info({ useCase, filters }, 'Searching vehicles using DeterministicRanker');
 
       // Build ranking context from filters
       const context: RankingContext = {
@@ -300,7 +305,9 @@ export class VehicleSearchAdapter {
           ...(filters.minScoreEconomia && { scoreEconomia: { gte: filters.minScoreEconomia } }),
           ...(filters.minScoreEspaco && { scoreEspaco: { gte: filters.minScoreEspaco } }),
           ...(filters.minScoreSeguranca && { scoreSeguranca: { gte: filters.minScoreSeguranca } }),
-          ...(filters.minScoreCustoBeneficio && { scoreCustoBeneficio: { gte: filters.minScoreCustoBeneficio } }),
+          ...(filters.minScoreCustoBeneficio && {
+            scoreCustoBeneficio: { gte: filters.minScoreCustoBeneficio },
+          }),
         },
         take: limit,
         orderBy: this.getSortStrategy(filters),
@@ -454,9 +461,10 @@ export class VehicleSearchAdapter {
       // No exact results - invoke FallbackService for alternatives
       // **Feature: vehicle-fallback-recommendations** - Requirements: 5.1
       if (extractedFilters.model) {
-        const requestedYear = extractedFilters.year ?? 
+        const requestedYear =
+          extractedFilters.year ??
           (extractedFilters.yearRange ? extractedFilters.yearRange.min : null);
-        
+
         const referencePrice = searchFilters.maxPrice ?? searchFilters.minPrice;
 
         logger.info(
@@ -764,7 +772,9 @@ export class VehicleSearchAdapter {
         ...(filters.minScoreEconomia && { scoreEconomia: { gte: filters.minScoreEconomia } }),
         ...(filters.minScoreEspaco && { scoreEspaco: { gte: filters.minScoreEspaco } }),
         ...(filters.minScoreSeguranca && { scoreSeguranca: { gte: filters.minScoreSeguranca } }),
-        ...(filters.minScoreCustoBeneficio && { scoreCustoBeneficio: { gte: filters.minScoreCustoBeneficio } }),
+        ...(filters.minScoreCustoBeneficio && {
+          scoreCustoBeneficio: { gte: filters.minScoreCustoBeneficio },
+        }),
       },
       take: limit,
       orderBy: this.getOrderByForFilters(filters),
@@ -854,35 +864,19 @@ export class VehicleSearchAdapter {
     }
 
     if (useCase === 'uber' || useCase === 'uberX') {
-      return [
-        { ano: 'desc' },
-        { km: 'asc' },
-        { scoreEconomia: 'desc' },
-      ];
+      return [{ ano: 'desc' }, { km: 'asc' }, { scoreEconomia: 'desc' }];
     }
 
     if (useCase === 'uberComfort' || useCase === 'uberBlack') {
-      return [
-        { ano: 'desc' },
-        { scoreConforto: 'desc' },
-        { km: 'asc' },
-      ];
+      return [{ ano: 'desc' }, { scoreConforto: 'desc' }, { km: 'asc' }];
     }
 
     if (useCase === 'work') {
-      return [
-        { scoreEconomia: 'desc' },
-        { scoreCustoBeneficio: 'desc' },
-        { preco: 'asc' },
-      ];
+      return [{ scoreEconomia: 'desc' }, { scoreCustoBeneficio: 'desc' }, { preco: 'asc' }];
     }
 
     if (useCase === 'travel') {
-      return [
-        { scoreConforto: 'desc' },
-        { scoreEconomia: 'desc' },
-        { km: 'asc' },
-      ];
+      return [{ scoreConforto: 'desc' }, { scoreEconomia: 'desc' }, { km: 'asc' }];
     }
 
     // GLOBAL DEFAULT: Efficiency/Rationality Focus
@@ -903,65 +897,35 @@ export class VehicleSearchAdapter {
   private getOrderByForFilters(filters: SearchFilters): any[] {
     // If specific aptitude filters are set, use appropriate ordering
     if (filters.aptoFamilia) {
-      return [
-        { scoreEspaco: 'desc' },
-        { scoreConforto: 'desc' },
-        { scoreSeguranca: 'desc' },
-      ];
+      return [{ scoreEspaco: 'desc' }, { scoreConforto: 'desc' }, { scoreSeguranca: 'desc' }];
     }
 
     if (filters.aptoUberComfort) {
-      return [
-        { ano: 'desc' },
-        { scoreConforto: 'desc' },
-        { km: 'asc' },
-      ];
+      return [{ ano: 'desc' }, { scoreConforto: 'desc' }, { km: 'asc' }];
     }
 
     if (filters.aptoUberBlack) {
-      return [
-        { ano: 'desc' },
-        { scoreConforto: 'desc' },
-        { km: 'asc' },
-      ];
+      return [{ ano: 'desc' }, { scoreConforto: 'desc' }, { km: 'asc' }];
     }
 
     if (filters.aptoUberX || filters.aptoUber) {
-      return [
-        { ano: 'desc' },
-        { km: 'asc' },
-        { scoreEconomia: 'desc' },
-      ];
+      return [{ ano: 'desc' }, { km: 'asc' }, { scoreEconomia: 'desc' }];
     }
 
     if (filters.aptoTrabalho || filters.aptoUsoDiario) {
-      return [
-        { scoreEconomia: 'desc' },
-        { scoreCustoBeneficio: 'desc' },
-        { preco: 'asc' },
-      ];
+      return [{ scoreEconomia: 'desc' }, { scoreCustoBeneficio: 'desc' }, { preco: 'asc' }];
     }
 
     if (filters.aptoViagem) {
-      return [
-        { scoreConforto: 'desc' },
-        { scoreEconomia: 'desc' },
-        { km: 'asc' },
-      ];
+      return [{ scoreConforto: 'desc' }, { scoreEconomia: 'desc' }, { km: 'asc' }];
     }
 
     if (filters.aptoCarga) {
-      return [
-        { scoreEspaco: 'desc' },
-        { scoreCustoBeneficio: 'desc' },
-      ];
+      return [{ scoreEspaco: 'desc' }, { scoreCustoBeneficio: 'desc' }];
     }
 
     if (filters.aptoEntrega) {
-      return [
-        { scoreEconomia: 'desc' },
-        { km: 'asc' },
-      ];
+      return [{ scoreEconomia: 'desc' }, { km: 'asc' }];
     }
 
     // Default ordering based on useCase if provided

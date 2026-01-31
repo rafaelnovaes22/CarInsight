@@ -70,7 +70,7 @@ describe('Family Recommendation Logic', () => {
     // Verify vehicleSearchAdapter.searchByUseCase was called (not search)
     const searchByUseCaseCalls = vi.mocked(vehicleSearchAdapter.searchByUseCase).mock.calls;
     const searchCalls = vi.mocked(vehicleSearchAdapter.search).mock.calls;
-    
+
     // Either searchByUseCase or search should be called
     const totalCalls = searchByUseCaseCalls.length + searchCalls.length;
     expect(totalCalls).toBeGreaterThan(0);
@@ -80,7 +80,7 @@ describe('Family Recommendation Logic', () => {
       const useCase = searchByUseCaseCalls[0][0];
       const filters = searchByUseCaseCalls[0][1];
       console.log('searchByUseCase called with useCase:', useCase, 'filters:', filters);
-      
+
       // For family use case, we use 'familia' use case with DeterministicRanker
       // The aptoFamilia filter is applied internally by the ranker
       expect(useCase).toBeDefined();

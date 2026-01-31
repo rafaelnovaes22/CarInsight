@@ -19,11 +19,25 @@ import { FallbackResult, FallbackType } from '../../src/services/fallback.types'
 // ============================================================================
 
 const brandArbitrary = fc.constantFrom(
-  'Honda', 'Toyota', 'Chevrolet', 'Volkswagen', 'Fiat', 'Hyundai', 'Jeep', 'Ford'
+  'Honda',
+  'Toyota',
+  'Chevrolet',
+  'Volkswagen',
+  'Fiat',
+  'Hyundai',
+  'Jeep',
+  'Ford'
 );
 
 const modelArbitrary = fc.constantFrom(
-  'Civic', 'Corolla', 'Onix', 'Polo', 'Argo', 'Creta', 'Compass', 'Ranger'
+  'Civic',
+  'Corolla',
+  'Onix',
+  'Polo',
+  'Argo',
+  'Creta',
+  'Compass',
+  'Ranger'
 );
 
 const bodyTypeArbitrary = fc.constantFrom('Sedan', 'Hatch', 'SUV', 'Pickup');
@@ -66,7 +80,7 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
 
     it('FallbackService is invoked when exact model is not found', () => {
       fc.assert(
-        fc.property(inventoryArbitrary, (inventory) => {
+        fc.property(inventoryArbitrary, inventory => {
           const fallbackService = new FallbackService();
 
           // Request a model that doesn't exist in inventory
@@ -74,11 +88,7 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
           const requestedYear = 2023;
 
           // Verify FallbackService returns alternatives
-          const result = fallbackService.findAlternatives(
-            requestedModel,
-            requestedYear,
-            inventory
-          );
+          const result = fallbackService.findAlternatives(requestedModel, requestedYear, inventory);
 
           // FallbackService should return a result (even if no_results)
           expect(result).toBeDefined();
@@ -95,7 +105,7 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
       fc.assert(
         fc.property(
           inventoryArbitrary.filter(inv => inv.length > 0),
-          (inventory) => {
+          inventory => {
             const fallbackService = new FallbackService();
 
             // Use a model from inventory but request a year that doesn't exist
@@ -110,15 +120,21 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
             );
 
             // Should return year alternatives if same model exists
-            const sameModelExists = inventory.some(v => 
-              v.modelo.toLowerCase().includes(requestedModel.toLowerCase()) ||
-              requestedModel.toLowerCase().includes(v.modelo.toLowerCase())
+            const sameModelExists = inventory.some(
+              v =>
+                v.modelo.toLowerCase().includes(requestedModel.toLowerCase()) ||
+                requestedModel.toLowerCase().includes(v.modelo.toLowerCase())
             );
 
             if (sameModelExists) {
               // Should find year alternatives or other fallback
-              expect(['year_alternative', 'same_brand', 'same_category', 'price_range', 'no_results'])
-                .toContain(result.type);
+              expect([
+                'year_alternative',
+                'same_brand',
+                'same_category',
+                'price_range',
+                'no_results',
+              ]).toContain(result.type);
             }
           }
         ),
@@ -159,7 +175,7 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
       fc.assert(
         fc.property(
           inventoryArbitrary.filter(inv => inv.length >= 3),
-          (inventory) => {
+          inventory => {
             const fallbackService = new FallbackService();
 
             // Request something that will trigger fallback
@@ -213,12 +229,7 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
     it('FallbackService handles empty inventory gracefully', () => {
       const fallbackService = new FallbackService();
 
-      const result = fallbackService.findAlternatives(
-        'Civic',
-        2023,
-        [],
-        100000
-      );
+      const result = fallbackService.findAlternatives('Civic', 2023, [], 100000);
 
       expect(result.type).toBe('no_results');
       expect(result.vehicles).toEqual([]);
@@ -227,14 +238,10 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
 
     it('FallbackService handles empty model gracefully', () => {
       fc.assert(
-        fc.property(inventoryArbitrary, (inventory) => {
+        fc.property(inventoryArbitrary, inventory => {
           const fallbackService = new FallbackService();
 
-          const result = fallbackService.findAlternatives(
-            '',
-            2023,
-            inventory
-          );
+          const result = fallbackService.findAlternatives('', 2023, inventory);
 
           expect(result.type).toBe('no_results');
           expect(result.vehicles).toEqual([]);
@@ -247,17 +254,13 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
       fc.assert(
         fc.property(
           inventoryArbitrary.filter(inv => inv.length >= 3),
-          (inventory) => {
+          inventory => {
             const fallbackService = new FallbackService();
 
             // Use a model from inventory
             const existingModel = inventory[0].modelo;
 
-            const result = fallbackService.findAlternatives(
-              existingModel,
-              null,
-              inventory
-            );
+            const result = fallbackService.findAlternatives(existingModel, null, inventory);
 
             // Should not crash and should return valid result
             expect(result).toBeDefined();
@@ -275,11 +278,11 @@ describe('VehicleSearchAdapter Fallback Integration Tests', () => {
     it('ExactSearchService uses FallbackService for similar suggestions', async () => {
       // Import ExactSearchService using dynamic import
       const { ExactSearchService } = await import('../../src/services/exact-search.service');
-      
+
       fc.assert(
         fc.property(
           inventoryArbitrary.filter(inv => inv.length >= 5),
-          (inventory) => {
+          inventory => {
             const exactSearchService = new ExactSearchService();
 
             // Request a model that doesn't exist

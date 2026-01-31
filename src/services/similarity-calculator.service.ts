@@ -72,10 +72,7 @@ export class SimilarityCalculator {
     let totalScore = 0;
 
     // Calculate category score
-    const categoryScore = this.calculateCategoryScore(
-      vehicle.carroceria,
-      criteria.targetCategory
-    );
+    const categoryScore = this.calculateCategoryScore(vehicle.carroceria, criteria.targetCategory);
     const categoryMatched = categoryScore > 0;
     matchingCriteria.push({
       criterion: 'category',
@@ -88,7 +85,8 @@ export class SimilarityCalculator {
 
     // Calculate brand score (if target brand is specified)
     if (criteria.targetBrand) {
-      const brandMatched = this.normalizeBrand(vehicle.marca) === this.normalizeBrand(criteria.targetBrand);
+      const brandMatched =
+        this.normalizeBrand(vehicle.marca) === this.normalizeBrand(criteria.targetBrand);
       matchingCriteria.push({
         criterion: 'brand',
         matched: brandMatched,
@@ -123,7 +121,8 @@ export class SimilarityCalculator {
 
     // Add transmission criterion if specified
     if (criteria.targetTransmission) {
-      const transmissionMatched = this.normalizeTransmission(vehicle.cambio) === 
+      const transmissionMatched =
+        this.normalizeTransmission(vehicle.cambio) ===
         this.normalizeTransmission(criteria.targetTransmission);
       matchingCriteria.push({
         criterion: 'transmission',
@@ -136,8 +135,8 @@ export class SimilarityCalculator {
 
     // Add fuel criterion if specified
     if (criteria.targetFuel) {
-      const fuelMatched = this.normalizeFuel(vehicle.combustivel) === 
-        this.normalizeFuel(criteria.targetFuel);
+      const fuelMatched =
+        this.normalizeFuel(vehicle.combustivel) === this.normalizeFuel(criteria.targetFuel);
       matchingCriteria.push({
         criterion: 'fuel',
         matched: fuelMatched,
@@ -165,10 +164,7 @@ export class SimilarityCalculator {
    * @param targetCategory - The target category to match
    * @returns Score from 0-100
    */
-  private calculateCategoryScore(
-    vehicleCategory: string,
-    targetCategory: string
-  ): number {
+  private calculateCategoryScore(vehicleCategory: string, targetCategory: string): number {
     const normalizedVehicle = normalizeCategory(vehicleCategory);
     const normalizedTarget = normalizeCategory(targetCategory);
 
@@ -207,9 +203,7 @@ export class SimilarityCalculator {
     }
 
     // Calculate how far outside the tolerance the price is
-    const deviation = vehiclePrice < minPrice
-      ? minPrice - vehiclePrice
-      : vehiclePrice - maxPrice;
+    const deviation = vehiclePrice < minPrice ? minPrice - vehiclePrice : vehiclePrice - maxPrice;
 
     // Score decreases linearly, reaching 0 at 2x tolerance
     const maxDeviation = tolerance; // Beyond this, score is 0
@@ -241,8 +235,10 @@ export class SimilarityCalculator {
     // Check transmission match
     if (criteria.targetTransmission) {
       totalFeatures++;
-      if (this.normalizeTransmission(vehicle.cambio) === 
-          this.normalizeTransmission(criteria.targetTransmission)) {
+      if (
+        this.normalizeTransmission(vehicle.cambio) ===
+        this.normalizeTransmission(criteria.targetTransmission)
+      ) {
         matchCount++;
       }
     }
@@ -250,8 +246,7 @@ export class SimilarityCalculator {
     // Check fuel match
     if (criteria.targetFuel) {
       totalFeatures++;
-      if (this.normalizeFuel(vehicle.combustivel) === 
-          this.normalizeFuel(criteria.targetFuel)) {
+      if (this.normalizeFuel(vehicle.combustivel) === this.normalizeFuel(criteria.targetFuel)) {
         matchCount++;
       }
     }
@@ -313,7 +308,11 @@ export class SimilarityCalculator {
       .trim();
 
     // Map common variations
-    if (normalized.includes('flex') || normalized.includes('alcool') || normalized.includes('etanol')) {
+    if (
+      normalized.includes('flex') ||
+      normalized.includes('alcool') ||
+      normalized.includes('etanol')
+    ) {
       return 'flex';
     }
     if (normalized.includes('gasolina') || normalized.includes('gasoline')) {

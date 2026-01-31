@@ -618,25 +618,29 @@ describe('Discovery Node Name Correction Property Tests', () => {
 
     it('response includes apology phrase (Requirement 1.3)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const state = createStateWithName(existingName);
-          const message = `é ${correctedName} na verdade`;
-          state.messages = [new HumanMessage(message)];
+            const state = createStateWithName(existingName);
+            const message = `é ${correctedName} na verdade`;
+            state.messages = [new HumanMessage(message)];
 
-          const result = await discoveryNode(state);
+            const result = await discoveryNode(state);
 
-          expect(result.messages).toBeDefined();
-          const responseContent = result.messages![0].content as string;
+            expect(result.messages).toBeDefined();
+            const responseContent = result.messages![0].content as string;
 
-          // Response should contain "Desculpa" (apology)
-          expect(responseContent.toLowerCase()).toContain('desculpa');
-        }),
+            // Response should contain "Desculpa" (apology)
+            expect(responseContent.toLowerCase()).toContain('desculpa');
+          }
+        ),
         { numRuns: 100 }
       );
     });
@@ -680,30 +684,34 @@ describe('Discovery Node Name Correction Property Tests', () => {
 
     it('does not transition to recommendation after name correction (Requirement 1.4)', async () => {
       await fc.assert(
-        fc.asyncProperty(brazilianNameGenerator, brazilianNameGenerator, async (correctedName, existingName) => {
-          // Skip if names are the same
-          if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+        fc.asyncProperty(
+          brazilianNameGenerator,
+          brazilianNameGenerator,
+          async (correctedName, existingName) => {
+            // Skip if names are the same
+            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
 
-          const expectedExtracted = extractName(correctedName);
-          if (!expectedExtracted) return;
+            const expectedExtracted = extractName(correctedName);
+            if (!expectedExtracted) return;
 
-          const state = createStateWithName(existingName);
-          // Even with vehicle info in profile, should stay in discovery
-          state.profile = {
-            ...state.profile,
-            model: 'Civic',
-            budget: 100000,
-          };
+            const state = createStateWithName(existingName);
+            // Even with vehicle info in profile, should stay in discovery
+            state.profile = {
+              ...state.profile,
+              model: 'Civic',
+              budget: 100000,
+            };
 
-          const message = `não, é ${correctedName}`;
-          state.messages = [new HumanMessage(message)];
+            const message = `não, é ${correctedName}`;
+            state.messages = [new HumanMessage(message)];
 
-          const result = await discoveryNode(state);
+            const result = await discoveryNode(state);
 
-          // Should NOT transition to recommendation
-          expect(result.next).not.toBe('recommendation');
-          expect(result.next).toBe('discovery');
-        }),
+            // Should NOT transition to recommendation
+            expect(result.next).not.toBe('recommendation');
+            expect(result.next).toBe('discovery');
+          }
+        ),
         { numRuns: 100 }
       );
     });

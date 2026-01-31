@@ -136,7 +136,11 @@ export class RecommendationAgent {
         // Se não encontrou, retornar sugestões similares
         if (specificModelResult.similarSuggestions.length > 0) {
           await this.saveRecommendations(conversationId, specificModelResult.similarSuggestions);
-          performanceMetrics.updateVehicleCounts(requestId, vehicles.length, specificModelResult.similarSuggestions.length);
+          performanceMetrics.updateVehicleCounts(
+            requestId,
+            vehicles.length,
+            specificModelResult.similarSuggestions.length
+          );
           performanceMetrics.endRequest(requestId);
           return specificModelResult.similarSuggestions;
         }
@@ -332,7 +336,8 @@ export class RecommendationAgent {
 
       // If no exact results, use FallbackService for intelligent alternatives
       if (exactResult.vehicles.length === 0 && exactResult.type === 'unavailable') {
-        const requestedYear = extractedFilters.year ?? 
+        const requestedYear =
+          extractedFilters.year ??
           (extractedFilters.yearRange ? extractedFilters.yearRange.min : null);
         const referencePrice = answers.budget;
 

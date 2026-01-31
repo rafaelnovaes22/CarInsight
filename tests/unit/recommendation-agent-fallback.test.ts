@@ -40,22 +40,68 @@ const createTestInventory = (): Vehicle[] => [
   createTestVehicle({ id: 'civic-2023', modelo: 'Civic', ano: 2023, preco: 130000 }),
   createTestVehicle({ id: 'civic-2022', modelo: 'Civic', ano: 2022, preco: 120000 }),
   createTestVehicle({ id: 'civic-2021', modelo: 'Civic', ano: 2021, preco: 110000 }),
-  
+
   // Outros Hondas
-  createTestVehicle({ id: 'hrv-2023', modelo: 'HR-V', ano: 2023, preco: 140000, carroceria: 'SUV' }),
+  createTestVehicle({
+    id: 'hrv-2023',
+    modelo: 'HR-V',
+    ano: 2023,
+    preco: 140000,
+    carroceria: 'SUV',
+  }),
   createTestVehicle({ id: 'city-2023', modelo: 'City', ano: 2023, preco: 100000 }),
-  
+
   // Outros sedans
-  createTestVehicle({ id: 'corolla-2023', marca: 'Toyota', modelo: 'Corolla', ano: 2023, preco: 140000 }),
-  createTestVehicle({ id: 'cruze-2023', marca: 'Chevrolet', modelo: 'Cruze', ano: 2023, preco: 120000 }),
-  
+  createTestVehicle({
+    id: 'corolla-2023',
+    marca: 'Toyota',
+    modelo: 'Corolla',
+    ano: 2023,
+    preco: 140000,
+  }),
+  createTestVehicle({
+    id: 'cruze-2023',
+    marca: 'Chevrolet',
+    modelo: 'Cruze',
+    ano: 2023,
+    preco: 120000,
+  }),
+
   // SUVs
-  createTestVehicle({ id: 'creta-2023', marca: 'Hyundai', modelo: 'Creta', ano: 2023, preco: 115000, carroceria: 'SUV' }),
-  createTestVehicle({ id: 'tracker-2023', marca: 'Chevrolet', modelo: 'Tracker', ano: 2023, preco: 110000, carroceria: 'SUV' }),
-  
+  createTestVehicle({
+    id: 'creta-2023',
+    marca: 'Hyundai',
+    modelo: 'Creta',
+    ano: 2023,
+    preco: 115000,
+    carroceria: 'SUV',
+  }),
+  createTestVehicle({
+    id: 'tracker-2023',
+    marca: 'Chevrolet',
+    modelo: 'Tracker',
+    ano: 2023,
+    preco: 110000,
+    carroceria: 'SUV',
+  }),
+
   // Hatches
-  createTestVehicle({ id: 'onix-2023', marca: 'Chevrolet', modelo: 'Onix', ano: 2023, preco: 80000, carroceria: 'Hatch' }),
-  createTestVehicle({ id: 'polo-2023', marca: 'Volkswagen', modelo: 'Polo', ano: 2023, preco: 85000, carroceria: 'Hatch' }),
+  createTestVehicle({
+    id: 'onix-2023',
+    marca: 'Chevrolet',
+    modelo: 'Onix',
+    ano: 2023,
+    preco: 80000,
+    carroceria: 'Hatch',
+  }),
+  createTestVehicle({
+    id: 'polo-2023',
+    marca: 'Volkswagen',
+    modelo: 'Polo',
+    ano: 2023,
+    preco: 85000,
+    carroceria: 'Hatch',
+  }),
 ];
 
 // ============================================================================
@@ -74,7 +120,7 @@ describe('RecommendationAgent Fallback Integration', () => {
   describe('Year Alternative Formatting', () => {
     it('returns year alternatives when exact year not found', () => {
       const inventory = createTestInventory();
-      
+
       // Request Civic 2020 (doesn't exist, but 2021-2023 do)
       const result = fallbackService.findAlternatives('Civic', 2020, inventory);
 
@@ -109,7 +155,7 @@ describe('RecommendationAgent Fallback Integration', () => {
   describe('Similar Profile Formatting', () => {
     it('returns same brand alternatives when model not found', () => {
       const inventory = createTestInventory();
-      
+
       // Request Honda Accord (doesn't exist)
       const result = fallbackService.findAlternatives('Accord', null, inventory, 130000);
 
@@ -120,7 +166,7 @@ describe('RecommendationAgent Fallback Integration', () => {
 
     it('returns same category alternatives when brand not found', () => {
       const inventory = createTestInventory();
-      
+
       // Request BMW 320i (doesn't exist)
       const result = fallbackService.findAlternatives('320i', null, inventory, 130000);
 
@@ -131,13 +177,13 @@ describe('RecommendationAgent Fallback Integration', () => {
     it('formats similar profile with relevance explanation', () => {
       const inventory = createTestInventory();
       const result = fallbackService.findAlternatives('Accord', null, inventory, 130000);
-      
+
       if (result.vehicles.length > 0) {
         const formatted = fallbackFormatter.format(result);
 
         expect(formatted.acknowledgment).toContain('Accord');
         expect(formatted.acknowledgment).toContain('disponível');
-        
+
         for (const alt of formatted.alternatives) {
           expect(alt.vehicleDescription.length).toBeGreaterThan(0);
           expect(alt.relevanceExplanation.length).toBeGreaterThan(0);
@@ -247,7 +293,7 @@ describe('RecommendationAgent Fallback Integration', () => {
   describe('Fallback Priority Chain', () => {
     it('prioritizes year alternatives over brand alternatives', () => {
       const inventory = createTestInventory();
-      
+
       // Request Civic 2020 - should get year alternatives first
       const result = fallbackService.findAlternatives('Civic', 2020, inventory);
 
@@ -257,7 +303,7 @@ describe('RecommendationAgent Fallback Integration', () => {
     it('falls back to brand when no year alternatives', () => {
       // Create inventory without Civic
       const inventory = createTestInventory().filter(v => v.modelo !== 'Civic');
-      
+
       // Request Civic - should get same brand (Honda) alternatives
       const result = fallbackService.findAlternatives('Civic', 2023, inventory, 130000);
 
@@ -268,7 +314,7 @@ describe('RecommendationAgent Fallback Integration', () => {
     it('falls back to category when no brand alternatives', () => {
       // Create inventory without any Honda
       const inventory = createTestInventory().filter(v => v.marca !== 'Honda');
-      
+
       // Request Civic - should get same category (Sedan) alternatives
       const result = fallbackService.findAlternatives('Civic', 2023, inventory, 130000);
 

@@ -105,9 +105,7 @@ describe('DeterministicRankerService', () => {
 
       expect(mockedFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: expect.arrayContaining([
-            expect.objectContaining({ scoreEspaco: 'desc' }),
-          ]),
+          orderBy: expect.arrayContaining([expect.objectContaining({ scoreEspaco: 'desc' })]),
         })
       );
     });
@@ -270,7 +268,13 @@ describe('DeterministicRankerService', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.array(vehicleArbitrary, { minLength: 1, maxLength: 20 }),
-          fc.constantFrom('familia', 'uberX', 'uberComfort', 'trabalho', 'viagem') as fc.Arbitrary<UseCase>,
+          fc.constantFrom(
+            'familia',
+            'uberX',
+            'uberComfort',
+            'trabalho',
+            'viagem'
+          ) as fc.Arbitrary<UseCase>,
           async (vehicles, useCase) => {
             // Filtrar veículos que têm a aptidão correspondente
             const aptitudeField = {
@@ -309,7 +313,7 @@ describe('DeterministicRankerService', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.array(vehicleArbitrary, { minLength: 2, maxLength: 10 }),
-          async (vehicles) => {
+          async vehicles => {
             // Marcar todos como aptos para família
             const eligibleVehicles = vehicles.map(v => ({ ...v, aptoFamilia: true }));
             mockedFindMany.mockResolvedValueOnce(eligibleVehicles as any);
@@ -335,7 +339,7 @@ describe('DeterministicRankerService', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.array(vehicleArbitrary, { minLength: 0, maxLength: 50 }),
-          async (vehicles) => {
+          async vehicles => {
             const eligibleVehicles = vehicles.map(v => ({ ...v, aptoFamilia: true }));
             mockedFindMany.mockResolvedValueOnce(eligibleVehicles as any);
 
@@ -357,7 +361,7 @@ describe('DeterministicRankerService', () => {
       await fc.assert(
         fc.asyncProperty(
           fc.array(vehicleArbitrary, { minLength: 1, maxLength: 10 }),
-          async (vehicles) => {
+          async vehicles => {
             const eligibleVehicles = vehicles.map(v => ({ ...v, aptoFamilia: true }));
             mockedFindMany.mockResolvedValueOnce(eligibleVehicles as any);
 

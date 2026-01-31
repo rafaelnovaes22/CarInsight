@@ -42,9 +42,7 @@ export class FallbackResponseFormatter {
       result.availableYears
     );
 
-    const alternatives = result.vehicles.map(match =>
-      this.formatAlternative(match, result.type)
-    );
+    const alternatives = result.vehicles.map(match => this.formatAlternative(match, result.type));
 
     const summary = this.generateSummary(result);
 
@@ -107,10 +105,7 @@ export class FallbackResponseFormatter {
    * @param fallbackType - The type of fallback being applied
    * @returns FormattedAlternative with description, explanation, and highlights
    */
-  formatAlternative(
-    match: FallbackVehicleMatch,
-    fallbackType: FallbackType
-  ): FormattedAlternative {
+  formatAlternative(match: FallbackVehicleMatch, fallbackType: FallbackType): FormattedAlternative {
     const vehicle = match.vehicle;
 
     // Build vehicle description
@@ -140,10 +135,7 @@ export class FallbackResponseFormatter {
    * @param fallbackType - The type of fallback for context
    * @returns Human-readable explanation in Portuguese
    */
-  generateRelevanceExplanation(
-    criteria: MatchingCriterion[],
-    fallbackType: FallbackType
-  ): string {
+  generateRelevanceExplanation(criteria: MatchingCriterion[], fallbackType: FallbackType): string {
     // Filter to matched criteria only
     const matchedCriteria = criteria.filter(c => c.matched);
 

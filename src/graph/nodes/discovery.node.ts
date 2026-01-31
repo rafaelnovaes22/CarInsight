@@ -41,7 +41,9 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
           customerName: correctionResult.correctedName,
         },
         messages: [
-          new AIMessage(`Desculpa pelo erro, ${firstName}! Continuando... o que você está procurando?`),
+          new AIMessage(
+            `Desculpa pelo erro, ${firstName}! Continuando... o que você está procurando?`
+          ),
         ],
       };
       timer.logSuccess(state, result);
