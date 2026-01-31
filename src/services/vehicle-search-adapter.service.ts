@@ -177,9 +177,11 @@ export class VehicleSearchAdapter {
           bodyType: vehicle.carroceria,
           transmission: vehicle.cambio,
           fuelType: null, // Not returned by DeterministicRanker
-          color: null, // Not returned by DeterministicRanker
-          imageUrl: null,
-          detailsUrl: null,
+          color: vehicle.cor || null,
+          imageUrl: vehicle.fotoUrl || null,
+          detailsUrl: vehicle.url || null,
+          // Also include url field for compatibility with recommendation-formatter
+          url: vehicle.url || null,
         },
       }));
     } catch (error) {

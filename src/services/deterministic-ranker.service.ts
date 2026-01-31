@@ -49,6 +49,10 @@ export interface RankedVehicle {
   reasoning: string;
   highlights: string[];
   concerns: string[];
+  // Campos para exibição de links e imagens
+  url?: string | null;
+  fotoUrl?: string | null;
+  cor?: string | null;
 }
 
 // Resultado do ranqueamento
@@ -163,6 +167,10 @@ export class DeterministicRankerService {
           aptoUberX: true,
           aptoUberComfort: true,
           aptoUberBlack: true,
+          // Campos para exibição de links e imagens
+          url: true,
+          fotoUrl: true,
+          cor: true,
         },
       });
 
@@ -297,13 +305,19 @@ export class DeterministicRankerService {
   ): RankedVehicle {
     const weights = USE_CASE_WEIGHTS[useCase];
 
-    // Calcular score ponderado (0-100)
+    // Calcular score ponderado
+    // Os scores individuais são de 1-10, mas na prática variam de 3-9
+    // Normalizamos para uma escala de 50-100 para melhor UX
+    // Score 3 -> 50, Score 6 -> 75, Score 9 -> 100
     let weightedScore = 0;
     let totalWeight = 0;
 
     for (const [field, weight] of Object.entries(weights)) {
-      const value = vehicle[field] || 5; // default 5 se não calculado
-      weightedScore += value * weight * 10; // scores são 1-10, multiplicar por 10 para escala 0-100
+      const rawValue = vehicle[field] || 5; // default 5 se não calculado
+      // Normalizar de escala 1-10 para 50-100
+      // Fórmula: 50 + (value - 1) * (50 / 9) ≈ 50 + value * 5.56
+      const normalizedValue = 50 + (rawValue - 1) * 5.56;
+      weightedScore += normalizedValue * weight;
       totalWeight += weight;
     }
 
@@ -325,6 +339,62 @@ export class DeterministicRankerService {
       }
     }
 
+    // Bônus específicos por categoria de uso
+    // Cada categoria valoriza características diferentes
+    switch (useCase) {
+      case 'familia':
+        // Família valoriza espaço, segurança e conforto
+        if (vehicle.scoreEspaco >= 7) score = Math.min(100, score + 3);
+        if (vehicle.scoreSeguranca >= 7) score = Math.min(100, score + 3);
+        if (vehicle.scoreConforto >= 6) score = Math.min(100, score + 2);
+        break;
+
+      case 'viagem':
+        // Viagem valoriza conforto, economia e espaço
+        if (vehicle.scoreConforto >= 6) score = Math.min(100, score + 3);
+        if (vehicle.scoreEconomia >= 6) score = Math.min(100, score + 3);
+        if (vehicle.scoreEspaco >= 7) score = Math.min(100, score + 2);
+        break;
+
+      case 'uberX':
+      case 'uber':
+        // Uber X valoriza economia e custo-benefício
+        if (vehicle.scoreEconomia >= 7) score = Math.min(100, score + 4);
+        if (vehicle.scoreCustoBeneficio >= 7) score = Math.min(100, score + 3);
+        break;
+
+      case 'uberComfort':
+        // Uber Comfort valoriza conforto e espaço
+        if (vehicle.scoreConforto >= 7) score = Math.min(100, score + 4);
+        if (vehicle.scoreEspaco >= 6) score = Math.min(100, score + 3);
+        break;
+
+      case 'uberBlack':
+        // Uber Black valoriza conforto premium e segurança
+        if (vehicle.scoreConforto >= 8) score = Math.min(100, score + 5);
+        if (vehicle.scoreSeguranca >= 7) score = Math.min(100, score + 3);
+        break;
+
+      case 'trabalho':
+      case 'usoDiario':
+        // Trabalho/uso diário valoriza economia e custo-benefício
+        if (vehicle.scoreEconomia >= 7) score = Math.min(100, score + 4);
+        if (vehicle.scoreCustoBeneficio >= 7) score = Math.min(100, score + 3);
+        break;
+
+      case 'carga':
+        // Carga valoriza espaço e custo-benefício
+        if (vehicle.scoreEspaco >= 8) score = Math.min(100, score + 5);
+        if (vehicle.scoreCustoBeneficio >= 6) score = Math.min(100, score + 3);
+        break;
+
+      case 'entrega':
+        // Entrega valoriza economia e baixa manutenção
+        if (vehicle.scoreEconomia >= 8) score = Math.min(100, score + 5);
+        if (vehicle.scoreCustoBeneficio >= 7) score = Math.min(100, score + 3);
+        break;
+    }
+
     // Gerar highlights e concerns
     const { highlights, concerns } = this.generateHighlightsAndConcerns(vehicle, useCase);
 
@@ -344,6 +414,10 @@ export class DeterministicRankerService {
       reasoning,
       highlights,
       concerns,
+      // Campos para exibição de links e imagens
+      url: vehicle.url,
+      fotoUrl: vehicle.fotoUrl,
+      cor: vehicle.cor,
     };
   }
 
