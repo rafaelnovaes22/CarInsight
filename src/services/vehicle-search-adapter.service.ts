@@ -810,6 +810,7 @@ export class VehicleSearchAdapter {
         color: vehicle.cor,
         imageUrl: vehicle.fotoUrl || null,
         detailsUrl: vehicle.url || null,
+        url: vehicle.url || null,
       },
     }));
   }
