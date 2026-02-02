@@ -146,7 +146,7 @@ async function classifyAllCategories() {
                 arCondicionado: vehicle.arCondicionado,
                 portas: vehicle.portas,
                 cambio: vehicle.cambio,
-                cor: vehicle.cor
+                cor: vehicle.cor || undefined
             });
 
             // 2. Classificar outras categorias
@@ -157,6 +157,8 @@ async function classifyAllCategories() {
                 where: { id: vehicle.id },
                 data: {
                     aptoUber: uberResult.uberX || uberResult.uberComfort,
+                    aptoUberX: uberResult.uberX,
+                    aptoUberComfort: uberResult.uberComfort,
                     aptoUberBlack: uberResult.uberBlack,
                     aptoFamilia: categoryResult.aptoFamilia,
                     aptoCarga: categoryResult.aptoCarga,
