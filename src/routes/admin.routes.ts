@@ -19,6 +19,98 @@ function requireSecret(req: any, res: any, next: () => void) {
   next();
 }
 
+/**
+ * GET /admin/seed-renatinhu
+ * Limpa veículos antigos e repopula com dados da Renatinhu's Cars
+ * ⚠️ Este é o endpoint PRINCIPAL para atualização do inventário em produção
+ */
+router.get('/seed-renatinhu', async (req, res) => {
+  const { secret } = req.query;
+
+  // Validação de autenticação
+  if (secret !== SEED_SECRET) {
+    logger.warn('Tentativa de acesso não autorizado ao endpoint de seed');
+    return res.status(403).json({
+      success: false,
+      error: 'Unauthorized - Invalid secret',
+    });
+  }
+
+  try {
+    logger.info("🚀 Seed Renatinhu's Cars iniciado via HTTP endpoint");
+
+    // Contar veículos atuais
+    const oldCount = await prisma.vehicle.count();
+    logger.info(`📊 Veículos atuais: ${oldCount}`);
+
+    // Limpar veículos antigos
+    logger.info('🗑️ Removendo veículos antigos...');
+    await prisma.vehicle.deleteMany({});
+    logger.info('✅ Veículos antigos removidos');
+
+    // Executar seed da Renatinhu
+    logger.info("📦 Populando banco com dados da Renatinhu's Cars...");
+    const seedOutput = execSync('npm run db:seed', {
+      cwd: process.cwd(),
+      env: process.env,
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+    });
+
+    logger.info('Seed output:', seedOutput);
+
+    // Contar novos veículos
+    const newCount = await prisma.vehicle.count();
+    logger.info(`📊 Novos veículos: ${newCount}`);
+
+    // Executar geração de embeddings
+    logger.info('🔄 Gerando embeddings OpenAI...');
+    const embeddingsOutput = execSync('npm run embeddings:generate', {
+      cwd: process.cwd(),
+      env: process.env,
+      encoding: 'utf-8',
+      maxBuffer: 10 * 1024 * 1024,
+    });
+
+    logger.info('Embeddings output:', embeddingsOutput);
+
+    logger.info("✅ Seed Renatinhu's Cars concluído com sucesso!");
+
+    res.json({
+      success: true,
+      message: "✅ Seed Renatinhu's Cars executado com sucesso!",
+      summary: {
+        vehiclesRemoved: oldCount,
+        vehiclesAdded: newCount,
+      },
+      seedOutput: seedOutput.split('\n').slice(-10).join('\n'), // Últimas 10 linhas
+      embeddingsOutput: embeddingsOutput.split('\n').slice(-10).join('\n'),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error({ error }, '❌ Erro ao executar seed');
+
+    const errorDetails = {
+      message: error.message,
+      stderr: error.stderr?.toString(),
+      stdout: error.stdout?.toString(),
+      code: error.code,
+      cmd: error.cmd,
+    };
+
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      details: errorDetails,
+      help: 'Verifique: 1) DATABASE_URL configurado, 2) OPENAI_API_KEY configurado',
+    });
+  }
+});
+
+/**
+ * GET /admin/seed-robustcar (LEGADO - mantido para compatibilidade)
+ * @deprecated Use /admin/seed-renatinhu para dados atualizados
+ */
 router.get('/seed-robustcar', async (req, res) => {
   const { secret } = req.query;
 
