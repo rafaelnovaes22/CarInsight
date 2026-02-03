@@ -44,11 +44,11 @@ router.get('/seed-renatinhu', async (req, res) => {
     logger.info(`📊 Veículos atuais: ${oldCount}`);
 
     // Limpar veículos antigos
-    logger.info('🗑️ Removendo veículos antigos...');
-    await prisma.vehicle.deleteMany({});
-    logger.info('✅ Veículos antigos removidos');
+    // logger.info('🗑️ Removendo veículos antigos...');
+    // await prisma.vehicle.deleteMany({});
+    // logger.info('✅ Veículos antigos removidos');
 
-    // Executar seed da Renatinhu
+    // Executar seed da Renatinhu (o script já cuida da limpeza na ordem correta)
     logger.info("📦 Populando banco com dados da Renatinhu's Cars...");
     const seedOutput = execSync('npm run db:seed', {
       cwd: process.cwd(),
@@ -837,11 +837,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-                priceMatch[1]
-                  .replace(/R\$|\./g, '')
-                  .replace(',', '.')
-                  .trim()
-              ) || null
+              priceMatch[1]
+                .replace(/R\$|\./g, '')
+                .replace(',', '.')
+                .trim()
+            ) || null
             : null;
 
           vehicles.push({
