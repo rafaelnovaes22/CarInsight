@@ -220,6 +220,95 @@ router.post('/schema-push', requireSecret, async (req, res) => {
   }
 });
 
+/**
+ * GET /admin/update-urls
+ * Atualiza URLs dos veículos para o site da Renatinhu's Cars
+ * URL Pattern: https://www.renatinhuscars.com.br/?veiculo={marca}+{modelo}+{versao}&id={id}
+ * O ID é extraído do fotoUrl (padrão: 394_{id}_1-1.jpg)
+ */
+router.get('/update-urls', requireSecret, async (req, res) => {
+  try {
+    logger.info('🔗 Admin: Atualizando URLs dos veículos...');
+
+    const BASE_URL = 'https://www.renatinhuscars.com.br/';
+
+    // Helper function to extract vehicle ID from fotoUrl
+    const extractVehicleId = (fotoUrl: string | null): string | null => {
+      if (!fotoUrl) return null;
+      const match = fotoUrl.match(/394_(\d+)_/);
+      return match ? match[1] : null;
+    };
+
+    // Helper function to build vehicle URL
+    const buildVehicleUrl = (marca: string, modelo: string, versao: string, vehicleId: string): string => {
+      const veiculoName = `${marca} ${modelo} ${versao}`.trim().replace(/\s+/g, '+');
+      return `${BASE_URL}?veiculo=${encodeURIComponent(veiculoName).replace(/%20/g, '+')}&id=${vehicleId}`;
+    };
+
+    const vehicles = await prisma.vehicle.findMany({
+      select: {
+        id: true,
+        marca: true,
+        modelo: true,
+        versao: true,
+        fotoUrl: true,
+        url: true,
+      }
+    });
+
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+    const updatedVehicles: string[] = [];
+
+    for (const vehicle of vehicles) {
+      const vehicleId = extractVehicleId(vehicle.fotoUrl);
+
+      if (!vehicleId) {
+        logger.warn(`⚠️ Sem ID no fotoUrl: ${vehicle.marca} ${vehicle.modelo}`);
+        failed++;
+        continue;
+      }
+
+      const newUrl = buildVehicleUrl(vehicle.marca, vehicle.modelo, vehicle.versao || '', vehicleId);
+
+      if (vehicle.url === newUrl) {
+        skipped++;
+        continue;
+      }
+
+      await prisma.vehicle.update({
+        where: { id: vehicle.id },
+        data: { url: newUrl }
+      });
+
+      updatedVehicles.push(`${vehicle.marca} ${vehicle.modelo} -> id=${vehicleId}`);
+      updated++;
+    }
+
+    logger.info(`✅ URLs atualizadas: ${updated}, Já atualizadas: ${skipped}, Sem ID: ${failed}`);
+
+    res.json({
+      success: true,
+      message: '✅ URLs dos veículos atualizadas!',
+      summary: {
+        updated,
+        skipped,
+        failed,
+        total: vehicles.length,
+      },
+      updatedVehicles: updatedVehicles.slice(0, 10), // Primeiros 10 para não sobrecarregar
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error({ error }, '❌ Erro ao atualizar URLs');
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao atualizar URLs',
+      details: error.message,
+    });
+  }
+});
 // Whitelist de modelos Uber
 const UBER_X_MODELS: any = {
   honda: ['civic', 'city', 'fit'],
@@ -837,11 +926,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-                priceMatch[1]
-                  .replace(/R\$|\./g, '')
-                  .replace(',', '.')
-                  .trim()
-              ) || null
+              priceMatch[1]
+                .replace(/R\$|\./g, '')
+                .replace(',', '.')
+                .trim()
+            ) || null
             : null;
 
           vehicles.push({
