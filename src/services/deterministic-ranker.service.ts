@@ -282,9 +282,13 @@ export class DeterministicRankerService {
       where.km = { lte: context.maxKm };
     }
 
-    // Filtro de tipo de carroceria
+    // Filtro de tipo de carroceria (case-insensitive)
     if (context.bodyTypes && context.bodyTypes.length > 0) {
-      where.carroceria = { in: context.bodyTypes };
+      // Use OR with mode insensitive for each body type to handle case differences
+      // e.g., profile sends 'suv' but DB stores 'SUV'
+      where.OR = context.bodyTypes.map(bt => ({
+        carroceria: { equals: bt, mode: 'insensitive' as const },
+      }));
     }
 
     // Filtro de transmissão
