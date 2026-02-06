@@ -240,7 +240,12 @@ router.get('/update-urls', requireSecret, async (req, res) => {
     };
 
     // Helper function to build vehicle URL
-    const buildVehicleUrl = (marca: string, modelo: string, versao: string, vehicleId: string): string => {
+    const buildVehicleUrl = (
+      marca: string,
+      modelo: string,
+      versao: string,
+      vehicleId: string
+    ): string => {
       const veiculoName = `${marca} ${modelo} ${versao}`.trim().replace(/\s+/g, '+');
       return `${BASE_URL}?veiculo=${encodeURIComponent(veiculoName).replace(/%20/g, '+')}&id=${vehicleId}`;
     };
@@ -253,7 +258,7 @@ router.get('/update-urls', requireSecret, async (req, res) => {
         versao: true,
         fotoUrl: true,
         url: true,
-      }
+      },
     });
 
     let updated = 0;
@@ -270,7 +275,12 @@ router.get('/update-urls', requireSecret, async (req, res) => {
         continue;
       }
 
-      const newUrl = buildVehicleUrl(vehicle.marca, vehicle.modelo, vehicle.versao || '', vehicleId);
+      const newUrl = buildVehicleUrl(
+        vehicle.marca,
+        vehicle.modelo,
+        vehicle.versao || '',
+        vehicleId
+      );
 
       if (vehicle.url === newUrl) {
         skipped++;
@@ -279,7 +289,7 @@ router.get('/update-urls', requireSecret, async (req, res) => {
 
       await prisma.vehicle.update({
         where: { id: vehicle.id },
-        data: { url: newUrl }
+        data: { url: newUrl },
       });
 
       updatedVehicles.push(`${vehicle.marca} ${vehicle.modelo} -> id=${vehicleId}`);
@@ -926,11 +936,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
           const price = priceMatch
             ? parseFloat(
-              priceMatch[1]
-                .replace(/R\$|\./g, '')
-                .replace(',', '.')
-                .trim()
-            ) || null
+                priceMatch[1]
+                  .replace(/R\$|\./g, '')
+                  .replace(',', '.')
+                  .trim()
+              ) || null
             : null;
 
           vehicles.push({

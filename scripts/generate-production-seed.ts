@@ -1,4 +1,3 @@
-
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
@@ -6,15 +5,15 @@ import path from 'path';
 const prisma = new PrismaClient();
 
 async function generateSeed() {
-    console.log('🔄 Fetching classified vehicles from database...');
+  console.log('🔄 Fetching classified vehicles from database...');
 
-    // Fetch all vehicles with their calculated flags
-    const vehicles = await prisma.vehicle.findMany({
-        orderBy: { marca: 'asc' }
-    });
+  // Fetch all vehicles with their calculated flags
+  const vehicles = await prisma.vehicle.findMany({
+    orderBy: { marca: 'asc' },
+  });
 
-    // Prepare the content for seed.ts
-    const fileContent = `import { PrismaClient } from '@prisma/client';
+  // Prepare the content for seed.ts
+  const fileContent = `import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -68,9 +67,9 @@ main()
   });
 `;
 
-    const outputPath = path.join(process.cwd(), 'src/scripts/seed.ts');
-    fs.writeFileSync(outputPath, fileContent);
-    console.log(`✅ Generated src/scripts/seed.ts with ${vehicles.length} vehicles.`);
+  const outputPath = path.join(process.cwd(), 'src/scripts/seed.ts');
+  fs.writeFileSync(outputPath, fileContent);
+  console.log(`✅ Generated src/scripts/seed.ts with ${vehicles.length} vehicles.`);
 }
 
 generateSeed();

@@ -18,68 +18,68 @@ interface VehicleData {
 
 const CATEGORY_MAP: Record<string, string> = {
   // SUVs
-  'CRETA': 'SUV',
-  'COMPASS': 'SUV',
-  'RENEGADE': 'SUV',
-  'TRACKER': 'SUV',
-  'ECOSPORT': 'SUV',
-  'DUSTER': 'SUV',
+  CRETA: 'SUV',
+  COMPASS: 'SUV',
+  RENEGADE: 'SUV',
+  TRACKER: 'SUV',
+  ECOSPORT: 'SUV',
+  DUSTER: 'SUV',
   'HR-V': 'SUV',
-  'TUCSON': 'SUV',
-  'SPORTAGE': 'SUV',
-  'RAV4': 'SUV',
-  'TIGGO': 'SUV',
-  'KORANDO': 'SUV',
-  'PAJERO': 'SUV',
+  TUCSON: 'SUV',
+  SPORTAGE: 'SUV',
+  RAV4: 'SUV',
+  TIGGO: 'SUV',
+  KORANDO: 'SUV',
+  PAJERO: 'SUV',
   'T-CROSS': 'SUV',
-  'AIRCROSS': 'SUV',
-  'STONIC': 'SUV',
+  AIRCROSS: 'SUV',
+  STONIC: 'SUV',
 
   // Sedans
-  'CIVIC': 'SEDAN',
-  'COROLLA': 'SEDAN',
-  'CITY': 'SEDAN',
-  'CRUZE': 'SEDAN',
-  'HB20S': 'SEDAN',
-  'SENTRA': 'SEDAN',
-  'LOGAN': 'SEDAN',
-  'VOYAGE': 'SEDAN',
-  'FOCUS': 'SEDAN',
-  'PRIUS': 'SEDAN',
-  'ARRIZO': 'SEDAN',
+  CIVIC: 'SEDAN',
+  COROLLA: 'SEDAN',
+  CITY: 'SEDAN',
+  CRUZE: 'SEDAN',
+  HB20S: 'SEDAN',
+  SENTRA: 'SEDAN',
+  LOGAN: 'SEDAN',
+  VOYAGE: 'SEDAN',
+  FOCUS: 'SEDAN',
+  PRIUS: 'SEDAN',
+  ARRIZO: 'SEDAN',
 
   // Hatches
-  'ONIX': 'HATCH',
-  'HB20': 'HATCH',
-  'FIESTA': 'HATCH',
-  'KA': 'HATCH',
-  'CELTA': 'HATCH',
-  'UNO': 'HATCH',
-  'PALIO': 'HATCH',
-  'FOX': 'HATCH',
-  'MOBI': 'HATCH',
-  'KWID': 'HATCH',
-  'ETIOS': 'HATCH',
-  'YARIS': 'HATCH',
-  'C3': 'HATCH',
+  ONIX: 'HATCH',
+  HB20: 'HATCH',
+  FIESTA: 'HATCH',
+  KA: 'HATCH',
+  CELTA: 'HATCH',
+  UNO: 'HATCH',
+  PALIO: 'HATCH',
+  FOX: 'HATCH',
+  MOBI: 'HATCH',
+  KWID: 'HATCH',
+  ETIOS: 'HATCH',
+  YARIS: 'HATCH',
+  C3: 'HATCH',
   '207': 'HATCH',
-  'PUNTO': 'HATCH',
+  PUNTO: 'HATCH',
 
   // Pickups
-  'TORO': 'PICKUP',
-  'STRADA': 'PICKUP',
+  TORO: 'PICKUP',
+  STRADA: 'PICKUP',
 
   // SUV 7 lugares
   'GRAND LIVINA': 'SUV',
-  'FREEMONT': 'SUV',
+  FREEMONT: 'SUV',
 
   // Minivans
-  'MERIVA': 'MINIVAN',
-  'IDEA': 'MINIVAN',
+  MERIVA: 'MINIVAN',
+  IDEA: 'MINIVAN',
 
   // Outros
-  'SOUL': 'HATCH',
-  'NEO': 'MOTO',
+  SOUL: 'HATCH',
+  NEO: 'MOTO',
 };
 
 function detectCategory(model: string): string {
@@ -99,11 +99,7 @@ function parsePrice(priceText: string): number | null {
     return null;
   }
 
-  const cleanPrice = priceText
-    .replace('R$', '')
-    .replace(/\./g, '')
-    .replace(',', '.')
-    .trim();
+  const cleanPrice = priceText.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
 
   return parseFloat(cleanPrice);
 }
@@ -175,7 +171,7 @@ async function scrapePage(pageNumber: number): Promise<VehicleData[]> {
       // Cleanup version (remove leading hyphens or weird chars)
       version = version.replace(/^[-–—]\s*/, '').trim();
 
-      // Fallback if Version from URL is needed/better? 
+      // Fallback if Version from URL is needed/better?
       // URL version: urlParts[4] -> "Zen-2"
       // Title version usually better formatted "ZEN 2"
 
@@ -220,10 +216,13 @@ async function scrapeAllPages(): Promise<VehicleData[]> {
 
   console.log(`\n✅ Scraping concluído! Total: ${allVehicles.length} veículos\n`);
 
-  const categoryCounts = allVehicles.reduce((acc, v) => {
-    acc[v.category] = (acc[v.category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const categoryCounts = allVehicles.reduce(
+    (acc, v) => {
+      acc[v.category] = (acc[v.category] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   console.log('📊 Distribuição por categoria:');
   Object.entries(categoryCounts)

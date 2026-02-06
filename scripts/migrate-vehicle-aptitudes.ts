@@ -155,7 +155,7 @@ function estimateTimeRemaining(stats: MigrationStats): string {
  */
 function logProgress(stats: MigrationStats, checkpoint: Checkpoint): void {
   const elapsed = Date.now() - stats.startTime.getTime();
-  const progress = ((stats.processed + stats.skipped) / stats.total * 100).toFixed(1);
+  const progress = (((stats.processed + stats.skipped) / stats.total) * 100).toFixed(1);
   const eta = estimateTimeRemaining(stats);
 
   console.log('');
@@ -170,7 +170,6 @@ function logProgress(stats: MigrationStats, checkpoint: Checkpoint): void {
   console.log('━'.repeat(60));
   console.log('');
 }
-
 
 /**
  * Process a single vehicle
@@ -267,7 +266,9 @@ async function processBatch(
       if (result.aptoCarga) flags.push('Carga');
 
       console.log(`      ✅ [${flags.join(', ') || 'Nenhuma aptidão'}]`);
-      console.log(`      📊 Scores: Conforto=${result.scoreConforto}, Economia=${result.scoreEconomia}, Espaço=${result.scoreEspaco}`);
+      console.log(
+        `      📊 Scores: Conforto=${result.scoreConforto}, Economia=${result.scoreEconomia}, Espaço=${result.scoreEspaco}`
+      );
       stats.processed++;
     } else {
       console.log(`      ❌ Error: ${error}`);
@@ -326,7 +327,9 @@ async function validateMigration(): Promise<{ complete: boolean; stats: any }> {
   console.log('📊 Migration Status:');
   console.log('━'.repeat(40));
   console.log(`   Total vehicles: ${stats.total}`);
-  console.log(`   Classified: ${stats.classified} (${(stats.classified / stats.total * 100).toFixed(1)}%)`);
+  console.log(
+    `   Classified: ${stats.classified} (${((stats.classified / stats.total) * 100).toFixed(1)}%)`
+  );
   console.log(`   With scores: ${stats.withScores}`);
   console.log(`   Unclassified: ${stats.unclassified}`);
   console.log(`   Missing scores: ${stats.missingScores}`);
@@ -348,7 +351,6 @@ async function validateMigration(): Promise<{ complete: boolean; stats: any }> {
 
   return { complete, stats };
 }
-
 
 /**
  * Main migration function
@@ -526,7 +528,6 @@ async function migrateVehicleAptitudes(): Promise<void> {
     } else {
       console.log('\n✅ Migration completed successfully!');
     }
-
   } catch (error) {
     console.error('\n❌ Fatal error:', (error as Error).message);
     console.error('   Run with --resume to continue from last checkpoint.');

@@ -1,6 +1,6 @@
 /**
  * Script para atualizar elegibilidade de veículos com o novo VehicleClassifierService
- * 
+ *
  * Atualiza:
  * - Uber X / Black
  * - Família (Regra estrita)
@@ -28,13 +28,16 @@ async function updateVehicleClassification() {
       familia: 0,
       carga: 0,
       usoDiario: 0,
-      entrega: 0
+      entrega: 0,
     };
 
     for (const vehicle of vehicles) {
       // Classificar usando serviço RAG (CategoryClassifierService)
       // Adapting Prisma Vehicle to VehicleData interface if needed, but classifyAll handles it.
-      const classification = await CategoryClassifierService.classifyAll(vehicle as any, 'sao-paulo');
+      const classification = await CategoryClassifierService.classifyAll(
+        vehicle as any,
+        'sao-paulo'
+      );
 
       // Atualizar estatísticas
       if (classification.aptoUber) stats.uberX++;
@@ -56,8 +59,8 @@ async function updateVehicleClassification() {
           aptoEntrega: classification.aptoEntrega,
           // Atualiza legado para ser a união das novas categorias de trabalho
           aptoTrabalho: classification.aptoCarga || classification.aptoUsoDiario,
-          economiaCombustivel: VehicleClassifierService.classify(vehicle).economiaCombustivel
-        }
+          economiaCombustivel: VehicleClassifierService.classify(vehicle).economiaCombustivel,
+        },
       });
 
       // Log para veículos de Carga/Entrega (Novos)
@@ -76,7 +79,6 @@ async function updateVehicleClassification() {
     console.log(`💼 Trabalho (Dia a Dia):${stats.usoDiario}`);
     console.log(`📦 Apps de Entrega:     ${stats.entrega}`);
     console.log(`----------------------------------------\n`);
-
   } catch (error) {
     console.error('❌ Erro durante atualização:', error);
   } finally {

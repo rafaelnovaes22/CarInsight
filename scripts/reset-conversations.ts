@@ -1,7 +1,7 @@
 /**
  * Script para resetar conversas do WhatsApp
  * Prepara o sistema para iniciar o modo conversacional
- * 
+ *
  * Uso:
  * npx tsx scripts/reset-conversations.ts [phoneNumber]
  * npx tsx scripts/reset-conversations.ts --all
@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 
 async function resetConversation(phoneNumber: string) {
   console.log(`\n🗑️  Resetando conversa de ${phoneNumber}...`);
-  
+
   try {
     // Buscar conversa
     const conversation = await prisma.conversation.findFirst({
@@ -22,8 +22,8 @@ async function resetConversation(phoneNumber: string) {
         recommendations: true,
         lead: true,
         events: true,
-        messages: true
-      }
+        messages: true,
+      },
     });
 
     if (!conversation) {
@@ -43,7 +43,7 @@ async function resetConversation(phoneNumber: string) {
 
     // Deletar em cascata
     await prisma.conversation.delete({
-      where: { id: conversation.id }
+      where: { id: conversation.id },
     });
 
     console.log(`✅ Conversa resetada com sucesso!`);
@@ -56,14 +56,14 @@ async function resetConversation(phoneNumber: string) {
 
 async function resetAllConversations() {
   console.log(`\n🗑️  Resetando TODAS as conversas...`);
-  
+
   try {
     const conversations = await prisma.conversation.findMany({
       select: {
         id: true,
         phoneNumber: true,
-        currentStep: true
-      }
+        currentStep: true,
+      },
     });
 
     console.log(`📊 Encontradas ${conversations.length} conversas`);
@@ -81,7 +81,7 @@ async function resetAllConversations() {
 
     // Deletar todas
     const result = await prisma.conversation.deleteMany({});
-    
+
     console.log(`\n✅ ${result.count} conversa(s) deletada(s)!`);
   } catch (error) {
     console.error(`❌ Erro ao resetar conversas:`, error);
@@ -90,7 +90,7 @@ async function resetAllConversations() {
 
 async function main() {
   const args = process.argv.slice(2);
-  
+
   console.log('🔄 Reset de Conversas - FaciliAuto WhatsApp');
   console.log('━'.repeat(50));
 
