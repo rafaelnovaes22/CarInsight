@@ -174,6 +174,8 @@ export interface ConversationState {
     lastMessageAt: Date;
     leadQuality?: 'hot' | 'warm' | 'cold';
     flags: string[];
+    tokenUsage?: any;
+    llmUsed?: string;
   };
 }
 

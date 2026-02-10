@@ -95,6 +95,7 @@ model Conversation {
   customerName    String?
   status          String           @default("active")
   currentStep     String           @default("greeting")
+  resolutionStatus String?         // AI_RESOLVED, HUMAN_HANDOFF, etc.
   quizAnswers     String?
   profileData     String?
   startedAt       DateTime         @default(now())
@@ -191,6 +192,9 @@ model Message {
   messageType     String       @default("text")
   waMessageId     String?
   originalMediaId String?
+  processingTimeMs Int?         // Tempo de processamento em ms
+  tokenUsage      Json?        // Uso de tokens {prompt, completion, total}
+  cost            Float?       // Custo estimado em USD
   timestamp       DateTime     @default(now())
   conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 

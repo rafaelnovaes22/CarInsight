@@ -8,6 +8,9 @@
 
 import { chatCompletion } from '../lib/llm-router';
 import { logger } from '../lib/logger';
+import { RunTree } from 'langsmith';
+import { getCurrentRunTree } from 'langsmith/traceable';
+import { feedbackService } from '../services/feedback.service';
 import { vehicleSearchAdapter } from '../services/vehicle-search-adapter.service';
 import { UseCase } from '../services/deterministic-ranker.service';
 import { preferenceExtractor } from './preference-extractor.agent';
@@ -980,7 +983,7 @@ export class VehicleExpertAgent {
         // PRIORIDADE: depois de mostrar recomendações, QUALQUER PERGUNTA do usuário é uma dúvida.
         // Devemos consultar e responder, sem assumir "escolha" nem entrar no fluxo de negociação.
         if (detectUserQuestion(userMessage)) {
-          const answer = await answerQuestionUtil(userMessage, context, updatedProfile);
+          const { answer, usage } = await answerQuestionUtil(userMessage, context, updatedProfile);
 
           return {
             response: answer,
@@ -997,6 +1000,7 @@ export class VehicleExpertAgent {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
               llmUsed: 'gpt-4o-mini',
+              tokenUsage: usage,
             },
           };
         }
@@ -1499,7 +1503,7 @@ export class VehicleExpertAgent {
         }
 
         // Regular question - Answer using RAG
-        const answer = await answerQuestionUtil(userMessage, context, updatedProfile);
+        const { answer, usage } = await answerQuestionUtil(userMessage, context, updatedProfile);
 
         return {
           response: answer,
@@ -1517,6 +1521,7 @@ export class VehicleExpertAgent {
             processingTime: Date.now() - startTime,
             confidence: extracted.confidence,
             llmUsed: 'gpt-4o-mini',
+            tokenUsage: usage,
           },
         };
       }
@@ -1740,7 +1745,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       }
 
       // 7. Continue conversation - ask next contextual question
-      const nextQuestion = await generateNextQuestionUtil({
+      const { question: nextQuestion, usage } = await generateNextQuestionUtil({
         profile: updatedProfile,
         missingFields: readiness.missingRequired,
         context: summarizeContextUtil(context),
@@ -1765,6 +1770,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           processingTime: Date.now() - startTime,
           confidence: extracted.confidence,
           llmUsed: 'gpt-4o-mini',
+          tokenUsage: usage,
         },
       };
     } catch (error) {
@@ -1924,6 +1930,21 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
       // **DETERMINISTIC RANKING (latency-optimization)**
       // Use pre-calculated aptitude fields for fast SQL filtering (< 5s)
+      // Get current run tree for observability
+      const runTree = getCurrentRunTree();
+      if (runTree) {
+        runTree.metadata = {
+          ...runTree.metadata,
+          intent: 'get_recommendations',
+          user_segment: profile.budget && profile.budget > 100000 ? 'high_value' : 'standard',
+          has_trade_in: !!profile.hasTradeIn,
+          body_type_preference: profile.bodyType || 'none',
+          usage_type: profile.usage || 'none',
+          // A/B testing or feature flags can be added here
+          conversation_mode: 'deterministic_v2',
+        };
+      }
+
       // This replaces LLM-based ranking to reduce latency from ~60s to < 5s
       // Requirements: 5.1-5.5
 
@@ -1950,6 +1971,11 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         logger.info(
           { useCase, budget: query.filters.maxPrice },
           'Using DeterministicRanker for fast SQL-based search'
+        );
+
+        logger.info(
+          { profileBodyType: profile.bodyType, filterBodyType: query.filters.bodyType, useCase },
+          'Recommendation search parameters'
         );
 
         results = await vehicleSearchAdapter.searchByUseCase(useCase, {
@@ -1991,7 +2017,48 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
       // Results are already ranked by DeterministicRanker using pre-calculated scores
       // No need for LLM-based ranking - this reduces latency from ~60s to < 5s
-      const rankedResults = results;
+      let rankedResults = results;
+
+      // Post-filter: enforce bodyType preference as HARD FILTER
+      // moto/pickup are handled separately via wantsMoto/wantsPickup flags
+      if (profile.bodyType && !['moto', 'pickup'].includes(profile.bodyType)) {
+        const bodyTypeUpper = profile.bodyType.toUpperCase();
+        const filtered = rankedResults.filter(rec => {
+          const vehicleBodyType = (rec.vehicle.bodyType || '').toUpperCase();
+          return vehicleBodyType === bodyTypeUpper;
+        });
+        if (filtered.length > 0) {
+          logger.info(
+            { bodyType: profile.bodyType, before: rankedResults.length, after: filtered.length },
+            'Post-filter: enforced bodyType preference'
+          );
+
+          // Track effectiveness: "Body Type Correctness"
+          // If we had to filter out vehicles, it means upstream (RAG/Ranker) returned incorrect types
+          if (feedbackService) {
+            const currentRunId = getCurrentRunTree()?.id;
+            if (currentRunId) {
+              const keptRatio = filtered.length / rankedResults.length;
+              // Score 1.0 if we didn't have to filter anything (perfect retrieval)
+              // Score < 1.0 if we had to filter (retrieval included wrong types)
+              feedbackService
+                .submitUserFeedback(
+                  currentRunId,
+                  keptRatio,
+                  `Body Type Filter: Kept ${filtered.length}/${rankedResults.length}`
+                )
+                .catch(err => logger.error({ err }, 'Failed to submit feedback'));
+            }
+          }
+
+          rankedResults = filtered;
+        } else {
+          logger.warn(
+            { bodyType: profile.bodyType, resultsCount: rankedResults.length },
+            'Post-filter: no vehicles match bodyType, keeping original results'
+          );
+        }
+      }
 
       // Post-filter: apply minimum seats requirement (RIGOROSO)
       const requiredSeats = profile.minSeats;

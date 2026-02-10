@@ -293,12 +293,12 @@ Exemplos:
 
 Responda APENAS o JSON:`;
 
-      const response = await chatCompletion([{ role: 'user', content: prompt }], {
+      const { content } = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0,
         maxTokens: 50,
       });
 
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return { brand: null, model: null };
       }
@@ -335,12 +335,12 @@ IMPORTANTE: Retorne APENAS o primeiro nome, sem sobrenome. Se não houver nome, 
 
 Nome:`;
 
-      const response = await chatCompletion([{ role: 'user', content: prompt }], {
+      const { content } = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0,
         maxTokens: 20,
       });
 
-      const extracted = response.trim();
+      const extracted = content.trim();
 
       if (extracted === 'NULL' || extracted.length === 0 || extracted.length > 30) {
         return null;
@@ -395,13 +395,13 @@ Exemplos:
 
 JSON:`;
 
-      const response = await chatCompletion([{ role: 'user', content: prompt }], {
+      const { content } = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0,
         maxTokens: 100,
       });
 
       // Try to parse JSON from response
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return { usoPrincipal: null, orcamento: budgetMatch };
       }

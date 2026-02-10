@@ -24,6 +24,8 @@ export interface MetricsResponse {
     active: number;
     completed: number;
     avgDurationMinutes: number;
+    resolvedRate: number; // New metric: % of resolved conversations
+    avgCost: number; // New metric: Average cost per conversation
   };
   leads: {
     total: number;
@@ -40,6 +42,7 @@ export interface MetricsResponse {
   messages: {
     total: number;
     avgPerConversation: number;
+    p95ResponseTimeMs: number; // New metric: p95 latency
   };
 }
 
@@ -70,23 +73,33 @@ export async function getMetrics(period: MetricsPeriod = '24h'): Promise<Metrics
   logger.info({ period, startDate }, 'MetricsService: Generating metrics');
 
   // Conversations metrics (use startedAt, not createdAt)
-  const [totalConversations, activeConversations, completedConversations] = await Promise.all([
-    prisma.conversation.count({
-      where: { startedAt: { gte: startDate } },
-    }),
-    prisma.conversation.count({
-      where: {
-        startedAt: { gte: startDate },
-        status: 'active',
-      },
-    }),
-    prisma.conversation.count({
-      where: {
-        startedAt: { gte: startDate },
-        status: 'completed',
-      },
-    }),
-  ]);
+  const [totalConversations, activeConversations, completedConversations, resolvedConversations] =
+    await Promise.all([
+      prisma.conversation.count({
+        where: { startedAt: { gte: startDate } },
+      }),
+      prisma.conversation.count({
+        where: {
+          startedAt: { gte: startDate },
+          status: 'active',
+        },
+      }),
+      prisma.conversation.count({
+        where: {
+          startedAt: { gte: startDate },
+          status: 'completed',
+        },
+      }),
+      prisma.conversation.count({
+        where: {
+          startedAt: { gte: startDate },
+          resolutionStatus: 'AI_RESOLVED', // Assuming AI_RESOLVED is the success status
+        },
+      }),
+    ]);
+
+  const resolvedRate =
+    totalConversations > 0 ? (resolvedConversations / totalConversations) * 100 : 0;
 
   // Leads metrics
   const [totalLeads, newLeads, contactedLeads, convertedLeads] = await Promise.all([
@@ -159,11 +172,32 @@ export async function getMetrics(period: MetricsPeriod = '24h'): Promise<Metrics
   }
 
   // Messages metrics (use timestamp instead of createdAt)
-  const messageCount = await prisma.message.count({
-    where: { timestamp: { gte: startDate } },
-  });
+  const [messageCount, messagesWithLatency] = await Promise.all([
+    prisma.message.count({
+      where: { timestamp: { gte: startDate } },
+    }),
+    prisma.message.findMany({
+      where: {
+        timestamp: { gte: startDate },
+        processingTimeMs: { not: null },
+      },
+      select: { processingTimeMs: true, cost: true },
+    }),
+  ]);
 
   const avgMessagesPerConversation = totalConversations > 0 ? messageCount / totalConversations : 0;
+
+  // Calculate p95 Response Time
+  let p95ResponseTimeMs = 0;
+  if (messagesWithLatency.length > 0) {
+    const sortedLatencies = messagesWithLatency.map(m => m.processingTimeMs!).sort((a, b) => a - b);
+    const p95Index = Math.floor(sortedLatencies.length * 0.95);
+    p95ResponseTimeMs = sortedLatencies[p95Index];
+  }
+
+  // Calculate Average Cost per Conversation
+  const totalCost = messagesWithLatency.reduce((sum, m) => sum + (m.cost || 0), 0);
+  const avgCost = totalConversations > 0 ? totalCost / totalConversations : 0;
 
   // Calculate average conversation duration (in minutes)
   // Use startedAt and lastMessageAt instead of createdAt/updatedAt
@@ -193,6 +227,8 @@ export async function getMetrics(period: MetricsPeriod = '24h'): Promise<Metrics
       active: activeConversations,
       completed: completedConversations,
       avgDurationMinutes: Math.round(avgDuration * 10) / 10,
+      resolvedRate: Math.round(resolvedRate * 10) / 10,
+      avgCost: Math.round(avgCost * 100000) / 100000, // 5 decimal places for micro-costs
     },
     leads: {
       total: totalLeads,
@@ -209,6 +245,7 @@ export async function getMetrics(period: MetricsPeriod = '24h'): Promise<Metrics
     messages: {
       total: messageCount,
       avgPerConversation: Math.round(avgMessagesPerConversation * 10) / 10,
+      p95ResponseTimeMs,
     },
   };
 

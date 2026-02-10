@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import Groq from 'groq-sdk';
 import { env } from '../config/env';
 import { logger } from './logger';
+import { traceable } from 'langsmith/traceable';
 
 // Configuração dos providers
 const openai = new OpenAI({
@@ -90,44 +91,50 @@ const circuitBreaker = new CircuitBreaker();
 /**
  * Executa chamada para OpenAI GPT-4o-mini
  */
-async function callOpenAI(
-  messages: ChatMessage[],
-  options: LLMRouterOptions
-): Promise<{ content: string; usage: any; model: string }> {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: messages as OpenAI.Chat.ChatCompletionMessageParam[],
-    temperature: options.temperature ?? 0.7,
-    max_tokens: options.maxTokens ?? 500,
-  });
+const callOpenAI = traceable(
+  async function callOpenAI(
+    messages: ChatMessage[],
+    options: LLMRouterOptions
+  ): Promise<{ content: string; usage: any; model: string }> {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: messages as OpenAI.Chat.ChatCompletionMessageParam[],
+      temperature: options.temperature ?? 0.3,
+      max_tokens: options.maxTokens ?? 500,
+    });
 
-  return {
-    content: response.choices[0]?.message?.content || '',
-    usage: response.usage,
-    model: response.model,
-  };
-}
+    return {
+      content: response.choices[0]?.message?.content || '',
+      usage: response.usage,
+      model: response.model,
+    };
+  },
+  { name: 'call_openai', run_type: 'llm' }
+);
 
 /**
  * Executa chamada para Groq LLaMA 3.1 8B Instant
  */
-async function callGroq(
-  messages: ChatMessage[],
-  options: LLMRouterOptions
-): Promise<{ content: string; usage: any; model: string }> {
-  const response = await groq.chat.completions.create({
-    model: 'llama-3.1-8b-instant',
-    messages,
-    temperature: options.temperature ?? 0.7,
-    max_tokens: options.maxTokens ?? 500,
-  });
+const callGroq = traceable(
+  async function callGroq(
+    messages: ChatMessage[],
+    options: LLMRouterOptions
+  ): Promise<{ content: string; usage: any; model: string }> {
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages,
+      temperature: options.temperature ?? 0.3,
+      max_tokens: options.maxTokens ?? 500,
+    });
 
-  return {
-    content: response.choices[0]?.message?.content || '',
-    usage: response.usage,
-    model: response.model,
-  };
-}
+    return {
+      content: response.choices[0]?.message?.content || '',
+      usage: response.usage,
+      model: response.model,
+    };
+  },
+  { name: 'call_groq', run_type: 'llm' }
+);
 
 /**
  * Modo mock para desenvolvimento sem API keys
@@ -210,15 +217,14 @@ function mockResponse(messages: ChatMessage[]): {
 export async function chatCompletion(
   messages: ChatMessage[],
   options: LLMRouterOptions = {}
-): Promise<string> {
+): Promise<{ content: string; usage: any; model: string }> {
   const maxRetries = options.retries ?? 2;
   const providers = LLM_PROVIDERS.filter(p => p.enabled).sort((a, b) => a.priority - b.priority);
 
   // Se nenhum provider está configurado, usar mock
   if (providers.length === 0) {
     logger.warn('🤖 Using MOCK mode (no API keys configured)');
-    const result = mockResponse(messages);
-    return result.content;
+    return mockResponse(messages);
   }
 
   // Tentar cada provider em ordem de prioridade
@@ -264,7 +270,7 @@ export async function chatCompletion(
           'LLM call successful'
         );
 
-        return result.content;
+        return result;
       } catch (error: any) {
         logger.error(
           {
@@ -292,8 +298,7 @@ export async function chatCompletion(
 
   // Se todos falharam, usar mock como último recurso
   logger.error('All LLM providers failed, using mock response');
-  const result = mockResponse(messages);
-  return result.content;
+  return mockResponse(messages);
 }
 
 /**
@@ -312,4 +317,35 @@ export function getLLMProvidersStatus() {
 export function resetCircuitBreaker() {
   circuitBreaker['failures'].clear();
   circuitBreaker['lastFailure'].clear();
+}
+
+/**
+ * Calculate cost based on model and token usage
+ * Returns cost in USD
+ */
+export function calculateCost(
+  model: string,
+  usage: { prompt_tokens: number; completion_tokens: number }
+): number {
+  if (!usage) return 0;
+
+  // Find provider by model name (approximate match)
+  const provider = LLM_PROVIDERS.find(p => model.includes(p.model) || p.model.includes(model));
+
+  if (!provider) {
+    // Default to GPT-4o-mini if unknown
+    const defaultProvider = LLM_PROVIDERS.find(p => p.name === 'openai');
+    if (defaultProvider) {
+      const inputCost = (usage.prompt_tokens / 1_000_000) * defaultProvider.costPer1MTokens.input;
+      const outputCost =
+        (usage.completion_tokens / 1_000_000) * defaultProvider.costPer1MTokens.output;
+      return inputCost + outputCost;
+    }
+    return 0;
+  }
+
+  const inputCost = (usage.prompt_tokens / 1_000_000) * provider.costPer1MTokens.input;
+  const outputCost = (usage.completion_tokens / 1_000_000) * provider.costPer1MTokens.output;
+
+  return inputCost + outputCost;
 }

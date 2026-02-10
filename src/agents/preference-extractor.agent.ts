@@ -391,7 +391,7 @@ Saída: {
       }
 
       // Call LLM
-      const result = await chatCompletion(
+      const { content: resultContent } = await chatCompletion(
         [
           {
             role: 'system',
@@ -409,7 +409,22 @@ Saída: {
       );
 
       // Parse result
-      const parsed = this.parseExtractionResult(result);
+      const parsed = this.parseExtractionResult(resultContent);
+
+      // FALLBACK: If LLM didn't extract bodyType, try deterministic detection
+      if (!parsed.extracted.bodyType) {
+        const detectedBodyType = this.detectBodyTypeFromMessage(message);
+        if (detectedBodyType) {
+          parsed.extracted.bodyType = detectedBodyType as CustomerProfile['bodyType'];
+          if (!parsed.fieldsExtracted.includes('bodyType')) {
+            parsed.fieldsExtracted.push('bodyType');
+          }
+          logger.info(
+            { message: message.substring(0, 100), detectedBodyType },
+            'Deterministic bodyType fallback triggered'
+          );
+        }
+      }
 
       // Validate confidence
       const minConfidence = config.minConfidence ?? 0.5;
@@ -637,6 +652,47 @@ Saída: {
     }
 
     return sanitized;
+  }
+
+  /**
+   * Deterministic body type detection from message keywords
+   * Fallback when LLM extraction misses short body type messages
+   */
+  private detectBodyTypeFromMessage(message: string): string | null {
+    const lower = message.toLowerCase().trim();
+    const words = lower.split(/\s+/);
+
+    // Map of keywords to body types
+    const bodyTypeKeywords: Record<string, string> = {
+      suv: 'suv',
+      suvs: 'suv',
+      utilitário: 'suv',
+      utilitario: 'suv',
+      sedan: 'sedan',
+      sedã: 'sedan',
+      seda: 'sedan',
+      hatch: 'hatch',
+      hatchback: 'hatch',
+      compacto: 'hatch',
+      pickup: 'pickup',
+      picape: 'pickup',
+      caminhonete: 'pickup',
+      camionete: 'pickup',
+      moto: 'moto',
+      motocicleta: 'moto',
+      scooter: 'moto',
+      minivan: 'minivan',
+    };
+
+    for (const word of words) {
+      // Remove common suffixes/noise
+      const cleaned = word.replace(/[.,!?;:]+$/, '');
+      if (bodyTypeKeywords[cleaned]) {
+        return bodyTypeKeywords[cleaned];
+      }
+    }
+
+    return null;
   }
 
   /**

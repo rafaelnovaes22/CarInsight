@@ -7,6 +7,7 @@ import { ConversationState } from '../types/state.types';
 import { dataRightsService } from './data-rights.service';
 import { featureFlags } from '../lib/feature-flags';
 import { conversationalHandler } from './conversational-handler.service';
+import { calculateCost } from '../lib/llm-router';
 
 /**
  * Options for audio message handling
@@ -265,6 +266,9 @@ Para começar, qual é o seu nome?`;
         'Routing decision'
       );
 
+      // Start tracking time
+      const startTime = Date.now();
+
       // Use integrated LangGraph + VehicleExpertAgent
       logger.debug(
         { conversationId: conversation.id },
@@ -280,6 +284,11 @@ Para começar, qual é o seu nome?`;
       const result = await langGraph.processMessage(sanitizedMessage, currentState);
       const newState = result.newState;
       const response = result.response;
+
+      const processingTimeMs = Date.now() - startTime;
+
+      // Extract token usage from metadata if available
+      const tokenUsage = newState.metadata.tokenUsage || undefined;
 
       // 🛡️ GUARDRAIL: Validate output
       const outputValidation = guardrails.validateOutput(response);
@@ -308,13 +317,25 @@ Para começar, qual é o seu nome?`;
         },
       });
 
-      // Log outgoing message
+      // Log outgoing message with metrics
+      let cost: number | undefined;
+      if (tokenUsage && newState.metadata.llmUsed) {
+        try {
+          cost = calculateCost(newState.metadata.llmUsed, tokenUsage);
+        } catch (error) {
+          logger.error({ error }, 'Error calculating message cost');
+        }
+      }
+
       await prisma.message.create({
         data: {
           conversationId: conversation.id,
           direction: 'outgoing',
           content: finalResponse,
           messageType: 'text',
+          processingTimeMs,
+          tokenUsage: tokenUsage ? JSON.parse(JSON.stringify(tokenUsage)) : undefined,
+          cost,
         },
       });
 
@@ -585,6 +606,7 @@ Para começar, qual é o seu nome?`;
         },
         data: {
           status: 'closed',
+          resolutionStatus: 'USER_RESET',
           closedAt: new Date(),
         },
       });

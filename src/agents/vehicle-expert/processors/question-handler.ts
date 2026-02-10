@@ -24,7 +24,7 @@ export async function answerQuestion(
   question: string,
   context: ConversationContext,
   profile: Partial<CustomerProfile>
-): Promise<string> {
+): Promise<{ answer: string; usage?: any }> {
   try {
     // Search relevant vehicles semantically
     const relevantVehicles = await vehicleSearchAdapter.search(question, {
@@ -63,7 +63,7 @@ Responda a pergunta de forma natural e útil, usando exemplos dos veículos quan
 Se a pergunta for sobre diferenças entre categorias, explique claramente.
 Sempre mantenha o foco em ajudar o cliente a encontrar o carro ideal.`;
 
-    const response = await chatCompletion(
+    const { content, usage } = await chatCompletion(
       [
         { role: 'system', content: prompt },
         { role: 'user', content: question },
@@ -74,10 +74,12 @@ Sempre mantenha o foco em ajudar o cliente a encontrar o carro ideal.`;
       }
     );
 
-    return response.trim();
+    return { answer: content.trim(), usage };
   } catch (error) {
     logger.error({ error, question }, 'Failed to answer question');
-    return 'Desculpe, não consegui processar sua pergunta. Pode reformular de outra forma?';
+    return {
+      answer: 'Desculpe, não consegui processar sua pergunta. Pode reformular de outra forma?',
+    };
   }
 }
 
@@ -87,7 +89,9 @@ Sempre mantenha o foco em ajudar o cliente a encontrar o carro ideal.`;
  * @param options - Question generation options
  * @returns Generated question string
  */
-export async function generateNextQuestion(options: QuestionGenerationOptions): Promise<string> {
+export async function generateNextQuestion(
+  options: QuestionGenerationOptions
+): Promise<{ question: string; usage?: any }> {
   try {
     const { profile, missingFields, context } = options;
 
@@ -137,7 +141,7 @@ EXEMPLO RUIM:
 
 Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
-    const response = await chatCompletion(
+    const { content, usage } = await chatCompletion(
       [
         { role: 'system', content: prompt },
         { role: 'user', content: 'Qual a próxima melhor pergunta?' },
@@ -148,7 +152,7 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
       }
     );
 
-    return response.trim();
+    return { question: content.trim(), usage };
   } catch (error) {
     logger.error({ error }, 'Failed to generate question');
 
@@ -159,13 +163,13 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
     const vehicleTerm = isMoto ? 'na moto' : 'no carro';
     const vehicleEmoji = isMoto ? '🏍️' : '🚗';
 
+    let fallbackQuestion = `Me conta mais sobre o que você busca ${isMoto ? 'na moto' : 'no carro'} ideal?`;
     if (missingFields.includes('budget') || !profile.budget) {
-      return `💰 Até quanto você pretende investir ${vehicleTerm}?`;
-    }
-    if (missingFields.includes('usage') || !profile.usage) {
-      return `${vehicleEmoji} Qual vai ser o uso principal? Cidade, viagens, trabalho?`;
+      fallbackQuestion = `💰 Até quanto você pretende investir ${vehicleTerm}?`;
+    } else if (missingFields.includes('usage') || !profile.usage) {
+      fallbackQuestion = `${vehicleEmoji} Qual vai ser o uso principal? Cidade, viagens, trabalho?`;
     }
 
-    return `Me conta mais sobre o que você busca ${isMoto ? 'na moto' : 'no carro'} ideal?`;
+    return { question: fallbackQuestion };
   }
 }

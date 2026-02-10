@@ -25,7 +25,10 @@ export interface IGraphState {
     lastMessageAt: number;
     loopCount: number;
     errorCount: number;
+    errorCount: number;
     flags: string[];
+    tokenUsage?: any;
+    llmUsed?: string;
   };
 
   // Legacy Quiz State (for backward compatibility during migration)

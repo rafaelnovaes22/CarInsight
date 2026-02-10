@@ -186,15 +186,20 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
   };
 
   // Propagate handoff_requested flag if detected
-  if (isHandoffRequest) {
-    result.metadata = {
-      ...state.metadata,
-      lastMessageAt: Date.now(),
-      flags: state.metadata.flags.includes('handoff_requested')
-        ? state.metadata.flags
-        : [...state.metadata.flags, 'handoff_requested'],
-    };
-  }
+  // Propagate handoff_requested flag if detected
+  const tokenUsage = response.metadata?.tokenUsage;
+  const llmUsed = response.metadata?.llmUsed;
+
+  result.metadata = {
+    ...state.metadata,
+    lastMessageAt: Date.now(),
+    flags:
+      isHandoffRequest && !state.metadata.flags.includes('handoff_requested')
+        ? [...state.metadata.flags, 'handoff_requested']
+        : state.metadata.flags,
+    tokenUsage,
+    llmUsed,
+  };
 
   // Only add message if there is actual content
   // If response is empty (delegation), we don't add AIMessage so the Router

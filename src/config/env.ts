@@ -42,6 +42,12 @@ const envSchema = z.object({
     .default('true')
     .transform(val => val === 'true'),
   AUDIO_MAX_DURATION_SECONDS: z.coerce.number().default(120), // 2 minutes max
+
+  // Observability (LangSmith)
+  LANGCHAIN_TRACING_V2: z.string().optional().default('false'),
+  LANGCHAIN_ENDPOINT: z.string().optional().default('https://api.smith.langchain.com'),
+  LANGCHAIN_API_KEY: z.string().optional(),
+  LANGCHAIN_PROJECT: z.string().optional().default('carinsight-prod'),
 });
 
 const parsed = envSchema.parse(process.env);

@@ -135,6 +135,8 @@ export class LangGraphConversation {
         startedAt: new Date(graphState.metadata.startedAt),
         lastMessageAt: new Date(graphState.metadata.lastMessageAt),
         flags: graphState.metadata.flags,
+        tokenUsage: graphState.metadata.tokenUsage,
+        llmUsed: graphState.metadata.llmUsed,
       },
     };
   }
