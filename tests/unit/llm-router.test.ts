@@ -33,7 +33,9 @@ describe('LLM Router', () => {
       const response = await chatCompletion(messages);
 
       expect(response).toBeTruthy();
-      expect(typeof response).toBe('string');
+      expect(response).toHaveProperty('content');
+      expect(typeof response.content).toBe('string');
+      expect(response).toHaveProperty('model');
     }, 30000);
 
     it('deve retornar string para qualquer input válido', async () => {
@@ -47,7 +49,9 @@ describe('LLM Router', () => {
       });
 
       expect(response).toBeTruthy();
-      expect(typeof response).toBe('string');
+      expect(response).toHaveProperty('content');
+      expect(typeof response.content).toBe('string');
+      expect(response).toHaveProperty('model');
     }, 30000);
   });
 
@@ -109,7 +113,9 @@ describe('LLM Router', () => {
       const response = await chatCompletion(messages);
 
       expect(response).toBeTruthy();
-      expect(typeof response).toBe('string');
+      expect(response).toHaveProperty('content');
+      expect(typeof response.content).toBe('string');
+      expect(response).toHaveProperty('model');
     }, 30000);
   });
 });

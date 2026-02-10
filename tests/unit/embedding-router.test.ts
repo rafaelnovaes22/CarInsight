@@ -1,6 +1,46 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock logger first
+// Mock OpenAI SDK to prevent real API calls
+vi.mock('openai', () => {
+  const mockCreate = vi.fn(async ({ input }: any) => {
+    const texts = Array.isArray(input) ? input : [input];
+    return {
+      data: texts.map((_: string, i: number) => {
+        // Generate raw values and normalize to magnitude ~1
+        const raw = Array.from({ length: 1536 }, (_, j) => Math.sin(i + j * 0.01));
+        const mag = Math.sqrt(raw.reduce((s, v) => s + v * v, 0));
+        return { embedding: raw.map(v => v / mag) };
+      }),
+      usage: { prompt_tokens: 5, total_tokens: 5 },
+      model: 'text-embedding-3-small',
+    };
+  });
+
+  return {
+    default: class MockOpenAI {
+      embeddings = { create: mockCreate };
+    },
+  };
+});
+
+// Mock Cohere SDK to prevent real API calls
+vi.mock('cohere-ai', () => {
+  const mockEmbed = vi.fn(async ({ texts }: any) => ({
+    embeddings: {
+      float: texts.map((_: string, i: number) =>
+        Array.from({ length: 1024 }, (_, j) => Math.cos(i + j * 0.01))
+      ),
+    },
+  }));
+
+  return {
+    CohereClient: class MockCohere {
+      embed = mockEmbed;
+    },
+  };
+});
+
+// Mock logger
 vi.mock('../../src/lib/logger', () => ({
   logger: {
     info: vi.fn(),
