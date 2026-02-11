@@ -16,88 +16,106 @@ vi.mock('../../src/lib/llm-router', () => ({
   chatCompletion: vi.fn(async (messages: any[]) => {
     const systemMessage = messages.find((m: any) => m.role === 'system')?.content || '';
     const userMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
-    console.log('MOCK CALL:', {
-      userMessage,
-      systemMessage: systemMessage.substring(0, 50),
-      msgCount: messages.length,
-    });
 
     // --- FINANCING MOCK ---
     if (userMessage.includes('financiar') || userMessage.includes('financiamento')) {
       if (systemMessage.includes('JSON') || systemMessage.includes('extrair')) {
-        return JSON.stringify({
-          extracted: { wantsFinancing: true },
-          confidence: 0.95,
-          reasoning: 'Financing intent detected',
-          fieldsExtracted: ['wantsFinancing'],
-        });
+        return {
+          content: JSON.stringify({
+            extracted: { wantsFinancing: true },
+            confidence: 0.95,
+            reasoning: 'Financing intent detected',
+            fieldsExtracted: ['wantsFinancing'],
+          }),
+        };
       }
-      return 'Claro, podemos simular um financiamento. Qual valor você daria de entrada?';
+      return {
+        content: 'Claro, podemos simular um financiamento. Qual valor você daria de entrada?',
+      };
     }
 
     if (userMessage.includes('entrada de 10 mil') || userMessage.includes('10000')) {
       if (systemMessage.includes('JSON') || systemMessage.includes('extrair')) {
-        return JSON.stringify({
-          extracted: { financingDownPayment: 10000 },
-          confidence: 0.95,
-          reasoning: 'Down payment extracted',
-          fieldsExtracted: ['financingDownPayment'],
-        });
+        return {
+          content: JSON.stringify({
+            extracted: { financingDownPayment: 10000 },
+            confidence: 0.95,
+            reasoning: 'Down payment extracted',
+            fieldsExtracted: ['financingDownPayment'],
+          }),
+        };
       }
-      return 'Perfeito, com essa entrada conseguimos parcelas a partir de R$ 900,00.';
+      return {
+        content: 'Perfeito, com essa entrada conseguimos parcelas a partir de R$ 900,00.',
+      };
     }
 
     // --- TRADE-IN MOCK ---
     if (userMessage.includes('tenho um carro') || userMessage.includes('troca')) {
       if (systemMessage.includes('JSON') || systemMessage.includes('extrair')) {
-        return JSON.stringify({
-          extracted: { hasTradeIn: true },
-          confidence: 0.95,
-          reasoning: 'Trade-in intent detected',
-          fieldsExtracted: ['hasTradeIn'],
-        });
+        return {
+          content: JSON.stringify({
+            extracted: { hasTradeIn: true },
+            confidence: 0.95,
+            reasoning: 'Trade-in intent detected',
+            fieldsExtracted: ['hasTradeIn'],
+          }),
+        };
       }
-      return 'Aceitamos seu carro na troca! Qual é o modelo e ano dele?';
+      return {
+        content: 'Aceitamos seu carro na troca! Qual é o modelo e ano dele?',
+      };
     }
 
-    if (userMessage.includes('gol 2015')) {
+    if (userMessage.includes('sandero 2018')) {
       if (systemMessage.includes('JSON') || systemMessage.includes('extrair')) {
-        return JSON.stringify({
-          extracted: {
-            tradeInModel: 'gol',
-            tradeInYear: 2015,
-            tradeInBrand: 'volkswagen',
-          },
-          confidence: 0.95,
-          reasoning: 'Trade-in details extracted',
-          fieldsExtracted: ['tradeInModel', 'tradeInYear', 'tradeInBrand'],
-        });
+        return {
+          content: JSON.stringify({
+            extracted: {
+              tradeInBrand: 'renault',
+              tradeInModel: 'sandero',
+              tradeInYear: 2018,
+            },
+            confidence: 0.95,
+            reasoning: 'Trade-in details extracted',
+            fieldsExtracted: ['tradeInBrand', 'tradeInModel', 'tradeInYear'],
+          }),
+        };
       }
-      return 'Ótimo, o Gol tem boa liquidez. Podemos avaliar seu carro.';
+      return {
+        content: 'Ótimo, um Renault Sandero 2018. Vamos avaliar seu carro na troca!',
+      };
     }
 
-    // --- EXTRACTION FALLBACK (must come BEFORE conversational checks for non-specific intents) ---
-    // If it's an extraction call and no specific intent matched above, return empty extraction
-    if (systemMessage.includes('JSON') || systemMessage.includes('extrair')) {
-      return JSON.stringify({
-        extracted: {},
-        confidence: 0.1,
-        reasoning: 'No preferences',
-        fieldsExtracted: [],
-      });
-    }
-
-    // --- HANDOFF/SCHEDULE MOCK (conversational only - AFTER extraction check) ---
+    // --- HANDOFF MOCK ---
     if (userMessage.includes('vendedor')) {
-      return 'Entendi. Vou te conectar com um de nossos vendedores. Clique no link: https://wa.me/5511999999999';
+      return {
+        content: 'Entendi. Vou te conectar com um de nossos vendedores. Clique no link: https://wa.me/5511999999999',
+      };
     }
 
     if (userMessage.includes('visita') || userMessage.includes('agendar')) {
-      return 'Podemos agendar uma visita sim! Qual horário fica melhor para você?';
+      return {
+        content: 'Podemos agendar uma visita sim! Qual horário fica melhor para você?',
+      };
     }
 
-    // --- GENERIC FALLBACK FOR CONVERSATION ---
-    return 'Posso ajudar com mais alguma coisa sobre os veículos?';
+    // --- GENERIC CONVERSATION FALLBACK ---
+    if (!systemMessage.includes('JSON') && !systemMessage.includes('extrair')) {
+      return {
+        content: 'Posso ajudar com mais alguma coisa sobre os veículos?',
+      };
+    }
+
+    // --- EXTRACTION FALLBACK ---
+    return {
+      content: JSON.stringify({
+        extracted: {},
+        confidence: 0.0,
+        reasoning: 'No intent detected',
+        fieldsExtracted: [],
+      }),
+    };
   }),
   resetCircuitBreaker: vi.fn(),
   getLLMProvidersStatus: vi.fn(() => []),
