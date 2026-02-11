@@ -90,7 +90,8 @@ vi.mock('../../src/lib/llm-router', () => ({
     // --- HANDOFF MOCK ---
     if (userMessage.includes('vendedor')) {
       return {
-        content: 'Entendi. Vou te conectar com um de nossos vendedores. Clique no link: https://wa.me/5511999999999',
+        content:
+          'Entendi. Vou te conectar com um de nossos vendedores. Clique no link: https://wa.me/5511999999999',
       };
     }
 
