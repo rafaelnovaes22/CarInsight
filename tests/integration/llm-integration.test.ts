@@ -54,10 +54,11 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
       const response = await chatCompletion(messages, { maxTokens: 50 });
 
       expect(response).toBeTruthy();
-      expect(typeof response).toBe('string');
-      expect(response.length).toBeGreaterThan(5);
+      expect(response.content).toBeTruthy();
+      expect(typeof response.content).toBe('string');
+      expect(response.content.length).toBeGreaterThan(5);
 
-      console.log(`   Resposta LLM: "${response.substring(0, 100)}..."`);
+      console.log(`   Resposta LLM: "${response.content.substring(0, 100)}..."`);
     }, 30000);
 
     it('deve classificar intenção de compra corretamente', async () => {
@@ -78,7 +79,7 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
         maxTokens: 20,
       });
 
-      expect(response.toUpperCase()).toContain('QUALIFICAR');
+      expect(response.content.toUpperCase()).toContain('QUALIFICAR');
     }, 30000);
 
     it('deve classificar intenção de contato humano', async () => {
@@ -99,7 +100,7 @@ describeIfApiKeys('LLM Integration Tests (Real API)', () => {
         maxTokens: 20,
       });
 
-      expect(response.toUpperCase()).toContain('HUMANO');
+      expect(response.content.toUpperCase()).toContain('HUMANO');
     }, 30000);
   });
 
@@ -241,6 +242,7 @@ describe('LLM Availability Check', () => {
     const response = await chatCompletion(messages);
 
     expect(response).toBeTruthy();
-    expect(typeof response).toBe('string');
+    expect(response.content).toBeTruthy();
+    expect(typeof response.content).toBe('string');
   }, 10000);
 });
