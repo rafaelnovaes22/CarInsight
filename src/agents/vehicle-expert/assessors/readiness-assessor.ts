@@ -25,13 +25,25 @@ export function assessReadiness(
     ['moto', 'pickup', 'suv', 'sedan', 'hatch', 'minivan'].includes(profile.bodyType);
 
   if (hasSpecificBodyType) {
+    // Budget is required even with specific body type
+    if (!profile.budget) {
+      return {
+        canRecommend: false,
+        confidence: 50,
+        missingRequired: ['budget'],
+        missingOptional: ['usage', 'minYear'].filter(field => !(profile as any)[field]),
+        action: 'continue_asking',
+        reasoning: `Tipo de veículo especificado (${profile.bodyType}) mas falta o orçamento`,
+      };
+    }
+
     return {
       canRecommend: true,
-      confidence: 80, // Good confidence with specific body type
+      confidence: 80, // Good confidence with specific body type + budget
       missingRequired: [],
-      missingOptional: ['budget', 'usage'].filter(field => !(profile as any)[field]),
+      missingOptional: ['usage', 'minYear'].filter(field => !(profile as any)[field]),
       action: 'recommend_now',
-      reasoning: `Tipo de veículo especificado (${profile.bodyType}) - suficiente para mostrar opções`,
+      reasoning: `Tipo de veículo especificado (${profile.bodyType}) com orçamento - suficiente para mostrar opções`,
     };
   }
 
