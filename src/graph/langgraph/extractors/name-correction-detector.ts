@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Name Correction Detector
  *
  * Detects when a user is correcting their previously stored name.
@@ -44,27 +44,27 @@ export interface NameCorrectionDetectorConfig {
  * Each pattern captures the corrected name in group 1.
  */
 export const NAME_CORRECTION_PATTERNS: RegExp[] = [
-  // "é [Name] na verdade" / "na verdade é [Name]"
-  /(?:^|\s)(?:é|e)\s+([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)\s+na\s+verdade/i,
-  /na\s+verdade\s+(?:é|e)\s+([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  // "Ã© [Name] na verdade" / "na verdade Ã© [Name]"
+  /(?:^|\s)(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)\s+na\s+verdade/i,
+  /na\s+verdade\s+(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
 
-  // "não, é [Name]" / "não, [Name]"
-  /^n[ãa]o[,.]?\s*(?:é|e)?\s*([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  // "nÃ£o, Ã© [Name]" / "nÃ£o, [Name]"
+  /^n[ãa]o[,.]?\s*(?:é|e)?\s*([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)?)\s*$/i,
 
-  // "meu nome é [Name]" (when name already exists - implies correction)
-  /meu\s+nome\s+(?:é|e)\s+([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  // "meu nome Ã© [Name]" (when name already exists - implies correction)
+  /meu\s+nome\s+(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
 
   // "me chama de [Name]" / "pode me chamar de [Name]"
-  /(?:me\s+chama|pode\s+me\s+chamar)\s+de\s+([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  /(?:me\s+chama|pode\s+me\s+chamar)\s+de\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
 
-  // "o nome é [Name]"
-  /o\s+nome\s+(?:é|e)\s+([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  // "o nome Ã© [Name]"
+  /o\s+nome\s+(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
 
   // "na verdade me chamo [Name]"
-  /na\s+verdade\s+me\s+chamo\s+([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  /na\s+verdade\s+me\s+chamo\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
 
-  // "errou, é [Name]" / "errado, é [Name]"
-  /err(?:ou|ado)[,.]?\s*(?:é|e)?\s*([A-ZÀ-Úa-zà-ú]+(?:\s+[A-ZÀ-Úa-zà-ú]+)*)/i,
+  // "errou, Ã© [Name]" / "errado, Ã© [Name]"
+  /err(?:ou|ado)[,.]?\s*(?:Ã©|e)?\s*([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
 ];
 
 /**
@@ -135,3 +135,4 @@ export function detectNameCorrection(
   logger.debug({ message, existingName }, 'detectNameCorrection: no correction pattern matched');
   return { isCorrection: false, correctedName: null, confidence: 0 };
 }
+

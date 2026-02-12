@@ -13,6 +13,20 @@ import { capitalizeWords } from '../constants';
  */
 export type SearchType = 'specific' | 'similar' | 'recommendation';
 
+function getVehicleLink(vehicle: any): string | null {
+  if (!vehicle) return null;
+  const candidates = [vehicle.url, vehicle.detailsUrl, vehicle.detailUrl, vehicle.link];
+  for (const raw of candidates) {
+    if (typeof raw !== 'string') continue;
+    const link = raw.trim();
+    if (!link) continue;
+    if (link.startsWith('http://') || link.startsWith('https://')) {
+      return link;
+    }
+  }
+  return null;
+}
+
 /**
  * Format recommendations into natural language message
  *
@@ -60,7 +74,7 @@ Me diz o que prefere!`;
     const vehiclesList = vehiclesToShow
       .map((rec, i) => {
         const v = rec.vehicle;
-        const link = v.url || v.detailsUrl;
+        const link = getVehicleLink(v);
 
         // Só mostrar % match em recomendações personalizadas
         const matchScore = showMatchScore && rec.matchScore ? `${Math.round(rec.matchScore)}%` : '';
