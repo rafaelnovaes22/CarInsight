@@ -261,4 +261,3 @@ ${eligible.length < 3 ? `\n[WARN] NAO e apto para: ${this.getNotEligible(result)
 
 // Singleton export
 export const uberEligibilityValidator = new UberEligibilityValidator();
-

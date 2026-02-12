@@ -292,7 +292,6 @@ export class WhatsAppMetaService implements IWhatsAppService {
    */
   async sendMessage(to: string, text: string, options?: SendMessageOptions): Promise<void> {
     try {
-
       logger.info('ðŸ”„ Calling Meta API...', {
         to: this.maskPhoneNumber(to),
         apiUrl: this.apiUrl,
@@ -502,4 +501,3 @@ export class WhatsAppMetaService implements IWhatsAppService {
 }
 
 export default WhatsAppMetaService;
-

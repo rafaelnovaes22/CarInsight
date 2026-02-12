@@ -81,7 +81,10 @@ app.post('/api/reset-conversation', requireAdminSecret, async (req, res) => {
       where: { phoneNumber },
     });
 
-    logger.info({ phoneNumber: maskPhoneNumber(phoneNumber), count: result.count }, 'Conversation reset');
+    logger.info(
+      { phoneNumber: maskPhoneNumber(phoneNumber), count: result.count },
+      'Conversation reset'
+    );
 
     res.json({
       success: true,

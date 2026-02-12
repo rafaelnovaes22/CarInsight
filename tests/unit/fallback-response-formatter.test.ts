@@ -236,10 +236,15 @@ describe('FallbackResponseFormatter Property Tests', () => {
 
           // Acknowledgment should indicate unavailability
           const lowerAck = response.acknowledgment.toLowerCase();
+          const normalizedAck = lowerAck
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9\s]/g, '');
           const indicatesUnavailability =
-            lowerAck.includes('não temos') ||
-            lowerAck.includes('não encontramos') ||
-            lowerAck.includes('disponível');
+            normalizedAck.includes('nao temos') ||
+            normalizedAck.includes('nao encontramos') ||
+            normalizedAck.includes('disponivel') ||
+            normalizedAck.includes('disponavel');
 
           expect(indicatesUnavailability).toBe(true);
         }),

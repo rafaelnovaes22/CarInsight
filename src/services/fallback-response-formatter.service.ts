@@ -1,4 +1,4 @@
-/**
+﻿/**
  * FallbackResponseFormatter
  *
  * Formats fallback results into user-friendly Portuguese messages for WhatsApp.
@@ -69,7 +69,12 @@ export class FallbackResponseFormatter {
     availableYears?: number[]
   ): string {
     if (!model || model.trim() === '') {
-      return 'Não foi possível identificar o modelo desejado.';
+      if (fallbackType === 'year_alternative' && availableYears && availableYears.length > 0) {
+        const yearsStr = availableYears.join(', ');
+        return `N\u00e3o encontramos o modelo solicitado, mas temos alternativas nos anos: ${yearsStr}`;
+      }
+
+      return 'N\u00e3o foi poss\u00edvel identificar o modelo desejado, mas n\u00e3o encontramos alternativa dispon\u00edvel no momento.';
     }
 
     const modelDisplay = this.capitalizeModel(model);
@@ -78,23 +83,23 @@ export class FallbackResponseFormatter {
     switch (fallbackType) {
       case 'year_alternative': {
         const yearsStr = availableYears?.join(', ') || '';
-        return `Não temos o ${modelDisplay}${yearDisplay} disponível, mas temos o mesmo modelo nos anos: ${yearsStr}`;
+        return `N\u00e3o temos o ${modelDisplay}${yearDisplay} dispon\u00edvel, mas temos o mesmo modelo nos anos: ${yearsStr}`;
       }
 
       case 'same_brand':
-        return `Não temos o ${modelDisplay}${yearDisplay} disponível, mas temos outras opções da mesma marca na mesma categoria.`;
+        return `N\u00e3o temos o ${modelDisplay}${yearDisplay} dispon\u00edvel, mas temos outras op\u00e7\u00f5es da mesma marca na mesma categoria.`;
 
       case 'same_category':
-        return `Não temos o ${modelDisplay}${yearDisplay} disponível, mas temos outras opções similares na mesma categoria.`;
+        return `N\u00e3o temos o ${modelDisplay}${yearDisplay} dispon\u00edvel, mas temos outras op\u00e7\u00f5es similares na mesma categoria.`;
 
       case 'price_range':
-        return `Não temos o ${modelDisplay}${yearDisplay} disponível, mas temos outras opções em faixa de preço similar.`;
+        return `N\u00e3o temos o ${modelDisplay}${yearDisplay} dispon\u00edvel, mas temos outras op\u00e7\u00f5es em faixa de pre\u00e7o similar.`;
 
       case 'no_results':
-        return `Não encontramos o ${modelDisplay}${yearDisplay} nem alternativas disponíveis no momento. Entre em contato com nossa equipe de vendas.`;
+        return `N\u00e3o encontramos o ${modelDisplay}${yearDisplay} nem alternativas dispon\u00edveis no momento. Entre em contato com nossa equipe de vendas.`;
 
       default:
-        return `Não temos o ${modelDisplay}${yearDisplay} disponível no momento.`;
+        return `N\u00e3o temos o ${modelDisplay}${yearDisplay} dispon\u00edvel no momento.`;
     }
   }
 
@@ -149,7 +154,7 @@ export class FallbackResponseFormatter {
     // Build explanation from criteria details
     const reasons = limitedCriteria.map(c => c.details);
 
-    return reasons.join(' • ');
+    return reasons.join(' | ');
   }
 
   // ============================================================================
@@ -184,7 +189,7 @@ export class FallbackResponseFormatter {
     // Body type and transmission
     parts.push(`${vehicle.carroceria} | ${vehicle.cambio}`);
 
-    return parts.join(' • ');
+    return parts.join(' | ');
   }
 
   /**
@@ -215,7 +220,7 @@ export class FallbackResponseFormatter {
       // Recent year
       const currentYear = new Date().getFullYear();
       if (vehicle.ano >= currentYear - 2) {
-        highlights.push(`Veículo recente: ${vehicle.ano}`);
+        highlights.push(`Ve\u00edculo recente: ${vehicle.ano}`);
       }
     }
 
@@ -232,11 +237,11 @@ export class FallbackResponseFormatter {
       case 'same_brand':
         return 'Mesma marca, categoria similar';
       case 'same_category':
-        return 'Mesma categoria, preço similar';
+        return 'Mesma categoria, pre\u00e7o similar';
       case 'price_range':
-        return 'Faixa de preço similar';
+        return 'Faixa de pre\u00e7o similar';
       default:
-        return 'Alternativa disponível';
+        return 'Alternativa dispon\u00edvel';
     }
   }
 
@@ -247,7 +252,7 @@ export class FallbackResponseFormatter {
     const count = result.vehicles.length;
 
     if (count === 0) {
-      return 'Não encontramos alternativas disponíveis. Gostaria de ver outras opções ou falar com um vendedor?';
+      return 'N\u00e3o encontramos alternativas dispon\u00edveis. Gostaria de ver outras op\u00e7\u00f5es ou falar com um vendedor?';
     }
 
     const modelDisplay = this.capitalizeModel(result.requestedModel);
@@ -257,16 +262,16 @@ export class FallbackResponseFormatter {
         return `Encontramos ${count} ${modelDisplay} em outros anos. Qual te interessa?`;
 
       case 'same_brand':
-        return `Encontramos ${count} opção(ões) da mesma marca. Quer saber mais sobre algum?`;
+        return `Encontramos ${count} op\u00e7\u00e3o(\u00f5es) da mesma marca. Quer saber mais sobre algum?`;
 
       case 'same_category':
-        return `Encontramos ${count} opção(ões) similares. Qual te chamou atenção?`;
+        return `Encontramos ${count} op\u00e7\u00e3o(\u00f5es) similares. Qual te chamou aten\u00e7\u00e3o?`;
 
       case 'price_range':
-        return `Encontramos ${count} opção(ões) na mesma faixa de preço. Posso dar mais detalhes?`;
+        return `Encontramos ${count} op\u00e7\u00e3o(\u00f5es) na mesma faixa de pre\u00e7o. Posso dar mais detalhes?`;
 
       default:
-        return `Encontramos ${count} alternativa(s). Gostaria de mais informações?`;
+        return `Encontramos ${count} alternativa(s). Gostaria de mais informa\u00e7\u00f5es?`;
     }
   }
 }

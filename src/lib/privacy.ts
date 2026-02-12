@@ -10,4 +10,3 @@ export function maskPhoneNumber(phoneNumber: string | null | undefined): string 
 
   return `${value.slice(0, 6)}****`;
 }
-

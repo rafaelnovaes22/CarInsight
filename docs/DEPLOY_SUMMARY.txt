@@ -32,7 +32,7 @@
 ═══════════════════════════════════════════════════════════════════════
 
 🤖 Groq AI:
-  GROQ_API_KEY=gsk_OodsADKNusVdNEDzxq2HWGdyb3FYKoSk...
+  GROQ_API_KEY=<SET_IN_ENV>
 
 📱 Meta Cloud API:
   META_WHATSAPP_TOKEN=EAAWqINRXnbcBP0UgH7kD4SzM...

@@ -30,7 +30,10 @@ export class GuardrailsService {
 
     // 2. Check message length
     if (message.length > this.MAX_MESSAGE_LENGTH) {
-      logger.warn({ phoneNumber: maskPhoneNumber(phoneNumber), length: message.length }, 'Message too long');
+      logger.warn(
+        { phoneNumber: maskPhoneNumber(phoneNumber), length: message.length },
+        'Message too long'
+      );
       return {
         allowed: false,
         reason: 'Mensagem muito longa. Por favor, envie mensagens menores.',
@@ -48,7 +51,10 @@ export class GuardrailsService {
     // 4. Detect prompt injection attempts
     const injectionCheck = this.detectPromptInjection(message);
     if (!injectionCheck.allowed) {
-      logger.warn({ phoneNumber: maskPhoneNumber(phoneNumber), message }, 'Prompt injection detected');
+      logger.warn(
+        { phoneNumber: maskPhoneNumber(phoneNumber), message },
+        'Prompt injection detected'
+      );
       return injectionCheck;
     }
 
@@ -119,7 +125,10 @@ export class GuardrailsService {
     }
 
     if (record.count >= this.MAX_MESSAGES_PER_MINUTE) {
-      logger.warn({ phoneNumber: maskPhoneNumber(phoneNumber), count: record.count }, 'Rate limit exceeded');
+      logger.warn(
+        { phoneNumber: maskPhoneNumber(phoneNumber), count: record.count },
+        'Rate limit exceeded'
+      );
       return {
         allowed: false,
         reason: 'Você está enviando mensagens muito rapidamente. Por favor, aguarde um momento.',

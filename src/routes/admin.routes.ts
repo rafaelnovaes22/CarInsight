@@ -197,8 +197,7 @@ router.post('/schema-push', requireSecret, async (req, res) => {
       success: false,
       error: 'Schema push failed',
       details: error.message,
-      stderr:
-        error instanceof AdminTaskExecutionError ? error.stderr : error.stderr?.toString(),
+      stderr: error instanceof AdminTaskExecutionError ? error.stderr : error.stderr?.toString(),
     });
   }
 });
@@ -1776,4 +1775,3 @@ router.get('/recommendations/report', requireSecret, async (req, res) => {
 });
 
 export default router;
-

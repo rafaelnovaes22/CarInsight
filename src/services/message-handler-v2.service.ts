@@ -200,7 +200,10 @@ Para começar, qual é o seu nome?`;
         if (existingConversation) {
           await this.resetConversation(phoneNumber);
           logger.info(
-            { phoneNumber: maskPhoneNumber(phoneNumber), message: sanitizedMessage.substring(0, 50) },
+            {
+              phoneNumber: maskPhoneNumber(phoneNumber),
+              message: sanitizedMessage.substring(0, 50),
+            },
             'User sent greeting with content, resetting and processing'
           );
         }
@@ -577,7 +580,10 @@ Para começar, qual é o seu nome?`;
           );
           await whatsappService.sendMessage(salesPhone, message);
 
-          logger.info({ salesPhone: maskPhoneNumber(salesPhone) }, 'Sales team notified via WhatsApp');
+          logger.info(
+            { salesPhone: maskPhoneNumber(salesPhone) },
+            'Sales team notified via WhatsApp'
+          );
         } catch (notifyError) {
           logger.error({ error: notifyError }, 'Failed to notify sales team');
         }
@@ -623,7 +629,10 @@ Para começar, qual é o seu nome?`;
         'Conversation reset'
       );
     } catch (error) {
-      logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'Error resetting conversation');
+      logger.error(
+        { error, phoneNumber: maskPhoneNumber(phoneNumber) },
+        'Error resetting conversation'
+      );
     }
   }
 
@@ -647,7 +656,10 @@ Para começar, qual é o seu nome?`;
         await cache.del(confirmationKey);
 
         if (pendingAction === 'DELETE_DATA') {
-          logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: User confirmed data deletion');
+          logger.info(
+            { phoneNumber: maskPhoneNumber(phoneNumber) },
+            'LGPD: User confirmed data deletion'
+          );
           const success = await dataRightsService.deleteUserData(phoneNumber);
 
           if (success) {
@@ -671,7 +683,10 @@ Para começar, qual é o seu nome?`;
       lowerMessage.includes('remover meus dados') ||
       lowerMessage.includes('apagar meus dados')
     ) {
-      logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Data deletion request received');
+      logger.info(
+        { phoneNumber: maskPhoneNumber(phoneNumber) },
+        'LGPD: Data deletion request received'
+      );
 
       // Check if user has data
       const hasData = await dataRightsService.hasUserData(phoneNumber);
@@ -706,7 +721,10 @@ _Esta confirmação expira em 5 minutos._`;
       lowerMessage.includes('baixar meus dados') ||
       lowerMessage.includes('meus dados')
     ) {
-      logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Data export request received');
+      logger.info(
+        { phoneNumber: maskPhoneNumber(phoneNumber) },
+        'LGPD: Data export request received'
+      );
 
       try {
         const data = await dataRightsService.exportUserData(phoneNumber);
@@ -727,7 +745,10 @@ _Esta confirmação expira em 5 minutos._`;
 
 Responderemos em até 15 dias úteis, conforme LGPD.`;
       } catch (error) {
-        logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Error exporting data');
+        logger.error(
+          { error, phoneNumber: maskPhoneNumber(phoneNumber) },
+          'LGPD: Error exporting data'
+        );
         return '❌ Desculpe, houve um erro ao exportar seus dados. Por favor, tente novamente ou contate suporte@faciliauto.com.br';
       }
     }
