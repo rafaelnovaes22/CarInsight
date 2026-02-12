@@ -262,13 +262,14 @@ Responda em JSON:
 Se o usuário está rejeitando todos, vehicleId = null.
 Se não está rejeitando nenhum, isRejection = false.`;
 
-      const response = await chatCompletion([{ role: 'user', content: prompt }], {
+      const llmResponse = await chatCompletion([{ role: 'user', content: prompt }], {
         temperature: 0.1,
         maxTokens: 200,
       });
+      const content = typeof llmResponse === 'string' ? llmResponse : llmResponse.content;
 
       // Parse response
-      const cleaned = response
+      const cleaned = content
         .replace(/```json\n?/g, '')
         .replace(/```\n?/g, '')
         .trim();

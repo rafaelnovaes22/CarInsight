@@ -1,80 +1,74 @@
 import { Router } from 'express';
 import { logger } from '../lib/logger';
 import { MessageHandlerV2 } from '../services/message-handler-v2.service';
-import { AudioTranscriptionService } from '../services/audio-transcription.service';
+import { WhatsAppEvolutionService } from '../services/whatsapp-evolution.service';
 import { env } from '../config/env';
 
 const router = Router();
 const messageHandler = new MessageHandlerV2();
-const audioService = new AudioTranscriptionService(); // Pode precisar de adaptação para Base64
+const evolutionService = new WhatsAppEvolutionService();
+
+function isAuthorized(req: any): boolean {
+  if (!env.EVOLUTION_API_KEY) {
+    return true;
+  }
+
+  const incomingKey = (req.headers.apikey as string) || (req.headers['x-api-key'] as string);
+  return incomingKey === env.EVOLUTION_API_KEY;
+}
 
 router.post('/evolution', async (req, res) => {
   try {
-    const { event, instance, data } = req.body;
+    if (!isAuthorized(req)) {
+      logger.warn('Evolution webhook unauthorized');
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
 
-    // Validar token de segurança (se configurado webhook global)
-    // if (req.headers.apikey !== env.EVOLUTION_API_KEY) ...
+    const { event, data } = req.body || {};
 
     if (event !== 'messages.upsert') {
-      // Ignorar outros eventos por enquanto
       return res.status(200).send('OK');
     }
 
-    const { key, message, messageType } = data;
+    const { key, message, messageType } = data || {};
 
     if (!key || key.fromMe) {
-      // Ignorar mensagens enviadas por mim
       return res.status(200).send('OK');
     }
 
     const phoneNumber = key.remoteJid?.replace('@s.whatsapp.net', '');
-
     if (!phoneNumber) {
       return res.status(200).send('OK');
     }
 
-    // Extrair texto
     let content = '';
-    let isAudio = false;
 
     if (messageType === 'conversation') {
-      content = message.conversation;
+      content = message?.conversation || '';
     } else if (messageType === 'extendedTextMessage') {
-      content = message.extendedTextMessage?.text || '';
+      content = message?.extendedTextMessage?.text || '';
     } else if (messageType === 'audioMessage') {
-      isAudio = true;
-      // Evolution pode enviar base64 no campo media (depende da config 'EVENTS_DATA_MESSAGE_MEDIA_ENABLED')
-      // Se não vier, precisamos baixar.
-      // Assumindo MVP: vamos tratar apenas texto por hora, e logar aviso se for áudio.
       logger.info(
-        '🎤 Audio received via Evolution (Not implemented explicitly in this handler yet)'
+        { from: `${phoneNumber.slice(0, 6)}****` },
+        'Audio received via Evolution but not implemented in this route yet'
       );
-    }
-
-    if (!content && !isAudio) {
-      logger.debug('⚠️ Ignoring unsupported message type', { messageType });
       return res.status(200).send('OK');
     }
 
-    logger.info('📱 Received via Evolution', { from: phoneNumber, content });
-
-    // Processar
-    if (content) {
-      // Enviar para bot
-      // Nota: Precisamos injetar o EvolutionService no MessageHandler se quisermos responder!
-      // No momento o MessageHandler instancia o MetaService internamente.
-      // Isso será resolvido na Fase 6 (Dependency Injection).
-
-      // Por enquanto, vamos instanciar o handler mas a resposta vai falhar
-      // se o MessageHandler ainda usar o MetaService internamente hardcoded.
-      // Mas a rota existe.
-      await messageHandler.handleMessage(phoneNumber, content);
+    if (!content) {
+      logger.debug({ messageType }, 'Ignoring unsupported/empty Evolution message');
+      return res.status(200).send('OK');
     }
 
-    res.status(200).json({ success: true });
+    logger.info({ from: `${phoneNumber.slice(0, 6)}****` }, 'Received message via Evolution');
+
+    const response = await messageHandler.handleMessage(phoneNumber, content);
+    await evolutionService.sendMessage(phoneNumber, response);
+
+    return res.status(200).json({ success: true });
   } catch (error: any) {
     logger.error({ error: error.message }, 'Error handling Evolution webhook');
-    res.status(500).json({ error: 'Internal Error' });
+    return res.status(500).json({ error: 'Internal Error' });
   }
 });
 

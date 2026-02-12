@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { env } from './config/env';
 import { logger } from './lib/logger';
+import { maskPhoneNumber } from './lib/privacy';
 import { MessageHandlerV2 } from './services/message-handler-v2.service';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
 
@@ -72,12 +73,12 @@ app.post('/message', async (req, res) => {
       return res.status(400).json({ error: 'phone and message are required' });
     }
 
-    logger.info({ phone, message }, '📱 Incoming message via API');
+    logger.info({ phone: maskPhoneNumber(phone), message }, '📱 Incoming message via API');
 
     // Process message
     const response = await messageHandler.handleMessage(phone, message);
 
-    logger.info({ phone, response }, '🤖 Bot response');
+    logger.info({ phone: maskPhoneNumber(phone), response }, '🤖 Bot response');
 
     res.json({
       success: true,

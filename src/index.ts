@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { env } from './config/env';
 import { logger } from './lib/logger';
+import { maskPhoneNumber } from './lib/privacy';
 import { prisma } from './lib/prisma';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
 import webhookRoutes from './routes/webhook.routes';
@@ -11,8 +12,31 @@ import debugRoutes from './routes/debug.routes';
 
 const app = express();
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf.toString('utf8');
+    },
+  })
+);
 app.use(express.static(path.join(__dirname, 'public')));
+
+function requireAdminSecret(req: any, res: any, next: () => void) {
+  const configuredSecret = env.SEED_SECRET;
+  const providedSecret = req.headers['x-admin-secret'] || req.query.secret;
+
+  if (!configuredSecret) {
+    logger.error('SEED_SECRET is not configured; admin/debug endpoints are disabled');
+    return res.status(503).json({ error: 'Admin endpoints are disabled' });
+  }
+
+  if (providedSecret !== configuredSecret) {
+    logger.warn('Unauthorized admin access attempt');
+    return res.status(403).json({ error: 'Unauthorized - Invalid secret' });
+  }
+
+  next();
+}
 
 // Webhook routes for Meta Cloud API
 app.use('/webhooks', webhookRoutes);
@@ -21,28 +45,28 @@ app.use('/webhooks', webhookRoutes);
 app.use('/webhooks', evolutionWebhookRoutes);
 
 // Admin routes (seed, management)
-app.use('/admin', adminRoutes);
+app.use('/admin', requireAdminSecret, adminRoutes);
 
 // Debug routes (feature flags, config)
-app.use('/debug', debugRoutes);
+app.use('/debug', requireAdminSecret, debugRoutes);
 
 // Dashboard
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Privacy Policy (required by Meta)
-app.get('/privacy-policy', (req, res) => {
+app.get('/privacy-policy', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'privacy-policy.html'));
 });
 
 // Reset conversation endpoint (for testing)
-app.post('/api/reset-conversation', async (req, res) => {
+app.post('/api/reset-conversation', requireAdminSecret, async (req, res) => {
   try {
     const { phoneNumber } = req.body;
 
@@ -54,7 +78,7 @@ app.post('/api/reset-conversation', async (req, res) => {
       where: { phoneNumber },
     });
 
-    logger.info('🗑️ Conversation reset', { phoneNumber, count: result.count });
+    logger.info({ phoneNumber: maskPhoneNumber(phoneNumber), count: result.count }, 'Conversation reset');
 
     res.json({
       success: true,
@@ -68,10 +92,8 @@ app.post('/api/reset-conversation', async (req, res) => {
 });
 
 // Basic stats endpoint
-app.get('/stats', async (req, res) => {
+app.get('/stats', requireAdminSecret, async (_req, res) => {
   try {
-    const { prisma } = await import('./lib/prisma');
-
     const [conversations, leads, recommendations] = await Promise.all([
       prisma.conversation.count(),
       prisma.lead.count(),
@@ -95,69 +117,49 @@ const PORT = env.PORT || 3000;
 
 async function start() {
   try {
-    // Push database schema
-    logger.info('📦 Setting up database schema...');
-    try {
-      const { execSync } = require('child_process');
-      execSync('npx prisma db push --accept-data-loss', {
-        stdio: 'inherit',
-        env: { ...process.env, FORCE_COLOR: '0' },
-      });
-      logger.info('✅ Database schema ready');
-    } catch (error) {
-      logger.error({ error }, '⚠️  Database push failed, continuing...');
-    }
-
-    // Check database and seed if needed
-    logger.info('🔍 Checking database...');
+    logger.info('Checking database connectivity...');
     const vehicleCount = await prisma.vehicle.count();
 
     if (vehicleCount === 0) {
-      logger.info('🌱 Database empty, running seed...');
-      const { execSync } = require('child_process');
-      execSync('npm run db:seed:complete', { stdio: 'inherit' });
-      logger.info('✅ Seed completed');
+      logger.warn(
+        'Database has no vehicles. Run migrations/seeds explicitly via CI/CD or admin scripts.'
+      );
     } else {
-      logger.info(`✅ Database has ${vehicleCount} vehicles`);
+      logger.info({ vehicleCount }, 'Database ready');
     }
 
     // Initialize vector store in background (non-blocking)
-    logger.info('🧠 Starting vector store initialization in background...');
+    logger.info('Starting vector store initialization in background...');
     inMemoryVectorStore
       .initialize()
       .then(() => {
-        logger.info(`✅ Vector store ready with ${inMemoryVectorStore.getCount()} embeddings`);
+        logger.info({ embeddings: inMemoryVectorStore.getCount() }, 'Vector store ready');
       })
       .catch(error => {
-        logger.error({ error }, '⚠️  Vector store failed, will use SQL fallback');
+        logger.error({ error }, 'Vector store failed, SQL fallback will be used');
       });
 
     // Start Express server
     app.listen(PORT, () => {
-      logger.info(`🚀 Server running on port ${PORT}`);
-      logger.info(`📊 Dashboard: http://localhost:${PORT}`);
-      logger.info(`📊 Stats: http://localhost:${PORT}/stats`);
-      logger.info(`📊 Health: http://localhost:${PORT}/health`);
-      logger.info(`📱 Webhook: http://localhost:${PORT}/webhooks/whatsapp`);
-      logger.info(`🔧 Admin: http://localhost:${PORT}/admin/health`);
+      logger.info({ port: PORT }, 'Server running');
+      logger.info({ dashboard: `http://localhost:${PORT}` }, 'Dashboard');
+      logger.info({ health: `http://localhost:${PORT}/health` }, 'Health endpoint');
+      logger.info({ webhook: `http://localhost:${PORT}/webhooks/whatsapp` }, 'Webhook endpoint');
 
-      // Check if Meta Cloud API is configured
       if (env.META_WHATSAPP_TOKEN && env.META_WHATSAPP_PHONE_NUMBER_ID) {
-        logger.info('✅ Meta Cloud API configured');
-        logger.info(`📱 Phone Number ID: ${env.META_WHATSAPP_PHONE_NUMBER_ID.substring(0, 10)}...`);
+        logger.info('Meta Cloud API configured');
       } else {
-        logger.warn('⚠️  Meta Cloud API not configured');
-        logger.warn('Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID in .env');
-        logger.warn('See META_CLOUD_API_SETUP.md for instructions');
+        logger.warn(
+          'Meta Cloud API not fully configured. Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID.'
+        );
       }
     });
   } catch (error) {
-    logger.error({ error }, '❌ Failed to start application');
+    logger.error({ error }, 'Failed to start application');
     process.exit(1);
   }
 }
 
-// Handle shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   process.exit(0);

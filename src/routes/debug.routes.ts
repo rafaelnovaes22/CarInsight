@@ -9,8 +9,24 @@ import { featureFlags } from '../lib/feature-flags';
 import { cache } from '../lib/redis';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { maskPhoneNumber } from '../lib/privacy';
 
 const router = Router();
+
+function requireDebugSecret(req: any, res: any, next: () => void) {
+  if (!env.SEED_SECRET) {
+    return res.status(503).json({ error: 'Debug routes are disabled' });
+  }
+
+  const secret = req.query.secret || req.headers['x-admin-secret'];
+  if (secret !== env.SEED_SECRET) {
+    return res.status(403).json({ error: 'Unauthorized - Invalid secret' });
+  }
+
+  next();
+}
+
+router.use(requireDebugSecret);
 
 /**
  * GET /debug/config
@@ -75,7 +91,7 @@ router.all('/reset-full', async (req, res) => {
 
     logger.info(
       {
-        phoneNumber,
+        phoneNumber: maskPhoneNumber(phoneNumber),
         conversationsDeleted: result.count,
         cacheKeysCleared: cacheKeysCleared.length,
       },

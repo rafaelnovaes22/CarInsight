@@ -5,6 +5,7 @@
 
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { maskPhoneNumber } from '../lib/privacy';
 
 export interface DataExportResult {
   solicitacao: string;
@@ -25,7 +26,7 @@ export class DataRightsService {
    */
   async deleteUserData(phoneNumber: string): Promise<boolean> {
     try {
-      logger.info({ phoneNumber }, 'LGPD: Solicitação de exclusão de dados');
+      logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Solicitação de exclusão de dados');
 
       // Realizar exclusão em transação (tudo ou nada)
       await prisma.$transaction(async tx => {
@@ -36,7 +37,7 @@ export class DataRightsService {
         });
 
         if (!conversation) {
-          logger.info({ phoneNumber }, 'LGPD: Nenhuma conversa encontrada para este número');
+          logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Nenhuma conversa encontrada para este número');
           return;
         }
 
@@ -68,7 +69,7 @@ export class DataRightsService {
         if (conversation) {
           logger.info(
             {
-              phoneNumber,
+              phoneNumber: maskPhoneNumber(phoneNumber),
               messages: deletedMessages.count,
               events: deletedEvents.count,
               recommendations: deletedRecommendations.count,
@@ -85,7 +86,7 @@ export class DataRightsService {
 
       return true;
     } catch (error) {
-      logger.error({ error, phoneNumber }, 'LGPD: Erro ao excluir dados');
+      logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Erro ao excluir dados');
       return false;
     }
   }
@@ -98,7 +99,7 @@ export class DataRightsService {
    */
   async exportUserData(phoneNumber: string): Promise<DataExportResult> {
     try {
-      logger.info({ phoneNumber }, 'LGPD: Solicitação de exportação de dados');
+      logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Solicitação de exportação de dados');
 
       const [conversation, messages, lead, recommendations] = await Promise.all([
         prisma.conversation.findFirst({
@@ -180,7 +181,7 @@ export class DataRightsService {
 
       logger.info(
         {
-          phoneNumber,
+          phoneNumber: maskPhoneNumber(phoneNumber),
           totalRecords: exportData.totalRegistros,
         },
         'LGPD: Dados exportados com sucesso'
@@ -191,7 +192,7 @@ export class DataRightsService {
 
       return exportData;
     } catch (error) {
-      logger.error({ error, phoneNumber }, 'LGPD: Erro ao exportar dados');
+      logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Erro ao exportar dados');
       throw error;
     }
   }
@@ -211,7 +212,7 @@ export class DataRightsService {
 
       return counts.some(count => count > 0);
     } catch (error) {
-      logger.error({ error, phoneNumber }, 'Erro ao verificar dados do usuário');
+      logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'Erro ao verificar dados do usuário');
       return false;
     }
   }
@@ -227,7 +228,7 @@ export class DataRightsService {
       logger.info(
         {
           type: 'DATA_DELETION',
-          phoneNumber,
+          phoneNumber: maskPhoneNumber(phoneNumber),
           timestamp: new Date().toISOString(),
         },
         'LGPD: Registro de solicitação de exclusão'
@@ -245,7 +246,7 @@ export class DataRightsService {
       logger.info(
         {
           type: 'DATA_EXPORT',
-          phoneNumber,
+          phoneNumber: maskPhoneNumber(phoneNumber),
           timestamp: new Date().toISOString(),
         },
         'LGPD: Registro de solicitação de exportação'

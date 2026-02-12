@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Uber Eligibility Validator
  *
  * Uses LLM to validate Uber/99 eligibility based on official criteria
@@ -28,11 +28,11 @@ export interface VehicleInfo {
 }
 
 export class UberEligibilityValidator {
-  private readonly UBER_CRITERIA_PROMPT = `ATENÇÃO MÁXIMA: Você é um validador RIGOROSO de veículos para Uber Black/Comfort no Brasil (2025).
+  private readonly UBER_CRITERIA_PROMPT = `ATENÃ‡ÃƒO MÃXIMA: VocÃª Ã© um validador RIGOROSO de veÃ­culos para Uber Black/Comfort no Brasil (2025).
 
-🚨 REGRA DE OURO (EXCLUSÕES IMEDIATAS):
-Se o veículo estiver nesta lista, ele **NUNCA** pode ser Uber Black, não importa o ano ou preço:
-- **HB20 / HB20S** (Qualquer versão) -> JAMAIS BLACK.
+ðŸš¨ REGRA DE OURO (EXCLUSÃ•ES IMEDIATAS):
+Se o veÃ­culo estiver nesta lista, ele **NUNCA** pode ser Uber Black, nÃ£o importa o ano ou preÃ§o:
+- **HB20 / HB20S** (Qualquer versÃ£o) -> JAMAIS BLACK.
 - **Onix / Onix Plus / Prisma** -> JAMAIS BLACK.
 - **Fiat Cronos / Grand Siena / Siena** -> JAMAIS BLACK.
 - **VW Voyage / Virtus (exceto Exclusive/GTS)** -> JAMAIS BLACK.
@@ -42,49 +42,49 @@ Se o veículo estiver nesta lista, ele **NUNCA** pode ser Uber Black, não impor
 - **Honda City** -> JAMAIS BLACK.
 - **Renault Logan / Sandero** -> JAMAIS BLACK.
 
-Se o carro for um desses, **uberBlack DEVE SER FALSE**. Não hesite.
+Se o carro for um desses, **uberBlack DEVE SER FALSE**. NÃ£o hesite.
 
 ---
 
-CRITÉRIOS POR CATEGORIA (FOCO SÃO PAULO - SP):
+CRITÃ‰RIOS POR CATEGORIA (FOCO SÃƒO PAULO - SP):
 
 1. **UBER X** (Entrada):
-   - **Ano: 2014 ou mais recente** (Regra SÃO PAULO).
+   - **Ano: 2014 ou mais recente** (Regra SÃƒO PAULO).
    - Aceita quase tudo 2014+ com 4 portas e Ar.
-   - Hatchs compactos (Mobi, Kwid, HB20) são aceitos.
-   - Sedans compactos (HB20S, Cronos) são aceitos.
+   - Hatchs compactos (Mobi, Kwid, HB20) sÃ£o aceitos.
+   - Sedans compactos (HB20S, Cronos) sÃ£o aceitos.
    - **PROIBIDO**: Carros 2 Portas (Jamais aceito). 
-   - **PROIBIDO**: Ano < 2014 (Celtas/Palios 2010-2013 não entram em SP).
+   - **PROIBIDO**: Ano < 2014 (Celtas/Palios 2010-2013 nÃ£o entram em SP).
 
-2. **UBER COMFORT** (Intermediário):
+2. **UBER COMFORT** (IntermediÃ¡rio):
    - Max 6 anos (2019+).
-   - Espaço interno decente.
-   - **NÃO ACEITA HATCHS PEQUENOS** (Mobi, Kwid, Gol, HB20 Hatch, Onix Hatch).
+   - EspaÃ§o interno decente.
+   - **NÃƒO ACEITA HATCHS PEQUENOS** (Mobi, Kwid, Gol, HB20 Hatch, Onix Hatch).
    - **ACEITA** Sedans compactos modernos (HB20S, Onix Plus, Cronos, Virtus) e SUVs.
 
-3. **UBER BLACK** (Premium - Apenas Sedans Médios/Grandes e SUVs):
+3. **UBER BLACK** (Premium - Apenas Sedans MÃ©dios/Grandes e SUVs):
    - Max 6 anos (2019+).
-   - Cores sóbrias (Preto, Prata, Cinza, Branco, Azul-marinho).
-   - **SOMENTE SEDANS MÉDIOS+**: Corolla, Civic, Sentra, Cerato, Cruze, Jetta.
+   - Cores sÃ³brias (Preto, Prata, Cinza, Branco, Azul-marinho).
+   - **SOMENTE SEDANS MÃ‰DIOS+**: Corolla, Civic, Sentra, Cerato, Cruze, Jetta.
    - **SUVs SELECIONADOS**: Compass, Kicks, Creta, HR-V, T-Cross, Renegade, Tracker, Sportage, Tucson, Tiguan, Equinox, Taos, Corolla Cross.
    - **JAMAIS**: Carros populares, compactos "de entrada" (Mobi, Kwid) ou modelos muito antigos.
-   - **OBS**: SUVs Compactos modernos (2020+) como Tracker e T-Cross em versões topo de linha são aceitos em algumas categorias Black/Comfort. Na dúvida, se for 2019+ e SUV, considere apto.
+   - **OBS**: SUVs Compactos modernos (2020+) como Tracker e T-Cross em versÃµes topo de linha sÃ£o aceitos em algumas categorias Black/Comfort. Na dÃºvida, se for 2019+ e SUV, considere apto.
 
 ---
 
 TAREFA:
-Analise o veículo abaixo. Primeiro verifique se ele está na LISTA DE EXCLUSÃO do Black.
+Analise o veÃ­culo abaixo. Primeiro verifique se ele estÃ¡ na LISTA DE EXCLUSÃƒO do Black.
 Retorne JSON estrito.
 
-Exemplo de Raciocínio Esperado para HB20S:
-"HB20S é um sedan compacto popular. Está na lista de exclusão do Black. Aceito no X e Comfort (se novo)." -> uberBlack: false.
+Exemplo de RaciocÃ­nio Esperado para HB20S:
+"HB20S Ã© um sedan compacto popular. EstÃ¡ na lista de exclusÃ£o do Black. Aceito no X e Comfort (se novo)." -> uberBlack: false.
 
 Formato de resposta:
 {
   "uberX": true/false,
   "uberComfort": true/false,
   "uberBlack": true/false,
-  "reasoning": "Seja direto. Mencione a exclusão se houver.",
+  "reasoning": "Seja direto. Mencione a exclusÃ£o se houver.",
   "confidence": 1.0
 }`;
 
@@ -97,25 +97,26 @@ Formato de resposta:
     try {
       const prompt = `${this.UBER_CRITERIA_PROMPT}
 
-VEÍCULO A ANALISAR:
+VEÃCULO A ANALISAR:
 - Marca: ${vehicle.marca}
 - Modelo: ${vehicle.modelo}
 - Ano: ${vehicle.ano}
 - Tipo/Carroceria: ${vehicle.carroceria}
-- Ar-condicionado: ${vehicle.arCondicionado ? 'Sim' : 'Não'}
+- Ar-condicionado: ${vehicle.arCondicionado ? 'Sim' : 'NÃ£o'}
 - Portas: ${vehicle.portas}
-- Câmbio: ${vehicle.cambio}
+- CÃ¢mbio: ${vehicle.cambio}
 ${vehicle.cor ? `- Cor: ${vehicle.cor}` : ''}
 
 Retorne APENAS o JSON, sem texto adicional:`;
 
-      const response = await chatCompletion([{ role: 'user', content: prompt }], {
-        temperature: 0.1, // Baixa temperatura para consistência
+      const llmResponse = await chatCompletion([{ role: 'user', content: prompt }], {
+        temperature: 0.1, // Baixa temperatura para consistÃªncia
         maxTokens: 300,
       });
+      const content = typeof llmResponse === 'string' ? llmResponse : llmResponse.content;
 
       // Parse JSON response
-      const result = JSON.parse(response.trim());
+      const result = JSON.parse(content.trim());
 
       logger.info(
         {
@@ -168,7 +169,7 @@ Retorne APENAS o JSON, sem texto adicional:`;
     // Uber X: Only sedan/hatch, 2012+
     const uberX = (isSedan || isHatch) && !isSUV && !isMinivan && vehicle.ano >= 2012;
 
-    // Uber Comfort: Sedan, minivan, SUV médio, 2015+
+    // Uber Comfort: Sedan, minivan, SUV mÃ©dio, 2015+
     const uberComfort = (isSedan || isMinivan || isSUV) && vehicle.ano >= 2015;
 
     // Uber Black: Only sedan, 2018+
@@ -239,14 +240,14 @@ Retorne APENAS o JSON, sem texto adicional:`;
     if (result.uberBlack) eligible.push('Uber Black');
 
     if (eligible.length === 0) {
-      return `❌ ${vehicleName} não é apto para Uber/99.\n\n${result.reasoning}`;
+      return `âŒ ${vehicleName} nÃ£o Ã© apto para Uber/99.\n\n${result.reasoning}`;
     }
 
-    return `✅ ${vehicleName} é apto para: ${eligible.join(', ')}
+    return `âœ… ${vehicleName} Ã© apto para: ${eligible.join(', ')}
 
 ${result.reasoning}
 
-${eligible.length < 3 ? `\n⚠️ NÃO é apto para: ${this.getNotEligible(result).join(', ')}` : ''}`;
+${eligible.length < 3 ? `\n[WARN] NAO e apto para: ${this.getNotEligible(result).join(', ')}` : ''}`;
   }
 
   private getNotEligible(result: UberEligibilityResult): string[] {
@@ -260,3 +261,4 @@ ${eligible.length < 3 ? `\n⚠️ NÃO é apto para: ${this.getNotEligible(resul
 
 // Singleton export
 export const uberEligibilityValidator = new UberEligibilityValidator();
+

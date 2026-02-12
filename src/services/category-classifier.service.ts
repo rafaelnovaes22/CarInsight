@@ -190,10 +190,11 @@ export class CategoryClassifierService {
     const prompt = interpolatePrompt(promptConfig.template, vehicle);
 
     try {
-      const response = await chatCompletion([{ role: 'user', content: prompt }], this.LLM_OPTIONS);
+      const llmResponse = await chatCompletion([{ role: 'user', content: prompt }], this.LLM_OPTIONS);
+      const content = typeof llmResponse === 'string' ? llmResponse : llmResponse.content;
 
       // Parse JSON response
-      const parsed = this.parseResponse(response, category);
+      const parsed = this.parseResponse(content, category);
 
       return {
         category,

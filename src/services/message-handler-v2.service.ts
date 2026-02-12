@@ -8,6 +8,7 @@ import { dataRightsService } from './data-rights.service';
 import { featureFlags } from '../lib/feature-flags';
 import { conversationalHandler } from './conversational-handler.service';
 import { calculateCost } from '../lib/llm-router';
+import { maskPhoneNumber } from '../lib/privacy';
 
 /**
  * Options for audio message handling
@@ -31,7 +32,10 @@ export class MessageHandlerV2 {
       // 🛡️ GUARDRAIL: Validate input
       const inputValidation = guardrails.validateInput(phoneNumber, message);
       if (!inputValidation.allowed) {
-        logger.warn({ phoneNumber, reason: inputValidation.reason }, 'Input blocked by guardrails');
+        logger.warn(
+          { phoneNumber: maskPhoneNumber(phoneNumber), reason: inputValidation.reason },
+          'Input blocked by guardrails'
+        );
         return inputValidation.reason || 'Desculpe, não consegui processar sua mensagem.';
       }
 
@@ -63,7 +67,7 @@ export class MessageHandlerV2 {
 
       if (exitCommands.some(cmd => lowerMessage.includes(cmd))) {
         await this.resetConversation(phoneNumber);
-        logger.info({ phoneNumber }, 'User requested exit');
+        logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'User requested exit');
         return `Obrigado por usar o CarInsight! 👋
 
 Foi um prazer ajudar você.
@@ -75,7 +79,7 @@ Até logo! 🚗`;
 
       if (restartCommands.some(cmd => lowerMessage.includes(cmd))) {
         await this.resetConversation(phoneNumber);
-        logger.info({ phoneNumber }, 'User requested restart');
+        logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'User requested restart');
         return `🔄 Conversa reiniciada!
 
 👋 Olá! Sou a assistente virtual do *CarInsight*.
@@ -116,14 +120,14 @@ Para começar, qual é o seu nome?`;
           if (timeDiff < SESSION_TIMEOUT) {
             // Session is fresh, let the graph handle the "Oi" (e.g. "Yes, how can I help?")
             logger.info(
-              { phoneNumber },
+              { phoneNumber: maskPhoneNumber(phoneNumber) },
               'User sent greeting in active session (<10m), passing to graph'
             );
           } else {
             // Session is stale, restart
             await this.resetConversation(phoneNumber);
             logger.info(
-              { phoneNumber, timeDiff },
+              { phoneNumber: maskPhoneNumber(phoneNumber), timeDiff },
               'User sent greeting in stale session (>10m), restarting'
             );
 
@@ -196,7 +200,7 @@ Para começar, qual é o seu nome?`;
         if (existingConversation) {
           await this.resetConversation(phoneNumber);
           logger.info(
-            { phoneNumber, message: sanitizedMessage.substring(0, 50) },
+            { phoneNumber: maskPhoneNumber(phoneNumber), message: sanitizedMessage.substring(0, 50) },
             'User sent greeting with content, resetting and processing'
           );
         }
@@ -257,7 +261,7 @@ Para começar, qual é o seu nome?`;
       logger.info(
         {
           conversationId: conversation.id,
-          phoneNumber: phoneNumber.substring(0, 8) + '****',
+          phoneNumber: maskPhoneNumber(phoneNumber),
           useConversational,
           useLangGraph,
           hasCache: !!currentState,
@@ -391,7 +395,7 @@ Para começar, qual é o seu nome?`;
 
       return finalResponse;
     } catch (error) {
-      logger.error({ error, phoneNumber }, 'Error handling message');
+      logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'Error handling message');
       return 'Desculpe, ocorreu um erro. Por favor, tente novamente.';
     }
   }
@@ -454,7 +458,10 @@ Para começar, qual é o seu nome?`;
         },
       });
 
-      logger.info({ conversationId: conversation.id, phoneNumber }, 'New conversation created');
+      logger.info(
+        { conversationId: conversation.id, phoneNumber: maskPhoneNumber(phoneNumber) },
+        'New conversation created'
+      );
     }
 
     return conversation;
@@ -492,9 +499,9 @@ Para começar, qual é o seu nome?`;
 
       logger.info(
         {
-          salesPhone,
-          customerPhoneNumber,
-          envValue: process.env.SALES_PHONE_NUMBER,
+          salesPhone: maskPhoneNumber(salesPhone),
+          customerPhoneNumber: maskPhoneNumber(customerPhoneNumber),
+          envValue: process.env.SALES_PHONE_NUMBER ? 'configured' : 'missing',
         },
         'SALES_PHONE_NUMBER debug - sending notification'
       );
@@ -561,8 +568,8 @@ Para começar, qual é o seu nome?`;
           const whatsappService = WhatsAppServiceFactory.getInstance();
           logger.info(
             {
-              salesPhone,
-              customerPhone: customerPhoneNumber,
+              salesPhone: maskPhoneNumber(salesPhone),
+              customerPhone: maskPhoneNumber(customerPhoneNumber),
               messageLength: message.length,
               samePhone: salesPhone === customerPhoneNumber,
             },
@@ -570,7 +577,7 @@ Para começar, qual é o seu nome?`;
           );
           await whatsappService.sendMessage(salesPhone, message);
 
-          logger.info({ salesPhone }, 'Sales team notified via WhatsApp');
+          logger.info({ salesPhone: maskPhoneNumber(salesPhone) }, 'Sales team notified via WhatsApp');
         } catch (notifyError) {
           logger.error({ error: notifyError }, 'Failed to notify sales team');
         }
@@ -611,9 +618,12 @@ Para começar, qual é o seu nome?`;
         },
       });
 
-      logger.info({ phoneNumber, count: conversations.length }, 'Conversation reset');
+      logger.info(
+        { phoneNumber: maskPhoneNumber(phoneNumber), count: conversations.length },
+        'Conversation reset'
+      );
     } catch (error) {
-      logger.error({ error, phoneNumber }, 'Error resetting conversation');
+      logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'Error resetting conversation');
     }
   }
 
@@ -637,7 +647,7 @@ Para começar, qual é o seu nome?`;
         await cache.del(confirmationKey);
 
         if (pendingAction === 'DELETE_DATA') {
-          logger.info({ phoneNumber }, 'LGPD: User confirmed data deletion');
+          logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: User confirmed data deletion');
           const success = await dataRightsService.deleteUserData(phoneNumber);
 
           if (success) {
@@ -661,7 +671,7 @@ Para começar, qual é o seu nome?`;
       lowerMessage.includes('remover meus dados') ||
       lowerMessage.includes('apagar meus dados')
     ) {
-      logger.info({ phoneNumber }, 'LGPD: Data deletion request received');
+      logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Data deletion request received');
 
       // Check if user has data
       const hasData = await dataRightsService.hasUserData(phoneNumber);
@@ -696,7 +706,7 @@ _Esta confirmação expira em 5 minutos._`;
       lowerMessage.includes('baixar meus dados') ||
       lowerMessage.includes('meus dados')
     ) {
-      logger.info({ phoneNumber }, 'LGPD: Data export request received');
+      logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Data export request received');
 
       try {
         const data = await dataRightsService.exportUserData(phoneNumber);
@@ -717,7 +727,7 @@ _Esta confirmação expira em 5 minutos._`;
 
 Responderemos em até 15 dias úteis, conforme LGPD.`;
       } catch (error) {
-        logger.error({ error, phoneNumber }, 'LGPD: Error exporting data');
+        logger.error({ error, phoneNumber: maskPhoneNumber(phoneNumber) }, 'LGPD: Error exporting data');
         return '❌ Desculpe, houve um erro ao exportar seus dados. Por favor, tente novamente ou contate suporte@faciliauto.com.br';
       }
     }

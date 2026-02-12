@@ -205,7 +205,7 @@ IMPORTANTE:
 - Seja específico no reasoning (mencione o contexto do cliente)
 - Retorne APENAS o JSON, sem texto adicional`;
 
-      const response = await chatCompletion(
+      const llmResponse = await chatCompletion(
         [
           { role: 'system', content: RANKING_SYSTEM_PROMPT },
           { role: 'user', content: userPrompt },
@@ -215,9 +215,10 @@ IMPORTANTE:
           maxTokens: 2000,
         }
       );
+      const content = typeof llmResponse === 'string' ? llmResponse : llmResponse.content;
 
       // Parse response
-      const result = this.parseRankingResponse(response, vehicles);
+      const result = this.parseRankingResponse(content, vehicles);
 
       logger.info(
         {

@@ -22,7 +22,13 @@ const envSchema = z.object({
   META_WHATSAPP_TOKEN: z.string().optional(),
   META_WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   META_WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().optional(),
+  META_APP_SECRET: z.string().optional(),
   META_WEBHOOK_VERIFY_TOKEN: z.string().optional().default('faciliauto_webhook_2025'),
+  SEED_SECRET: z.string().optional(),
+  ENABLE_WEBHOOK_TEST_ENDPOINT: z
+    .string()
+    .default('false')
+    .transform(val => val === 'true'),
 
   // Evolution API (Alternative WhatsApp Gateway)
   EVOLUTION_API_URL: z.string().optional(),

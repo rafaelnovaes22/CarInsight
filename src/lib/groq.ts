@@ -28,11 +28,12 @@ export async function chatCompletion(
   }
 ): Promise<string> {
   // Usar o novo LLM Router que gerencia fallback automaticamente
-  return routerChatCompletion(messages, {
+  const result = await routerChatCompletion(messages, {
     temperature: options?.temperature,
     maxTokens: options?.maxTokens,
     retries: 2,
   });
+  return result.content;
 }
 
 // Função específica para chat de vendas com prompt otimizado para naturalidade

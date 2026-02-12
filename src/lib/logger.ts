@@ -1,5 +1,6 @@
 import pino from 'pino';
 import { isDev } from '../config/env';
+import { maskPhoneNumber } from './privacy';
 
 export const logger = pino({
   level: isDev ? 'debug' : 'info',
@@ -14,7 +15,11 @@ export const logEvent = {
    * Log when a new conversation starts
    */
   conversationStarted: (data: { conversationId: string; phoneNumber: string; source?: string }) => {
-    logger.info({ event: 'conversation_started', ...data });
+    logger.info({
+      event: 'conversation_started',
+      ...data,
+      phoneNumber: maskPhoneNumber(data.phoneNumber),
+    });
   },
 
   /**
@@ -26,7 +31,11 @@ export const logEvent = {
     vehicleId?: string;
     source: string;
   }) => {
-    logger.info({ event: 'lead_created', ...data });
+    logger.info({
+      event: 'lead_created',
+      ...data,
+      phoneNumber: data.phoneNumber ? maskPhoneNumber(data.phoneNumber) : undefined,
+    });
   },
 
   /**
@@ -118,7 +127,11 @@ export const logEvent = {
    * Log handoff to human agent
    */
   handoffRequested: (data: { conversationId: string; phoneNumber: string; reason?: string }) => {
-    logger.info({ event: 'handoff_requested', ...data });
+    logger.info({
+      event: 'handoff_requested',
+      ...data,
+      phoneNumber: maskPhoneNumber(data.phoneNumber),
+    });
   },
 
   // ============================================================================

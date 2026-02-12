@@ -74,7 +74,7 @@ jobs:
         run: npm run test:coverage
         env:
           NODE_ENV: test
-          DATABASE_URL: file:./test.db
+          DATABASE_URL: postgresql://test:test@localhost:5432/faciliauto_test
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

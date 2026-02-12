@@ -36,11 +36,13 @@ describe('PerformanceMetricsService', () => {
   let service: PerformanceMetricsService;
 
   beforeEach(() => {
+    vi.useFakeTimers();
     service = new PerformanceMetricsService();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -72,18 +74,17 @@ describe('PerformanceMetricsService', () => {
   });
 
   describe('startStage and endStage', () => {
-    it('should track stage timing correctly', async () => {
+    it('should track stage timing correctly', () => {
       const requestId = service.startRequest('conv-123');
 
       service.startStage(requestId, 'vehicle_search');
 
       // Simulate some work
-      await new Promise(resolve => setTimeout(resolve, 50));
+      vi.advanceTimersByTime(50);
 
       const duration = service.endStage(requestId, 'vehicle_search', true);
 
-      expect(duration).toBeGreaterThanOrEqual(50);
-      expect(duration).toBeLessThan(200); // Allow some tolerance
+      expect(duration).toBe(50);
     });
 
     it('should store metadata for stages', () => {
@@ -156,11 +157,11 @@ describe('PerformanceMetricsService', () => {
   });
 
   describe('endRequest', () => {
-    it('should return summary with all metrics', async () => {
+    it('should return summary with all metrics', () => {
       const requestId = service.startRequest('conv-123');
 
       service.startStage(requestId, 'vehicle_search');
-      await new Promise(resolve => setTimeout(resolve, 10));
+      vi.advanceTimersByTime(10);
       service.endStage(requestId, 'vehicle_search', true);
 
       service.recordLLMCall(requestId, 100);
@@ -171,7 +172,7 @@ describe('PerformanceMetricsService', () => {
       expect(summary).toBeDefined();
       expect(summary?.conversationId).toBe('conv-123');
       expect(summary?.requestId).toBe(requestId);
-      expect(summary?.totalDurationMs).toBeGreaterThan(0);
+      expect(summary?.totalDurationMs).toBeGreaterThanOrEqual(10); // At least the stage time
       expect(summary?.llmCallCount).toBe(1);
       expect(summary?.llmTotalTimeMs).toBe(100);
       expect(summary?.vehiclesProcessed).toBe(50);
@@ -179,7 +180,7 @@ describe('PerformanceMetricsService', () => {
       expect(summary?.stages).toHaveLength(1);
     });
 
-    it('should set exceededThreshold to false when under 5 seconds', async () => {
+    it('should set exceededThreshold to false when under 5 seconds', () => {
       const requestId = service.startRequest('conv-123');
 
       const summary = service.endRequest(requestId);
@@ -233,19 +234,27 @@ describe('PerformanceMetricsService', () => {
 
 describe('measureTime helper', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should measure async function execution time', async () => {
     const requestId = performanceMetrics.startRequest('conv-123');
 
-    const { result, durationMs } = await measureTime(requestId, 'vehicle_search', async () => {
+    const promise = measureTime(requestId, 'vehicle_search', async () => {
       await new Promise(resolve => setTimeout(resolve, 50));
       return 'test-result';
     });
 
+    await vi.advanceTimersByTimeAsync(50);
+    const { result, durationMs } = await promise;
+
     expect(result).toBe('test-result');
-    expect(durationMs).toBeGreaterThanOrEqual(50);
+    expect(durationMs).toBe(50);
 
     performanceMetrics.endRequest(requestId);
   });
@@ -253,11 +262,11 @@ describe('measureTime helper', () => {
   it('should handle errors and still record stage', async () => {
     const requestId = performanceMetrics.startRequest('conv-123');
 
-    await expect(
-      measureTime(requestId, 'vehicle_search', async () => {
-        throw new Error('Test error');
-      })
-    ).rejects.toThrow('Test error');
+    const promise = measureTime(requestId, 'vehicle_search', async () => {
+      throw new Error('Test error');
+    });
+
+    await expect(promise).rejects.toThrow('Test error');
 
     performanceMetrics.endRequest(requestId);
   });
@@ -265,22 +274,30 @@ describe('measureTime helper', () => {
 
 describe('measureLLMCall helper', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should measure LLM call and record it', async () => {
     const requestId = performanceMetrics.startRequest('conv-123');
 
-    const result = await measureLLMCall(requestId, async () => {
+    const promise = measureLLMCall(requestId, async () => {
       await new Promise(resolve => setTimeout(resolve, 50));
       return 'llm-response';
     });
+
+    await vi.advanceTimersByTimeAsync(50);
+    const result = await promise;
 
     expect(result).toBe('llm-response');
 
     const metrics = performanceMetrics.getMetrics(requestId);
     expect(metrics?.llmCallCount).toBe(1);
-    expect(metrics?.llmTotalTime).toBeGreaterThanOrEqual(50);
+    expect(metrics?.llmTotalTime).toBe(50); // Exact match with fake timers
 
     performanceMetrics.endRequest(requestId);
   });
@@ -288,14 +305,18 @@ describe('measureLLMCall helper', () => {
   it('should record LLM call even on error', async () => {
     const requestId = performanceMetrics.startRequest('conv-123');
 
-    await expect(
-      measureLLMCall(requestId, async () => {
-        throw new Error('LLM error');
-      })
-    ).rejects.toThrow('LLM error');
+    const promise = measureLLMCall(requestId, async () => {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      throw new Error('LLM error');
+    });
+    const rejection = expect(promise).rejects.toThrow('LLM error');
+
+    await vi.advanceTimersByTimeAsync(50);
+    await rejection;
 
     const metrics = performanceMetrics.getMetrics(requestId);
     expect(metrics?.llmCallCount).toBe(1);
+    expect(metrics?.llmTotalTime).toBe(50); // Exact match even on error
 
     performanceMetrics.endRequest(requestId);
   });

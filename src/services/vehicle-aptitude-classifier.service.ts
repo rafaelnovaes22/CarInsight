@@ -362,7 +362,7 @@ Retorne APENAS um JSON válido com a seguinte estrutura:
   "segmentoPreco": string
 }`;
 
-      const response = await chatCompletion(
+      const llmResponse = await chatCompletion(
         [
           { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
           { role: 'user', content: userPrompt },
@@ -372,8 +372,9 @@ Retorne APENAS um JSON válido com a seguinte estrutura:
           maxTokens: 500,
         }
       );
+      const content = typeof llmResponse === 'string' ? llmResponse : llmResponse.content;
 
-      return this.parseResponse(response, vehicle);
+      return this.parseResponse(content, vehicle);
     } catch (error) {
       logger.warn(
         { error: (error as Error).message, vehicle: `${vehicle.marca} ${vehicle.modelo}` },
