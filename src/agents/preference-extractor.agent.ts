@@ -390,8 +390,8 @@ Saída: {
         contextString += `\n\nMENSAGENS RECENTES:\n${recentHistory}`;
       }
 
-      // Call LLM
-      const { content: resultContent } = await chatCompletion(
+      // Call LLM. Some tests mock chatCompletion as a raw string, while runtime returns an object.
+      const llmResult = await chatCompletion(
         [
           {
             role: 'system',
@@ -407,6 +407,13 @@ Saída: {
           maxTokens: 400,
         }
       );
+
+      const resultContent =
+        typeof llmResult === 'string' ? llmResult : (llmResult as { content?: string })?.content;
+
+      if (!resultContent) {
+        throw new Error('Empty LLM extraction response');
+      }
 
       // Parse result
       const parsed = this.parseExtractionResult(resultContent);

@@ -110,7 +110,7 @@ jobs:
 
       - name: Check for exposed secrets
         run: |
-          if grep -rE "(gsk_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})" --include=*.js --include=*.ts --include=*.md --exclude-dir=node_modules .; then
+          if grep -rE "(gsk_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})" --include=*.js --include=*.ts --include=*.md --include=*.json --include=*.txt --include=*.html --exclude-dir=node_modules .; then
             echo "❌ Exposed secrets detected!"
             exit 1
           else

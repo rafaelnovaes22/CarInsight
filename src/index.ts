@@ -23,7 +23,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 function requireAdminSecret(req: any, res: any, next: () => void) {
   const configuredSecret = env.SEED_SECRET;
-  const providedSecret = req.headers['x-admin-secret'] || req.query.secret;
+  const headerSecret = req.headers['x-admin-secret'];
+  const authHeader = req.headers.authorization as string | undefined;
+  const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  const providedSecret = headerSecret || bearerSecret;
 
   if (!configuredSecret) {
     logger.error('SEED_SECRET is not configured; admin/debug endpoints are disabled');

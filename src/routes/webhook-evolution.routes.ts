@@ -9,16 +9,19 @@ const messageHandler = new MessageHandlerV2();
 const evolutionService = new WhatsAppEvolutionService();
 
 function isAuthorized(req: any): boolean {
-  if (!env.EVOLUTION_API_KEY) {
-    return true;
-  }
-
+  const configuredKey = env.EVOLUTION_API_KEY;
+  if (!configuredKey) return false;
   const incomingKey = (req.headers.apikey as string) || (req.headers['x-api-key'] as string);
-  return incomingKey === env.EVOLUTION_API_KEY;
+  return typeof incomingKey === 'string' && incomingKey === configuredKey;
 }
 
 router.post('/evolution', async (req, res) => {
   try {
+    if (!env.EVOLUTION_API_KEY) {
+      logger.error('EVOLUTION_API_KEY is not configured; Evolution webhook is disabled');
+      return res.status(503).json({ error: 'Evolution webhook is disabled' });
+    }
+
     if (!isAuthorized(req)) {
       logger.warn('Evolution webhook unauthorized');
       return res.status(403).json({ error: 'Unauthorized' });

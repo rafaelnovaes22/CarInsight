@@ -1930,8 +1930,15 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
       // **DETERMINISTIC RANKING (latency-optimization)**
       // Use pre-calculated aptitude fields for fast SQL filtering (< 5s)
-      // Get current run tree for observability
-      const runTree = getCurrentRunTree();
+      // Get current run tree for observability.
+      // getCurrentRunTree() throws outside a traceable execution context.
+      let runTree: RunTree | undefined;
+      try {
+        runTree = getCurrentRunTree();
+      } catch {
+        runTree = undefined;
+      }
+
       if (runTree) {
         runTree.metadata = {
           ...runTree.metadata,
@@ -2036,7 +2043,13 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           // Track effectiveness: "Body Type Correctness"
           // If we had to filter out vehicles, it means upstream (RAG/Ranker) returned incorrect types
           if (feedbackService) {
-            const currentRunId = getCurrentRunTree()?.id;
+            let currentRunId: string | undefined;
+            try {
+              currentRunId = getCurrentRunTree()?.id;
+            } catch {
+              currentRunId = undefined;
+            }
+
             if (currentRunId) {
               const keptRatio = filtered.length / rankedResults.length;
               // Score 1.0 if we didn't have to filter anything (perfect retrieval)

@@ -18,7 +18,11 @@ function requireDebugSecret(req: any, res: any, next: () => void) {
     return res.status(503).json({ error: 'Debug routes are disabled' });
   }
 
-  const secret = req.query.secret || req.headers['x-admin-secret'];
+  const headerSecret = req.headers['x-admin-secret'];
+  const authHeader = req.headers.authorization as string | undefined;
+  const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  const secret = headerSecret || bearerSecret;
+
   if (secret !== env.SEED_SECRET) {
     return res.status(403).json({ error: 'Unauthorized - Invalid secret' });
   }

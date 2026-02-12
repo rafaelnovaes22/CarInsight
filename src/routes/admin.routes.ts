@@ -15,7 +15,12 @@ function requireSecret(req: any, res: any, next: () => void) {
     logger.error('SEED_SECRET is not configured; admin routes are disabled');
     return res.status(503).json({ error: 'Admin routes are disabled' });
   }
-  const secret = req.query.secret || req.headers['x-admin-secret'];
+
+  const headerSecret = req.headers['x-admin-secret'];
+  const authHeader = req.headers.authorization as string | undefined;
+  const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  const secret = headerSecret || bearerSecret;
+
   if (secret !== SEED_SECRET) {
     logger.warn('Unauthorized admin access attempt');
     return res.status(403).json({ error: 'Unauthorized - Invalid secret' });
@@ -1279,16 +1284,17 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
 router.get('/health/endpoints', requireSecret, (_req, res) => {
   res.json({
     status: 'ok',
+    auth: 'Use header x-admin-secret: <SEED_SECRET> or Authorization: Bearer <SEED_SECRET>',
     endpoints: {
-      seed: '/admin/seed-robustcar?secret=YOUR_SECRET',
-      schemaPush: 'POST /admin/schema-push?secret=YOUR_SECRET',
-      updateUber: 'POST /admin/update-uber?secret=YOUR_SECRET',
-      vehiclesUber: '/admin/vehicles-uber?secret=YOUR_SECRET&type=x',
-      validateUrls: 'POST /admin/validate-urls?secret=YOUR_SECRET',
-      scrapeRobustcar: 'POST /admin/scrape-robustcar?secret=YOUR_SECRET',
-      refreshInventory: 'POST /admin/refresh-inventory?secret=YOUR_SECRET',
-      debugVehicles: '/admin/debug-vehicles?secret=YOUR_SECRET',
-      debug: '/admin/debug-env?secret=YOUR_SECRET',
+      seed: 'GET /admin/seed-robustcar',
+      schemaPush: 'POST /admin/schema-push',
+      updateUber: 'POST /admin/update-uber',
+      vehiclesUber: 'GET /admin/vehicles-uber?type=x',
+      validateUrls: 'POST /admin/validate-urls',
+      scrapeRobustcar: 'POST /admin/scrape-robustcar',
+      refreshInventory: 'POST /admin/refresh-inventory',
+      debugVehicles: 'GET /admin/debug-vehicles',
+      debug: 'GET /admin/debug-env',
     },
   });
 });

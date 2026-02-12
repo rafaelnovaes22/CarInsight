@@ -12,6 +12,20 @@ import { ConversationContext, QuestionGenerationOptions } from '../../../types/c
 import { SYSTEM_PROMPT } from '../constants';
 import { summarizeContext } from '../assessors';
 
+function normalizeCompletionResponse(result: string | { content?: string; usage?: any }): {
+  content: string;
+  usage?: any;
+} {
+  const content = typeof result === 'string' ? result : result?.content || '';
+  const usage = typeof result === 'string' ? undefined : result?.usage;
+
+  if (!content) {
+    throw new Error('Empty LLM response content');
+  }
+
+  return { content, usage };
+}
+
 /**
  * Answer user's question using RAG (Retrieval Augmented Generation)
  *
@@ -63,7 +77,7 @@ Responda a pergunta de forma natural e útil, usando exemplos dos veículos quan
 Se a pergunta for sobre diferenças entre categorias, explique claramente.
 Sempre mantenha o foco em ajudar o cliente a encontrar o carro ideal.`;
 
-    const { content, usage } = await chatCompletion(
+    const completion = await chatCompletion(
       [
         { role: 'system', content: prompt },
         { role: 'user', content: question },
@@ -72,6 +86,10 @@ Sempre mantenha o foco em ajudar o cliente a encontrar o carro ideal.`;
         temperature: 0.7,
         maxTokens: 350,
       }
+    );
+
+    const { content, usage } = normalizeCompletionResponse(
+      completion as string | { content?: string; usage?: any }
     );
 
     return { answer: content.trim(), usage };
@@ -141,7 +159,7 @@ EXEMPLO RUIM:
 
 Gere APENAS a pergunta, sem prefácio ou explicação:`;
 
-    const { content, usage } = await chatCompletion(
+    const completion = await chatCompletion(
       [
         { role: 'system', content: prompt },
         { role: 'user', content: 'Qual a próxima melhor pergunta?' },
@@ -150,6 +168,10 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
         temperature: 0.8,
         maxTokens: 150,
       }
+    );
+
+    const { content, usage } = normalizeCompletionResponse(
+      completion as string | { content?: string; usage?: any }
     );
 
     return { question: content.trim(), usage };

@@ -42,7 +42,11 @@ function hasAdminSecret(req: Request): boolean {
     return false;
   }
 
-  const providedSecret = (req.headers['x-admin-secret'] as string) || (req.query.secret as string);
+  const headerSecret = req.headers['x-admin-secret'] as string | undefined;
+  const authHeader = req.headers.authorization as string | undefined;
+  const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  const providedSecret = headerSecret || bearerSecret;
+
   return providedSecret === env.SEED_SECRET;
 }
 

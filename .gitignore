@@ -100,3 +100,18 @@ RECOMENDACOES_*.md
 
 # Core dumps
 core
+
+# Local debug/scrape artifacts
+debug-output.json
+last_scrape.txt
+scraped_content.txt
+uber_api_response.json
+net_logs.txt
+lint_output.txt
+test-results.json
+test_output.txt
+verify_output.txt
+url_audit.txt
+temp_site.html
+temp_instance_controller.js
+temp_monitor_service.js
