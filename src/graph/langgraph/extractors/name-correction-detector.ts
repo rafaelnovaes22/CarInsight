@@ -37,6 +37,21 @@ export interface NameCorrectionDetectorConfig {
   existingName: string | null;
 }
 
+function normalizeCommonMojibake(input: string): string {
+  return input
+    .replace(/Ã£/g, 'ã')
+    .replace(/Ã¡/g, 'á')
+    .replace(/Ã¢/g, 'â')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ãª/g, 'ê')
+    .replace(/Ã­/g, 'í')
+    .replace(/Ã³/g, 'ó')
+    .replace(/Ã´/g, 'ô')
+    .replace(/Ãµ/g, 'õ')
+    .replace(/Ãº/g, 'ú')
+    .replace(/Ã§/g, 'ç');
+}
+
 /**
  * Portuguese name correction patterns
  *
@@ -45,26 +60,26 @@ export interface NameCorrectionDetectorConfig {
  */
 export const NAME_CORRECTION_PATTERNS: RegExp[] = [
   // "Ã© [Name] na verdade" / "na verdade Ã© [Name]"
-  /(?:^|\s)(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)\s+na\s+verdade/i,
-  /na\s+verdade\s+(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
+  /(?:^|\s)(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)\s+na\s+verdade/iu,
+  /na\s+verdade\s+(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
   // "nÃ£o, Ã© [Name]" / "nÃ£o, [Name]"
-  /^n[ãa]o[,.]?\s*(?:é|e)?\s*([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)?)\s*$/i,
+  /^n(?:\u00E3|a)o[,.]?\s*(?:\u00E9|e)?\s*([\p{L}]+(?:\s+[\p{L}]+)?)\s*$/iu,
 
   // "meu nome Ã© [Name]" (when name already exists - implies correction)
-  /meu\s+nome\s+(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
+  /meu\s+nome\s+(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
   // "me chama de [Name]" / "pode me chamar de [Name]"
-  /(?:me\s+chama|pode\s+me\s+chamar)\s+de\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
+  /(?:me\s+chama|pode\s+me\s+chamar)\s+de\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
   // "o nome Ã© [Name]"
-  /o\s+nome\s+(?:Ã©|e)\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
+  /o\s+nome\s+(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
   // "na verdade me chamo [Name]"
-  /na\s+verdade\s+me\s+chamo\s+([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
+  /na\s+verdade\s+me\s+chamo\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
   // "errou, Ã© [Name]" / "errado, Ã© [Name]"
-  /err(?:ou|ado)[,.]?\s*(?:Ã©|e)?\s*([A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)*)/i,
+  /err(?:ou|ado)[,.]?\s*(?:\u00E9|e)?\s*([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 ];
 
 /**
@@ -86,7 +101,7 @@ export function detectNameCorrection(
     return { isCorrection: false, correctedName: null, confidence: 0 };
   }
 
-  const trimmedMessage = message.trim();
+  const trimmedMessage = normalizeCommonMojibake(message).trim();
 
   // Try each correction pattern
   for (const pattern of NAME_CORRECTION_PATTERNS) {
@@ -135,4 +150,3 @@ export function detectNameCorrection(
   logger.debug({ message, existingName }, 'detectNameCorrection: no correction pattern matched');
   return { isCorrection: false, correctedName: null, confidence: 0 };
 }
-

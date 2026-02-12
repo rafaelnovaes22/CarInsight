@@ -91,4 +91,64 @@ describe('Family Recommendation Logic', () => {
       expect(filters?.aptoFamilia).toBeUndefined();
     }
   });
+
+  it('should keep previous bodyType filtering when applying family rules', async () => {
+    const profile = {
+      usoPrincipal: 'familia',
+      usage: 'cidade',
+      budget: 120000,
+      bodyType: 'suv',
+      people: 5,
+      priorities: ['familia'],
+      completed: true,
+    };
+
+    const context = {
+      conversationId: 'test-id',
+      phoneNumber: '123',
+      profile,
+      messages: [{ role: 'user', content: 'Quero um carro para familia', timestamp: new Date() }],
+      metadata: { messageCount: 1 },
+      mode: 'discovery',
+    };
+
+    vi.mocked(vehicleSearchAdapter.searchByUseCase).mockResolvedValue([
+      {
+        vehicleId: 'sedan-1',
+        matchScore: 98,
+        reasoning: 'sedan score alto',
+        highlights: [],
+        concerns: [],
+        vehicle: {
+          brand: 'Toyota',
+          model: 'Corolla',
+          year: 2022,
+          price: 115000,
+          mileage: 32000,
+          bodyType: 'sedan',
+        },
+      },
+      {
+        vehicleId: 'suv-1',
+        matchScore: 90,
+        reasoning: 'suv score bom',
+        highlights: [],
+        concerns: [],
+        vehicle: {
+          brand: 'Jeep',
+          model: 'Compass',
+          year: 2021,
+          price: 118000,
+          mileage: 41000,
+          bodyType: 'suv',
+        },
+      },
+    ] as any);
+
+    const response = await vehicleExpert.chat('Pode mostrar as opcoes', context as any);
+
+    expect(response.recommendations?.length).toBeGreaterThan(0);
+    const bodyTypes = (response.recommendations || []).map(r => r.vehicle?.bodyType?.toLowerCase());
+    expect(bodyTypes.every(type => type === 'suv')).toBe(true);
+  });
 });

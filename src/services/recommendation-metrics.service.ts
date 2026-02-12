@@ -153,15 +153,23 @@ export class RecommendationMetricsService {
   /**
    * Calculate comprehensive accuracy metrics for a period
    */
-  async calculateMetrics(period: '24h' | '7d' | '30d' = '7d'): Promise<AccuracyMetrics> {
-    const startDate = getPeriodStart(period);
+  async calculateMetrics(
+    period: '24h' | '7d' | '30d' = '7d',
+    dateRange?: { startDate: Date; endDate?: Date; periodLabel?: string }
+  ): Promise<AccuracyMetrics> {
+    const startDate = dateRange?.startDate ?? getPeriodStart(period);
+    const endDate = dateRange?.endDate;
+    const resolvedPeriod = dateRange?.periodLabel ?? period;
 
-    logger.info({ period, startDate }, 'Calculating recommendation metrics');
+    logger.info(
+      { period: resolvedPeriod, startDate, endDate },
+      'Calculating recommendation metrics'
+    );
 
     // Fetch all recommendations with feedback data
     const recommendations = await prisma.recommendation.findMany({
       where: {
-        createdAt: { gte: startDate },
+        createdAt: endDate ? { gte: startDate, lte: endDate } : { gte: startDate },
       },
       include: {
         vehicle: {
@@ -178,7 +186,7 @@ export class RecommendationMetricsService {
     });
 
     if (recommendations.length === 0) {
-      return this.emptyMetrics(period);
+      return this.emptyMetrics(resolvedPeriod);
     }
 
     // Group by conversation
@@ -348,7 +356,7 @@ export class RecommendationMetricsService {
     const matchScoreCorrelation = pearsonCorrelation(matchScores, engagementScores);
 
     const metrics: AccuracyMetrics = {
-      period,
+      period: resolvedPeriod,
       generatedAt: new Date().toISOString(),
       totalConversations,
       totalRecommendations,
@@ -366,7 +374,7 @@ export class RecommendationMetricsService {
 
     logger.info(
       {
-        period,
+        period: resolvedPeriod,
         precisionAt3: metrics.precisionAt3,
         ctr: metrics.ctr,
         mrr: metrics.mrr,
@@ -375,6 +383,28 @@ export class RecommendationMetricsService {
     );
 
     return metrics;
+  }
+
+  /**
+   * Calculate metrics for an explicit date range
+   */
+  async calculateMetricsForRange(
+    startDate: Date,
+    endDate: Date,
+    periodLabel: string = 'custom'
+  ): Promise<AccuracyMetrics> {
+    const normalizedStart = new Date(startDate);
+    const normalizedEnd = new Date(endDate);
+    const [from, to] =
+      normalizedStart.getTime() <= normalizedEnd.getTime()
+        ? [normalizedStart, normalizedEnd]
+        : [normalizedEnd, normalizedStart];
+
+    return this.calculateMetrics('7d', {
+      startDate: from,
+      endDate: to,
+      periodLabel,
+    });
   }
 
   /**

@@ -107,6 +107,7 @@ describe('LangGraph Nodes Logic', () => {
   describe('discoveryNode', () => {
     it('should call vehicle expert and update profile', async () => {
       const state = createInitialState();
+      state.phoneNumber = '5511999999999';
       state.messages = [new HumanMessage('Quero um SUV para família')];
 
       mockChat.mockResolvedValue({
@@ -118,8 +119,27 @@ describe('LangGraph Nodes Logic', () => {
       const result = await discoveryNode(state);
 
       expect(mockChat).toHaveBeenCalled();
+      const context = mockChat.mock.calls[0][1];
+      expect(context.conversationId).toBe('graph-5511999999999');
       expect(result.profile?.bodyType).toBe('SUV');
       expect(result.next).toBe('discovery'); // Still in discovery
+    });
+
+    it('should prefer thread_id from RunnableConfig when available', async () => {
+      const state = createInitialState();
+      state.phoneNumber = '5511888888888';
+      state.messages = [new HumanMessage('Quero um carro')];
+
+      mockChat.mockResolvedValue({
+        extractedPreferences: {},
+        response: 'Entendi',
+        canRecommend: false,
+      });
+
+      await discoveryNode(state, { configurable: { thread_id: 'thread-abc-123' } } as any);
+
+      const context = mockChat.mock.calls[0][1];
+      expect(context.conversationId).toBe('thread-abc-123');
     });
 
     it('should move to recommendation if expert returns recommendations', async () => {

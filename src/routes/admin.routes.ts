@@ -1559,6 +1559,76 @@ router.get('/recommendations/accuracy', requireSecret, async (req, res) => {
 });
 
 /**
+ * GET /admin/recommendations/health
+ * Returns operational health snapshot for recommendation quality.
+ * Query params:
+ *   - period: '24h' | '7d' | '30d' (default: '7d')
+ *   - baselinePeriod: '24h' | '7d' | '30d' (default: '30d')
+ *   - alert: 'true' | 'false' (default: false)
+ * Optional threshold overrides:
+ *   - minPrecisionAt3
+ *   - maxRejectionRate
+ *   - minCtr
+ *   - minConversationsWithFeedback
+ *   - precisionAt3DropWarning
+ *   - rejectionRateIncreaseWarning
+ *   - ctrDropWarning
+ */
+router.get('/recommendations/health', requireSecret, async (req, res) => {
+  try {
+    const { recommendationHealthMonitor } =
+      await import('../services/recommendation-health-monitor.service');
+    const validPeriods: MetricsPeriod[] = ['24h', '7d', '30d'];
+
+    const parsePeriod = (value: unknown, fallback: MetricsPeriod): MetricsPeriod => {
+      if (typeof value === 'string' && validPeriods.includes(value as MetricsPeriod)) {
+        return value as MetricsPeriod;
+      }
+      return fallback;
+    };
+
+    const parseOptionalNumber = (value: unknown): number | undefined => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    };
+
+    const period = parsePeriod(req.query.period, '7d');
+    const baselinePeriod = parsePeriod(req.query.baselinePeriod, '30d');
+    const emitAlerts = String(req.query.alert || 'false').toLowerCase() === 'true';
+
+    const thresholdOverrides = {
+      minPrecisionAt3: parseOptionalNumber(req.query.minPrecisionAt3),
+      maxRejectionRate: parseOptionalNumber(req.query.maxRejectionRate),
+      minCtr: parseOptionalNumber(req.query.minCtr),
+      minConversationsWithFeedback: parseOptionalNumber(req.query.minConversationsWithFeedback),
+      precisionAt3DropWarning: parseOptionalNumber(req.query.precisionAt3DropWarning),
+      rejectionRateIncreaseWarning: parseOptionalNumber(req.query.rejectionRateIncreaseWarning),
+      ctrDropWarning: parseOptionalNumber(req.query.ctrDropWarning),
+    };
+
+    const hasThresholdOverride = Object.values(thresholdOverrides).some(v => v !== undefined);
+
+    const snapshot = await recommendationHealthMonitor.evaluateHealth(period, baselinePeriod, {
+      emitAlerts,
+      thresholds: hasThresholdOverride ? thresholdOverrides : undefined,
+    });
+
+    res.json({
+      success: true,
+      snapshot,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get recommendation health');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get recommendation health',
+      details: error.message,
+    });
+  }
+});
+
+/**
  * GET /admin/recommendations/worst
  * Returns worst performing recommendations for analysis
  * Query params:

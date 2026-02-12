@@ -2116,7 +2116,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           profile.priorities?.includes('cadeirinha') || profile.priorities?.includes('crianca');
         const peopleCount = profile.people || 4;
 
-        filteredResults = results.filter(rec => {
+        filteredResults = rankedResults.filter(rec => {
           const model = rec.vehicle.model?.toLowerCase() || '';
           const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
 
@@ -2224,9 +2224,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         });
 
         // Se filtrou demais, relaxa os critérios
-        if (filteredResults.length < 3 && results.length >= 3) {
+        if (filteredResults.length < 3 && rankedResults.length >= 3) {
           // Tenta pegar pelo menos sedans e SUVs
-          filteredResults = results.filter(rec => {
+          filteredResults = rankedResults.filter(rec => {
             const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
             return (
               bodyType.includes('suv') || bodyType.includes('sedan') || bodyType.includes('minivan')
@@ -2234,7 +2234,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           });
 
           if (filteredResults.length < 3) {
-            filteredResults = results.slice(0, 5);
+            filteredResults = rankedResults.slice(0, 5);
           }
         }
       }

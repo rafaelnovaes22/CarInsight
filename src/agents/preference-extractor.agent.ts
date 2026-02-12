@@ -517,6 +517,7 @@ Saída: {
    */
   private sanitizeExtracted(extracted: Partial<CustomerProfile>): Partial<CustomerProfile> {
     const sanitized: Partial<CustomerProfile> = {};
+    const maxAcceptedYear = new Date().getFullYear() + 1;
 
     // Budget validation
     if (extracted.budget !== undefined && extracted.budget !== null) {
@@ -535,7 +536,7 @@ Saída: {
     }
 
     // Usage validation
-    const validUsage = ['cidade', 'viagem', 'trabalho', 'misto'];
+    const validUsage = ['cidade', 'viagem', 'trabalho', 'misto', 'diario'];
     if (extracted.usage && validUsage.includes(extracted.usage)) {
       sanitized.usage = extracted.usage;
     }
@@ -548,7 +549,7 @@ Saída: {
 
     // Year validation (1950-2025) - permite carros clássicos e antigos
     if (extracted.minYear !== undefined && extracted.minYear !== null) {
-      sanitized.minYear = Math.max(1950, Math.min(2025, Math.floor(extracted.minYear)));
+      sanitized.minYear = Math.max(1950, Math.min(maxAcceptedYear, Math.floor(extracted.minYear)));
     }
 
     // Km validation (0-500000)
@@ -655,7 +656,10 @@ Saída: {
       sanitized.tradeInModel = extracted.tradeInModel.trim().toLowerCase();
     }
     if (extracted.tradeInYear !== undefined && extracted.tradeInYear !== null) {
-      sanitized.tradeInYear = Math.max(1990, Math.min(2025, Math.floor(extracted.tradeInYear)));
+      sanitized.tradeInYear = Math.max(
+        1990,
+        Math.min(maxAcceptedYear, Math.floor(extracted.tradeInYear))
+      );
     }
 
     return sanitized;

@@ -4,7 +4,7 @@
 
 export interface QuizAnswers {
   budget?: number;
-  usage?: 'cidade' | 'viagem' | 'trabalho' | 'misto';
+  usage?: 'cidade' | 'viagem' | 'trabalho' | 'misto' | 'diario';
   people?: number;
   hasTradeIn?: boolean;
   minYear?: number;
@@ -25,7 +25,7 @@ export interface CustomerProfile {
   orcamento?: number; // alias for budget (Portuguese)
 
   // Usage
-  usage?: 'cidade' | 'viagem' | 'trabalho' | 'misto';
+  usage?: 'cidade' | 'viagem' | 'trabalho' | 'misto' | 'diario';
   usagePattern?: string; // legacy support
   usoPrincipal?: string; // alias for usage (Portuguese)
   tipoUber?: 'uberx' | 'comfort' | 'black'; // Uber category

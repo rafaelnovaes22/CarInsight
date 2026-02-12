@@ -570,8 +570,10 @@ export class RecommendationAnalysisService {
     startDate: Date,
     endDate: Date
   ): Promise<AccuracyMetrics> {
-    // Simplified implementation - in production would query with date range
-    return recommendationMetrics.calculateMetrics('7d');
+    const periodLabel = `${startDate.toISOString().slice(0, 10)}..${endDate
+      .toISOString()
+      .slice(0, 10)}`;
+    return recommendationMetrics.calculateMetricsForRange(startDate, endDate, periodLabel);
   }
 }
 

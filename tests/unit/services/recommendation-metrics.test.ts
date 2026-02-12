@@ -53,6 +53,30 @@ describe('RecommendationMetricsService', () => {
     });
   });
 
+  describe('calculateMetricsForRange', () => {
+    it('should return empty metrics with custom period label', async () => {
+      const metrics = await service.calculateMetricsForRange(
+        new Date('2026-01-01T00:00:00.000Z'),
+        new Date('2026-01-10T00:00:00.000Z'),
+        '2026-01-01..2026-01-10'
+      );
+
+      expect(metrics.period).toBe('2026-01-01..2026-01-10');
+      expect(metrics.totalRecommendations).toBe(0);
+    });
+
+    it('should handle inverted date ranges', async () => {
+      const metrics = await service.calculateMetricsForRange(
+        new Date('2026-01-10T00:00:00.000Z'),
+        new Date('2026-01-01T00:00:00.000Z'),
+        'custom-window'
+      );
+
+      expect(metrics.period).toBe('custom-window');
+      expect(metrics.totalRecommendations).toBe(0);
+    });
+  });
+
   describe('getWorstPerformingRecommendations', () => {
     it('should return empty array when no bad recommendations', async () => {
       const worst = await service.getWorstPerformingRecommendations(10, '7d');

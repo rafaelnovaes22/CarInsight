@@ -2,6 +2,7 @@ import { vehicleExpert } from '../../agents/vehicle-expert.agent';
 import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
+import { RunnableConfig } from '@langchain/core/runnables';
 import { createNodeTimer } from '../../lib/node-metrics';
 import { detectNameCorrection } from '../langgraph/extractors/name-correction-detector';
 import {
@@ -9,11 +10,27 @@ import {
   isInformationProvision,
 } from '../../agents/vehicle-expert/intent-detector';
 
+function resolveConversationId(state: IGraphState, config?: RunnableConfig): string {
+  const threadId = (config?.configurable as Record<string, unknown> | undefined)?.thread_id;
+  if (typeof threadId === 'string' && threadId.trim().length > 0) {
+    return threadId.trim();
+  }
+
+  if (state.phoneNumber && state.phoneNumber.trim().length > 0) {
+    return `graph-${state.phoneNumber.trim()}`;
+  }
+
+  return `graph-${state.metadata.startedAt}`;
+}
+
 /**
  * Discovery Node
  * Analyzes user input to understand vehicle preferences
  */
-export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphState>> {
+export async function discoveryNode(
+  state: IGraphState,
+  config?: RunnableConfig
+): Promise<Partial<IGraphState>> {
   const timer = createNodeTimer('discovery');
 
   const lastMessage = state.messages[state.messages.length - 1];
@@ -86,7 +103,7 @@ export async function discoveryNode(state: IGraphState): Promise<Partial<IGraphS
   });
 
   const context: ConversationContext = {
-    conversationId: 'graph-execution', // TODO: Get from config/state if available
+    conversationId: resolveConversationId(state, config),
     phoneNumber: state.phoneNumber || 'unknown',
     mode: 'discovery',
     profile: state.profile || {},

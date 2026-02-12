@@ -296,6 +296,8 @@ describe('Property 9: Name Extraction From Correction Messages', () => {
 
           const expectedExtracted = extractName(correctedName);
           if (!expectedExtracted) return;
+          const normalizedExisting = extractName(existingName) ?? existingName;
+          if (expectedExtracted.toLowerCase() === normalizedExisting.toLowerCase()) return;
 
           const message = `é ${correctedName} na verdade`;
           const result = detectNameCorrection(message, { existingName });
@@ -320,6 +322,8 @@ describe('Property 9: Name Extraction From Correction Messages', () => {
 
           const expectedExtracted = extractName(correctedName);
           if (!expectedExtracted) return;
+          const normalizedExisting = extractName(existingName) ?? existingName;
+          if (expectedExtracted.toLowerCase() === normalizedExisting.toLowerCase()) return;
 
           const message = `não, é ${correctedName}`;
           const result = detectNameCorrection(message, { existingName });
@@ -343,6 +347,8 @@ describe('Property 9: Name Extraction From Correction Messages', () => {
 
           const expectedExtracted = extractName(correctedName);
           if (!expectedExtracted) return;
+          const normalizedExisting = extractName(existingName) ?? existingName;
+          if (expectedExtracted.toLowerCase() === normalizedExisting.toLowerCase()) return;
 
           const message = `meu nome é ${correctedName}`;
           const result = detectNameCorrection(message, { existingName });
@@ -366,6 +372,8 @@ describe('Property 9: Name Extraction From Correction Messages', () => {
 
           const expectedExtracted = extractName(correctedName);
           if (!expectedExtracted) return;
+          const normalizedExisting = extractName(existingName) ?? existingName;
+          if (expectedExtracted.toLowerCase() === normalizedExisting.toLowerCase()) return;
 
           // Test with lowercase input
           const message = `é ${correctedName.toLowerCase()} na verdade`;

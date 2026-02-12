@@ -21,8 +21,8 @@ vi.mock('../../../src/lib/recommendation-feedback', () => ({
 
 vi.mock('../../../src/services/recommendation-metrics.service', () => ({
   recommendationMetrics: {
-    calculateMetrics: vi.fn().mockResolvedValue({
-      period: '7d',
+    calculateMetrics: vi.fn().mockImplementation(async (period: string = '7d') => ({
+      period,
       generatedAt: new Date().toISOString(),
       totalConversations: 10,
       totalRecommendations: 30,
@@ -36,11 +36,30 @@ vi.mock('../../../src/services/recommendation-metrics.service', () => ({
       rejectionRate: 20,
       avgEngagement: 55,
       matchScoreCorrelation: 0.45,
-    }),
+    })),
+    calculateMetricsForRange: vi
+      .fn()
+      .mockImplementation(async (_startDate: Date, _endDate: Date, periodLabel: string) => ({
+        period: periodLabel,
+        generatedAt: new Date().toISOString(),
+        totalConversations: 10,
+        totalRecommendations: 30,
+        conversationsWithFeedback: 8,
+        precisionAt1: 60,
+        precisionAt3: 70,
+        precisionAt5: 75,
+        mrr: 0.65,
+        ctr: 25,
+        conversionRate: 15,
+        rejectionRate: 20,
+        avgEngagement: 55,
+        matchScoreCorrelation: 0.45,
+      })),
   },
 }));
 
 import { RecommendationAnalysisService } from '../../../src/services/recommendation-analysis.service';
+import { recommendationMetrics } from '../../../src/services/recommendation-metrics.service';
 
 describe('RecommendationAnalysisService', () => {
   let service: RecommendationAnalysisService;
@@ -109,6 +128,24 @@ describe('RecommendationAnalysisService', () => {
       expect(comparison.improvement.precisionAt1).toBeDefined();
       expect(comparison.improvement.ctr).toBeDefined();
       expect(comparison.improvement.overall).toBeDefined();
+    });
+
+    it('should use explicit date ranges for before/after windows', async () => {
+      const before = new Date('2026-01-20T00:00:00.000Z');
+      const after = new Date('2026-01-27T00:00:00.000Z');
+
+      await service.compareVersions(before, after);
+
+      const metricsMock = vi.mocked(recommendationMetrics);
+      expect(metricsMock.calculateMetricsForRange).toHaveBeenCalledTimes(2);
+
+      const [beforeStart, beforeEnd] = metricsMock.calculateMetricsForRange.mock.calls[0];
+      const [afterStart, afterEnd] = metricsMock.calculateMetricsForRange.mock.calls[1];
+
+      expect(beforeStart.toISOString()).toBe('2026-01-13T00:00:00.000Z');
+      expect(beforeEnd.toISOString()).toBe('2026-01-20T00:00:00.000Z');
+      expect(afterStart.toISOString()).toBe('2026-01-27T00:00:00.000Z');
+      expect(afterEnd.toISOString()).toBe('2026-02-03T00:00:00.000Z');
     });
   });
 

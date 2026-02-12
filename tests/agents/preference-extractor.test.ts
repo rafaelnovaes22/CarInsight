@@ -104,6 +104,16 @@ vi.mock('../../src/lib/llm-router', () => ({
       });
     }
 
+    // Daily usage extraction
+    if (userMessage.includes('uso diario') || userMessage.includes('dia a dia')) {
+      return JSON.stringify({
+        extracted: { usage: 'diario' },
+        confidence: 0.9,
+        reasoning: 'Uso diario identificado',
+        fieldsExtracted: ['usage'],
+      });
+    }
+
     // Body type extraction
     if (
       userMessage.includes('prefiro suv') &&
@@ -129,12 +139,29 @@ vi.mock('../../src/lib/llm-router', () => ({
     }
 
     // Year constraint
-    if (userMessage.includes('a partir de 2018') || userMessage.includes('partir de 2018')) {
+    const minYearMatch = userMessage.match(/\ba partir de\s+(\d{4})\b/);
+    if (minYearMatch) {
       return JSON.stringify({
-        extracted: { minYear: 2018 },
+        extracted: { minYear: Number(minYearMatch[1]) },
         confidence: 0.9,
         reasoning: 'Ano mínimo especificado',
         fieldsExtracted: ['minYear'],
+      });
+    }
+
+    // Trade-in year extraction
+    const tradeInYearMatch = userMessage.match(/\btroca(?:r)?\b.*\b(19\d{2}|20\d{2})\b/);
+    if (tradeInYearMatch) {
+      return JSON.stringify({
+        extracted: {
+          hasTradeIn: true,
+          tradeInBrand: 'honda',
+          tradeInModel: 'civic',
+          tradeInYear: Number(tradeInYearMatch[1]),
+        },
+        confidence: 0.9,
+        reasoning: 'Ano do carro na troca identificado',
+        fieldsExtracted: ['hasTradeIn', 'tradeInBrand', 'tradeInModel', 'tradeInYear'],
       });
     }
 
@@ -303,6 +330,13 @@ describe('PreferenceExtractorAgent', () => {
       expect(hasViagem).toBe(true);
     });
 
+    it('should accept diario usage as valid', async () => {
+      const message = 'O uso diario, no dia a dia da cidade';
+      const result = await extractor.extract(message);
+
+      expect(result.extracted.usage).toBe('diario');
+    });
+
     it('should extract body type', async () => {
       const message = 'Prefiro SUV';
       const result = await extractor.extract(message);
@@ -375,6 +409,24 @@ describe('PreferenceExtractorAgent', () => {
       const result = await extractor.extract(message);
 
       expect(result.extracted.minYear).toBe(2018);
+    });
+
+    it('should clamp minYear to current year + 1', async () => {
+      const futureYear = new Date().getFullYear() + 10;
+      const maxAcceptedYear = new Date().getFullYear() + 1;
+      const message = `Prefiro a partir de ${futureYear}`;
+      const result = await extractor.extract(message);
+
+      expect(result.extracted.minYear).toBe(maxAcceptedYear);
+    });
+
+    it('should clamp tradeInYear to current year + 1', async () => {
+      const futureYear = new Date().getFullYear() + 10;
+      const maxAcceptedYear = new Date().getFullYear() + 1;
+      const message = `Quero trocar meu Civic ${futureYear}`;
+      const result = await extractor.extract(message);
+
+      expect(result.extracted.tradeInYear).toBe(maxAcceptedYear);
     });
 
     it('should extract km constraint', async () => {
