@@ -67,6 +67,20 @@ function formatPrice(price: number | string | null): string {
   });
 }
 
+function getVehicleLink(vehicle: any): string | null {
+  if (!vehicle) return null;
+  const candidates = [vehicle.url, vehicle.detailUrl, vehicle.detailsUrl, vehicle.link];
+  for (const raw of candidates) {
+    if (typeof raw !== 'string') continue;
+    const link = raw.trim();
+    if (!link) continue;
+    if (link.startsWith('http://') || link.startsWith('https://')) {
+      return link;
+    }
+  }
+  return null;
+}
+
 /**
  * Format recommendations into WhatsApp message - ESTILO NATURAL
  */
@@ -86,20 +100,29 @@ function formatRecommendations(recommendations: any[]): string {
     const vehicle = rec.vehicle;
     if (!vehicle) return;
 
+    const brand = vehicle.marca || vehicle.brand || '';
+    const model = vehicle.modelo || vehicle.model || '';
     const num = index + 1;
-    const ano = vehicle.ano || '';
-    const km = vehicle.km ? `${Math.round(vehicle.km / 1000)}mil km` : '';
-    const price = formatPrice(vehicle.preco);
+    const ano = vehicle.ano || vehicle.year || '';
+    const mileage = vehicle.km ?? vehicle.mileage;
+    const km = mileage ? `${Math.round(mileage / 1000)}mil km` : '';
+    const price = formatPrice(vehicle.preco ?? vehicle.price ?? null);
+    const color = vehicle.cor || vehicle.color;
+    const link = getVehicleLink(vehicle);
 
     // Formato compacto e natural
-    message += `*${num}. ${vehicle.marca} ${vehicle.modelo}* ${ano}\n`;
+    message += `*${num}. ${brand} ${model}* ${ano}\n`;
     message += `   ${km} • R$ ${price}`;
 
     // Cor só se relevante
-    if (vehicle.cor && vehicle.cor.toLowerCase() !== 'não informada') {
-      message += ` • ${vehicle.cor}`;
+    if (color && typeof color === 'string' && color.toLowerCase() !== 'não informada') {
+      message += ` • ${color}`;
     }
     message += `\n`;
+
+    if (link) {
+      message += `   🔗 ${link}\n`;
+    }
 
     // Reasoning curto e natural
     if (rec.reasoning) {
@@ -234,19 +257,41 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     if (vehicleIndex >= 0 && vehicleIndex < state.recommendations.length) {
       const rec = state.recommendations[vehicleIndex];
       const vehicle = rec.vehicle;
+      const brand = vehicle.marca || vehicle.brand || '';
+      const model = vehicle.modelo || vehicle.model || '';
+      const year = vehicle.ano || vehicle.year || 'N/A';
+      const mileage = vehicle.km ?? vehicle.mileage;
+      const price = vehicle.preco ?? vehicle.price;
+      const color = vehicle.cor || vehicle.color || 'N/A';
+      const fuel = vehicle.combustivel || vehicle.fuelType;
+      const transmission = vehicle.cambio || vehicle.transmission;
+      const description = vehicle.descricao || vehicle.description;
+      const link = getVehicleLink(vehicle);
 
-      let detailsMessage = `📋 *${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''}*\n\n`;
-      detailsMessage += `📅 Ano: ${vehicle.ano}\n`;
-      detailsMessage += `🛣️ ${vehicle.km.toLocaleString('pt-BR')} km\n`;
-      detailsMessage += `💰 R$ ${parseFloat(vehicle.preco).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-      detailsMessage += `🎨 Cor: ${vehicle.cor}\n`;
+      let detailsMessage = `📋 *${brand} ${model} ${vehicle.versao || ''}*\n\n`;
+      detailsMessage += `📅 Ano: ${year}\n`;
+      if (typeof mileage === 'number') {
+        detailsMessage += `🛣️ ${mileage.toLocaleString('pt-BR')} km\n`;
+      } else {
+        detailsMessage += `🛣️ Consulte km\n`;
+      }
+      if (price != null && !Number.isNaN(parseFloat(String(price)))) {
+        detailsMessage += `💰 R$ ${parseFloat(String(price)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+      } else {
+        detailsMessage += `💰 Consulte valor\n`;
+      }
+      detailsMessage += `🎨 Cor: ${color}\n`;
 
-      if (vehicle.combustivel) detailsMessage += `⛽ ${vehicle.combustivel}`;
-      if (vehicle.cambio) detailsMessage += ` • 🔧 ${vehicle.cambio}`;
+      if (fuel) detailsMessage += `⛽ ${fuel}`;
+      if (transmission) detailsMessage += ` • 🔧 ${transmission}`;
       detailsMessage += `\n`;
 
-      if (vehicle.descricao) {
-        detailsMessage += `\n_${vehicle.descricao}_\n`;
+      if (link) {
+        detailsMessage += `🔗 ${link}\n`;
+      }
+
+      if (description) {
+        detailsMessage += `\n_${description}_\n`;
       }
 
       detailsMessage += `\n━━━━━━━━━━━━━━━━━━━━━\n\n`;
