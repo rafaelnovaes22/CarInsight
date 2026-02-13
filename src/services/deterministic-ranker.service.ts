@@ -51,6 +51,7 @@ export interface RankedVehicle {
   concerns: string[];
   // Campos para exibição de links e imagens
   url?: string | null;
+  detailUrl?: string | null;
   fotoUrl?: string | null;
   cor?: string | null;
 }
@@ -169,6 +170,7 @@ export class DeterministicRankerService {
           aptoUberBlack: true,
           // Campos para exibição de links e imagens
           url: true,
+          detailUrl: true,
           fotoUrl: true,
           cor: true,
         },
@@ -419,7 +421,8 @@ export class DeterministicRankerService {
       highlights,
       concerns,
       // Campos para exibição de links e imagens
-      url: vehicle.url,
+      url: vehicle.url || vehicle.detailUrl || null,
+      detailUrl: vehicle.detailUrl || vehicle.url || null,
       fotoUrl: vehicle.fotoUrl,
       cor: vehicle.cor,
     };

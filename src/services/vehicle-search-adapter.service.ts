@@ -80,6 +80,19 @@ interface SearchFilters {
   minScoreCustoBeneficio?: number;
 }
 
+function resolveVehicleUrl(vehicle: any): string | null {
+  if (!vehicle) return null;
+
+  const candidates = [vehicle.url, vehicle.detailUrl, vehicle.detailsUrl, vehicle.link];
+  for (const raw of candidates) {
+    if (typeof raw !== 'string') continue;
+    const link = raw.trim();
+    if (link) return link;
+  }
+
+  return null;
+}
+
 export class VehicleSearchAdapter {
   private fallbackService: FallbackService;
 
@@ -161,29 +174,33 @@ export class VehicleSearchAdapter {
       );
 
       // Convert to VehicleRecommendation format
-      return result.vehicles.map(vehicle => ({
-        vehicleId: vehicle.id,
-        matchScore: vehicle.score,
-        reasoning: vehicle.reasoning,
-        highlights: vehicle.highlights,
-        concerns: vehicle.concerns,
-        vehicle: {
-          id: vehicle.id,
-          brand: vehicle.marca,
-          model: vehicle.modelo,
-          year: vehicle.ano,
-          price: vehicle.preco,
-          mileage: vehicle.km,
-          bodyType: vehicle.carroceria,
-          transmission: vehicle.cambio,
-          fuelType: null, // Not returned by DeterministicRanker
-          color: vehicle.cor || null,
-          imageUrl: vehicle.fotoUrl || null,
-          detailsUrl: vehicle.url || null,
-          // Also include url field for compatibility with recommendation-formatter
-          url: vehicle.url || null,
-        },
-      }));
+      return result.vehicles.map(vehicle => {
+        const vehicleUrl = resolveVehicleUrl(vehicle);
+        return {
+          vehicleId: vehicle.id,
+          matchScore: vehicle.score,
+          reasoning: vehicle.reasoning,
+          highlights: vehicle.highlights,
+          concerns: vehicle.concerns,
+          vehicle: {
+            id: vehicle.id,
+            brand: vehicle.marca,
+            model: vehicle.modelo,
+            year: vehicle.ano,
+            price: vehicle.preco,
+            mileage: vehicle.km,
+            bodyType: vehicle.carroceria,
+            transmission: vehicle.cambio,
+            fuelType: null, // Not returned by DeterministicRanker
+            color: vehicle.cor || null,
+            imageUrl: vehicle.fotoUrl || null,
+            detailsUrl: vehicleUrl,
+            detailUrl: vehicleUrl,
+            // Also include url field for compatibility with recommendation-formatter
+            url: vehicleUrl,
+          },
+        };
+      });
     } catch (error) {
       logger.error({ error, useCase, filters }, 'Error in searchByUseCase');
       // Fallback to regular search if DeterministicRanker fails
@@ -364,27 +381,32 @@ export class VehicleSearchAdapter {
       }
 
       // Convert to VehicleRecommendation format
-      return vehicles.map((vehicle, index) => ({
-        vehicleId: vehicle.id,
-        matchScore: Math.max(95 - index * 5, 70), // Simple scoring based on order
-        reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
-        highlights: this.generateHighlights(vehicle),
-        concerns: [],
-        vehicle: {
-          id: vehicle.id,
-          brand: vehicle.marca,
-          model: vehicle.modelo,
-          year: vehicle.ano,
-          price: vehicle.preco,
-          mileage: vehicle.km,
-          bodyType: vehicle.carroceria,
-          transmission: vehicle.cambio,
-          fuelType: vehicle.combustivel,
-          color: vehicle.cor,
-          imageUrl: vehicle.fotoUrl || null,
-          detailsUrl: vehicle.url || null,
-        },
-      }));
+      return vehicles.map((vehicle, index) => {
+        const vehicleUrl = resolveVehicleUrl(vehicle);
+        return {
+          vehicleId: vehicle.id,
+          matchScore: Math.max(95 - index * 5, 70), // Simple scoring based on order
+          reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
+          highlights: this.generateHighlights(vehicle),
+          concerns: [],
+          vehicle: {
+            id: vehicle.id,
+            brand: vehicle.marca,
+            model: vehicle.modelo,
+            year: vehicle.ano,
+            price: vehicle.preco,
+            mileage: vehicle.km,
+            bodyType: vehicle.carroceria,
+            transmission: vehicle.cambio,
+            fuelType: vehicle.combustivel,
+            color: vehicle.cor,
+            imageUrl: vehicle.fotoUrl || null,
+            detailsUrl: vehicleUrl,
+            detailUrl: vehicleUrl,
+            url: vehicleUrl,
+          },
+        };
+      });
     } catch (error) {
       logger.error({ error, query, filters }, 'Error searching vehicles');
       return [];
@@ -438,7 +460,7 @@ export class VehicleSearchAdapter {
         cambio: v.cambio,
         disponivel: v.disponivel,
         fotoUrl: v.fotoUrl,
-        url: v.url,
+        url: v.url || v.detailUrl,
       }));
 
       // Perform exact search
@@ -518,35 +540,40 @@ export class VehicleSearchAdapter {
     result: FallbackResult,
     limit: number
   ): VehicleRecommendation[] {
-    return result.vehicles.slice(0, limit).map((match: FallbackVehicleMatch) => ({
-      vehicleId: match.vehicle.id,
-      matchScore: match.similarityScore,
-      reasoning: match.reasoning,
-      highlights: this.generateHighlightsFromVehicle(match.vehicle),
-      concerns: [],
-      vehicle: {
-        id: match.vehicle.id,
-        brand: match.vehicle.marca,
-        model: match.vehicle.modelo,
-        year: match.vehicle.ano,
-        price: match.vehicle.preco,
-        mileage: match.vehicle.km,
-        bodyType: match.vehicle.carroceria,
-        transmission: match.vehicle.cambio,
-        fuelType: match.vehicle.combustivel,
-        color: match.vehicle.cor,
-        imageUrl: match.vehicle.fotoUrl || null,
-        detailsUrl: match.vehicle.url || null,
-      },
-      // Include fallback metadata for downstream processing
-      fallbackMetadata: {
-        type: result.type,
-        message: result.message,
-        availableYears: result.availableYears,
-        requestedModel: result.requestedModel,
-        requestedYear: result.requestedYear,
-      },
-    }));
+    return result.vehicles.slice(0, limit).map((match: FallbackVehicleMatch) => {
+      const vehicleUrl = resolveVehicleUrl(match.vehicle);
+      return {
+        vehicleId: match.vehicle.id,
+        matchScore: match.similarityScore,
+        reasoning: match.reasoning,
+        highlights: this.generateHighlightsFromVehicle(match.vehicle),
+        concerns: [],
+        vehicle: {
+          id: match.vehicle.id,
+          brand: match.vehicle.marca,
+          model: match.vehicle.modelo,
+          year: match.vehicle.ano,
+          price: match.vehicle.preco,
+          mileage: match.vehicle.km,
+          bodyType: match.vehicle.carroceria,
+          transmission: match.vehicle.cambio,
+          fuelType: match.vehicle.combustivel,
+          color: match.vehicle.cor,
+          imageUrl: match.vehicle.fotoUrl || null,
+          detailsUrl: vehicleUrl,
+          detailUrl: vehicleUrl,
+          url: vehicleUrl,
+        },
+        // Include fallback metadata for downstream processing
+        fallbackMetadata: {
+          type: result.type,
+          message: result.message,
+          availableYears: result.availableYears,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+        },
+      };
+    });
   }
 
   /**
@@ -558,36 +585,41 @@ export class VehicleSearchAdapter {
     result: ExactSearchResult,
     limit: number
   ): VehicleRecommendation[] {
-    return result.vehicles.slice(0, limit).map(match => ({
-      vehicleId: match.vehicle.id,
-      matchScore: match.matchScore,
-      reasoning: match.reasoning,
-      highlights: this.generateHighlightsFromVehicle(match.vehicle),
-      concerns: [],
-      vehicle: {
-        id: match.vehicle.id,
-        brand: match.vehicle.marca,
-        model: match.vehicle.modelo,
-        year: match.vehicle.ano,
-        price: match.vehicle.preco,
-        mileage: match.vehicle.km,
-        bodyType: match.vehicle.carroceria,
-        transmission: match.vehicle.cambio,
-        fuelType: match.vehicle.combustivel,
-        color: match.vehicle.cor,
-        imageUrl: match.vehicle.fotoUrl || null,
-        detailsUrl: match.vehicle.url || null,
-      },
-      // Include exact search metadata for downstream processing
-      exactSearchMetadata: {
-        type: result.type,
-        message: result.message,
-        availableYears: result.availableYears,
-        requestedModel: result.requestedModel,
-        requestedYear: result.requestedYear,
-        matchType: match.matchType,
-      },
-    }));
+    return result.vehicles.slice(0, limit).map(match => {
+      const vehicleUrl = resolveVehicleUrl(match.vehicle);
+      return {
+        vehicleId: match.vehicle.id,
+        matchScore: match.matchScore,
+        reasoning: match.reasoning,
+        highlights: this.generateHighlightsFromVehicle(match.vehicle),
+        concerns: [],
+        vehicle: {
+          id: match.vehicle.id,
+          brand: match.vehicle.marca,
+          model: match.vehicle.modelo,
+          year: match.vehicle.ano,
+          price: match.vehicle.preco,
+          mileage: match.vehicle.km,
+          bodyType: match.vehicle.carroceria,
+          transmission: match.vehicle.cambio,
+          fuelType: match.vehicle.combustivel,
+          color: match.vehicle.cor,
+          imageUrl: match.vehicle.fotoUrl || null,
+          detailsUrl: vehicleUrl,
+          detailUrl: vehicleUrl,
+          url: vehicleUrl,
+        },
+        // Include exact search metadata for downstream processing
+        exactSearchMetadata: {
+          type: result.type,
+          message: result.message,
+          availableYears: result.availableYears,
+          requestedModel: result.requestedModel,
+          requestedYear: result.requestedYear,
+          matchType: match.matchType,
+        },
+      };
+    });
   }
 
   /**
@@ -791,28 +823,32 @@ export class VehicleSearchAdapter {
    * Formata veículos para o formato VehicleRecommendation
    */
   private formatVehicleResults(vehicles: any[]): VehicleRecommendation[] {
-    return vehicles.map((vehicle, index) => ({
-      vehicleId: vehicle.id,
-      matchScore: Math.max(95 - index * 5, 70),
-      reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
-      highlights: this.generateHighlights(vehicle),
-      concerns: [],
-      vehicle: {
-        id: vehicle.id,
-        brand: vehicle.marca,
-        model: vehicle.modelo,
-        year: vehicle.ano,
-        price: vehicle.preco,
-        mileage: vehicle.km,
-        bodyType: vehicle.carroceria,
-        transmission: vehicle.cambio,
-        fuelType: vehicle.combustivel,
-        color: vehicle.cor,
-        imageUrl: vehicle.fotoUrl || null,
-        detailsUrl: vehicle.url || null,
-        url: vehicle.url || null,
-      },
-    }));
+    return vehicles.map((vehicle, index) => {
+      const vehicleUrl = resolveVehicleUrl(vehicle);
+      return {
+        vehicleId: vehicle.id,
+        matchScore: Math.max(95 - index * 5, 70),
+        reasoning: `Veículo ${index + 1} mais relevante para sua busca`,
+        highlights: this.generateHighlights(vehicle),
+        concerns: [],
+        vehicle: {
+          id: vehicle.id,
+          brand: vehicle.marca,
+          model: vehicle.modelo,
+          year: vehicle.ano,
+          price: vehicle.preco,
+          mileage: vehicle.km,
+          bodyType: vehicle.carroceria,
+          transmission: vehicle.cambio,
+          fuelType: vehicle.combustivel,
+          color: vehicle.cor,
+          imageUrl: vehicle.fotoUrl || null,
+          detailsUrl: vehicleUrl,
+          detailUrl: vehicleUrl,
+          url: vehicleUrl,
+        },
+      };
+    });
   }
 
   /**

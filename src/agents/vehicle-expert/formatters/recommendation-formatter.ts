@@ -13,14 +13,48 @@ import { capitalizeWords } from '../constants';
  */
 export type SearchType = 'specific' | 'similar' | 'recommendation';
 
+const VEHICLE_SITE_BASE_URL = (
+  process.env.VEHICLE_SITE_BASE_URL || 'https://www.renatinhuscars.com.br'
+).replace(/\/+$/, '');
+
+function normalizeVehicleLink(rawLink: string): string | null {
+  const link = rawLink.trim();
+  if (!link) return null;
+
+  if (/^https?:\/\//i.test(link)) {
+    return link;
+  }
+
+  if (link.startsWith('//')) {
+    return `https:${link}`;
+  }
+
+  if (link.startsWith('www.')) {
+    return `https://${link}`;
+  }
+
+  if (link.startsWith('/')) {
+    return `${VEHICLE_SITE_BASE_URL}${link}`;
+  }
+
+  if (link.startsWith('?')) {
+    return `${VEHICLE_SITE_BASE_URL}/${link}`;
+  }
+
+  if (/^[\w.-]+\.[a-z]{2,}(?:\/|$|\?)/i.test(link)) {
+    return `https://${link}`;
+  }
+
+  return null;
+}
+
 function getVehicleLink(vehicle: any): string | null {
   if (!vehicle) return null;
   const candidates = [vehicle.url, vehicle.detailsUrl, vehicle.detailUrl, vehicle.link];
   for (const raw of candidates) {
     if (typeof raw !== 'string') continue;
-    const link = raw.trim();
-    if (!link) continue;
-    if (link.startsWith('http://') || link.startsWith('https://')) {
+    const link = normalizeVehicleLink(raw);
+    if (link) {
       return link;
     }
   }
