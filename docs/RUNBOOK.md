@@ -270,7 +270,10 @@ curl "https://sua-url.railway.app/admin/metrics?secret=$SEED_SECRET&period=7d"
 DATABASE_URL       # PostgreSQL connection string
 OPENAI_API_KEY     # OpenAI API key
 GROQ_API_KEY       # Groq fallback key
-WHATSAPP_TOKEN     # Meta WhatsApp token
+META_WHATSAPP_TOKEN # Meta WhatsApp token
+EVOLUTION_API_URL  # Evolution API base URL
+EVOLUTION_API_KEY  # Evolution API key
+EVOLUTION_INSTANCE_NAME # Evolution instance name
 SEED_SECRET        # Admin endpoint authentication
 SALES_PHONE_NUMBER # Número para handoff de vendas
 ```
