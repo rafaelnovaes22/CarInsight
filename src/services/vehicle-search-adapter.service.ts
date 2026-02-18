@@ -128,7 +128,7 @@ export class VehicleSearchAdapter {
         minYear: filters.minYear,
         maxKm: filters.maxKm,
         bodyTypes: filters.bodyType ? [filters.bodyType] : undefined,
-        transmission: filters.transmission as 'AutomÃ¡tico' | 'Manual' | undefined,
+        transmission: filters.transmission as 'Automático' | 'Manual' | undefined,
       };
 
       // Use DeterministicRanker for fast SQL-based ranking
