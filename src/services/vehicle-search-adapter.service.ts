@@ -597,7 +597,12 @@ export class VehicleSearchAdapter {
         reasoning: match.reasoning,
         highlights,
         concerns: [],
-        explanation: this.buildDeterministicExplanation(match.reasoning, highlights, [], 'fallback'),
+        explanation: this.buildDeterministicExplanation(
+          match.reasoning,
+          highlights,
+          [],
+          'fallback'
+        ),
         vehicle: {
           id: match.vehicle.id,
           brand: match.vehicle.marca,
@@ -644,7 +649,12 @@ export class VehicleSearchAdapter {
         reasoning: match.reasoning,
         highlights,
         concerns: [],
-        explanation: this.buildDeterministicExplanation(match.reasoning, highlights, [], 'busca exata'),
+        explanation: this.buildDeterministicExplanation(
+          match.reasoning,
+          highlights,
+          [],
+          'busca exata'
+        ),
         vehicle: {
           id: match.vehicle.id,
           brand: match.vehicle.marca,
@@ -1067,4 +1077,3 @@ export class VehicleSearchAdapter {
 
 // Singleton export
 export const vehicleSearchAdapter = new VehicleSearchAdapter();
-

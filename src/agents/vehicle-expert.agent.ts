@@ -2318,4 +2318,3 @@ Quer que eu mostre opÃ§Ãµes de SUVs ou sedans espaÃ§osos de 5 lugares como
 
 // Singleton export
 export const vehicleExpert = new VehicleExpertAgent();
-

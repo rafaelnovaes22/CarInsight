@@ -483,4 +483,3 @@ export async function handleSuggestionResponse(
   // Fallback: Ambiguous response
   return handleAmbiguous(ctx);
 }
-

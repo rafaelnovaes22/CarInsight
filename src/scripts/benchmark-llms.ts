@@ -435,4 +435,3 @@ runBenchmark()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

@@ -190,7 +190,11 @@ function mockResponse(messages: ChatMessage[]): {
   }
 
   // Recommendation reasoning
-  if (content.includes('explique') || content.includes('por que') || content.includes('veÃ­culo:')) {
+  if (
+    content.includes('explique') ||
+    content.includes('por que') ||
+    content.includes('veÃ­culo:')
+  ) {
     return {
       content:
         'Excelente custo-benefÃ­cio! Atende suas necessidades de espaÃ§o e estÃ¡ dentro do orÃ§amento.',
@@ -349,4 +353,3 @@ export function calculateCost(
 
   return inputCost + outputCost;
 }
-

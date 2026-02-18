@@ -243,8 +243,8 @@ export class RecommendationAgent {
         const message = String(error?.message || '');
         const isExplanationCompatibilityIssue =
           message.includes('Unknown argument `explanation`') ||
-          message.includes('column') && message.includes('explanation') ||
-          message.includes('does not exist') && message.includes('explanation');
+          (message.includes('column') && message.includes('explanation')) ||
+          (message.includes('does not exist') && message.includes('explanation'));
 
         if (isExplanationCompatibilityIssue) {
           await prisma.recommendation.create({ data: baseData });

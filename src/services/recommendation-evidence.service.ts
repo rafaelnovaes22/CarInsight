@@ -69,7 +69,10 @@ export class RecommendationEvidenceService {
         if (p.includes('econom') && selectedBecause.some(r => r.toLowerCase().includes('econ'))) {
           matchedCharacteristics.push('economia');
         }
-        if (p.includes('confort') && selectedBecause.some(r => r.toLowerCase().includes('confort'))) {
+        if (
+          p.includes('confort') &&
+          selectedBecause.some(r => r.toLowerCase().includes('confort'))
+        ) {
           matchedCharacteristics.push('conforto');
         }
         if (
@@ -86,8 +89,12 @@ export class RecommendationEvidenceService {
     if (useCase.includes('uber')) {
       profileSignals.push(`perfil ${useCase}`);
       if (
-        String(vehicle.transmission || '').toLowerCase().includes('autom') ||
-        String(vehicle.transmission || '').toLowerCase().includes('cvt')
+        String(vehicle.transmission || '')
+          .toLowerCase()
+          .includes('autom') ||
+        String(vehicle.transmission || '')
+          .toLowerCase()
+          .includes('cvt')
       ) {
         selectedBecause.push('Cambio automatico favorece conforto no uso intenso');
         matchedCharacteristics.push('conforto');
@@ -100,8 +107,12 @@ export class RecommendationEvidenceService {
     if (useCase === 'familia') {
       profileSignals.push('uso familiar');
       if (
-        String(vehicle.bodyType || '').toLowerCase().includes('suv') ||
-        String(vehicle.bodyType || '').toLowerCase().includes('sedan')
+        String(vehicle.bodyType || '')
+          .toLowerCase()
+          .includes('suv') ||
+        String(vehicle.bodyType || '')
+          .toLowerCase()
+          .includes('sedan')
       ) {
         matchedCharacteristics.push('carroceria');
       }

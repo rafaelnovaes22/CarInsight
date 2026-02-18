@@ -77,7 +77,8 @@ Regras:
       const explanation: RecommendationExplanation = {
         version: 1,
         strategy: 'slm',
-        summary: String(parsed.summary || '').trim() || this.buildFallback(input, 'fallback').summary,
+        summary:
+          String(parsed.summary || '').trim() || this.buildFallback(input, 'fallback').summary,
         matchedCharacteristics: Array.isArray(parsed.matchedCharacteristics)
           ? parsed.matchedCharacteristics.slice(0, 4)
           : input.evidence.matchedCharacteristics,

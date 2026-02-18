@@ -392,8 +392,8 @@ Para começar, qual é o seu nome?`;
 
             const isExplanationCompatibilityIssue =
               message.includes('Unknown argument `explanation`') ||
-              message.includes('column') && message.includes('explanation') ||
-              message.includes('does not exist') && message.includes('explanation');
+              (message.includes('column') && message.includes('explanation')) ||
+              (message.includes('does not exist') && message.includes('explanation'));
 
             if (isExplanationCompatibilityIssue) {
               try {

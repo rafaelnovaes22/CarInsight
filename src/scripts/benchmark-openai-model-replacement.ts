@@ -75,7 +75,12 @@ const TEST_CASES: TestCase[] = [
         if (typeof parsed.bodyType === 'string') score += 0.2;
         if (typeof parsed.transmission === 'string') score += 0.2;
         if (typeof parsed.usage === 'string') score += 0.2;
-        if (String(parsed.bodyType || '').toLowerCase().includes('sedan')) score += 0.1;
+        if (
+          String(parsed.bodyType || '')
+            .toLowerCase()
+            .includes('sedan')
+        )
+          score += 0.1;
         return Math.min(1, score);
       } catch {
         return 0;
@@ -87,8 +92,7 @@ const TEST_CASES: TestCase[] = [
     description: 'Justificativa de recomendacao curta e util',
     system:
       'Explique em ate 3 frases por que o carro recomendado combina com o perfil do cliente. Seja objetivo.',
-    user:
-      'Perfil: familia com 2 filhos, uso urbano, orcamento 95 mil. Veiculo: Chevrolet Spin 2022, 7 lugares, cambio automatico, manutencao acessivel.',
+    user: 'Perfil: familia com 2 filhos, uso urbano, orcamento 95 mil. Veiculo: Chevrolet Spin 2022, 7 lugares, cambio automatico, manutencao acessivel.',
     validator: output => {
       const lower = output.toLowerCase();
       let score = 0;
@@ -195,18 +199,53 @@ function aggregate(results: RunResult[], failuresByModel: Record<CandidateModel,
   const qualityMax = 1;
 
   const latencyMins = Math.min(
-    ...CANDIDATES.map(m => avg(byModel.get(m)!.map(x => x.latencyMs), Number.MAX_SAFE_INTEGER))
+    ...CANDIDATES.map(m =>
+      avg(
+        byModel.get(m)!.map(x => x.latencyMs),
+        Number.MAX_SAFE_INTEGER
+      )
+    )
   );
-  const latencyMaxs = Math.max(...CANDIDATES.map(m => avg(byModel.get(m)!.map(x => x.latencyMs), 0)));
+  const latencyMaxs = Math.max(
+    ...CANDIDATES.map(m =>
+      avg(
+        byModel.get(m)!.map(x => x.latencyMs),
+        0
+      )
+    )
+  );
 
-  const costMins = Math.min(...CANDIDATES.map(m => avg(byModel.get(m)!.map(x => x.costUsd), 0)));
-  const costMaxs = Math.max(...CANDIDATES.map(m => avg(byModel.get(m)!.map(x => x.costUsd), 0)));
+  const costMins = Math.min(
+    ...CANDIDATES.map(m =>
+      avg(
+        byModel.get(m)!.map(x => x.costUsd),
+        0
+      )
+    )
+  );
+  const costMaxs = Math.max(
+    ...CANDIDATES.map(m =>
+      avg(
+        byModel.get(m)!.map(x => x.costUsd),
+        0
+      )
+    )
+  );
 
   const rows: AggregateModelResult[] = CANDIDATES.map(model => {
     const runs = byModel.get(model)!;
-    const qualityAvg = avg(runs.map(r => r.quality), 0);
-    const latencyAvgMs = avg(runs.map(r => r.latencyMs), 0);
-    const costAvgUsd = avg(runs.map(r => r.costUsd), 0);
+    const qualityAvg = avg(
+      runs.map(r => r.quality),
+      0
+    );
+    const latencyAvgMs = avg(
+      runs.map(r => r.latencyMs),
+      0
+    );
+    const costAvgUsd = avg(
+      runs.map(r => r.costUsd),
+      0
+    );
 
     const qualityNorm = normalize(qualityAvg, qualityMin, qualityMax, true);
     const latencyNorm = normalize(latencyAvgMs, latencyMins, latencyMaxs, false);
@@ -304,4 +343,3 @@ main().catch(err => {
   console.error('Falha no benchmark:', err?.message || err);
   process.exit(1);
 });
-
