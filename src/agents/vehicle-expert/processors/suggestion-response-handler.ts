@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Suggestion Response Handler
  *
  * Handles user responses when the bot is waiting for a yes/no confirmation
@@ -129,7 +129,7 @@ async function handleUberXAlternatives(
       'recommendation'
     );
 
-    const intro = `Perfeito! Encontrei ${uberXVehicles.length} veículos aptos para ${appCategory}:\n\n`;
+    const intro = `Perfeito! Encontrei ${uberXVehicles.length} veÃ­culos aptos para ${appCategory}:\n\n`;
 
     return {
       handled: true,
@@ -163,13 +163,13 @@ async function handleUberXAlternatives(
   return {
     handled: true,
     response: buildResponse(
-      `Desculpe, no momento também não temos veículos aptos para ${appCategory} disponíveis. 😕\n\nPosso te ajudar a encontrar outro tipo de veículo?`,
+      `Desculpe, no momento tambÃ©m nÃ£o temos veÃ­culos aptos para ${appCategory} disponÃ­veis. ðŸ˜•\n\nPosso te ajudar a encontrar outro tipo de veÃ­culo?`,
       { ...ctx.extracted.extracted, _waitingForUberXAlternatives: false },
       {
         needsMoreInfo: ['budget', 'usage'],
         nextMode: 'discovery',
         startTime: ctx.startTime,
-        llmUsed: 'gpt-4o-mini',
+        llmUsed: 'gpt-4.1-mini',
       }
     ),
   };
@@ -249,7 +249,7 @@ async function handleAlternativeYears(
           nextMode: 'recommendation',
           startTime: ctx.startTime,
           confidence: 0.95,
-          llmUsed: 'gpt-4o-mini',
+          llmUsed: 'gpt-4.1-mini',
         }
       ),
     };
@@ -259,7 +259,7 @@ async function handleAlternativeYears(
 }
 
 /**
- * D) Handle 7-seater → 5-seater SUV alternative acceptance
+ * D) Handle 7-seater â†’ 5-seater SUV alternative acceptance
  */
 async function handleSevenSeaterAlternative(
   ctx: SuggestionResponseContext
@@ -291,7 +291,7 @@ async function handleSevenSeaterAlternative(
       bodyType: 'suv' as const,
     };
 
-    const results = await vehicleSearchAdapter.search('suv espaçoso', {
+    const results = await vehicleSearchAdapter.search('suv espaÃ§oso', {
       bodyType: 'suv',
       limit: 5,
       maxPrice: existingBudget,
@@ -307,7 +307,7 @@ async function handleSevenSeaterAlternative(
       return {
         handled: true,
         response: buildResponse(
-          `Entendido! Considerando seu orçamento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opções de SUVs espaçosos:\n\n` +
+          `Entendido! Considerando seu orÃ§amento de R$ ${existingBudget.toLocaleString('pt-BR')}, encontrei estas opÃ§Ãµes de SUVs espaÃ§osos:\n\n` +
             formattedResponse,
           altProfile,
           {
@@ -336,13 +336,13 @@ async function handleSevenSeaterAlternative(
   return {
     handled: true,
     response: buildResponse(
-      `Ótimo! Vou te mostrar SUVs e opções espaçosas que temos disponíveis! 🚗\n\n💰 Até quanto você pretende investir?`,
+      `Ã“timo! Vou te mostrar SUVs e opÃ§Ãµes espaÃ§osas que temos disponÃ­veis! ðŸš—\n\nðŸ’° AtÃ© quanto vocÃª pretende investir?`,
       altProfile,
       {
         needsMoreInfo: ['budget'],
         nextMode: 'clarification',
         startTime: ctx.startTime,
-        llmUsed: 'gpt-4o-mini',
+        llmUsed: 'gpt-4.1-mini',
       }
     ),
   };
@@ -360,7 +360,7 @@ function handleGenericAccept(ctx: SuggestionResponseContext): SuggestionHandlerR
   return {
     handled: true,
     response: buildResponse(
-      `Ótimo! Vou te fazer algumas perguntas rápidas para encontrar o carro ideal pra você. 🚗\n\n💰 Até quanto você pretende investir no carro?`,
+      `Ã“timo! Vou te fazer algumas perguntas rÃ¡pidas para encontrar o carro ideal pra vocÃª. ðŸš—\n\nðŸ’° AtÃ© quanto vocÃª pretende investir no carro?`,
       {
         ...ctx.extracted.extracted,
         _waitingForSuggestionResponse: false,
@@ -370,7 +370,7 @@ function handleGenericAccept(ctx: SuggestionResponseContext): SuggestionHandlerR
         needsMoreInfo: ['budget', 'usage'],
         nextMode: 'discovery',
         startTime: ctx.startTime,
-        llmUsed: 'gpt-4o-mini',
+        llmUsed: 'gpt-4.1-mini',
       }
     ),
   };
@@ -388,7 +388,7 @@ function handleDecline(ctx: SuggestionResponseContext): SuggestionHandlerResult 
   return {
     handled: true,
     response: buildResponse(
-      `Sem problemas! 🙂 Se mudar de ideia ou quiser ver outros veículos, é só me chamar!`,
+      `Sem problemas! ðŸ™‚ Se mudar de ideia ou quiser ver outros veÃ­culos, Ã© sÃ³ me chamar!`,
       {
         ...ctx.extracted.extracted,
         _waitingForSuggestionResponse: false,
@@ -398,7 +398,7 @@ function handleDecline(ctx: SuggestionResponseContext): SuggestionHandlerResult 
         nextMode: 'discovery',
         startTime: ctx.startTime,
         confidence: 0.8,
-        llmUsed: 'gpt-4o-mini',
+        llmUsed: 'gpt-4.1-mini',
       }
     ),
   };
@@ -483,3 +483,4 @@ export async function handleSuggestionResponse(
   // Fallback: Ambiguous response
   return handleAmbiguous(ctx);
 }
+

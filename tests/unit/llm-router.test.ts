@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock logger first
 vi.mock('../../src/lib/logger', () => ({
@@ -24,10 +24,10 @@ describe('LLM Router', () => {
   });
 
   describe('chatCompletion', () => {
-    it('deve retornar resposta válida (mock ou real)', async () => {
+    it('deve retornar resposta vÃ¡lida (mock ou real)', async () => {
       const messages = [
-        { role: 'system' as const, content: 'Você é um assistente útil' },
-        { role: 'user' as const, content: 'Olá' },
+        { role: 'system' as const, content: 'VocÃª Ã© um assistente Ãºtil' },
+        { role: 'user' as const, content: 'OlÃ¡' },
       ];
 
       const response = await chatCompletion(messages);
@@ -38,10 +38,10 @@ describe('LLM Router', () => {
       expect(response).toHaveProperty('model');
     }, 30000);
 
-    it('deve retornar string para qualquer input válido', async () => {
+    it('deve retornar string para qualquer input vÃ¡lido', async () => {
       const messages = [
         { role: 'system' as const, content: 'Seja breve' },
-        { role: 'user' as const, content: 'Olá' },
+        { role: 'user' as const, content: 'OlÃ¡' },
       ];
 
       const response = await chatCompletion(messages, {
@@ -72,13 +72,13 @@ describe('LLM Router', () => {
       });
     });
 
-    it('deve incluir OpenAI como primário', () => {
+    it('deve incluir OpenAI como primÃ¡rio', () => {
       const status = getLLMProvidersStatus();
       const openai = status.find(p => p.name === 'openai');
 
       expect(openai).toBeDefined();
       expect(openai?.priority).toBe(1);
-      expect(openai?.model).toBe('gpt-4o-mini');
+      expect(openai?.model).toBe('gpt-4.1-mini');
     });
 
     it('deve incluir Groq como fallback', () => {
@@ -103,13 +103,13 @@ describe('LLM Router', () => {
   });
 
   describe('Fallback Behavior', () => {
-    it('deve retornar resposta mesmo sem API keys válidas', async () => {
+    it('deve retornar resposta mesmo sem API keys vÃ¡lidas', async () => {
       const messages = [
         { role: 'system' as const, content: 'Teste' },
-        { role: 'user' as const, content: 'Olá' },
+        { role: 'user' as const, content: 'OlÃ¡' },
       ];
 
-      // Não deve lançar erro - usa mock se APIs falharem
+      // NÃ£o deve lanÃ§ar erro - usa mock se APIs falharem
       const response = await chatCompletion(messages);
 
       expect(response).toBeTruthy();
@@ -119,3 +119,4 @@ describe('LLM Router', () => {
     }, 30000);
   });
 });
+

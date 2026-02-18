@@ -1,10 +1,10 @@
-import OpenAI from 'openai';
+﻿import OpenAI from 'openai';
 import Groq from 'groq-sdk';
 import { env } from '../config/env';
 import { logger } from './logger';
 import { traceable } from 'langsmith/traceable';
 
-// Configuração dos providers
+// ConfiguraÃ§Ã£o dos providers
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY || 'mock-key',
 });
@@ -33,18 +33,18 @@ export interface LLMProviderConfig {
   costPer1MTokens: { input: number; output: number };
 }
 
-// Configuração dos modelos disponíveis
+// ConfiguraÃ§Ã£o dos modelos disponÃ­veis
 const LLM_PROVIDERS: LLMProviderConfig[] = [
   {
     name: 'openai',
-    model: 'gpt-4o-mini',
+    model: 'gpt-4.1-mini',
     enabled: !!env.OPENAI_API_KEY && env.OPENAI_API_KEY !== 'mock-key',
-    priority: 1, // Primário
-    costPer1MTokens: { input: 0.15, output: 0.6 },
+    priority: 1, // PrimÃ¡rio
+    costPer1MTokens: { input: 0.4, output: 1.6 },
   },
   {
     name: 'groq',
-    // Modelo Llama 3.1 8B Instant (Fallback rápido e econômico)
+    // Modelo Llama 3.1 8B Instant (Fallback rÃ¡pido e econÃ´mico)
     model: 'llama-3.1-8b-instant',
     enabled: !!env.GROQ_API_KEY && env.GROQ_API_KEY !== 'mock-key',
     priority: 2, // Fallback
@@ -53,7 +53,7 @@ const LLM_PROVIDERS: LLMProviderConfig[] = [
 ];
 
 /**
- * Classe para gerenciar circuit breaker (previne chamadas repetidas a serviços falhando)
+ * Classe para gerenciar circuit breaker (previne chamadas repetidas a serviÃ§os falhando)
  */
 class CircuitBreaker {
   private failures: Map<string, number> = new Map();
@@ -89,7 +89,7 @@ class CircuitBreaker {
 const circuitBreaker = new CircuitBreaker();
 
 /**
- * Executa chamada para OpenAI GPT-4o-mini
+ * Executa chamada para OpenAI gpt-4.1-mini
  */
 const callOpenAI = traceable(
   async function callOpenAI(
@@ -97,7 +97,7 @@ const callOpenAI = traceable(
     options: LLMRouterOptions
   ): Promise<{ content: string; usage: any; model: string }> {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
       messages: messages as OpenAI.Chat.ChatCompletionMessageParam[],
       temperature: options.temperature ?? 0.3,
       max_tokens: options.maxTokens ?? 500,
@@ -149,13 +149,13 @@ function mockResponse(messages: ChatMessage[]): {
   const systemMessage = messages.find(m => m.role === 'system')?.content.toLowerCase() || '';
 
   // Intent classification
-  if (systemMessage.includes('classificador') || systemMessage.includes('intenção')) {
+  if (systemMessage.includes('classificador') || systemMessage.includes('intenÃ§Ã£o')) {
     if (
       content.includes('sim') ||
       content.includes('quero') ||
       content.includes('comprar') ||
       content.includes('carro') ||
-      content.includes('veículo') ||
+      content.includes('veÃ­culo') ||
       content.includes('ver')
     ) {
       return {
@@ -175,7 +175,7 @@ function mockResponse(messages: ChatMessage[]): {
         model: 'mock',
       };
     }
-    if (content.includes('dúvida') || content.includes('preço') || content.includes('quanto')) {
+    if (content.includes('dÃºvida') || content.includes('preÃ§o') || content.includes('quanto')) {
       return {
         content: 'DUVIDA',
         usage: { prompt_tokens: 50, completion_tokens: 1, total_tokens: 51 },
@@ -190,29 +190,29 @@ function mockResponse(messages: ChatMessage[]): {
   }
 
   // Recommendation reasoning
-  if (content.includes('explique') || content.includes('por que') || content.includes('veículo:')) {
+  if (content.includes('explique') || content.includes('por que') || content.includes('veÃ­culo:')) {
     return {
       content:
-        'Excelente custo-benefício! Atende suas necessidades de espaço e está dentro do orçamento.',
+        'Excelente custo-benefÃ­cio! Atende suas necessidades de espaÃ§o e estÃ¡ dentro do orÃ§amento.',
       usage: { prompt_tokens: 100, completion_tokens: 15, total_tokens: 115 },
       model: 'mock',
     };
   }
 
   return {
-    content: 'Olá! Como posso ajudar você hoje? Quer ver nossos carros disponíveis?',
+    content: 'OlÃ¡! Como posso ajudar vocÃª hoje? Quer ver nossos carros disponÃ­veis?',
     usage: { prompt_tokens: 50, completion_tokens: 12, total_tokens: 62 },
     model: 'mock',
   };
 }
 
 /**
- * LLM Router com fallback automático e circuit breaker
+ * LLM Router com fallback automÃ¡tico e circuit breaker
  *
  * Ordem de prioridade:
- * 1. GPT-4o-mini (OpenAI) - Primário
+ * 1. gpt-4.1-mini (OpenAI) - PrimÃ¡rio
  * 2. LLaMA 3.1 8B Instant (Groq) - Fallback
- * 3. Mock Mode - Se nenhum disponível
+ * 3. Mock Mode - Se nenhum disponÃ­vel
  */
 export async function chatCompletion(
   messages: ChatMessage[],
@@ -221,9 +221,9 @@ export async function chatCompletion(
   const maxRetries = options.retries ?? 2;
   const providers = LLM_PROVIDERS.filter(p => p.enabled).sort((a, b) => a.priority - b.priority);
 
-  // Se nenhum provider está configurado, usar mock
+  // Se nenhum provider estÃ¡ configurado, usar mock
   if (providers.length === 0) {
-    logger.warn('🤖 Using MOCK mode (no API keys configured)');
+    logger.warn('ðŸ¤– Using MOCK mode (no API keys configured)');
     return mockResponse(messages);
   }
 
@@ -283,12 +283,12 @@ export async function chatCompletion(
           'LLM call failed'
         );
 
-        // Se foi a última tentativa, registrar falha
+        // Se foi a Ãºltima tentativa, registrar falha
         if (attempt === maxRetries) {
           circuitBreaker.recordFailure(provider.name);
         }
 
-        // Se não é a última tentativa, aguardar antes de retry
+        // Se nÃ£o Ã© a Ãºltima tentativa, aguardar antes de retry
         if (attempt < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
@@ -296,13 +296,13 @@ export async function chatCompletion(
     }
   }
 
-  // Se todos falharam, usar mock como último recurso
+  // Se todos falharam, usar mock como Ãºltimo recurso
   logger.error('All LLM providers failed, using mock response');
   return mockResponse(messages);
 }
 
 /**
- * Obter estatísticas dos providers disponíveis
+ * Obter estatÃ­sticas dos providers disponÃ­veis
  */
 export function getLLMProvidersStatus() {
   return LLM_PROVIDERS.map(provider => ({
@@ -312,7 +312,7 @@ export function getLLMProvidersStatus() {
 }
 
 /**
- * Forçar reset do circuit breaker (útil para testes)
+ * ForÃ§ar reset do circuit breaker (Ãºtil para testes)
  */
 export function resetCircuitBreaker() {
   circuitBreaker['failures'].clear();
@@ -333,7 +333,7 @@ export function calculateCost(
   const provider = LLM_PROVIDERS.find(p => model.includes(p.model) || p.model.includes(model));
 
   if (!provider) {
-    // Default to GPT-4o-mini if unknown
+    // Default to gpt-4.1-mini if unknown
     const defaultProvider = LLM_PROVIDERS.find(p => p.name === 'openai');
     if (defaultProvider) {
       const inputCost = (usage.prompt_tokens / 1_000_000) * defaultProvider.costPer1MTokens.input;
@@ -349,3 +349,4 @@ export function calculateCost(
 
   return inputCost + outputCost;
 }
+

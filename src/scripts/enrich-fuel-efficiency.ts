@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+﻿import { PrismaClient } from '@prisma/client';
 import { tavilySearchService } from '../services/tavily-search.service';
 import { openai } from '../lib/openai';
 import { logger } from '../lib/logger';
@@ -6,12 +6,12 @@ import { logger } from '../lib/logger';
 const prisma = new PrismaClient();
 
 async function enrichFuelEfficiency() {
-  console.log('⛽ Starting fuel efficiency enrichment...');
+  console.log('â›½ Starting fuel efficiency enrichment...');
 
   if (!process.env.TAVILY_API_KEY) {
-    console.error('❌ TAVILY_API_KEY is missing in environment!');
+    console.error('âŒ TAVILY_API_KEY is missing in environment!');
   } else {
-    console.log('✅ TAVILY_API_KEY found');
+    console.log('âœ… TAVILY_API_KEY found');
   }
 
   // Fetch vehicles without consumption data OR with invalid data
@@ -31,7 +31,7 @@ async function enrichFuelEfficiency() {
 
   for (const vehicle of vehicles) {
     try {
-      const query = `consumo combustível urbano ficha técnica ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} ${vehicle.ano}`;
+      const query = `consumo combustÃ­vel urbano ficha tÃ©cnica ${vehicle.marca} ${vehicle.modelo} ${vehicle.versao || ''} ${vehicle.ano}`;
       console.log(`Searching: ${query}`);
 
       const results = await tavilySearchService.search(query, 3);
@@ -46,21 +46,21 @@ async function enrichFuelEfficiency() {
       const context = results.map(r => `Title: ${r.title}\nContent: ${r.content}`).join('\n---\n');
 
       const prompt = `
-        Você é um especialista automotivo.
-        Analise os resultados de busca abaixo e extraia o **consumo urbano com gasolina** (em km/l) para o veículo: ${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}.
+        VocÃª Ã© um especialista automotivo.
+        Analise os resultados de busca abaixo e extraia o **consumo urbano com gasolina** (em km/l) para o veÃ­culo: ${vehicle.marca} ${vehicle.modelo} ${vehicle.ano}.
         
         Resultados:
         ${context}
         
         Regras:
-        1. Retorne APENAS o número (ex: "10.5"). Use ponto para decimal.
-        2. Se houver variação, retorne uma média conservadora.
-        3. Se não encontrar o dado, retorne "N/A".
+        1. Retorne APENAS o nÃºmero (ex: "10.5"). Use ponto para decimal.
+        2. Se houver variaÃ§Ã£o, retorne uma mÃ©dia conservadora.
+        3. Se nÃ£o encontrar o dado, retorne "N/A".
         4. Priorize consumo URBANO com GASOLINA.
       `;
 
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4.1-mini',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 10,
         temperature: 0,
@@ -70,7 +70,7 @@ async function enrichFuelEfficiency() {
       console.log(`Extracted: ${consumption}`);
 
       if (consumption && consumption !== 'N/A' && !isNaN(parseFloat(consumption))) {
-        const val = parseFloat(consumption); // Valida se é número
+        const val = parseFloat(consumption); // Valida se Ã© nÃºmero
         const formatted = `${val} km/l`;
 
         await prisma.vehicle.update({
@@ -78,7 +78,7 @@ async function enrichFuelEfficiency() {
           data: { economiaCombustivel: formatted },
         });
 
-        console.log(`✅ Updated ${vehicle.modelo}: ${formatted}`);
+        console.log(`âœ… Updated ${vehicle.modelo}: ${formatted}`);
       } else {
         console.warn(
           `Could not extract valid consumption for ${vehicle.modelo}. Got: ${consumption}`
@@ -92,14 +92,14 @@ async function enrichFuelEfficiency() {
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
-  logger.info('⛽ Enrichment complete.');
+  logger.info('â›½ Enrichment complete.');
 }
 
 // Execute if run directly
 if (require.main === module) {
   enrichFuelEfficiency()
     .catch(e => {
-      console.error('❌ Enrichment failed:', e);
+      console.error('âŒ Enrichment failed:', e);
       // Don't exit process with error to allow subsequent tasks (if any) in a pipeline,
       // but strictly speaking we should probably exit(1). For dev script, logging is enough.
       process.exit(1);
@@ -108,3 +108,4 @@ if (require.main === module) {
       await prisma.$disconnect();
     });
 }
+

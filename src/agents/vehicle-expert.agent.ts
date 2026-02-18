@@ -1,4 +1,4 @@
-/**
+﻿/**
  * VehicleExpertAgent
  *
  * AI agent specialized in vehicle sales conversations.
@@ -183,7 +183,7 @@ export class VehicleExpertAgent {
           'pickup',
           'picape',
           'caminhonete',
-          'caçamba',
+          'caÃ§amba',
           'cacamba',
           'carga',
           'obra',
@@ -192,11 +192,11 @@ export class VehicleExpertAgent {
         const isPickupRequest = pickupKeywords.some(kw => messageLower.includes(kw));
 
         // SUV keywords
-        const suvKeywords = ['suv', 'utilitário', 'utilitario', 'crossover', 'jipe', 'jeep'];
+        const suvKeywords = ['suv', 'utilitÃ¡rio', 'utilitario', 'crossover', 'jipe', 'jeep'];
         const isSuvRequest = suvKeywords.some(kw => messageLower.includes(kw));
 
         // Sedan keywords
-        const sedanKeywords = ['sedan', 'sedã'];
+        const sedanKeywords = ['sedan', 'sedÃ£'];
         const isSedanRequest = sedanKeywords.some(kw => messageLower.includes(kw));
 
         // Hatch keywords
@@ -213,18 +213,18 @@ export class VehicleExpertAgent {
         // Family keywords (implies car with space)
         const isFamilyRequest =
           extracted.extracted.usoPrincipal === 'familia' ||
-          messageLower.includes('família') ||
+          messageLower.includes('famÃ­lia') ||
           messageLower.includes('familia') ||
           messageLower.includes('cadeirinha') ||
-          messageLower.includes('criança') ||
+          messageLower.includes('crianÃ§a') ||
           messageLower.includes('crianca');
 
         // Generic car keywords
         const isGenericCarRequest =
           messageLower.includes('carro') ||
-          messageLower.includes('veículo') ||
+          messageLower.includes('veÃ­culo') ||
           messageLower.includes('veiculo') ||
-          messageLower.includes('automóvel') ||
+          messageLower.includes('automÃ³vel') ||
           messageLower.includes('automovel');
 
         return {
@@ -384,19 +384,19 @@ export class VehicleExpertAgent {
         return uberEligibilityResult.response;
       }
 
-      // 2.0.2. If user corrects us ("não escolhi"), acknowledge and reset the assumption
+      // 2.0.2. If user corrects us ("nÃ£o escolhi"), acknowledge and reset the assumption
       // This avoids keeping the conversation stuck in negotiation when it was only a doubt.
       const correctionLower = userMessage.toLowerCase();
       const isNotChosenCorrection =
-        /\b(não|nao)\s+escolhi\b/.test(correctionLower) ||
-        /\bs[óo]\s+uma\s+d[úu]vida\b/.test(correctionLower) ||
-        /\bquis\s+t(i|í)rar\s+uma\s+d[úu]vida\b/.test(correctionLower);
+        /\b(nÃ£o|nao)\s+escolhi\b/.test(correctionLower) ||
+        /\bs[Ã³o]\s+uma\s+d[Ãºu]vida\b/.test(correctionLower) ||
+        /\bquis\s+t(i|Ã­)rar\s+uma\s+d[Ãºu]vida\b/.test(correctionLower);
 
       if (isNotChosenCorrection) {
         return {
           response:
-            `Sem problemas — entendi que você *não escolheu* um carro ainda, era só uma dúvida.\n\n` +
-            `Qual é a dúvida exatamente? Se for sobre *Uber/99*, me diga sua *cidade/UF* e a *categoria* (X/Comfort/Black) que eu te ajudo a confirmar.`,
+            `Sem problemas â€” entendi que vocÃª *nÃ£o escolheu* um carro ainda, era sÃ³ uma dÃºvida.\n\n` +
+            `Qual Ã© a dÃºvida exatamente? Se for sobre *Uber/99*, me diga sua *cidade/UF* e a *categoria* (X/Comfort/Black) que eu te ajudo a confirmar.`,
           extractedPreferences: {
             ...extracted.extracted,
             _showedRecommendation: false,
@@ -421,11 +421,11 @@ export class VehicleExpertAgent {
       const targetYear = exactMatch.year || updatedProfile.minYear;
 
       // IMPORTANT: Check if user is mentioning a vehicle they OWN (for trade-in) vs. want to BUY
-      // "Quero trocar meu polo 2020 em um carro mais novo" → Polo is TRADE-IN, not what they want
+      // "Quero trocar meu polo 2020 em um carro mais novo" â†’ Polo is TRADE-IN, not what they want
       const isTradeInContext = exactSearchParser.isTradeInContext(userMessage);
 
-      // IMPORTANTE: Verificar se já mostramos uma recomendação e o cliente selecionou um veículo
-      // Se sim, o trade-in deve ser processado como parte do fluxo de NEGOCIAÇÃO, não como busca inicial
+      // IMPORTANTE: Verificar se jÃ¡ mostramos uma recomendaÃ§Ã£o e o cliente selecionou um veÃ­culo
+      // Se sim, o trade-in deve ser processado como parte do fluxo de NEGOCIAÃ‡ÃƒO, nÃ£o como busca inicial
       const alreadyHasSelectedVehicle =
         context.profile?._showedRecommendation &&
         context.profile?._lastShownVehicles &&
@@ -487,28 +487,28 @@ export class VehicleExpertAgent {
       }
 
       if (targetModel && targetYear) {
-        // Ignorar se estivermos no meio de um fluxo de negociação ou se for menção de troca
+        // Ignorar se estivermos no meio de um fluxo de negociaÃ§Ã£o ou se for menÃ§Ã£o de troca
         const isTradeInMention =
           isTradeInContext ||
           (/tenho|minha|meu|troca|possuo/i.test(userMessage) && !updatedProfile.model);
 
-        // IMPORTANTE: Pular se já estamos esperando resposta de sugestão de anos alternativos
-        // Porque senão o bloco vai re-executar a busca quando o usuário responde "sim"
+        // IMPORTANTE: Pular se jÃ¡ estamos esperando resposta de sugestÃ£o de anos alternativos
+        // Porque senÃ£o o bloco vai re-executar a busca quando o usuÃ¡rio responde "sim"
         const isWaitingForSuggestion = context.profile?._waitingForSuggestionResponse;
 
         // IMPORTANTE: Pular se estamos aguardando detalhes de financiamento (entrada, carro de troca)
-        // Se o usuário disse "10 mil de entrada e um Fiesta 2016", o Fiesta é o carro DE TROCA, não uma nova busca
+        // Se o usuÃ¡rio disse "10 mil de entrada e um Fiesta 2016", o Fiesta Ã© o carro DE TROCA, nÃ£o uma nova busca
         const isAwaitingFinancingDetails =
           context.profile?._awaitingFinancingDetails || context.profile?._awaitingTradeInDetails;
 
-        // IMPORTANTE: Pular se já mostramos uma recomendação e o usuário está respondendo sobre ela
-        // (financiamento, troca, agendamento, etc.) - NÃO RE-FAZER A BUSCA
+        // IMPORTANTE: Pular se jÃ¡ mostramos uma recomendaÃ§Ã£o e o usuÃ¡rio estÃ¡ respondendo sobre ela
+        // (financiamento, troca, agendamento, etc.) - NÃƒO RE-FAZER A BUSCA
         const alreadyShowedRecommendation = context.profile?._showedRecommendation;
         const lastShownVehicles = context.profile?._lastShownVehicles || [];
 
-        // Verifica se o modelo mencionado está entre os veículos já mostrados
-        // Se sim, é interesse no veículo, não nova busca
-        // FIX: Checar se ALGUMA parte importante do nome do modelo está na mensagem
+        // Verifica se o modelo mencionado estÃ¡ entre os veÃ­culos jÃ¡ mostrados
+        // Se sim, Ã© interesse no veÃ­culo, nÃ£o nova busca
+        // FIX: Checar se ALGUMA parte importante do nome do modelo estÃ¡ na mensagem
         const msgLower = userMessage.toLowerCase();
         const mentionedShownVehicleModel = lastShownVehicles.some(
           (v: { model: string; brand: string }) => {
@@ -552,7 +552,7 @@ export class VehicleExpertAgent {
             // Encontrou exatamente o que queria
             logger.info('Exact match found - returning recommendation immediately');
 
-            // Extrair anos disponíveis
+            // Extrair anos disponÃ­veis
             const availableYears = [...new Set(exactResults.map(r => r.vehicle.year))].sort(
               (a, b) => b - a
             );
@@ -594,7 +594,7 @@ export class VehicleExpertAgent {
               } as any,
             };
           } else {
-            // Não encontrou o ano exato - verificar se O MODELO existe em outros anos
+            // NÃ£o encontrou o ano exato - verificar se O MODELO existe em outros anos
             const modelResults = await vehicleSearchAdapter.search(targetModel, {
               model: targetModel,
               limit: 20,
@@ -617,11 +617,11 @@ export class VehicleExpertAgent {
 
               const questionText =
                 availableYears.length === 1
-                  ? 'Quer ver essa opção?'
-                  : 'Quer ver alguma dessas opções?';
+                  ? 'Quer ver essa opÃ§Ã£o?'
+                  : 'Quer ver alguma dessas opÃ§Ãµes?';
 
               return {
-                response: `Não encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. 😕\n\nMas tenho esse modelo ${yearsText}.\n\n${questionText}`,
+                response: `NÃ£o encontrei o ${capitalize(targetModel)} ${targetYear} no estoque agora. ðŸ˜•\n\nMas tenho esse modelo ${yearsText}.\n\n${questionText}`,
                 extractedPreferences: {
                   ...updatedProfile,
                   _searchedItem: targetModel,
@@ -644,8 +644,8 @@ export class VehicleExpertAgent {
       }
 
       // 2.2. Moto request handling - ALLOW motorcycles to be searched
-      // Motos agora podem ser retornadas se solicitadas pelo usuário
-      // O filtro será aplicado no vehicle-search-adapter baseado no bodyType
+      // Motos agora podem ser retornadas se solicitadas pelo usuÃ¡rio
+      // O filtro serÃ¡ aplicado no vehicle-search-adapter baseado no bodyType
 
       // 2.2. Intercept Hard Constraints (FAIL FAST) - 7 seats
       if (
@@ -671,11 +671,11 @@ export class VehicleExpertAgent {
           );
 
           return {
-            response: `No momento não temos veículos de ${seatsText} disponíveis no estoque. 🚗\n\nQuer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alternativa?`,
+            response: `No momento nÃ£o temos veÃ­culos de ${seatsText} disponÃ­veis no estoque. ðŸš—\n\nQuer que eu mostre opÃ§Ãµes de SUVs ou sedans espaÃ§osos de 5 lugares como alternativa?`,
             extractedPreferences: {
               ...extracted.extracted,
               _waitingForSuggestionResponse: true,
-              _searchedItem: `veículo de ${seatsText}`,
+              _searchedItem: `veÃ­culo de ${seatsText}`,
             },
             needsMoreInfo: [],
             canRecommend: false,
@@ -695,7 +695,7 @@ export class VehicleExpertAgent {
         const isYes = /sim|claro|pode|quero|manda|gostaria|ok|beleza|sim pode|com certeza/i.test(
           userMessage
         );
-        const isNo = /n[ãa]o|agora n[ãa]o|depois|nenhum|parar|cancela|deixa/i.test(userMessage);
+        const isNo = /n[Ã£a]o|agora n[Ã£a]o|depois|nenhum|parar|cancela|deixa/i.test(userMessage);
 
         if (isYes) {
           const pending = context.profile._pendingSimilarResults || [];
@@ -706,7 +706,7 @@ export class VehicleExpertAgent {
               'similar'
             );
 
-            const intro = `Ótimo! Aqui estão as opções similares que encontrei:\n\n`;
+            const intro = `Ã“timo! Aqui estÃ£o as opÃ§Ãµes similares que encontrei:\n\n`;
 
             return {
               response: intro + formattedResponse.replace(/^.*?\n\n/, ''),
@@ -741,7 +741,7 @@ export class VehicleExpertAgent {
 
           if (isNo) {
             return {
-              response: 'Entendido. O que você gostaria de buscar então?',
+              response: 'Entendido. O que vocÃª gostaria de buscar entÃ£o?',
               extractedPreferences: { ...extracted.extracted, _waitingForSimilarApproval: false },
               canRecommend: false,
               needsMoreInfo: [],
@@ -850,7 +850,7 @@ export class VehicleExpertAgent {
         if (extracted.extracted.hasTradeIn || /troca|meu carro|tenho um|minha/i.test(userMessage)) {
           const hasTradeInDetails = extracted.extracted.tradeInModel || updatedProfile.tradeInModel;
 
-          // Se AINDA NÃO temos os dados do carro de troca, PERGUNTAR
+          // Se AINDA NÃƒO temos os dados do carro de troca, PERGUNTAR
           if (!hasTradeInDetails) {
             logger.info('User mentioned trade-in but no car details - asking which car');
 
@@ -872,8 +872,8 @@ export class VehicleExpertAgent {
             };
           }
 
-          // Se JÁ TEMOS os dados do carro de troca, encaminhar para vendedor avaliar
-          // NÃO fazemos simulação porque o valor do carro de troca depende da avaliação presencial
+          // Se JÃ TEMOS os dados do carro de troca, encaminhar para vendedor avaliar
+          // NÃƒO fazemos simulaÃ§Ã£o porque o valor do carro de troca depende da avaliaÃ§Ã£o presencial
           const tradeInCar = updatedProfile.tradeInModel
             ? `${capitalizeWords(updatedProfile.tradeInBrand || '')} ${capitalizeWords(updatedProfile.tradeInModel)} ${updatedProfile.tradeInYear || ''}`.trim()
             : `${capitalizeWords(extracted.extracted.tradeInModel || '')} ${extracted.extracted.tradeInYear || ''}`.trim();
@@ -904,12 +904,12 @@ export class VehicleExpertAgent {
           const modelName = lastConfig.model;
           const vehiclePrice = lastConfig.price;
 
-          // Se o usuário JÁ informou o valor de entrada, podemos prosseguir
+          // Se o usuÃ¡rio JÃ informou o valor de entrada, podemos prosseguir
           if (extracted.extracted.financingDownPayment !== undefined) {
             const entry = `R$ ${extracted.extracted.financingDownPayment.toLocaleString('pt-BR')}`;
 
             return {
-              response: `Excelente! Vamos avançar com o financiamento do ${modelName}. 🏦\n\nCom entrada de ${entry}, já consigo encaminhar para aprovação.\n\nPara finalizar essa simulação e garantir as melhores taxas, vou conectar você com nosso consultor agora. Pode ser?`,
+              response: `Excelente! Vamos avanÃ§ar com o financiamento do ${modelName}. ðŸ¦\n\nCom entrada de ${entry}, jÃ¡ consigo encaminhar para aprovaÃ§Ã£o.\n\nPara finalizar essa simulaÃ§Ã£o e garantir as melhores taxas, vou conectar vocÃª com nosso consultor agora. Pode ser?`,
               extractedPreferences: {
                 ...extracted.extracted,
                 wantsFinancing: true,
@@ -928,8 +928,8 @@ export class VehicleExpertAgent {
             };
           }
 
-          // Se NÃO informou entrada ainda, verificar se tem troca
-          // Verificar se usuário já informou carro de troca
+          // Se NÃƒO informou entrada ainda, verificar se tem troca
+          // Verificar se usuÃ¡rio jÃ¡ informou carro de troca
           const hasTradeInInfo = updatedProfile.hasTradeIn && updatedProfile.tradeInModel;
           const tradeInText = hasTradeInInfo
             ? updatedProfile.tradeInYear
@@ -937,10 +937,10 @@ export class VehicleExpertAgent {
               : capitalizeWords(updatedProfile.tradeInModel || '')
             : null;
 
-          // Se tem troca, o carro É a entrada - vai direto pro vendedor
+          // Se tem troca, o carro Ã‰ a entrada - vai direto pro vendedor
           if (hasTradeInInfo) {
             return {
-              response: `Perfeito! Vou encaminhar você para nosso consultor! 🏦\n\n📋 *Resumo:*\n🚗 *Veículo:* ${lastConfig.brand} ${modelName} ${lastConfig.year}\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n🔄 *Entrada:* ${tradeInText} (troca)\n💳 *Pagamento:* Financiamento\n\nNosso consultor vai avaliar seu ${tradeInText} e apresentar a melhor proposta!\n\n_Digite "vendedor" para falar com nossa equipe!_`,
+              response: `Perfeito! Vou encaminhar vocÃª para nosso consultor! ðŸ¦\n\nðŸ“‹ *Resumo:*\nðŸš— *VeÃ­culo:* ${lastConfig.brand} ${modelName} ${lastConfig.year}\nðŸ’° *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\nðŸ”„ *Entrada:* ${tradeInText} (troca)\nðŸ’³ *Pagamento:* Financiamento\n\nNosso consultor vai avaliar seu ${tradeInText} e apresentar a melhor proposta!\n\n_Digite "vendedor" para falar com nossa equipe!_`,
               extractedPreferences: {
                 ...extracted.extracted,
                 wantsFinancing: true,
@@ -959,9 +959,9 @@ export class VehicleExpertAgent {
             };
           }
 
-          // Se não tem troca, perguntar sobre entrada em dinheiro ou troca
+          // Se nÃ£o tem troca, perguntar sobre entrada em dinheiro ou troca
           return {
-            response: `Ótimo! Financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! 🏦\n\n💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n\nPra encaminhar pro nosso consultor, me conta:\n• Tem algum valor de *entrada*?\n• Ou tem algum *carro pra dar na troca*?\n\n_Exemplo: "10 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
+            response: `Ã“timo! Financiamento do ${lastConfig.brand} ${modelName} ${lastConfig.year}! ðŸ¦\n\nðŸ’° *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}\n\nPra encaminhar pro nosso consultor, me conta:\nâ€¢ Tem algum valor de *entrada*?\nâ€¢ Ou tem algum *carro pra dar na troca*?\n\n_Exemplo: "10 mil de entrada" ou "tenho um Gol 2018 pra trocar"_`,
             extractedPreferences: {
               ...extracted.extracted,
               wantsFinancing: true,
@@ -980,8 +980,8 @@ export class VehicleExpertAgent {
           };
         }
 
-        // PRIORIDADE: depois de mostrar recomendações, QUALQUER PERGUNTA do usuário é uma dúvida.
-        // Devemos consultar e responder, sem assumir "escolha" nem entrar no fluxo de negociação.
+        // PRIORIDADE: depois de mostrar recomendaÃ§Ãµes, QUALQUER PERGUNTA do usuÃ¡rio Ã© uma dÃºvida.
+        // Devemos consultar e responder, sem assumir "escolha" nem entrar no fluxo de negociaÃ§Ã£o.
         if (detectUserQuestion(userMessage)) {
           const { answer, usage } = await answerQuestionUtil(userMessage, context, updatedProfile);
 
@@ -999,7 +999,7 @@ export class VehicleExpertAgent {
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini',
+              llmUsed: 'gpt-4.1-mini',
               tokenUsage: usage,
             },
           };
@@ -1021,7 +1021,7 @@ export class VehicleExpertAgent {
         );
 
         // PRIORITY: Check if user is asking for a SPECIFIC MODEL not in the shown list
-        // e.g., "Não tem HB20?", "Tem Onix?", "E o Civic?"
+        // e.g., "NÃ£o tem HB20?", "Tem Onix?", "E o Civic?"
         const specificModelMatch = await exactSearchParser.parse(userMessage);
         if (specificModelMatch.model) {
           // Check if this model was NOT in the shown vehicles
@@ -1142,7 +1142,7 @@ export class VehicleExpertAgent {
                   _waitingForSuggestionResponse: false,
                   _searchedItem: undefined,
                 },
-                'specific' // Usuário escolheu um ano alternativo - busca específica
+                'specific' // UsuÃ¡rio escolheu um ano alternativo - busca especÃ­fica
               );
 
               return {
@@ -1170,7 +1170,7 @@ export class VehicleExpertAgent {
                 metadata: {
                   processingTime: Date.now() - startTime,
                   confidence: 0.95,
-                  llmUsed: 'gpt-4o-mini',
+                  llmUsed: 'gpt-4.1-mini',
                 },
               };
             }
@@ -1230,14 +1230,14 @@ export class VehicleExpertAgent {
       const isRecommendation = isRecommendationRequest(userMessage);
 
       if (isUserQuestion && !isRecommendation) {
-        // Check if it's a question about vehicle availability (e.g., "qual pickup você tem?")
+        // Check if it's a question about vehicle availability (e.g., "qual pickup vocÃª tem?")
         const availabilityKeywords = [
           'tem',
-          'têm',
-          'disponível',
+          'tÃªm',
+          'disponÃ­vel',
           'disponivel',
           'estoque',
-          'vocês',
+          'vocÃªs',
           'voces',
         ];
         const vehicleTypeKeywords = [
@@ -1283,7 +1283,7 @@ export class VehicleExpertAgent {
           // Para perguntas de disponibilidade, buscar DIRETO por categoria (sem filtros extras)
           const categoryResults = await vehicleSearchAdapter.search(`${normalizedBodyType}`, {
             bodyType: normalizedBodyType,
-            limit: 5, // Retornar até 5 veículos da categoria
+            limit: 5, // Retornar atÃ© 5 veÃ­culos da categoria
             excludeMotorcycles: normalizedBodyType !== 'moto', // Exclude motos unless asking for motos
           });
 
@@ -1304,7 +1304,7 @@ export class VehicleExpertAgent {
                         : `${askedBodyType}s`;
 
             return {
-              response: `No momento não temos ${categoryName} disponíveis no estoque. 😕\n\nQuer que eu busque outras opções para você?`,
+              response: `No momento nÃ£o temos ${categoryName} disponÃ­veis no estoque. ðŸ˜•\n\nQuer que eu busque outras opÃ§Ãµes para vocÃª?`,
               extractedPreferences: {
                 ...extracted.extracted,
                 bodyType: normalizedBodyType,
@@ -1316,7 +1316,7 @@ export class VehicleExpertAgent {
               metadata: {
                 processingTime: Date.now() - startTime,
                 confidence: 0.9,
-                llmUsed: 'gpt-4o-mini',
+                llmUsed: 'gpt-4.1-mini',
               },
             };
           }
@@ -1333,20 +1333,20 @@ export class VehicleExpertAgent {
                     ? 'hatches'
                     : `${askedBodyType}s`;
 
-          const intro = `Temos ${categoryResults.length} ${categoryName} disponíveis! 🚗\n\n`;
+          const intro = `Temos ${categoryResults.length} ${categoryName} disponÃ­veis! ðŸš—\n\n`;
           const vehicleList = categoryResults
             .map((rec, i) => {
               const v = rec.vehicle;
-              const emoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
+              const emoji = i === 0 ? 'ðŸ†' : i === 1 ? 'ðŸ¥ˆ' : i === 2 ? 'ðŸ¥‰' : 'â­';
               return (
                 `${emoji} ${v.brand} ${v.model} ${v.year}\n` +
-                `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n` +
-                `   📍 ${v.mileage.toLocaleString('pt-BR')}km`
+                `   ðŸ’° R$ ${v.price.toLocaleString('pt-BR')}\n` +
+                `   ðŸ“ ${v.mileage.toLocaleString('pt-BR')}km`
               );
             })
             .join('\n\n');
 
-          const footer = '\n\n💬 Quer saber mais detalhes de algum? Me diz qual te interessou!';
+          const footer = '\n\nðŸ’¬ Quer saber mais detalhes de algum? Me diz qual te interessou!';
 
           // Update profile with the asked bodyType
           if (normalizedBodyType) {
@@ -1375,7 +1375,7 @@ export class VehicleExpertAgent {
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini',
+              llmUsed: 'gpt-4.1-mini',
             },
           };
         }
@@ -1388,36 +1388,36 @@ export class VehicleExpertAgent {
             type: 'moto',
             name: 'moto',
             plural: 'motos',
-            emoji: '🏍️',
+            emoji: 'ðŸï¸',
           },
           {
             keywords: ['pickup', 'picape', 'caminhonete'],
             type: 'pickup',
             name: 'pickup',
             plural: 'picapes',
-            emoji: '🛻',
+            emoji: 'ðŸ›»',
           },
-          { keywords: ['suv'], type: 'suv', name: 'SUV', plural: 'SUVs', emoji: '🚙' },
+          { keywords: ['suv'], type: 'suv', name: 'SUV', plural: 'SUVs', emoji: 'ðŸš™' },
           {
-            keywords: ['sedan', 'sedã'],
+            keywords: ['sedan', 'sedÃ£'],
             type: 'sedan',
             name: 'sedan',
             plural: 'sedans',
-            emoji: '🚗',
+            emoji: 'ðŸš—',
           },
           {
             keywords: ['hatch', 'hatchback'],
             type: 'hatch',
             name: 'hatch',
             plural: 'hatches',
-            emoji: '🚗',
+            emoji: 'ðŸš—',
           },
           {
             keywords: ['minivan', 'van'],
             type: 'minivan',
             name: 'minivan',
             plural: 'minivans',
-            emoji: '🚐',
+            emoji: 'ðŸš',
           },
         ];
 
@@ -1425,7 +1425,7 @@ export class VehicleExpertAgent {
           vt.keywords.some(kw => messageLower.includes(kw))
         );
 
-        if (detectedVehicleType && messageLower.match(/tem|disponível|disponivel|há/i)) {
+        if (detectedVehicleType && messageLower.match(/tem|disponÃ­vel|disponivel|hÃ¡/i)) {
           logger.info(
             { userMessage, vehicleType: detectedVehicleType.type },
             'Detected vehicle type availability question (fallback)'
@@ -1440,20 +1440,20 @@ export class VehicleExpertAgent {
 
           if (typeResults.length > 0) {
             // Format and return vehicle list with _lastShownVehicles
-            const intro = `Temos ${typeResults.length} ${typeResults.length > 1 ? detectedVehicleType.plural : detectedVehicleType.name} disponível${typeResults.length > 1 ? 'eis' : ''}! ${detectedVehicleType.emoji}\n\n`;
+            const intro = `Temos ${typeResults.length} ${typeResults.length > 1 ? detectedVehicleType.plural : detectedVehicleType.name} disponÃ­vel${typeResults.length > 1 ? 'eis' : ''}! ${detectedVehicleType.emoji}\n\n`;
             const vehicleList = typeResults
               .map((rec, i) => {
                 const v = rec.vehicle;
-                const emoji = i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
+                const emoji = i === 0 ? 'ðŸ†' : i === 1 ? 'ðŸ¥ˆ' : i === 2 ? 'ðŸ¥‰' : 'â­';
                 return (
                   `${emoji} ${v.brand} ${v.model} ${v.year}\n` +
-                  `   💰 R$ ${v.price.toLocaleString('pt-BR')}\n` +
-                  `   📍 ${v.mileage.toLocaleString('pt-BR')}km`
+                  `   ðŸ’° R$ ${v.price.toLocaleString('pt-BR')}\n` +
+                  `   ðŸ“ ${v.mileage.toLocaleString('pt-BR')}km`
                 );
               })
               .join('\n\n');
 
-            const footer = `\n\n💬 Quer saber mais detalhes ${detectedVehicleType.type === 'moto' ? 'de alguma' : 'de algum'}? Me diz qual te interessou!`;
+            const footer = `\n\nðŸ’¬ Quer saber mais detalhes ${detectedVehicleType.type === 'moto' ? 'de alguma' : 'de algum'}? Me diz qual te interessou!`;
 
             return {
               response: intro + vehicleList + footer,
@@ -1484,7 +1484,7 @@ export class VehicleExpertAgent {
           } else {
             // No vehicles of this type found
             return {
-              response: `No momento não temos ${detectedVehicleType.plural} disponíveis no estoque. ${detectedVehicleType.emoji}\n\nQuer que eu busque outras opções para você?`,
+              response: `No momento nÃ£o temos ${detectedVehicleType.plural} disponÃ­veis no estoque. ${detectedVehicleType.emoji}\n\nQuer que eu busque outras opÃ§Ãµes para vocÃª?`,
               extractedPreferences: {
                 ...extracted.extracted,
                 bodyType: detectedVehicleType.type as any,
@@ -1520,14 +1520,14 @@ export class VehicleExpertAgent {
           metadata: {
             processingTime: Date.now() - startTime,
             confidence: extracted.confidence,
-            llmUsed: 'gpt-4o-mini',
+            llmUsed: 'gpt-4.1-mini',
             tokenUsage: usage,
           },
         };
       }
 
       // 5.5. Detect if user is accepting suggestions when asked about preference
-      // This handles cases like "envie sugestões", "pode sugerir", "tô aberto"
+      // This handles cases like "envie sugestÃµes", "pode sugerir", "tÃ´ aberto"
       // when user has budget + usage but no bodyType yet
       const hasBudgetAndUsage =
         updatedProfile.budget && (updatedProfile.usage || updatedProfile.usoPrincipal);
@@ -1539,7 +1539,7 @@ export class VehicleExpertAgent {
         (/sugest/i.test(messageLower) ||
           /aberto/i.test(messageLower) ||
           /escolh[ae]/i.test(messageLower) ||
-          /fica.*crit[ée]rio/i.test(messageLower));
+          /fica.*crit[Ã©e]rio/i.test(messageLower));
 
       if (isSuggestionAcceptance) {
         logger.info(
@@ -1559,12 +1559,12 @@ export class VehicleExpertAgent {
           'pickup',
           'picape',
           'caminhonete',
-          'caçamba',
+          'caÃ§amba',
           'cacamba',
           'carga',
           'obra',
           'material',
-          'construção',
+          'construÃ§Ã£o',
           'construcao',
           'carregar',
           'entulho',
@@ -1609,9 +1609,9 @@ export class VehicleExpertAgent {
         // Generate recommendations
         const result = await this.getRecommendations(updatedProfile, context.phoneNumber);
 
-        // Se não encontrou motos, oferecer sugestões alternativas
+        // Se nÃ£o encontrou motos, oferecer sugestÃµes alternativas
         if (result.noMotosFound) {
-          const noMotoResponse = `No momento não temos motos disponíveis no estoque. 🏍️\n\nQuer responder algumas perguntas rápidas para eu te dar sugestões de carros?`;
+          const noMotoResponse = `No momento nÃ£o temos motos disponÃ­veis no estoque. ðŸï¸\n\nQuer responder algumas perguntas rÃ¡pidas para eu te dar sugestÃµes de carros?`;
 
           return {
             response: noMotoResponse,
@@ -1626,17 +1626,17 @@ export class VehicleExpertAgent {
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini',
+              llmUsed: 'gpt-4.1-mini',
               noMotosFound: true,
             },
           };
         }
 
-        // Se não encontrou pickups, oferecer sugestões alternativas
+        // Se nÃ£o encontrou pickups, oferecer sugestÃµes alternativas
         if (result.noPickupsFound) {
-          const noPickupResponse = `No momento não temos pickups disponíveis no estoque. 🛻
+          const noPickupResponse = `No momento nÃ£o temos pickups disponÃ­veis no estoque. ðŸ›»
 
-Quer responder algumas perguntas rápidas para eu te dar sugestões personalizadas?`;
+Quer responder algumas perguntas rÃ¡pidas para eu te dar sugestÃµes personalizadas?`;
 
           return {
             response: noPickupResponse,
@@ -1651,26 +1651,26 @@ Quer responder algumas perguntas rápidas para eu te dar sugestões personalizad
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini',
+              llmUsed: 'gpt-4.1-mini',
               noPickupsFound: true,
             },
           };
         }
 
-        // Se não encontrou veículos de 7 lugares, informar e perguntar se quer alternativas
+        // Se nÃ£o encontrou veÃ­culos de 7 lugares, informar e perguntar se quer alternativas
         if (result.noSevenSeaters) {
           const seatsText =
             result.requiredSeats === 7 ? '7 lugares' : `${result.requiredSeats} lugares`;
-          const noSevenSeaterResponse = `No momento não temos veículos de ${seatsText} disponíveis no estoque. 🚗
+          const noSevenSeaterResponse = `No momento nÃ£o temos veÃ­culos de ${seatsText} disponÃ­veis no estoque. ðŸš—
 
-Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alternativa?`;
+Quer que eu mostre opÃ§Ãµes de SUVs ou sedans espaÃ§osos de 5 lugares como alternativa?`;
 
           return {
             response: noSevenSeaterResponse,
             extractedPreferences: {
               ...extracted.extracted,
               _waitingForSuggestionResponse: true,
-              _searchedItem: `veículo de ${seatsText}`,
+              _searchedItem: `veÃ­culo de ${seatsText}`,
             },
             needsMoreInfo: [],
             canRecommend: false,
@@ -1678,7 +1678,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             metadata: {
               processingTime: Date.now() - startTime,
               confidence: 0.9,
-              llmUsed: 'gpt-4o-mini',
+              llmUsed: 'gpt-4.1-mini',
               noSevenSeaters: true,
             },
           };
@@ -1714,7 +1714,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         const formattedResponse = await formatRecommendationsUtil(
           filteredRecommendations,
           updatedProfile,
-          'recommendation' // Fluxo de recomendação personalizada
+          'recommendation' // Fluxo de recomendaÃ§Ã£o personalizada
         );
 
         return {
@@ -1730,7 +1730,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               year: r.vehicle.year,
               price: r.vehicle.price,
             })),
-            _excludeVehicleIds: undefined, // Limpar após usar
+            _excludeVehicleIds: undefined, // Limpar apÃ³s usar
           },
           needsMoreInfo: [],
           canRecommend: true,
@@ -1739,7 +1739,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           metadata: {
             processingTime: Date.now() - startTime,
             confidence: readiness.confidence,
-            llmUsed: 'gpt-4o-mini',
+            llmUsed: 'gpt-4.1-mini',
           },
         };
       }
@@ -1769,7 +1769,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         metadata: {
           processingTime: Date.now() - startTime,
           confidence: extracted.confidence,
-          llmUsed: 'gpt-4o-mini',
+          llmUsed: 'gpt-4.1-mini',
           tokenUsage: usage,
         },
       };
@@ -1835,12 +1835,12 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         'pickup',
         'picape',
         'caminhonete',
-        'caçamba',
+        'caÃ§amba',
         'cacamba',
         'carga',
         'obra',
         'material',
-        'construção',
+        'construÃ§Ã£o',
         'construcao',
         'carregar',
         'entulho',
@@ -1890,9 +1890,9 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       const wantsCarExplicitly =
         searchTextLower.includes('carro') ||
         searchTextLower.includes('veiculo') ||
-        searchTextLower.includes('veículo') ||
+        searchTextLower.includes('veÃ­culo') ||
         searchTextLower.includes('automovel') ||
-        searchTextLower.includes('automóvel');
+        searchTextLower.includes('automÃ³vel');
 
       // wantsMoto is true ONLY if:
       // 1. NOT switching to app transport (Uber/99)
@@ -2014,13 +2014,13 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         });
       }
 
-      // Se não encontrou motos e o usuário quer moto, informar
+      // Se nÃ£o encontrou motos e o usuÃ¡rio quer moto, informar
       if (wantsMoto && results.length === 0) {
         logger.info({ profile }, 'No motos found in inventory');
         return { recommendations: [], noMotosFound: true, wantsMoto: true };
       }
 
-      // Se não encontrou pickups e o usuário quer pickup, informar
+      // Se nÃ£o encontrou pickups e o usuÃ¡rio quer pickup, informar
       if (wantsPickup && results.length === 0) {
         logger.info({ profile }, 'No pickups found in inventory');
         return { recommendations: [], noPickupsFound: true, wantsPickup: true };
@@ -2085,7 +2085,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           'Filtering for 7+ seat vehicles'
         );
 
-        // Filtrar APENAS veículos de 7 lugares
+        // Filtrar APENAS veÃ­culos de 7 lugares
         const sevenSeaterResults = rankedResults.filter(rec => {
           const modelLower = (rec.vehicle.model || '').toLowerCase();
           return isSevenSeater(modelLower);
@@ -2101,11 +2101,11 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         );
 
         if (sevenSeaterResults.length === 0) {
-          // Não encontrou veículos de 7 lugares - NÃO retornar alternativas automaticamente
+          // NÃ£o encontrou veÃ­culos de 7 lugares - NÃƒO retornar alternativas automaticamente
           return { recommendations: [], noSevenSeaters: true, requiredSeats };
         }
 
-        // Retornar APENAS os veículos de 7 lugares
+        // Retornar APENAS os veÃ­culos de 7 lugares
         return { recommendations: sevenSeaterResults.slice(0, 5), requiredSeats };
       }
 
@@ -2124,20 +2124,20 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           const model = rec.vehicle.model?.toLowerCase() || '';
           const bodyType = rec.vehicle.bodyType?.toLowerCase() || '';
 
-          // NUNCA para família: hatch compactos/subcompactos
+          // NUNCA para famÃ­lia: hatch compactos/subcompactos
           const neverForFamily = ['mobi', 'kwid', 'up!', 'uno', 'ka', 'march', 'sandero'];
           if (neverForFamily.some(n => model.includes(n))) {
             return false;
           }
 
-          // Para família: pickups GRANDES de cabine dupla são OK (espaço similar a SUVs)
-          // Pickups COMPACTAS devem ser excluídas (cabine menor, menos conforto)
+          // Para famÃ­lia: pickups GRANDES de cabine dupla sÃ£o OK (espaÃ§o similar a SUVs)
+          // Pickups COMPACTAS devem ser excluÃ­das (cabine menor, menos conforto)
           const isPickup =
             bodyType.includes('pickup') ||
             bodyType.includes('picape') ||
             bodyType.includes('cabine');
           if (isPickup) {
-            // Pickups grandes de cabine dupla - PERMITIDAS para família
+            // Pickups grandes de cabine dupla - PERMITIDAS para famÃ­lia
             const largePickups = [
               'ranger',
               'amarok',
@@ -2150,16 +2150,16 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
             ];
             const isLargePickup = largePickups.some(p => model.includes(p));
 
-            // Se for pickup compacta (Strada, Saveiro, Montana), excluir para família
+            // Se for pickup compacta (Strada, Saveiro, Montana), excluir para famÃ­lia
             if (!isLargePickup) {
               return false;
             }
-            // Pickups grandes passam no filtro (são adequadas para família)
+            // Pickups grandes passam no filtro (sÃ£o adequadas para famÃ­lia)
           }
 
-          // Com cadeirinha: precisa de mais espaço
+          // Com cadeirinha: precisa de mais espaÃ§o
           if (hasCadeirinha) {
-            // Ideais para 2 cadeirinhas: SUVs, Sedans médios/grandes, Minivans
+            // Ideais para 2 cadeirinhas: SUVs, Sedans mÃ©dios/grandes, Minivans
             const idealForCadeirinha = [
               // SUVs compactos bons
               'creta',
@@ -2170,7 +2170,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               'hr-v',
               'hrv',
               'renegade',
-              // SUVs médios (excelentes)
+              // SUVs mÃ©dios (excelentes)
               'tucson',
               'compass',
               'corolla cross',
@@ -2178,14 +2178,14 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               'sw4',
               'trailblazer',
               'commander',
-              // Sedans médios/grandes (muito bons)
+              // Sedans mÃ©dios/grandes (muito bons)
               'corolla',
               'civic',
               'cruze',
               'sentra',
               'jetta',
               'virtus',
-              // Sedans compactos (aceitáveis)
+              // Sedans compactos (aceitÃ¡veis)
               'hb20s',
               'onix plus',
               'cronos',
@@ -2197,27 +2197,27 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
               'zafira',
             ];
 
-            // Se é hatch, só aceita se for espaçoso
+            // Se Ã© hatch, sÃ³ aceita se for espaÃ§oso
             if (bodyType.includes('hatch')) {
               const hatchOkForFamily = ['fit', 'golf', 'polo', 'argo'];
               return hatchOkForFamily.some(h => model.includes(h));
             }
 
-            // SUV e Sedan são sempre ok (exceto os já filtrados)
+            // SUV e Sedan sÃ£o sempre ok (exceto os jÃ¡ filtrados)
             if (bodyType.includes('suv') || bodyType.includes('sedan')) {
               return true;
             }
 
-            // Minivan é excelente
+            // Minivan Ã© excelente
             if (bodyType.includes('minivan') || model.includes('spin')) {
               return true;
             }
 
-            // Verifica se está na lista ideal
+            // Verifica se estÃ¡ na lista ideal
             return idealForCadeirinha.some(ideal => model.includes(ideal));
           }
 
-          // Família sem cadeirinha (mais flexível)
+          // FamÃ­lia sem cadeirinha (mais flexÃ­vel)
           // Exclui apenas os muito pequenos
           if (bodyType.includes('hatch')) {
             const smallHatch = ['mobi', 'kwid', 'up', 'uno', 'ka', 'march'];
@@ -2227,7 +2227,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
           return true;
         });
 
-        // Se filtrou demais, relaxa os critérios
+        // Se filtrou demais, relaxa os critÃ©rios
         if (filteredResults.length < 3 && rankedResults.length >= 3) {
           // Tenta pegar pelo menos sedans e SUVs
           filteredResults = rankedResults.filter(rec => {
@@ -2318,3 +2318,4 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
 
 // Singleton export
 export const vehicleExpert = new VehicleExpertAgent();
+
