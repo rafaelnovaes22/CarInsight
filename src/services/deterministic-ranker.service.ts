@@ -35,6 +35,19 @@ export interface RankingContext {
   numberOfPeople?: number;
 }
 
+export interface VehicleScoreBreakdown {
+  baseScore: number;
+  weightedCriteria: {
+    conforto: number;
+    economia: number;
+    espaco: number;
+    seguranca: number;
+    custoBeneficio: number;
+  };
+  bonuses: string[];
+  penalties: string[];
+}
+
 // Veículo ranqueado
 export interface RankedVehicle {
   id: string;
@@ -49,6 +62,14 @@ export interface RankedVehicle {
   reasoning: string;
   highlights: string[];
   concerns: string[];
+  scoreBreakdown?: VehicleScoreBreakdown;
+  rawScores?: {
+    conforto: number;
+    economia: number;
+    espaco: number;
+    seguranca: number;
+    custoBeneficio: number;
+  };
   // Campos para exibição de links e imagens
   url?: string | null;
   detailUrl?: string | null;

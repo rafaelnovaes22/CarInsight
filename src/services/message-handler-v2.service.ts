@@ -362,22 +362,54 @@ Para começar, qual é o seu nome?`;
         newState.recommendations.length > 0 &&
         (!currentState || currentState.recommendations.length === 0)
       ) {
-        for (const rec of newState.recommendations) {
-          await prisma.recommendation
-            .create({
+        for (let i = 0; i < newState.recommendations.length; i++) {
+          const rec = newState.recommendations[i];
+
+          const baseData = {
+            conversationId: conversation.id,
+            vehicleId: rec.vehicleId,
+            matchScore: rec.matchScore,
+            reasoning: rec.reasoning,
+            position: i + 1,
+          };
+
+          try {
+            // Try to persist structured explanation when schema/client are up-to-date.
+            // If runtime/client still uses old schema, fallback below keeps compatibility.
+            await prisma.recommendation.create({
               data: {
-                conversationId: conversation.id,
-                vehicleId: rec.vehicleId,
-                matchScore: rec.matchScore,
-                reasoning: rec.reasoning,
-              },
-            })
-            .catch(error => {
-              // Ignore duplicate errors
-              if (!error.message.includes('Unique constraint')) {
-                logger.error({ error }, 'Error saving recommendation');
-              }
+                ...baseData,
+                explanation: rec.explanation ? (rec.explanation as any) : undefined,
+              } as any,
             });
+          } catch (error: any) {
+            const message = String(error?.message || '');
+
+            // Ignore duplicate errors
+            if (message.includes('Unique constraint')) {
+              continue;
+            }
+
+            const isExplanationCompatibilityIssue =
+              message.includes('Unknown argument `explanation`') ||
+              message.includes('column') && message.includes('explanation') ||
+              message.includes('does not exist') && message.includes('explanation');
+
+            if (isExplanationCompatibilityIssue) {
+              try {
+                await prisma.recommendation.create({
+                  data: baseData,
+                });
+              } catch (fallbackError: any) {
+                const fallbackMessage = String(fallbackError?.message || '');
+                if (!fallbackMessage.includes('Unique constraint')) {
+                  logger.error({ error: fallbackError }, 'Error saving recommendation (fallback)');
+                }
+              }
+            } else {
+              logger.error({ error }, 'Error saving recommendation');
+            }
+          }
         }
       }
 

@@ -114,6 +114,18 @@ export interface ExactSearchMetadata {
   matchType: 'exact' | 'year_alternative' | 'suggestion';
 }
 
+export interface RecommendationExplanation {
+  version: number;
+  strategy: 'deterministic' | 'slm' | 'fallback';
+  summary: string;
+  matchedCharacteristics: string[];
+  selectedBecause: string[];
+  notIdealBecause: string[];
+  profileSignals: string[];
+  confidence: number; // 0-1
+  generatedAt: string; // ISO timestamp
+}
+
 export interface VehicleRecommendation {
   vehicleId: string;
   matchScore: number; // 0-100
@@ -121,6 +133,7 @@ export interface VehicleRecommendation {
   highlights: string[];
   concerns: string[];
   vehicle?: any; // Full vehicle object from DB
+  explanation?: RecommendationExplanation;
   exactSearchMetadata?: ExactSearchMetadata; // Metadata from exact search (Feature: exact-vehicle-search)
 }
 

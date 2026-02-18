@@ -51,6 +51,18 @@ export const logEvent = {
   },
 
   /**
+   * Log explanation generation quality for recommendations
+   */
+  recommendationExplained: (data: {
+    strategy: 'deterministic' | 'slm' | 'fallback';
+    recommendationsCount: number;
+    withReasonsCount: number;
+    useCase?: string;
+  }) => {
+    logger.info({ event: 'recommendation_explained', ...data });
+  },
+
+  /**
    * Log node execution results (for latency tracking)
    */
   nodeExecuted: (data: {

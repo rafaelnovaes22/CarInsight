@@ -69,11 +69,19 @@ export class FeatureFlagService {
       enabled: boolean;
       rollout: number;
     };
+    slmExplanations: {
+      enabled: boolean;
+      rollout: number;
+    };
   } {
     return {
       conversational: {
         enabled: env.ENABLE_CONVERSATIONAL_MODE,
         rollout: env.CONVERSATIONAL_ROLLOUT_PERCENTAGE,
+      },
+      slmExplanations: {
+        enabled: env.USE_SLM_EXPLANATIONS,
+        rollout: env.SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE,
       },
     };
   }
@@ -99,6 +107,7 @@ export class FeatureFlagService {
     const envFlags: Record<string, boolean> = {
       USE_LANGGRAPH: true, // Enabled after successful migration (Phase 3)
       ENABLE_CONVERSATIONAL_MODE: env.ENABLE_CONVERSATIONAL_MODE,
+      USE_SLM_EXPLANATIONS: env.USE_SLM_EXPLANATIONS,
     };
 
     const isGloballyEnabled = envFlags[flagName] ?? false;
@@ -109,6 +118,18 @@ export class FeatureFlagService {
     }
 
     return isGloballyEnabled;
+  }
+
+  shouldUseSlmExplanations(phoneNumber?: string): boolean {
+    if (!env.USE_SLM_EXPLANATIONS) return false;
+    if (env.SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE >= 100) return true;
+    if (env.SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE <= 0) return false;
+    if (!phoneNumber) {
+      return env.SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE >= 100;
+    }
+
+    const bucket = this.simpleHash(phoneNumber) % 100;
+    return bucket < env.SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE;
   }
 }
 

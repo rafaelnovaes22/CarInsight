@@ -41,6 +41,11 @@ const envSchema = z.object({
     .default('true') // Enabled by default after migration
     .transform(val => val === 'true'),
   CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.coerce.number().default(100), // 100% rollout
+  USE_SLM_EXPLANATIONS: z
+    .string()
+    .default('false')
+    .transform(val => val === 'true'),
+  SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE: z.coerce.number().default(0),
 
   // Audio Transcription
   ENABLE_AUDIO_TRANSCRIPTION: z

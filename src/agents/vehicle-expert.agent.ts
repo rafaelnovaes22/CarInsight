@@ -1607,7 +1607,7 @@ export class VehicleExpertAgent {
         }
 
         // Generate recommendations
-        const result = await this.getRecommendations(updatedProfile);
+        const result = await this.getRecommendations(updatedProfile, context.phoneNumber);
 
         // Se não encontrou motos, oferecer sugestões alternativas
         if (result.noMotosFound) {
@@ -1798,7 +1798,10 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
    * Get vehicle recommendations based on profile
    * Returns { recommendations, noPickupsFound, noSevenSeaters } to indicate if category was not found
    */
-  private async getRecommendations(profile: Partial<CustomerProfile>): Promise<{
+  private async getRecommendations(
+    profile: Partial<CustomerProfile>,
+    phoneNumber?: string
+  ): Promise<{
     recommendations: VehicleRecommendation[];
     noPickupsFound?: boolean;
     wantsPickup?: boolean;
@@ -1986,6 +1989,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         );
 
         results = await vehicleSearchAdapter.searchByUseCase(useCase, {
+          phoneNumber,
           maxPrice: query.filters.maxPrice,
           minYear: query.filters.minYear,
           bodyType: query.filters.bodyType?.[0],

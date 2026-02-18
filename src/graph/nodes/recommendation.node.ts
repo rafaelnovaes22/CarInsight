@@ -67,18 +67,55 @@ function formatPrice(price: number | string | null): string {
   });
 }
 
+const VEHICLE_SITE_BASE_URL = (
+  process.env.VEHICLE_SITE_BASE_URL || 'https://www.renatinhuscars.com.br'
+).replace(/\/+$/, '');
+
+function extractSiteVehicleIdFromPhoto(photoUrl?: string | null): string | null {
+  if (!photoUrl || typeof photoUrl !== 'string') return null;
+  const match = photoUrl.match(/_(\d+)_\d+-\d+\./);
+  return match?.[1] || null;
+}
+
+function buildFallbackVehicleLink(vehicle: any): string | null {
+  if (!vehicle) return null;
+
+  const parts = [vehicle.brand, vehicle.model, vehicle.version, vehicle.year]
+    .map(part => (typeof part === 'string' ? part.trim() : String(part ?? '').trim()))
+    .filter(Boolean);
+
+  if (parts.length === 0) return null;
+
+  const queryValue = encodeURIComponent(parts.join(' ')).replace(/%20/g, '+');
+  const siteVehicleId = extractSiteVehicleIdFromPhoto(vehicle.imageUrl || vehicle.fotoUrl);
+  const idParam = siteVehicleId ? `&id=${siteVehicleId}` : '';
+
+  return `${VEHICLE_SITE_BASE_URL}/?veiculo=${queryValue}${idParam}`;
+}
+
+function normalizeVehicleLink(rawLink: string): string | null {
+  const link = rawLink.trim();
+  if (!link) return null;
+  if (link.startsWith('http://') || link.startsWith('https://')) return link;
+  if (link.startsWith('//')) return `https:${link}`;
+  if (link.startsWith('www.')) return `https://${link}`;
+  if (link.startsWith('/')) return `${VEHICLE_SITE_BASE_URL}${link}`;
+  if (link.startsWith('?')) return `${VEHICLE_SITE_BASE_URL}/${link}`;
+  if (/^[\w.-]+\.[a-z]{2,}(?:\/|$|\?)/i.test(link)) return `https://${link}`;
+  return null;
+}
+
 function getVehicleLink(vehicle: any): string | null {
   if (!vehicle) return null;
   const candidates = [vehicle.url, vehicle.detailUrl, vehicle.detailsUrl, vehicle.link];
   for (const raw of candidates) {
     if (typeof raw !== 'string') continue;
-    const link = raw.trim();
-    if (!link) continue;
-    if (link.startsWith('http://') || link.startsWith('https://')) {
+    const link = normalizeVehicleLink(raw);
+    if (link) {
       return link;
     }
   }
-  return null;
+  return buildFallbackVehicleLink(vehicle);
 }
 
 /**
@@ -124,9 +161,17 @@ function formatRecommendations(recommendations: any[]): string {
       message += `   🔗 ${link}\n`;
     }
 
-    // Reasoning curto e natural
-    if (rec.reasoning) {
+    const explanationReasons = rec.explanation?.selectedBecause?.slice(0, 2) || [];
+    const explanationConcern = rec.explanation?.notIdealBecause?.[0];
+
+    if (explanationReasons.length > 0) {
+      message += `   _Por que combina: ${explanationReasons.join(' • ')}_\n`;
+    } else if (rec.reasoning) {
       message += `   _${rec.reasoning}_\n`;
+    }
+
+    if (explanationConcern) {
+      message += `   _Ponto de atenção: ${explanationConcern}_\n`;
     }
 
     message += `\n`;

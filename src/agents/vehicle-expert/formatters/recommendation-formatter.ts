@@ -17,6 +17,28 @@ const VEHICLE_SITE_BASE_URL = (
   process.env.VEHICLE_SITE_BASE_URL || 'https://www.renatinhuscars.com.br'
 ).replace(/\/+$/, '');
 
+function extractSiteVehicleIdFromPhoto(photoUrl?: string | null): string | null {
+  if (!photoUrl || typeof photoUrl !== 'string') return null;
+  const match = photoUrl.match(/_(\d+)_\d+-\d+\./);
+  return match?.[1] || null;
+}
+
+function buildFallbackVehicleLink(vehicle: any): string | null {
+  if (!vehicle) return null;
+
+  const parts = [vehicle.brand, vehicle.model, vehicle.version, vehicle.year]
+    .map(part => (typeof part === 'string' ? part.trim() : String(part ?? '').trim()))
+    .filter(Boolean);
+
+  if (parts.length === 0) return null;
+
+  const queryValue = encodeURIComponent(parts.join(' ')).replace(/%20/g, '+');
+  const siteVehicleId = extractSiteVehicleIdFromPhoto(vehicle.imageUrl || vehicle.fotoUrl);
+  const idParam = siteVehicleId ? `&id=${siteVehicleId}` : '';
+
+  return `${VEHICLE_SITE_BASE_URL}/?veiculo=${queryValue}${idParam}`;
+}
+
 function normalizeVehicleLink(rawLink: string): string | null {
   const link = rawLink.trim();
   if (!link) return null;
@@ -58,7 +80,7 @@ function getVehicleLink(vehicle: any): string | null {
       return link;
     }
   }
-  return null;
+  return buildFallbackVehicleLink(vehicle);
 }
 
 /**
@@ -126,6 +148,17 @@ Me diz o que prefere!`;
 
         if (link) {
           item += `\n   🔗 ${link}\n`;
+        }
+
+        const explanationReasons = rec.explanation?.selectedBecause?.slice(0, 2) || [];
+        const explanationConcern = rec.explanation?.notIdealBecause?.[0];
+        if (explanationReasons.length > 0) {
+          item += `   _Por que combina: ${explanationReasons.join(' • ')}_\n`;
+        } else if (rec.reasoning) {
+          item += `   _${rec.reasoning}_\n`;
+        }
+        if (explanationConcern) {
+          item += `   _Ponto de atenção: ${explanationConcern}_\n`;
         }
 
         return item;

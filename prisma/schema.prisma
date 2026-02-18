@@ -126,6 +126,7 @@ model Recommendation {
   vehicleId      String
   matchScore     Int
   reasoning      String
+  explanation    Json?
   position       Int          @default(1)
   clicked        Boolean      @default(false)
   interested     Boolean      @default(false)

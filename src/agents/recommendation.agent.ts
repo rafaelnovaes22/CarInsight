@@ -224,15 +224,34 @@ export class RecommendationAgent {
     matches: VehicleMatch[]
   ): Promise<void> {
     for (let i = 0; i < matches.length; i++) {
-      await prisma.recommendation.create({
-        data: {
-          conversationId,
-          vehicleId: matches[i].vehicle.id,
-          matchScore: matches[i].matchScore,
-          reasoning: matches[i].reasoning,
-          position: i + 1,
-        },
-      });
+      const baseData = {
+        conversationId,
+        vehicleId: matches[i].vehicle.id,
+        matchScore: matches[i].matchScore,
+        reasoning: matches[i].reasoning,
+        position: i + 1,
+      };
+
+      try {
+        await prisma.recommendation.create({
+          data: {
+            ...baseData,
+            explanation: (matches[i] as any).explanation || undefined,
+          } as any,
+        });
+      } catch (error: any) {
+        const message = String(error?.message || '');
+        const isExplanationCompatibilityIssue =
+          message.includes('Unknown argument `explanation`') ||
+          message.includes('column') && message.includes('explanation') ||
+          message.includes('does not exist') && message.includes('explanation');
+
+        if (isExplanationCompatibilityIssue) {
+          await prisma.recommendation.create({ data: baseData });
+        } else {
+          throw error;
+        }
+      }
     }
 
     await prisma.event.create({
