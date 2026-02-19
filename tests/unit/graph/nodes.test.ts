@@ -29,6 +29,11 @@ const { mockSearchVehicles } = vi.hoisted(() => {
   return { mockSearchVehicles: vi.fn() };
 });
 
+// Mock Vehicle Search Adapter (used by recommendationNode replacement flow)
+const { mockVehicleAdapterSearch } = vi.hoisted(() => {
+  return { mockVehicleAdapterSearch: vi.fn() };
+});
+
 vi.mock('../../../src/services/vector-search.service', () => {
   return {
     VectorSearchService: class {
@@ -36,6 +41,12 @@ vi.mock('../../../src/services/vector-search.service', () => {
     },
   };
 });
+
+vi.mock('../../../src/services/vehicle-search-adapter.service', () => ({
+  vehicleSearchAdapter: {
+    search: (...args: any[]) => mockVehicleAdapterSearch(...args),
+  },
+}));
 
 describe('LangGraph Nodes Logic', () => {
   beforeEach(() => {
@@ -308,6 +319,78 @@ describe('LangGraph Nodes Logic', () => {
 
       expect(hasHandoffKeyword).toBe(true);
       expect(result.metadata?.flags).toContain('handoff_requested');
+    });
+
+    it('should replace rejected vehicle and keep recommendation flow', async () => {
+      const state = createInitialState();
+      state.profile = {
+        budget: 80000,
+        bodyType: 'hatch',
+        _excludeVehicleIds: [],
+      } as any;
+      state.recommendations = [
+        {
+          vehicleId: 'kwid-1',
+          matchScore: 90,
+          reasoning: 'Boa economia',
+          highlights: ['Econômico'],
+          concerns: [],
+          vehicle: {
+            id: 'kwid-1',
+            marca: 'Renault',
+            modelo: 'Kwid',
+            ano: 2022,
+            km: 20000,
+            preco: 55000,
+            carroceria: 'hatch',
+          } as any,
+        },
+        {
+          vehicleId: 'onix-1',
+          matchScore: 88,
+          reasoning: 'Boa revenda',
+          highlights: ['Confiável'],
+          concerns: [],
+          vehicle: {
+            id: 'onix-1',
+            marca: 'Chevrolet',
+            modelo: 'Onix',
+            ano: 2021,
+            km: 30000,
+            preco: 62000,
+            carroceria: 'hatch',
+          } as any,
+        },
+      ];
+      state.messages = [new HumanMessage('Não quero Kwid, me mostra outro')];
+
+      mockVehicleAdapterSearch.mockResolvedValue([
+        {
+          vehicleId: 'argo-1',
+          matchScore: 86,
+          reasoning: 'Alternativa similar',
+          highlights: ['Bom custo-benefício'],
+          concerns: [],
+          vehicle: {
+            id: 'argo-1',
+            brand: 'Fiat',
+            model: 'Argo',
+            year: 2021,
+            mileage: 35000,
+            price: 61000,
+            bodyType: 'hatch',
+          },
+        },
+      ]);
+
+      const result = await recommendationNode(state);
+      const message = String(result.messages?.[0].content || '');
+
+      expect(result.recommendations).toBeDefined();
+      expect(result.recommendations?.map(r => r.vehicleId)).toContain('argo-1');
+      expect(result.recommendations?.map(r => r.vehicleId)).not.toContain('kwid-1');
+      expect(result.profile?._excludeVehicleIds).toContain('kwid-1');
+      expect(message.toLowerCase()).toContain('argo');
     });
 
     it('should handle schedule request', async () => {

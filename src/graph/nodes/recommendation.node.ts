@@ -3,6 +3,7 @@ import { CustomerProfile } from '../../types/state.types';
 import { createNodeTimer } from '../../lib/node-metrics';
 import { logger } from '../../lib/logger';
 import { AIMessage } from '@langchain/core/messages';
+import { vehicleSearchAdapter } from '../../services/vehicle-search-adapter.service';
 import {
   getRandomVariation,
   getVehicleIntroMessage,
@@ -116,6 +117,107 @@ function getVehicleLink(vehicle: any): string | null {
     }
   }
   return buildFallbackVehicleLink(vehicle);
+}
+
+function normalizeText(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function isRecommendationRejectionMessage(message: string): boolean {
+  const normalized = normalizeText(message);
+  return (
+    /nao\s+gostei/.test(normalized) ||
+    /nao\s+quero/.test(normalized) ||
+    /nao\s+curti/.test(normalized) ||
+    /prefiro\s+outro/.test(normalized) ||
+    /mostra\s+outro/.test(normalized) ||
+    /tem\s+outro/.test(normalized) ||
+    /quero\s+outro/.test(normalized)
+  );
+}
+
+function extractRejectedRecommendationIds(message: string, recommendations: any[]): string[] {
+  if (!isRecommendationRejectionMessage(message) || recommendations.length === 0) {
+    return [];
+  }
+
+  const normalizedMessage = normalizeText(message);
+  const explicitMatches = recommendations
+    .filter(rec => {
+      const vehicle = rec?.vehicle;
+      const brand = normalizeText(vehicle?.marca || vehicle?.brand || '');
+      const model = normalizeText(vehicle?.modelo || vehicle?.model || '');
+      const fullName = `${brand} ${model}`.trim();
+
+      if (fullName && normalizedMessage.includes(fullName)) return true;
+      if (model && normalizedMessage.includes(model)) return true;
+      return false;
+    })
+    .map(rec => rec.vehicleId);
+
+  if (explicitMatches.length > 0) {
+    return Array.from(new Set(explicitMatches));
+  }
+
+  if (/\bprimeir[oa]\b|\b1\b/.test(normalizedMessage) && recommendations[0]?.vehicleId) {
+    return [recommendations[0].vehicleId];
+  }
+  if (/\bsegund[oa]\b|\b2\b/.test(normalizedMessage) && recommendations[1]?.vehicleId) {
+    return [recommendations[1].vehicleId];
+  }
+  if (/\bterceir[oa]\b|\b3\b/.test(normalizedMessage) && recommendations[2]?.vehicleId) {
+    return [recommendations[2].vehicleId];
+  }
+
+  // Generic rejection without explicit model: replace the top recommendation.
+  return recommendations[0]?.vehicleId ? [recommendations[0].vehicleId] : [];
+}
+
+function profileToSearchFilters(
+  profile?: Partial<CustomerProfile>,
+  fallbackBodyType?: string
+): any {
+  const budget = profile?.budget ?? profile?.orcamento ?? profile?.budgetMax;
+  const bodyType = (profile?.bodyType || fallbackBodyType || '').trim();
+
+  const filters: any = {
+    limit: 8,
+    excludeMotorcycles: true,
+  };
+
+  if (budget) filters.maxPrice = budget;
+  if (profile?.minYear) filters.minYear = profile.minYear;
+  if (profile?.maxKm) filters.maxKm = profile.maxKm;
+  if (profile?.transmission) filters.transmission = profile.transmission;
+  if (bodyType) filters.bodyType = bodyType;
+  if (profile?.brand) filters.brand = profile.brand;
+
+  return filters;
+}
+
+function getVehicleName(rec: any): string {
+  const vehicle = rec?.vehicle || {};
+  const brand = vehicle.marca || vehicle.brand || '';
+  const model = vehicle.modelo || vehicle.model || '';
+  return `${brand} ${model}`.trim();
+}
+
+function toShownVehicles(recommendations: any[]) {
+  return recommendations.map(rec => {
+    const vehicle = rec?.vehicle || {};
+    return {
+      vehicleId: rec.vehicleId,
+      brand: vehicle.marca || vehicle.brand || '',
+      model: vehicle.modelo || vehicle.model || '',
+      year: vehicle.ano || vehicle.year || 0,
+      price: Number(vehicle.preco ?? vehicle.price ?? 0) || 0,
+      bodyType: vehicle.carroceria || vehicle.bodyType,
+    };
+  });
 }
 
 /**
@@ -285,7 +387,106 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
     };
   }
 
-  if (/gostei|interessei|quero esse|quero o|vou levar|fechar|comprar/i.test(lowerMessage)) {
+  // Handle recommendation rejection and replacement request
+  if (state.recommendations.length > 0 && isRecommendationRejectionMessage(lowerMessage)) {
+    const rejectedIds = extractRejectedRecommendationIds(lowerMessage, state.recommendations);
+
+    if (rejectedIds.length > 0) {
+      const rejectedSet = new Set(rejectedIds);
+      const keptRecommendations = state.recommendations.filter(
+        rec => !rejectedSet.has(rec.vehicleId)
+      );
+      const targetCount = Math.max(state.recommendations.length, 1);
+      const replacementsNeeded = Math.max(targetCount - keptRecommendations.length, 0);
+      const previouslyExcluded = state.profile?._excludeVehicleIds || [];
+      const excludeIds = Array.from(
+        new Set([...previouslyExcluded, ...state.recommendations.map(rec => rec.vehicleId)])
+      );
+
+      let replacements: any[] = [];
+      if (replacementsNeeded > 0) {
+        const firstRejected = state.recommendations.find(rec => rejectedSet.has(rec.vehicleId));
+        const fallbackBodyType =
+          firstRejected?.vehicle?.carroceria || firstRejected?.vehicle?.bodyType || '';
+        const filters = profileToSearchFilters(state.profile, fallbackBodyType);
+        filters.excludeIds = excludeIds;
+        filters.limit = Math.max(replacementsNeeded * 3, 8);
+
+        const replacementQuery = [
+          state.profile?.bodyType,
+          state.profile?.usage || state.profile?.usoPrincipal,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+
+        try {
+          const searchResults = await vehicleSearchAdapter.search(replacementQuery, filters);
+          replacements = searchResults
+            .filter(rec => !excludeIds.includes(rec.vehicleId))
+            .slice(0, replacementsNeeded);
+        } catch (error) {
+          logger.warn({ error }, 'RecommendationNode: Failed to fetch replacement recommendations');
+        }
+      }
+
+      const updatedRecommendations = [...keptRecommendations, ...replacements].slice(
+        0,
+        targetCount
+      );
+
+      if (updatedRecommendations.length > 0) {
+        const rejectedNames = state.recommendations
+          .filter(rec => rejectedSet.has(rec.vehicleId))
+          .map(getVehicleName)
+          .filter(Boolean);
+        const removedText =
+          rejectedNames.length > 0
+            ? rejectedNames.join(', ')
+            : getRandomVariation(['essa opção', 'esse carro', 'essa recomendação']);
+        const intro = `Perfeito, tirei ${removedText} da lista. Separei novas opções para você:`;
+
+        return {
+          messages: [new AIMessage(`${intro}\n\n${formatRecommendations(updatedRecommendations)}`)],
+          recommendations: updatedRecommendations,
+          profile: {
+            ...state.profile,
+            _excludeVehicleIds: Array.from(new Set([...previouslyExcluded, ...rejectedIds])),
+            _showedRecommendation: true,
+            _lastSearchType: 'recommendation',
+            _lastShownVehicles: toShownVehicles(updatedRecommendations),
+          },
+          metadata: {
+            ...state.metadata,
+            lastMessageAt: Date.now(),
+          },
+        };
+      }
+
+      return {
+        messages: [
+          new AIMessage(
+            'Sem problemas! Tirei essa opção, mas não encontrei outra com os mesmos critérios agora. Quer ajustar orçamento, ano ou tipo de carro para eu buscar de novo?'
+          ),
+        ],
+        profile: {
+          ...state.profile,
+          _excludeVehicleIds: Array.from(new Set([...previouslyExcluded, ...rejectedIds])),
+          _showedRecommendation: false,
+        },
+        metadata: {
+          ...state.metadata,
+          lastMessageAt: Date.now(),
+        },
+      };
+    }
+  }
+
+  const hasNegativePreference = /\bn[ãa]o\s+(gostei|quero|curti)\b/i.test(lowerMessage);
+  if (
+    !hasNegativePreference &&
+    /gostei|interessei|quero esse|quero o|vou levar|fechar|comprar/i.test(lowerMessage)
+  ) {
     logger.info('RecommendationNode: Interest intent detected -> negotiation');
     return {
       next: 'negotiation',
