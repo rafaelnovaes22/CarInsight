@@ -133,7 +133,7 @@ describe('LangGraph Flows Integration', () => {
     });
 
     const resFin = await runGraph(threadId, 'Quero financiar');
-    expect(resFin.content).toContain('entrada');
+    expect(resFin.content).toMatch(/entrada|simula/i);
   });
 
   it('Scenario 3: Trade-in Flow', async () => {

@@ -99,6 +99,28 @@ describe('LangGraph Nodes Logic', () => {
       expect(result.next).toBe('recommendation'); // Jump straight to recommendation
       expect(mockChat).toHaveBeenCalled();
     });
+
+    it('should preserve negotiation stage when name already exists', async () => {
+      const state = createInitialState();
+      state.profile = { customerName: 'Rafael' };
+      state.next = 'negotiation';
+      state.messages = [new HumanMessage('Tenho 20 mil de entrada')];
+
+      const result = await greetingNode(state);
+
+      expect(result.next).toBe('negotiation');
+    });
+
+    it('should normalize clarification stage to discovery when name already exists', async () => {
+      const state = createInitialState();
+      state.profile = { customerName: 'Rafael' };
+      state.next = 'clarification';
+      state.messages = [new HumanMessage('170 a 230 mil')];
+
+      const result = await greetingNode(state);
+
+      expect(result.next).toBe('discovery');
+    });
   });
 
   // ============================================

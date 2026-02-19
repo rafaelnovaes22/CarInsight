@@ -46,9 +46,16 @@ const routeNode = (state: IGraphState) => {
       return 'greeting';
     case 'discovery':
       return 'discovery';
+    case 'clarification':
+      // Clarification is handled by discovery in the LangGraph workflow.
+      return 'discovery';
+    case 'ready_to_recommend':
+      return 'search';
     case 'search':
       return 'search';
     case 'recommendation':
+      return 'recommendation';
+    case 'refinement':
       return 'recommendation';
     case 'financing':
       return 'financing';
@@ -59,9 +66,12 @@ const routeNode = (state: IGraphState) => {
     case 'end':
     case 'handoff':
       return END;
-    default:
-      logger.warn({ nextNode }, 'Router: Unknown next state, defaulting to greeting');
-      return 'greeting';
+    default: {
+      // Keep the user in discovery if profile already exists to avoid name-collection loops.
+      const fallbackNode = state.profile?.customerName ? 'discovery' : 'greeting';
+      logger.warn({ nextNode, fallbackNode }, 'Router: Unknown next state, using safe fallback');
+      return fallbackNode;
+    }
   }
 };
 

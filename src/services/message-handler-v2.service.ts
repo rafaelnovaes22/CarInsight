@@ -17,6 +17,8 @@ import { maskPhoneNumber } from '../lib/privacy';
 export interface AudioMessageOptions {
   /** Original media ID from Meta API for audio messages */
   mediaId?: string;
+  /** Original incoming message ID from WhatsApp provider */
+  waMessageId?: string;
 }
 
 /**
@@ -230,6 +232,7 @@ Para começar, qual é o seu nome?`;
           direction: 'incoming',
           content: sanitizedMessage,
           messageType,
+          waMessageId: audioOptions?.waMessageId,
           originalMediaId: audioOptions?.mediaId,
         },
       });

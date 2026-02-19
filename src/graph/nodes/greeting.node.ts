@@ -16,6 +16,11 @@ import { HumanMessage, AIMessage } from '@langchain/core/messages';
 export async function greetingNode(state: IGraphState): Promise<Partial<IGraphState>> {
   const timer = createNodeTimer('greeting');
   const lastMessage = state.messages[state.messages.length - 1];
+  const continuationMap: Record<string, string> = {
+    clarification: 'discovery',
+    ready_to_recommend: 'search',
+    refinement: 'recommendation',
+  };
 
   // Guard clause: ensure we have a message to process
   if (!lastMessage || typeof lastMessage.content !== 'string') {
@@ -66,6 +71,20 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
 
   // 1. If we already have a name, we shouldn't be here ideally, but if we are, move to discovery
   if (state.profile?.customerName) {
+    const normalizedNext = continuationMap[state.next] || state.next;
+    const canContinue =
+      normalizedNext &&
+      ['discovery', 'search', 'recommendation', 'financing', 'trade_in', 'negotiation'].includes(
+        normalizedNext
+      );
+
+    if (canContinue) {
+      logger.info({ next: normalizedNext }, 'GreetingNode: Name exists, preserving current stage');
+      return {
+        next: normalizedNext,
+      };
+    }
+
     logger.info('GreetingNode: Name exists, passing to discovery');
     return {
       next: 'discovery',

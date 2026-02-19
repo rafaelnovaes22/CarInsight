@@ -71,6 +71,12 @@ vi.mock('../../src/services/audio-transcription.service', () => {
 
 import { WhatsAppMetaService } from '../../src/services/whatsapp-meta.service';
 import axios from 'axios';
+import { cache } from '../../src/lib/redis';
+
+async function clearInMemoryCache(): Promise<void> {
+  const keys = await cache.keys('*');
+  await Promise.all(keys.map(key => cache.del(key)));
+}
 
 /**
  * Generator for valid media IDs (alphanumeric strings)
@@ -128,8 +134,9 @@ describe('WhatsAppMetaService Audio Handling', () => {
   let service: WhatsAppMetaService;
   const mockedAxios = vi.mocked(axios);
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await clearInMemoryCache();
     // Mock axios.post for sendMessage and markMessageAsRead
     mockedAxios.post = vi.fn().mockResolvedValue({ data: { messages: [{ id: 'msg-id' }] } });
     service = new WhatsAppMetaService();
@@ -227,9 +234,14 @@ describe('WhatsAppMetaService Audio Handling', () => {
             expect(mockTranscribeFromMediaId).toHaveBeenCalledWith(audioMessage.audio.id);
 
             // 2. Message handler received transcribed text with audio options
-            expect(mockHandleMessage).toHaveBeenCalledWith(audioMessage.from, transcribedText, {
-              mediaId: audioMessage.audio.id,
-            });
+            expect(mockHandleMessage).toHaveBeenCalledWith(
+              audioMessage.from,
+              transcribedText,
+              expect.objectContaining({
+                mediaId: audioMessage.audio.id,
+                waMessageId: audioMessage.id,
+              })
+            );
 
             // 3. Response was sent back to user
             expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -399,8 +411,9 @@ describe('WhatsAppMetaService Audio Unit Tests', () => {
   let service: WhatsAppMetaService;
   const mockedAxios = vi.mocked(axios);
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await clearInMemoryCache();
     mockedAxios.post = vi.fn().mockResolvedValue({ data: { messages: [{ id: 'msg-id' }] } });
     service = new WhatsAppMetaService();
   });
@@ -485,6 +498,83 @@ describe('WhatsAppMetaService Audio Unit Tests', () => {
       // Should not call transcription or message handler
       expect(mockTranscribeFromMediaId).not.toHaveBeenCalled();
       expect(mockHandleMessage).not.toHaveBeenCalled();
+    });
+
+    it('deduplicates repeated text messages with the same Meta ID in a single webhook payload', async () => {
+      const textMessage = {
+        from: '5511999999999',
+        id: 'wamid.duplicate123456789012345678901',
+        timestamp: '1234567890',
+        text: {
+          body: 'Quero simular financiamento',
+        },
+        type: 'text' as const,
+      };
+
+      mockHandleMessage.mockResolvedValue('Bot response');
+
+      await service.processWebhook({
+        entry: [
+          {
+            id: 'entry-id',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: {
+                    display_phone_number: '5511888888888',
+                    phone_number_id: 'phone-id',
+                  },
+                  messages: [textMessage, textMessage],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(mockHandleMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it('deduplicates repeated text messages with the same Meta ID across webhook retries', async () => {
+      const textMessage = {
+        from: '5511999999999',
+        id: 'wamid.retry123456789012345678901',
+        timestamp: '1234567890',
+        text: {
+          body: 'Simulação por favor',
+        },
+        type: 'text' as const,
+      };
+
+      mockHandleMessage.mockResolvedValue('Bot response');
+
+      const payload = {
+        entry: [
+          {
+            id: 'entry-id',
+            changes: [
+              {
+                value: {
+                  messaging_product: 'whatsapp',
+                  metadata: {
+                    display_phone_number: '5511888888888',
+                    phone_number_id: 'phone-id',
+                  },
+                  messages: [textMessage],
+                },
+                field: 'messages',
+              },
+            ],
+          },
+        ],
+      };
+
+      await service.processWebhook(payload);
+      await service.processWebhook(payload);
+
+      expect(mockHandleMessage).toHaveBeenCalledTimes(1);
     });
   });
 

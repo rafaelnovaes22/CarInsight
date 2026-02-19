@@ -1,6 +1,7 @@
 ﻿import axios from 'axios';
 import { logger } from '../lib/logger';
 import { env } from '../config/env';
+import { cache } from '../lib/redis';
 import { MessageHandlerV2 } from './message-handler-v2.service';
 import { AudioTranscriptionService, TranscriptionResult } from './audio-transcription.service';
 import { IWhatsAppService, SendMessageOptions } from '../interfaces/whatsapp-service.interface';
@@ -62,6 +63,10 @@ const AUDIO_ERROR_MESSAGES: Record<string, string> = {
 };
 
 export class WhatsAppMetaService implements IWhatsAppService {
+  private static readonly MESSAGE_PROCESSED_TTL_SECONDS = 24 * 60 * 60;
+  private static readonly MESSAGE_INFLIGHT_TTL_SECONDS = 2 * 60;
+  private static readonly inFlightMessageIds = new Set<string>();
+
   private messageHandler: MessageHandlerV2;
   private audioTranscriptionService: AudioTranscriptionService;
   private apiUrl: string;
@@ -135,16 +140,36 @@ export class WhatsAppMetaService implements IWhatsAppService {
    * Handle incoming message
    */
   private async handleIncomingMessage(message: MetaWebhookMessage): Promise<void> {
+    const dedupeStatus = await this.claimIncomingMessage(message.id);
+    if (dedupeStatus === 'processed') {
+      logger.info('⚠️ Skipping duplicate incoming message (already processed)', {
+        id: message.id,
+        type: message.type,
+      });
+      return;
+    }
+    if (dedupeStatus === 'in_flight') {
+      logger.info('⚠️ Skipping duplicate incoming message (already in-flight)', {
+        id: message.id,
+        type: message.type,
+      });
+      return;
+    }
+
+    let handledSuccessfully = false;
+
     try {
       // Route audio messages to audio handler
       if (message.type === 'audio' && message.audio) {
         await this.handleAudioMessage(message);
+        handledSuccessfully = true;
         return;
       }
 
       // Only process text messages
       if (message.type !== 'text' || !message.text) {
         logger.info('âš ï¸ Ignoring non-text message', { type: message.type, id: message.id });
+        handledSuccessfully = true;
         return;
       }
 
@@ -161,7 +186,9 @@ export class WhatsAppMetaService implements IWhatsAppService {
 
       // Process with our bot
       logger.info('ðŸ¤– Processing with bot...');
-      const response = await this.messageHandler.handleMessage(phoneNumber, messageText);
+      const response = await this.messageHandler.handleMessage(phoneNumber, messageText, {
+        waMessageId: message.id,
+      });
 
       logger.info('ðŸ“¤ Sending response...', {
         to: this.maskPhoneNumber(phoneNumber),
@@ -175,6 +202,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         to: this.maskPhoneNumber(phoneNumber),
         length: response.length,
       });
+      handledSuccessfully = true;
     } catch (error: any) {
       logger.error(
         {
@@ -185,6 +213,12 @@ export class WhatsAppMetaService implements IWhatsAppService {
         'âŒ Error handling incoming message'
       );
       throw error;
+    } finally {
+      if (handledSuccessfully) {
+        await this.markIncomingMessageProcessed(message.id);
+      } else {
+        await this.releaseIncomingMessage(message.id);
+      }
     }
   }
 
@@ -243,6 +277,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
     logger.info('ðŸ¤– Processing transcribed text with bot...');
     const response = await this.messageHandler.handleMessage(phoneNumber, transcribedText, {
       mediaId,
+      waMessageId: message.id,
     });
 
     logger.info('ðŸ“¤ Sending response...', {
@@ -489,6 +524,66 @@ export class WhatsAppMetaService implements IWhatsAppService {
       );
       throw error;
     }
+  }
+
+  private getProcessedMessageKey(messageId: string): string {
+    return `meta:message:processed:${messageId}`;
+  }
+
+  private getInFlightMessageKey(messageId: string): string {
+    return `meta:message:inflight:${messageId}`;
+  }
+
+  private async claimIncomingMessage(
+    messageId: string
+  ): Promise<'acquired' | 'processed' | 'in_flight'> {
+    if (!messageId) {
+      return 'acquired';
+    }
+
+    const processedKey = this.getProcessedMessageKey(messageId);
+    const inFlightKey = this.getInFlightMessageKey(messageId);
+
+    if (await cache.exists(processedKey)) {
+      return 'processed';
+    }
+
+    if (WhatsAppMetaService.inFlightMessageIds.has(messageId)) {
+      return 'in_flight';
+    }
+
+    WhatsAppMetaService.inFlightMessageIds.add(messageId);
+
+    if (await cache.exists(inFlightKey)) {
+      WhatsAppMetaService.inFlightMessageIds.delete(messageId);
+      return 'in_flight';
+    }
+
+    await cache.set(inFlightKey, '1', WhatsAppMetaService.MESSAGE_INFLIGHT_TTL_SECONDS);
+    return 'acquired';
+  }
+
+  private async markIncomingMessageProcessed(messageId: string): Promise<void> {
+    if (!messageId) {
+      return;
+    }
+
+    const processedKey = this.getProcessedMessageKey(messageId);
+    const inFlightKey = this.getInFlightMessageKey(messageId);
+
+    await cache.set(processedKey, '1', WhatsAppMetaService.MESSAGE_PROCESSED_TTL_SECONDS);
+    await cache.del(inFlightKey);
+    WhatsAppMetaService.inFlightMessageIds.delete(messageId);
+  }
+
+  private async releaseIncomingMessage(messageId: string): Promise<void> {
+    if (!messageId) {
+      return;
+    }
+
+    const inFlightKey = this.getInFlightMessageKey(messageId);
+    await cache.del(inFlightKey);
+    WhatsAppMetaService.inFlightMessageIds.delete(messageId);
   }
 
   private maskPhoneNumber(phoneNumber: string): string {
