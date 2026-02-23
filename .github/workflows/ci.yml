@@ -13,7 +13,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:14
+        image: pgvector/pgvector:pg14
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
