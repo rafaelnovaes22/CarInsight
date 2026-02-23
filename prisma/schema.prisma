@@ -1,10 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  extensions = [vector]
 }
 
 model Vehicle {
@@ -36,7 +38,7 @@ model Vehicle {
   url                  String?
   detailUrl            String?
   descricao            String?
-  embedding            String?
+  embedding            Unsupported("vector(1536)")?
   embeddingModel       String?          @default("text-embedding-3-small")
   embeddingGeneratedAt DateTime?
   disponivel           Boolean          @default(true)

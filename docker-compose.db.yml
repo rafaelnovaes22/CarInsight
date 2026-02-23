@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  postgres-pgvector:
+    image: ankane/pgvector:latest
+    container_name: carinsight-postgres-vector
+    environment:
+      POSTGRES_USER: faciliauto
+      POSTGRES_PASSWORD: faciliauto2025
+      POSTGRES_DB: faciliauto_mvp
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgvector-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: carinsight-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+volumes:
+  pgvector-data:
+  redis-data:

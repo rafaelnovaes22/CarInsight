@@ -32,7 +32,7 @@ export class MessageHandlerV2 {
   ): Promise<string> {
     try {
       // 🛡️ GUARDRAIL: Validate input
-      const inputValidation = guardrails.validateInput(phoneNumber, message);
+      const inputValidation = await guardrails.validateInput(phoneNumber, message);
       if (!inputValidation.allowed) {
         logger.warn(
           { phoneNumber: maskPhoneNumber(phoneNumber), reason: inputValidation.reason },

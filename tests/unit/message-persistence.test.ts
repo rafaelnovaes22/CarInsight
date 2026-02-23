@@ -69,7 +69,7 @@ vi.mock('../../src/lib/logger', () => ({
 // Mock guardrails
 vi.mock('../../src/services/guardrails.service', () => ({
   guardrails: {
-    validateInput: vi.fn().mockReturnValue({ allowed: true, sanitizedInput: null }),
+    validateInput: vi.fn().mockResolvedValue({ allowed: true, sanitizedInput: null }),
     validateOutput: vi.fn().mockReturnValue({ allowed: true }),
   },
 }));

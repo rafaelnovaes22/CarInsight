@@ -61,14 +61,8 @@ export class VectorSearchService {
    */
   private async checkEmbeddingsAvailable(): Promise<boolean> {
     try {
-      const count = await prisma.vehicle.count({
-        where: {
-          embedding: {
-            not: null,
-          },
-        },
-      });
-      return count > 0;
+      const result = await prisma.$queryRaw<{ count: number }[]>`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
+      return Number(result[0].count) > 0;
     } catch (error) {
       return false;
     }
@@ -87,59 +81,32 @@ export class VectorSearchService {
 
       const queryEmbedding = await generateEmbedding(queryText);
 
-      // Buscar veículos disponíveis com embeddings
-      const vehicles = await prisma.vehicle.findMany({
-        where: {
-          disponivel: true,
-          embedding: {
-            not: null,
-          },
-        },
-      });
+      // Buscar veículos similares diretamente via pgvector e PostgreSQL
+      const vectorString = `[${queryEmbedding.join(',')}]`;
+      const similarVehiclesData = await prisma.$queryRaw<any[]>`
+        SELECT v.*, 1 - (v.embedding <=> ${vectorString}::vector) as "semanticScore"
+        FROM "Vehicle" v
+        WHERE v.disponivel = true AND v.embedding IS NOT NULL
+        ORDER BY v.embedding <=> ${vectorString}::vector
+        LIMIT ${limit * 2}
+      `;
 
-      if (vehicles.length === 0) {
-        logger.warn('Nenhum veículo com embedding encontrado');
+      if (similarVehiclesData.length === 0) {
+        logger.warn('Nenhum veículo com embedding encontrado na busca vetorial via pgvector');
         return this.sqlSearch(criteria, limit);
       }
-
-      // Parsear embeddings e preparar para busca
-      const vehiclesWithEmbeddings = vehicles
-        .map(v => ({
-          id: v.id,
-          embedding: stringToEmbedding(v.embedding),
-          vehicle: v,
-        }))
-        .filter(v => v.embedding !== null) as Array<{
-        id: string;
-        embedding: number[];
-        vehicle: any;
-      }>;
-
-      if (vehiclesWithEmbeddings.length === 0) {
-        logger.warn('Nenhum embedding válido encontrado');
-        return this.sqlSearch(criteria, limit);
-      }
-
-      // Buscar veículos similares
-      const similarVehicles = searchSimilar(queryEmbedding, vehiclesWithEmbeddings, limit * 2);
 
       logger.info(
         {
-          found: similarVehicles.length,
-          topScore: similarVehicles[0]?.score,
+          found: similarVehiclesData.length,
+          topScore: similarVehiclesData[0]?.semanticScore,
         },
-        'Veículos similares encontrados'
+        'Veículos similares encontrados via pgvector'
       );
 
       // Calcular score híbrido (40% semântico + 60% critérios)
-      const scoredVehicles = similarVehicles.map(result => {
-        const vehicleData = vehiclesWithEmbeddings.find(v => v.id === result.id);
-        if (!vehicleData) {
-          throw new Error(`Veículo ${result.id} não encontrado`);
-        }
-
-        const vehicle = vehicleData.vehicle;
-        const semanticScore = result.score;
+      const scoredVehicles = similarVehiclesData.map(vehicle => {
+        const semanticScore = vehicle.semanticScore;
         const criteriaScore = this.calculateCriteriaMatch(vehicle, criteria);
 
         const finalScore = semanticScore * 0.4 + criteriaScore * 0.6;

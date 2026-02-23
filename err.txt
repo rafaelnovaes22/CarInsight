@@ -1,0 +1,13 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "faciliauto_mvp", schema "public" at "localhost:5432"
+
+Error: P3014
+
+Prisma Migrate could not create the shadow database. Please make sure the database user has permission to create databases. Read more about the shadow database (and workarounds) at https://pris.ly/d/migrate-shadow
+
+Original error: 
+ERRO: permissão negada ao criar banco de dados
+   0: schema_core::state::DevDiagnostic
+             at schema-engine\core\src\state.rs:276
+

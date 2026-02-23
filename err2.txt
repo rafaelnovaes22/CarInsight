@@ -1,0 +1,14 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "faciliauto_mvp", schema "public" at "localhost:5432"
+Error: ERRO: a extensão "vector" não está disponível
+DETAIL: Não foi possível abrir o arquivo de controle de extensão "C:/Program Files/PostgreSQL/16/share/extension/vector.control": No such file or directory.
+HINT: A extensão deve ser instalada primeiro no sistema onde o PostgreSQL está sendo executado.
+   0: sql_schema_connector::apply_migration::migration_step
+           with step=CreateExtension(CreateExtension { id: ExtensionId(0) })
+             at schema-engine\connectors\sql-schema-connector\src\apply_migration.rs:21
+   1: sql_schema_connector::apply_migration::apply_migration
+             at schema-engine\connectors\sql-schema-connector\src\apply_migration.rs:10
+   2: schema_core::state::SchemaPush
+             at schema-engine\core\src\state.rs:504
+

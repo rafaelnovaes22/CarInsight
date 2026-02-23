@@ -38,9 +38,12 @@ class InMemoryVectorStore {
   private async initializeInBackground(): Promise<void> {
     console.log('🧠 Inicializando vector store in-memory (background)...');
 
-    const vehicles = await prisma.vehicle.findMany({
-      where: { disponivel: true },
-    });
+    // Use raw query to fetch the embedding as text (Prisma omits Unsupported columns in findMany)
+    const vehicles = await prisma.$queryRaw<any[]>`
+      SELECT v.*, v.embedding::text as "embeddingString"
+      FROM "Vehicle" v
+      WHERE v.disponivel = true
+    `;
 
     console.log(`📊 Carregando embeddings para ${vehicles.length} veículos...`);
 
@@ -52,9 +55,9 @@ class InMemoryVectorStore {
       let embedding: number[];
 
       // Verificar se já tem embedding salvo no banco
-      if (vehicle.embedding) {
+      if (vehicle.embeddingString) {
         try {
-          embedding = JSON.parse(vehicle.embedding);
+          embedding = JSON.parse(vehicle.embeddingString);
           loadedFromDb++;
         } catch (e) {
           // Embedding inválido, regenerar
@@ -98,18 +101,16 @@ class InMemoryVectorStore {
     const embedding = await generateEmbedding(description);
 
     // Salvar no banco para próxima inicialização
-    await prisma.vehicle
-      .update({
-        where: { id: vehicleId },
-        data: {
-          embedding: JSON.stringify(embedding),
-          embeddingModel: 'text-embedding-3-small',
-          embeddingGeneratedAt: new Date(),
-        },
-      })
-      .catch(error => {
-        console.warn(`⚠️ Erro ao salvar embedding do veículo ${vehicleId}:`, error.message);
-      });
+    const vectorString = `[${embedding.join(',')}]`;
+    await prisma.$executeRawUnsafe(`
+      UPDATE "Vehicle" 
+      SET "embedding" = $1::vector, 
+          "embeddingModel" = 'text-embedding-3-small', 
+          "embeddingGeneratedAt" = $2 
+      WHERE id = $3
+    `, vectorString, new Date(), vehicleId).catch(error => {
+      console.warn(`⚠️ Erro ao salvar embedding do veículo ${vehicleId}:`, error.message);
+    });
 
     return embedding;
   }
