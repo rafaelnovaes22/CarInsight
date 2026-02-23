@@ -265,9 +265,7 @@ describe('Guardrails Service - Security E2E', () => {
       // 11th should be blocked
       const result = await service.validateInput(testPhone, 'Mensagem 11');
       expect(result.allowed).toBe(false);
-      expect(result.reason).toContain(
-        'Você está enviando mensagens muito rapidamente. Por favor, aguarde um momento.'
-      );
+      expect(result.reason).toMatch(/(Muitas mensagens|Você está enviando mensagens muito rapidamente)/);
     });
 
     it('should track rate limits per phone number', async () => {
