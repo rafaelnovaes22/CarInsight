@@ -18,18 +18,22 @@ interface RobustCarVehicle {
 }
 
 const CATEGORY_TO_CARROCERIA: Record<string, string> = {
-  'SUV': 'SUV',
-  'SEDAN': 'Sedan',
-  'HATCH': 'Hatchback',
-  'PICKUP': 'Picape',
-  'MINIVAN': 'Minivan',
-  'MOTO': 'Moto',
-  'OUTROS': 'Outros'
+  SUV: 'SUV',
+  SEDAN: 'Sedan',
+  HATCH: 'Hatchback',
+  PICKUP: 'Picape',
+  MINIVAN: 'Minivan',
+  MOTO: 'Moto',
+  OUTROS: 'Outros',
 };
 
 function detectTransmission(version: string): string {
   const versionUpper = version.toUpperCase();
-  if (versionUpper.includes('AUT') || versionUpper.includes('AUTOMATICO') || versionUpper.includes('CVT')) {
+  if (
+    versionUpper.includes('AUT') ||
+    versionUpper.includes('AUTOMATICO') ||
+    versionUpper.includes('CVT')
+  ) {
     return 'Automático';
   }
   return 'Manual';
@@ -51,9 +55,12 @@ function detectFeatures(version: string) {
     vidroEletrico: !versionUpper.includes('BASE'),
     travaEletrica: !versionUpper.includes('BASE'),
     alarme: true,
-    rodaLigaLeve: versionUpper.includes('LTZ') || versionUpper.includes('EX') || versionUpper.includes('LIMITED'),
+    rodaLigaLeve:
+      versionUpper.includes('LTZ') ||
+      versionUpper.includes('EX') ||
+      versionUpper.includes('LIMITED'),
     som: true,
-    portas: portas
+    portas: portas,
   };
 
   return features;
@@ -61,11 +68,11 @@ function detectFeatures(version: string) {
 
 function normalizeFuel(fuel: string): string {
   const fuelMap: Record<string, string> = {
-    'FLEX': 'Flex',
-    'DIESEL': 'Diesel',
-    'HÍBRIDO': 'Híbrido',
-    'ELÉTRICO': 'Elétrico',
-    'GASOLINA': 'Gasolina'
+    FLEX: 'Flex',
+    DIESEL: 'Diesel',
+    HÍBRIDO: 'Híbrido',
+    ELÉTRICO: 'Elétrico',
+    GASOLINA: 'Gasolina',
   };
 
   return fuelMap[fuel] || 'Flex';
@@ -169,7 +176,7 @@ async function main() {
         category: CATEGORY_TO_CARROCERIA[vehicle.category] || 'Outros',
         fuel: normalizeFuel(vehicle.fuel),
         transmission: transmission,
-        features
+        features,
       };
 
       // Validação via LLM (Assíncrona - pode demorar um pouco)
@@ -211,12 +218,14 @@ async function main() {
           aptoUber: eligibility.uberX || eligibility.uberComfort, // Se for X ou Comfort, marca como aptoUber (genérico)
           aptoUberBlack: eligibility.uberBlack,
           aptoFamilia: VehicleClassifierService.detectFamilyEligibility(vehicleInput),
-          aptoTrabalho: VehicleClassifierService.detectWorkEligibility(vehicleInput)
-        }
+          aptoTrabalho: VehicleClassifierService.detectWorkEligibility(vehicleInput),
+        },
       });
 
       successCount++;
-      console.log(`✅ ${successCount}. ${vehicle.brand} ${vehicle.model} ${vehicle.year} - R$ ${vehicle.price.toLocaleString('pt-BR')}`);
+      console.log(
+        `✅ ${successCount}. ${vehicle.brand} ${vehicle.model} ${vehicle.year} - R$ ${vehicle.price.toLocaleString('pt-BR')}`
+      );
     } catch (error) {
       console.error(`❌ Erro ao inserir ${vehicle.brand} ${vehicle.model}:`, error);
     }
@@ -229,7 +238,7 @@ async function main() {
 
   const categoryCounts = await prisma.vehicle.groupBy({
     by: ['carroceria'],
-    _count: true
+    _count: true,
   });
 
   console.log('\n🚗 Veículos por categoria:');
@@ -241,7 +250,7 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Erro no seed:', e);
     process.exit(1);
   })

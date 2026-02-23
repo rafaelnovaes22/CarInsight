@@ -8,9 +8,9 @@ async function checkUrls() {
       marca: true,
       modelo: true,
       ano: true,
-      url: true
+      url: true,
     },
-    take: 10
+    take: 10,
   });
 
   console.log('📊 Primeiros 10 veículos:\n');
@@ -22,7 +22,7 @@ async function checkUrls() {
   const withUrl = vehicles.filter(v => v.url).length;
   const total = vehicles.length;
   console.log(`\n📈 ${withUrl}/${total} veículos com URL`);
-  
+
   await prisma.$disconnect();
 }
 

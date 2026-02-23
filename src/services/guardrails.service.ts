@@ -125,7 +125,10 @@ export class GuardrailsService {
   /**
    * Rate limit implementation using Redis (Persistent, distributed)
    */
-  private async checkRateLimitRedis(redis: import('ioredis').Redis, phoneNumber: string): Promise<GuardrailResult> {
+  private async checkRateLimitRedis(
+    redis: import('ioredis').Redis,
+    phoneNumber: string
+  ): Promise<GuardrailResult> {
     const key = `ratelimit:${phoneNumber}`;
 
     try {

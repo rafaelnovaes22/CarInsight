@@ -37,7 +37,7 @@ jobs:
       GROQ_API_KEY: test-mock-key
       OPENAI_API_KEY: test-mock-key
       META_WHATSAPP_TOKEN: test-mock-token
-      META_WHATSAPP_PHONE_NUMBER_ID: "123456789"
+      META_WHATSAPP_PHONE_NUMBER_ID: '123456789'
 
     steps:
       - name: Checkout code

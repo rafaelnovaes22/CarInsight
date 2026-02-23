@@ -1441,7 +1441,7 @@ router.get('/health', async (req, res) => {
   try {
     const vehiclesCount = await prisma.vehicle.count({ where: { disponivel: true } });
     const vehiclesWithEmbeddings = await prisma.vehicle.count({
-      where: { disponivel: true, embedding: { not: null } },
+      where: { disponivel: true, embeddingGeneratedAt: { not: null } },
     });
     checks.vehicles = {
       status: vehiclesCount > 0 ? 'ok' : 'warning',

@@ -1,8 +1,8 @@
 /**
  * Exporta todos os dados do banco para JSON
  * Não requer pg_dump - usa Prisma
- * 
- * Uso: 
+ *
+ * Uso:
  *   DATABASE_URL="postgresql://..." node scripts/db-export.mjs
  */
 
@@ -50,22 +50,22 @@ async function exportDatabase() {
         vehicles,
         conversations,
         messages,
-        leads
+        leads,
       },
       counts: {
         vehicles: vehicles.length,
         conversations: conversations.length,
         messages: messages.length,
-        leads: leads.length
-      }
+        leads: leads.length,
+      },
     };
 
     // Salvar arquivo
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const filename = `scripts/db-backup-${timestamp}.json`;
-    
+
     fs.writeFileSync(filename, JSON.stringify(backup, null, 2));
-    
+
     console.log('\n════════════════════════════════════════════════════════════');
     console.log(`   ✅ BACKUP SALVO: ${filename}`);
     console.log('════════════════════════════════════════════════════════════');
@@ -82,7 +82,7 @@ async function exportDatabase() {
       acc[v.carroceria || 'N/I'] = (acc[v.carroceria || 'N/I'] || 0) + 1;
       return acc;
     }, {});
-    
+
     console.log('\n📊 Veículos por categoria:');
     Object.entries(byCategory)
       .sort((a, b) => b[1] - a[1])
@@ -91,7 +91,6 @@ async function exportDatabase() {
       });
 
     return filename;
-
   } catch (error) {
     console.error('\n❌ Erro ao exportar:', error.message);
     throw error;
@@ -101,4 +100,3 @@ async function exportDatabase() {
 }
 
 exportDatabase().catch(console.error);
-

@@ -102,15 +102,22 @@ class InMemoryVectorStore {
 
     // Salvar no banco para próxima inicialização
     const vectorString = `[${embedding.join(',')}]`;
-    await prisma.$executeRawUnsafe(`
+    await prisma
+      .$executeRawUnsafe(
+        `
       UPDATE "Vehicle" 
       SET "embedding" = $1::vector, 
           "embeddingModel" = 'text-embedding-3-small', 
           "embeddingGeneratedAt" = $2 
       WHERE id = $3
-    `, vectorString, new Date(), vehicleId).catch(error => {
-      console.warn(`⚠️ Erro ao salvar embedding do veículo ${vehicleId}:`, error.message);
-    });
+    `,
+        vectorString,
+        new Date(),
+        vehicleId
+      )
+      .catch(error => {
+        console.warn(`⚠️ Erro ao salvar embedding do veículo ${vehicleId}:`, error.message);
+      });
 
     return embedding;
   }

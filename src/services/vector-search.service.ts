@@ -61,7 +61,9 @@ export class VectorSearchService {
    */
   private async checkEmbeddingsAvailable(): Promise<boolean> {
     try {
-      const result = await prisma.$queryRaw<{ count: number }[]>`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
+      const result = await prisma.$queryRaw<
+        { count: number }[]
+      >`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
       return Number(result[0].count) > 0;
     } catch (error) {
       return false;

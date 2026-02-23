@@ -64,10 +64,10 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     const whereClause = forceRegenerate
       ? {}
       : {
-        /* We'll filter the vehicles that need embeddings via raw query or fetching all and checking locally if Prisma can't filter Unsupported columns */
-      };
+          /* We'll filter the vehicles that need embeddings via raw query or fetching all and checking locally if Prisma can't filter Unsupported columns */
+        };
 
-    // Since Prisma can't easily filter Unsupported columns via Prisma Client natively in all versions, 
+    // Since Prisma can't easily filter Unsupported columns via Prisma Client natively in all versions,
     // we fetch IDs using raw SQL
     const missingEmbeddingsQuery = await prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM "Vehicle" 
@@ -77,13 +77,15 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     const vehiclesToProcess = forceRegenerate
       ? await prisma.vehicle.findMany()
       : await prisma.vehicle.findMany({
-        where: { id: { in: missingEmbeddingsQuery.map(r => r.id) } }
-      });
+          where: { id: { in: missingEmbeddingsQuery.map(r => r.id) } },
+        });
 
     // Filter to only missing embeddings if not forcing
     let vehicles = vehiclesToProcess;
     if (!forceRegenerate) {
-      const missingIds = await prisma.$queryRaw<{ id: string }[]>`SELECT id FROM "Vehicle" WHERE "embedding" IS NULL`;
+      const missingIds = await prisma.$queryRaw<
+        { id: string }[]
+      >`SELECT id FROM "Vehicle" WHERE "embedding" IS NULL`;
       const missingIdSet = new Set(missingIds.map(r => r.id));
       vehicles = vehiclesToProcess.filter(v => missingIdSet.has(v.id));
     }
@@ -124,13 +126,19 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
 
           // Salvar no banco
           const vectorString = `[${embedding.join(',')}]`;
-          await prisma.$executeRawUnsafe(`
+          await prisma.$executeRawUnsafe(
+            `
             UPDATE "Vehicle" 
             SET "embedding" = $1::vector, 
                 "embeddingModel" = $2, 
                 "embeddingGeneratedAt" = $3 
             WHERE id = $4
-          `, vectorString, EMBEDDING_MODEL, new Date(), vehicle.id);
+          `,
+            vectorString,
+            EMBEDDING_MODEL,
+            new Date(),
+            vehicle.id
+          );
 
           processed++;
           console.log(`     ✅ Embedding salvo com sucesso!`);
@@ -156,7 +164,9 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     console.log('='.repeat(60) + '\n');
 
     // Verificação final
-    const rawCount = await prisma.$queryRaw<{ count: number }[]>`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
+    const rawCount = await prisma.$queryRaw<
+      { count: number }[]
+    >`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
     const totalWithEmbeddings = Number(rawCount[0].count);
 
     const totalVehicles = await prisma.vehicle.count();
@@ -196,13 +206,19 @@ async function regenerateVehicleEmbedding(vehicleId: string): Promise<void> {
     const embedding = await generateEmbedding(description);
 
     const vectorString = `[${embedding.join(',')}]`;
-    await prisma.$executeRawUnsafe(`
+    await prisma.$executeRawUnsafe(
+      `
       UPDATE "Vehicle" 
       SET "embedding" = $1::vector, 
           "embeddingModel" = $2, 
           "embeddingGeneratedAt" = $3 
       WHERE id = $4
-    `, vectorString, EMBEDDING_MODEL, new Date(), vehicleId);
+    `,
+      vectorString,
+      EMBEDDING_MODEL,
+      new Date(),
+      vehicleId
+    );
 
     console.log('✅ Embedding regenerado com sucesso!\n');
   } catch (error: any) {
@@ -221,7 +237,9 @@ async function showEmbeddingStats(): Promise<void> {
     const total = await prisma.vehicle.count();
 
     // Contagem via sql raw
-    const rawQueryRes = await prisma.$queryRaw<{ count: number }[]>`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
+    const rawQueryRes = await prisma.$queryRaw<
+      { count: number }[]
+    >`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
     const withEmbeddings = Number(rawQueryRes[0].count);
 
     const byModel = await prisma.vehicle.groupBy({

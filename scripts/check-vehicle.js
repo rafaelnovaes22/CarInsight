@@ -8,8 +8,8 @@ async function checkVehicle() {
       where: {
         OR: [
           { marca: { contains: 'Jeep', mode: 'insensitive' } },
-          { modelo: { contains: 'Compass', mode: 'insensitive' } }
-        ]
+          { modelo: { contains: 'Compass', mode: 'insensitive' } },
+        ],
       },
       select: {
         id: true,
@@ -17,8 +17,8 @@ async function checkVehicle() {
         modelo: true,
         ano: true,
         preco: true,
-        disponivel: true
-      }
+        disponivel: true,
+      },
     });
 
     console.log('\n=== Veículos Jeep/Compass ===');
@@ -27,7 +27,9 @@ async function checkVehicle() {
     } else {
       console.log(`✅ Encontrados ${jeepCompass.length} veículos:`);
       jeepCompass.forEach(v => {
-        console.log(`   - ${v.marca} ${v.modelo} ${v.ano} - R$ ${v.preco} (${v.disponivel ? 'disponível' : 'indisponível'})`);
+        console.log(
+          `   - ${v.marca} ${v.modelo} ${v.ano} - R$ ${v.preco} (${v.disponivel ? 'disponível' : 'indisponível'})`
+        );
       });
     }
 
@@ -36,7 +38,7 @@ async function checkVehicle() {
       by: ['marca'],
       where: { disponivel: true },
       _count: true,
-      orderBy: { _count: { marca: 'desc' } }
+      orderBy: { _count: { marca: 'desc' } },
     });
 
     console.log('\n=== Marcas disponíveis ===');
@@ -47,7 +49,6 @@ async function checkVehicle() {
     // Total de veículos
     const total = await prisma.vehicle.count({ where: { disponivel: true } });
     console.log(`\n📊 Total: ${total} veículos disponíveis\n`);
-
   } catch (error) {
     console.error('Erro:', error.message);
   } finally {
@@ -56,4 +57,3 @@ async function checkVehicle() {
 }
 
 checkVehicle();
-

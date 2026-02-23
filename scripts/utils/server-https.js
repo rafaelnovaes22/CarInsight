@@ -10,10 +10,10 @@ const PORT = 3000;
 app.use(express.static(path.join(__dirname, 'src', 'public')));
 
 const options = {
-    key: fs.readFileSync(path.join(__dirname, 'meta-auth-demo', 'key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, 'meta-auth-demo', 'cert.pem'))
+  key: fs.readFileSync(path.join(__dirname, 'meta-auth-demo', 'key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'meta-auth-demo', 'cert.pem')),
 };
 
 https.createServer(options, app).listen(PORT, () => {
-    console.log(`🚀 Servidor HTTPS rodando em https://localhost:${PORT}/facebook-login.html`);
+  console.log(`🚀 Servidor HTTPS rodando em https://localhost:${PORT}/facebook-login.html`);
 });

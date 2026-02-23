@@ -1,7 +1,7 @@
 /**
  * Importa dados de um backup JSON para o banco
- * 
- * Uso: 
+ *
+ * Uso:
  *   DATABASE_URL="postgresql://..." node scripts/db-import.mjs scripts/db-backup-XXXX.json
  */
 
@@ -28,9 +28,11 @@ async function importDatabase(backupFile) {
   try {
     console.log(`📂 Lendo backup: ${backupFile}`);
     const backup = JSON.parse(fs.readFileSync(backupFile, 'utf-8'));
-    
+
     console.log(`📅 Backup de: ${backup.exportedAt}`);
-    console.log(`📊 Contém: ${backup.counts.vehicles} veículos, ${backup.counts.conversations} conversas\n`);
+    console.log(
+      `📊 Contém: ${backup.counts.vehicles} veículos, ${backup.counts.conversations} conversas\n`
+    );
 
     // Confirmar
     console.log('⚠️  ATENÇÃO: Isso vai SUBSTITUIR os dados existentes!');
@@ -51,18 +53,18 @@ async function importDatabase(backupFile) {
     // Importar veículos
     if (backup.data.vehicles && backup.data.vehicles.length > 0) {
       console.log(`📦 Importando ${backup.data.vehicles.length} veículos...`);
-      
+
       for (const vehicle of backup.data.vehicles) {
         try {
           // Remover campos que podem causar conflito
           const { id, createdAt, updatedAt, ...vehicleData } = vehicle;
-          
+
           await prisma.vehicle.create({
             data: {
               ...vehicleData,
               createdAt: new Date(createdAt),
-              updatedAt: new Date(updatedAt)
-            }
+              updatedAt: new Date(updatedAt),
+            },
           });
         } catch (e) {
           console.error(`   ⚠️  Erro ao importar veículo: ${vehicle.marca} ${vehicle.modelo}`);
@@ -74,17 +76,17 @@ async function importDatabase(backupFile) {
     // Importar conversas
     if (backup.data.conversations && backup.data.conversations.length > 0) {
       console.log(`📦 Importando ${backup.data.conversations.length} conversas...`);
-      
+
       for (const conv of backup.data.conversations) {
         try {
           const { id, createdAt, updatedAt, ...convData } = conv;
-          
+
           await prisma.conversation.create({
             data: {
               ...convData,
               createdAt: new Date(createdAt),
-              updatedAt: new Date(updatedAt)
-            }
+              updatedAt: new Date(updatedAt),
+            },
           });
         } catch (e) {
           console.error(`   ⚠️  Erro ao importar conversa: ${conv.phoneNumber}`);
@@ -96,17 +98,17 @@ async function importDatabase(backupFile) {
     // Importar mensagens
     if (backup.data.messages && backup.data.messages.length > 0) {
       console.log(`📦 Importando ${backup.data.messages.length} mensagens...`);
-      
+
       let imported = 0;
       for (const msg of backup.data.messages) {
         try {
           const { id, createdAt, ...msgData } = msg;
-          
+
           await prisma.message.create({
             data: {
               ...msgData,
-              createdAt: new Date(createdAt)
-            }
+              createdAt: new Date(createdAt),
+            },
           });
           imported++;
         } catch (e) {
@@ -128,7 +130,6 @@ async function importDatabase(backupFile) {
     console.log(`   Veículos: ${vehicleCount}`);
     console.log(`   Conversas: ${convCount}`);
     console.log(`   Mensagens: ${msgCount}`);
-
   } catch (error) {
     console.error('\n❌ Erro ao importar:', error.message);
     throw error;
@@ -139,4 +140,3 @@ async function importDatabase(backupFile) {
 
 const backupFile = process.argv[2];
 importDatabase(backupFile).catch(console.error);
-

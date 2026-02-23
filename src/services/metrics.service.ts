@@ -278,7 +278,7 @@ export const metricsService = {
         prisma.vehicle.count({
           where: {
             disponivel: true,
-            embedding: { not: null },
+            embeddingGeneratedAt: { not: null },
           },
         }),
 
