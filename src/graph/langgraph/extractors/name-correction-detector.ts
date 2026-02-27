@@ -39,17 +39,17 @@ export interface NameCorrectionDetectorConfig {
 
 function normalizeCommonMojibake(input: string): string {
   return input
-    .replace(/Ã£/g, 'ã')
-    .replace(/Ã¡/g, 'á')
-    .replace(/Ã¢/g, 'â')
-    .replace(/Ã©/g, 'é')
-    .replace(/Ãª/g, 'ê')
-    .replace(/Ã­/g, 'í')
-    .replace(/Ã³/g, 'ó')
-    .replace(/Ã´/g, 'ô')
-    .replace(/Ãµ/g, 'õ')
-    .replace(/Ãº/g, 'ú')
-    .replace(/Ã§/g, 'ç');
+    .replace(/ã/g, 'ã')
+    .replace(/á/g, 'á')
+    .replace(/â/g, 'â')
+    .replace(/é/g, 'é')
+    .replace(/ê/g, 'ê')
+    .replace(/í/g, 'í')
+    .replace(/ó/g, 'ó')
+    .replace(/ô/g, 'ô')
+    .replace(/õ/g, 'õ')
+    .replace(/ú/g, 'ú')
+    .replace(/ç/g, 'ç');
 }
 
 /**
@@ -59,26 +59,26 @@ function normalizeCommonMojibake(input: string): string {
  * Each pattern captures the corrected name in group 1.
  */
 export const NAME_CORRECTION_PATTERNS: RegExp[] = [
-  // "Ã© [Name] na verdade" / "na verdade Ã© [Name]"
+  // "é [Name] na verdade" / "na verdade é [Name]"
   /(?:^|\s)(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)\s+na\s+verdade/iu,
   /na\s+verdade\s+(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
-  // "nÃ£o, Ã© [Name]" / "nÃ£o, [Name]"
+  // "não, é [Name]" / "não, [Name]"
   /^n(?:\u00E3|a)o[,.]?\s*(?:\u00E9|e)?\s*([\p{L}]+(?:\s+[\p{L}]+)?)\s*$/iu,
 
-  // "meu nome Ã© [Name]" (when name already exists - implies correction)
+  // "meu nome é [Name]" (when name already exists - implies correction)
   /meu\s+nome\s+(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
   // "me chama de [Name]" / "pode me chamar de [Name]"
   /(?:me\s+chama|pode\s+me\s+chamar)\s+de\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
-  // "o nome Ã© [Name]"
+  // "o nome é [Name]"
   /o\s+nome\s+(?:\u00E9|e)\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
   // "na verdade me chamo [Name]"
   /na\s+verdade\s+me\s+chamo\s+([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 
-  // "errou, Ã© [Name]" / "errado, Ã© [Name]"
+  // "errou, é [Name]" / "errado, é [Name]"
   /err(?:ou|ado)[,.]?\s*(?:\u00E9|e)?\s*([\p{L}]+(?:\s+[\p{L}]+)*)/iu,
 ];
 

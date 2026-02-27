@@ -4,7 +4,7 @@ import { env } from '../config/env';
 import { logger } from './logger';
 import { traceable } from 'langsmith/traceable';
 
-// ConfiguraÃ§Ã£o dos providers
+// Configuração dos providers
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY || 'mock-key',
 });
@@ -33,18 +33,18 @@ export interface LLMProviderConfig {
   costPer1MTokens: { input: number; output: number };
 }
 
-// ConfiguraÃ§Ã£o dos modelos disponÃ­veis
+// Configuração dos modelos disponíveis
 const LLM_PROVIDERS: LLMProviderConfig[] = [
   {
     name: 'openai',
     model: 'gpt-4.1-mini',
     enabled: !!env.OPENAI_API_KEY && env.OPENAI_API_KEY !== 'mock-key',
-    priority: 1, // PrimÃ¡rio
+    priority: 1, // Primário
     costPer1MTokens: { input: 0.4, output: 1.6 },
   },
   {
     name: 'groq',
-    // Modelo Llama 3.1 8B Instant (Fallback rÃ¡pido e econÃ´mico)
+    // Modelo Llama 3.1 8B Instant (Fallback rápido e econômico)
     model: 'llama-3.1-8b-instant',
     enabled: !!env.GROQ_API_KEY && env.GROQ_API_KEY !== 'mock-key',
     priority: 2, // Fallback
@@ -53,7 +53,7 @@ const LLM_PROVIDERS: LLMProviderConfig[] = [
 ];
 
 /**
- * Classe para gerenciar circuit breaker (previne chamadas repetidas a serviÃ§os falhando)
+ * Classe para gerenciar circuit breaker (previne chamadas repetidas a serviços falhando)
  */
 class CircuitBreaker {
   private failures: Map<string, number> = new Map();
@@ -149,13 +149,13 @@ function mockResponse(messages: ChatMessage[]): {
   const systemMessage = messages.find(m => m.role === 'system')?.content.toLowerCase() || '';
 
   // Intent classification
-  if (systemMessage.includes('classificador') || systemMessage.includes('intenÃ§Ã£o')) {
+  if (systemMessage.includes('classificador') || systemMessage.includes('intenção')) {
     if (
       content.includes('sim') ||
       content.includes('quero') ||
       content.includes('comprar') ||
       content.includes('carro') ||
-      content.includes('veÃ­culo') ||
+      content.includes('veículo') ||
       content.includes('ver')
     ) {
       return {
@@ -175,7 +175,7 @@ function mockResponse(messages: ChatMessage[]): {
         model: 'mock',
       };
     }
-    if (content.includes('dÃºvida') || content.includes('preÃ§o') || content.includes('quanto')) {
+    if (content.includes('dúvida') || content.includes('preço') || content.includes('quanto')) {
       return {
         content: 'DUVIDA',
         usage: { prompt_tokens: 50, completion_tokens: 1, total_tokens: 51 },
@@ -193,30 +193,30 @@ function mockResponse(messages: ChatMessage[]): {
   if (
     content.includes('explique') ||
     content.includes('por que') ||
-    content.includes('veÃ­culo:')
+    content.includes('veículo:')
   ) {
     return {
       content:
-        'Excelente custo-benefÃ­cio! Atende suas necessidades de espaÃ§o e estÃ¡ dentro do orÃ§amento.',
+        'Excelente custo-benefício! Atende suas necessidades de espaço e está dentro do orçamento.',
       usage: { prompt_tokens: 100, completion_tokens: 15, total_tokens: 115 },
       model: 'mock',
     };
   }
 
   return {
-    content: 'OlÃ¡! Como posso ajudar vocÃª hoje? Quer ver nossos carros disponÃ­veis?',
+    content: 'Olá! Como posso ajudar você hoje? Quer ver nossos carros disponíveis?',
     usage: { prompt_tokens: 50, completion_tokens: 12, total_tokens: 62 },
     model: 'mock',
   };
 }
 
 /**
- * LLM Router com fallback automÃ¡tico e circuit breaker
+ * LLM Router com fallback automático e circuit breaker
  *
  * Ordem de prioridade:
- * 1. gpt-4.1-mini (OpenAI) - PrimÃ¡rio
+ * 1. gpt-4.1-mini (OpenAI) - Primário
  * 2. LLaMA 3.1 8B Instant (Groq) - Fallback
- * 3. Mock Mode - Se nenhum disponÃ­vel
+ * 3. Mock Mode - Se nenhum disponível
  */
 export async function chatCompletion(
   messages: ChatMessage[],
@@ -225,9 +225,9 @@ export async function chatCompletion(
   const maxRetries = options.retries ?? 2;
   const providers = LLM_PROVIDERS.filter(p => p.enabled).sort((a, b) => a.priority - b.priority);
 
-  // Se nenhum provider estÃ¡ configurado, usar mock
+  // Se nenhum provider está configurado, usar mock
   if (providers.length === 0) {
-    logger.warn('ðŸ¤– Using MOCK mode (no API keys configured)');
+    logger.warn('🤖 Using MOCK mode (no API keys configured)');
     return mockResponse(messages);
   }
 
@@ -287,12 +287,12 @@ export async function chatCompletion(
           'LLM call failed'
         );
 
-        // Se foi a Ãºltima tentativa, registrar falha
+        // Se foi a última tentativa, registrar falha
         if (attempt === maxRetries) {
           circuitBreaker.recordFailure(provider.name);
         }
 
-        // Se nÃ£o Ã© a Ãºltima tentativa, aguardar antes de retry
+        // Se não é a última tentativa, aguardar antes de retry
         if (attempt < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
@@ -300,13 +300,13 @@ export async function chatCompletion(
     }
   }
 
-  // Se todos falharam, usar mock como Ãºltimo recurso
+  // Se todos falharam, usar mock como último recurso
   logger.error('All LLM providers failed, using mock response');
   return mockResponse(messages);
 }
 
 /**
- * Obter estatÃ­sticas dos providers disponÃ­veis
+ * Obter estatísticas dos providers disponíveis
  */
 export function getLLMProvidersStatus() {
   return LLM_PROVIDERS.map(provider => ({
@@ -316,7 +316,7 @@ export function getLLMProvidersStatus() {
 }
 
 /**
- * ForÃ§ar reset do circuit breaker (Ãºtil para testes)
+ * Forçar reset do circuit breaker (útil para testes)
  */
 export function resetCircuitBreaker() {
   circuitBreaker['failures'].clear();

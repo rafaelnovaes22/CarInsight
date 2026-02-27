@@ -40,7 +40,7 @@ interface SearchFilters {
   bodyType?: string;
   transmission?: string;
   brand?: string;
-  model?: string; // Modelo especÃ­fico (ex: "Compass", "Civic")
+  model?: string; // Modelo específico (ex: "Compass", "Civic")
   limit?: number;
   // Uber filters
   aptoUber?: boolean;
@@ -289,8 +289,8 @@ export class VehicleSearchAdapter {
         }
       }
 
-      // Step 2: Se tem filtro de marca, modelo OU categoria especÃ­fica, fazer busca DIRETA no banco
-      // (nÃ£o depender da busca semÃ¢ntica que pode nÃ£o retornar o veÃ­culo)
+      // Step 2: Se tem filtro de marca, modelo OU categoria específica, fazer busca DIRETA no banco
+      // (não depender da busca semântica que pode não retornar o veículo)
       if (filters.brand || filters.model || filters.bodyType) {
         logger.info(
           { brand: filters.brand, model: filters.model, bodyType: filters.bodyType, query },
@@ -309,7 +309,7 @@ export class VehicleSearchAdapter {
         logger.info('Empty query for semantic search, skipping to SQL fallback');
       }
 
-      // Se busca semÃ¢ntica nÃ£o retornou nada (ou foi pulada), fazer fallback para busca SQL
+      // Se busca semântica não retornou nada (ou foi pulada), fazer fallback para busca SQL
       if (vehicleIds.length === 0) {
         logger.info(
           { query, filters },
@@ -406,8 +406,8 @@ export class VehicleSearchAdapter {
         });
       }
 
-      // Se filtrou por bodyType e nÃ£o encontrou nada, buscar SEM o filtro de IDs
-      // para verificar se existem veÃ­culos desse tipo no estoque
+      // Se filtrou por bodyType e não encontrou nada, buscar SEM o filtro de IDs
+      // para verificar se existem veículos desse tipo no estoque
       if (vehicles.length === 0 && filters.bodyType) {
         const existsInStock = await prisma.vehicle.count({
           where: {
@@ -418,10 +418,10 @@ export class VehicleSearchAdapter {
 
         if (existsInStock === 0) {
           logger.info({ bodyType: filters.bodyType }, 'Body type not available in stock');
-          return []; // Retorna vazio para trigger "nÃ£o temos X no estoque"
+          return []; // Retorna vazio para trigger "não temos X no estoque"
         }
 
-        // Se existe no estoque mas nÃ£o veio da busca semÃ¢ntica, fazer fallback SQL
+        // Se existe no estoque mas não veio da busca semântica, fazer fallback SQL
         return this.searchFallbackSQL(filters);
       }
 
@@ -698,19 +698,19 @@ export class VehicleSearchAdapter {
     // Recent year
     const currentYear = new Date().getFullYear();
     if (vehicle.ano >= currentYear - 3) {
-      highlights.push(`VeÃ­culo recente: ${vehicle.ano}`);
+      highlights.push(`Veículo recente: ${vehicle.ano}`);
     }
 
     return highlights.slice(0, 3);
   }
 
   /**
-   * Busca direta por marca, modelo e/ou categoria (nÃ£o usa busca semÃ¢ntica)
+   * Busca direta por marca, modelo e/ou categoria (não usa busca semântica)
    */
   private async searchDirectByFilters(filters: SearchFilters): Promise<VehicleRecommendation[]> {
     const limit = filters.limit || 5;
 
-    // Mapear variaÃ§Ãµes de categoria para busca
+    // Mapear variações de categoria para busca
     const bodyTypeVariations = this.getBodyTypeVariations(filters.bodyType);
 
     const vehicles = await prisma.vehicle.findMany({
@@ -725,7 +725,7 @@ export class VehicleSearchAdapter {
         ...(filters.brand && { marca: { contains: filters.brand, mode: 'insensitive' } }),
         // Filtro de modelo (se especificado)
         ...(filters.model && { modelo: { contains: filters.model, mode: 'insensitive' } }),
-        // Filtro de categoria/carroceria (se especificado) - com variaÃ§Ãµes
+        // Filtro de categoria/carroceria (se especificado) - com variações
         ...(bodyTypeVariations.length > 0 && {
           OR: bodyTypeVariations.map(bt => ({
             carroceria: { contains: bt, mode: 'insensitive' as const },
@@ -759,8 +759,8 @@ export class VehicleSearchAdapter {
   }
 
   /**
-   * Retorna variaÃ§Ãµes de nome para cada tipo de carroceria
-   * Aceita variaÃ§Ãµes comuns em portuguÃªs e inglÃªs
+   * Retorna variações de nome para cada tipo de carroceria
+   * Aceita variações comuns em português e inglês
    */
   private getBodyTypeVariations(bodyType?: string): string[] {
     if (!bodyType) return [];
@@ -770,16 +770,16 @@ export class VehicleSearchAdapter {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, ''); // Remove acentos
 
-    // Mapeamento completo de variaÃ§Ãµes (inclui termos em PT e EN)
+    // Mapeamento completo de variações (inclui termos em PT e EN)
     const variationGroups: string[][] = [
       // Pickups / Caminhonetes
       ['pickup', 'picape', 'pick-up', 'caminhonete', 'camionete', 'cabine', 'truck'],
 
-      // SUVs / UtilitÃ¡rios
+      // SUVs / Utilitários
       ['suv', 'utilitario', 'crossover', 'jipe', 'jeep', '4x4', 'off-road', 'offroad'],
 
       // Sedans
-      ['sedan', 'seda', 'sedÃ£', 'notchback', 'fastback'],
+      ['sedan', 'seda', 'sedã', 'notchback', 'fastback'],
 
       // Hatches / Compactos
       ['hatch', 'hatchback', 'compacto', 'compact'],
@@ -787,8 +787,8 @@ export class VehicleSearchAdapter {
       // Minivans / Monovolumes
       ['minivan', 'mini-van', 'monovolume', 'mpv', 'van', 'perua', 'wagon', 'station'],
 
-      // CupÃªs / Esportivos
-      ['coupe', 'cupe', 'cupÃª', 'esportivo', 'sport', 'roadster', 'conversivel', 'cabriolet'],
+      // Cupês / Esportivos
+      ['coupe', 'cupe', 'cupê', 'esportivo', 'sport', 'roadster', 'conversivel', 'cabriolet'],
 
       // Motos / Motocicletas
       [
@@ -805,19 +805,19 @@ export class VehicleSearchAdapter {
       ],
     ];
 
-    // Encontrar o grupo que contÃ©m a variaÃ§Ã£o buscada
+    // Encontrar o grupo que contém a variação buscada
     for (const group of variationGroups) {
       if (group.some(v => bt.includes(v) || v.includes(bt))) {
         return group;
       }
     }
 
-    // Se nÃ£o encontrou grupo, retorna o termo original + algumas variaÃ§Ãµes comuns
+    // Se não encontrou grupo, retorna o termo original + algumas variações comuns
     return [bodyType, bt];
   }
 
   /**
-   * Busca SQL fallback quando busca semÃ¢ntica nÃ£o retorna resultados
+   * Busca SQL fallback quando busca semântica não retorna resultados
    * Updated to support new aptitude filters (latency-optimization)
    *
    * **Feature: latency-optimization**
@@ -882,7 +882,7 @@ export class VehicleSearchAdapter {
   }
 
   /**
-   * Formata veÃ­culos para o formato VehicleRecommendation
+   * Formata veículos para o formato VehicleRecommendation
    */
   private formatVehicleResults(vehicles: any[]): VehicleRecommendation[] {
     return vehicles.map((vehicle, index) => {
@@ -930,13 +930,13 @@ export class VehicleSearchAdapter {
     // Recent year
     const currentYear = new Date().getFullYear();
     if (vehicle.ano >= currentYear - 3) {
-      highlights.push(`VeÃ­culo recente: ${vehicle.ano}`);
+      highlights.push(`Veículo recente: ${vehicle.ano}`);
     }
 
     // Features
     const features: string[] = [];
     if (vehicle.arCondicionado) features.push('Ar condicionado');
-    if (vehicle.direcaoHidraulica) features.push('DireÃ§Ã£o hidrÃ¡ulica');
+    if (vehicle.direcaoHidraulica) features.push('Direção hidráulica');
     if (vehicle.airbag) features.push('Airbag');
     if (vehicle.abs) features.push('ABS');
 

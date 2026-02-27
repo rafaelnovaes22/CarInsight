@@ -82,10 +82,10 @@ export class WhatsAppMetaService implements IWhatsAppService {
 
     if (!this.phoneNumberId || !this.accessToken) {
       logger.warn(
-        'âš ï¸  Meta Cloud API credentials not configured. Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID'
+        '⚠️  Meta Cloud API credentials not configured. Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID'
       );
     } else {
-      logger.info('âœ… Meta Cloud API WhatsApp ready', {
+      logger.info('✅ Meta Cloud API WhatsApp ready', {
         phoneNumberId: this.phoneNumberId.substring(0, 10) + '...',
       });
     }
@@ -98,11 +98,11 @@ export class WhatsAppMetaService implements IWhatsAppService {
     const verifyToken = env.META_WEBHOOK_VERIFY_TOKEN || 'faciliauto_webhook_2025';
 
     if (mode === 'subscribe' && token === verifyToken) {
-      logger.info('âœ… Webhook verified successfully');
+      logger.info('✅ Webhook verified successfully');
       return challenge;
     }
 
-    logger.warn('âŒ Webhook verification failed', { mode });
+    logger.warn('❌ Webhook verification failed', { mode });
     return null;
   }
 
@@ -168,7 +168,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
 
       // Only process text messages
       if (message.type !== 'text' || !message.text) {
-        logger.info('âš ï¸ Ignoring non-text message', { type: message.type, id: message.id });
+        logger.info('⚠️ Ignoring non-text message', { type: message.type, id: message.id });
         handledSuccessfully = true;
         return;
       }
@@ -176,7 +176,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
       const phoneNumber = message.from;
       const messageText = message.text.body;
 
-      logger.info('ðŸ“± Message received', {
+      logger.info('📱 Message received', {
         from: this.maskPhoneNumber(phoneNumber),
         textLength: messageText.length,
       });
@@ -185,12 +185,12 @@ export class WhatsAppMetaService implements IWhatsAppService {
       await this.markMessageAsRead(message.id);
 
       // Process with our bot
-      logger.info('ðŸ¤– Processing with bot...');
+      logger.info('🤖 Processing with bot...');
       const response = await this.messageHandler.handleMessage(phoneNumber, messageText, {
         waMessageId: message.id,
       });
 
-      logger.info('ðŸ“¤ Sending response...', {
+      logger.info('📤 Sending response...', {
         to: this.maskPhoneNumber(phoneNumber),
         responseLength: response.length,
       });
@@ -198,7 +198,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
       // Send response back
       await this.sendMessage(phoneNumber, response);
 
-      logger.info('âœ… Response sent successfully', {
+      logger.info('✅ Response sent successfully', {
         to: this.maskPhoneNumber(phoneNumber),
         length: response.length,
       });
@@ -210,7 +210,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
           stack: error.stack,
           message,
         },
-        'âŒ Error handling incoming message'
+        '❌ Error handling incoming message'
       );
       throw error;
     } finally {
@@ -234,7 +234,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
       return;
     }
 
-    logger.info('ðŸŽ¤ Audio message received', {
+    logger.info('🎤 Audio message received', {
       from: this.maskPhoneNumber(phoneNumber),
       mediaId: mediaId.substring(0, 8) + '...',
       mimeType: message.audio?.mime_type,
@@ -247,7 +247,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
     await this.sendTypingIndicator(phoneNumber);
 
     // Step 3: Transcribe audio
-    logger.info('ðŸ”„ Transcribing audio...');
+    logger.info('🔄 Transcribing audio...');
     const transcriptionResult = await this.audioTranscriptionService.transcribeFromMediaId(mediaId);
 
     // Step 4: Handle transcription result
@@ -255,7 +255,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
       const errorMessage = this.getAudioErrorMessage(transcriptionResult.errorCode);
       await this.sendMessage(phoneNumber, errorMessage);
 
-      logger.warn('âš ï¸ Audio transcription failed', {
+      logger.warn('⚠️ Audio transcription failed', {
         from: this.maskPhoneNumber(phoneNumber),
         mediaId: mediaId.substring(0, 8) + '...',
         errorCode: transcriptionResult.errorCode,
@@ -265,7 +265,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
 
     const transcribedText = transcriptionResult.text!;
 
-    logger.info('âœ… Audio transcribed successfully', {
+    logger.info('✅ Audio transcribed successfully', {
       from: this.maskPhoneNumber(phoneNumber),
       mediaId: mediaId.substring(0, 8) + '...',
       textLength: transcribedText.length,
@@ -274,13 +274,13 @@ export class WhatsAppMetaService implements IWhatsAppService {
     });
 
     // Step 5: Process transcribed text with message handler
-    logger.info('ðŸ¤– Processing transcribed text with bot...');
+    logger.info('🤖 Processing transcribed text with bot...');
     const response = await this.messageHandler.handleMessage(phoneNumber, transcribedText, {
       mediaId,
       waMessageId: message.id,
     });
 
-    logger.info('ðŸ“¤ Sending response...', {
+    logger.info('📤 Sending response...', {
       to: this.maskPhoneNumber(phoneNumber),
       responseLength: response.length,
     });
@@ -288,7 +288,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
     // Step 6: Send response back to user
     await this.sendMessage(phoneNumber, response);
 
-    logger.info('âœ… Audio response sent successfully', {
+    logger.info('✅ Audio response sent successfully', {
       to: this.maskPhoneNumber(phoneNumber),
       length: response.length,
     });
@@ -306,7 +306,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
    */
   async sendTypingIndicator(to: string): Promise<void> {
     try {
-      logger.debug('ðŸ“ Typing indicator sent', { to: this.maskPhoneNumber(to) });
+      logger.debug('📝 Typing indicator sent', { to: this.maskPhoneNumber(to) });
     } catch (error) {
       logger.debug({ error, to: this.maskPhoneNumber(to) }, 'Failed to send typing indicator');
     }
@@ -316,7 +316,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
    * Handle status updates
    */
   private handleStatusUpdate(status: any): void {
-    logger.debug('ðŸ“Š Status update', {
+    logger.debug('📊 Status update', {
       messageId: status.id,
       status: status.status,
     });
@@ -361,7 +361,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
     };
 
     try {
-      logger.info('ðŸ”„ Calling Meta API...', {
+      logger.info('🔄 Calling Meta API...', {
         to: this.maskPhoneNumber(to),
         apiUrl: this.apiUrl,
         textLength: body.length,
@@ -369,7 +369,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
 
       const response = await makeRequest();
 
-      logger.info('âœ… Message sent via Meta API', {
+      logger.info('✅ Message sent via Meta API', {
         messageId: response.data.messages?.[0]?.id,
         to: this.maskPhoneNumber(to),
       });
@@ -386,7 +386,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         await new Promise(resolve => setTimeout(resolve, 1000));
         try {
           const response = await makeRequest();
-          logger.info('âœ… Message sent via Meta API (retry)', {
+          logger.info('✅ Message sent via Meta API (retry)', {
             messageId: response.data.messages?.[0]?.id,
             to: this.maskPhoneNumber(to),
           });
@@ -398,7 +398,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
               status: retryError.response?.status,
               to: this.maskPhoneNumber(to),
             },
-            'âŒ Failed to send message via Meta API (retry also failed)'
+            '❌ Failed to send message via Meta API (retry also failed)'
           );
           throw retryError;
         }
@@ -413,7 +413,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
           apiUrl: this.apiUrl,
           hasToken: !!this.accessToken,
         },
-        'âŒ Failed to send message via Meta API'
+        '❌ Failed to send message via Meta API'
       );
       throw error;
     }
@@ -459,7 +459,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         }
       );
 
-      logger.info('âœ… Button message sent', {
+      logger.info('✅ Button message sent', {
         messageId: response.data.messages?.[0]?.id,
       });
     } catch (error: any) {
@@ -467,7 +467,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         {
           error: error.response?.data || error.message,
         },
-        'âŒ Failed to send button message'
+        '❌ Failed to send button message'
       );
       throw error;
     }
@@ -530,7 +530,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         }
       );
 
-      logger.info('âœ… Template sent', {
+      logger.info('✅ Template sent', {
         messageId: response.data.messages?.[0]?.id,
         template: templateName,
       });
@@ -540,7 +540,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
           error: error.response?.data || error.message,
           template: templateName,
         },
-        'âŒ Failed to send template'
+        '❌ Failed to send template'
       );
       throw error;
     }
@@ -564,7 +564,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
           error: error.response?.data || error.message,
           mediaId,
         },
-        'âŒ Failed to get media URL'
+        '❌ Failed to get media URL'
       );
       throw error;
     }

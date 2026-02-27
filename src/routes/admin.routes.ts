@@ -59,53 +59,53 @@ function requireSecret(req: any, res: any, next: () => void) {
 
 /**
  * GET /admin/seed-renatinhu
- * Limpa veÃ­culos antigos e repopula com dados da Renatinhu's Cars
+ * Limpa veículos antigos e repopula com dados da Renatinhu's Cars
  * IMPORTANT: This is the MAIN endpoint for inventory updates in production
  */
 router.get('/seed-renatinhu', requireSecret, async (req, res) => {
   try {
-    logger.info("ðŸš€ Seed Renatinhu's Cars iniciado via HTTP endpoint");
+    logger.info("🚀 Seed Renatinhu's Cars iniciado via HTTP endpoint");
 
-    // Contar veÃ­culos atuais
+    // Contar veículos atuais
     const oldCount = await prisma.vehicle.count();
-    logger.info(`ðŸ“Š VeÃ­culos atuais: ${oldCount}`);
+    logger.info(`📊 Veículos atuais: ${oldCount}`);
 
-    // Limpar veÃ­culos antigos
-    // logger.info('ðŸ—‘ï¸ Removendo veÃ­culos antigos...');
+    // Limpar veículos antigos
+    // logger.info('🗑️ Removendo veículos antigos...');
     // await prisma.vehicle.deleteMany({});
-    // logger.info('âœ… VeÃ­culos antigos removidos');
+    // logger.info('✅ Veículos antigos removidos');
 
-    // Executar seed da Renatinhu (o script jÃ¡ cuida da limpeza na ordem correta)
-    logger.info("ðŸ“¦ Populando banco com dados da Renatinhu's Cars...");
+    // Executar seed da Renatinhu (o script já cuida da limpeza na ordem correta)
+    logger.info("📦 Populando banco com dados da Renatinhu's Cars...");
     const seedTask = await runAdminTask('seedRenatinhu');
     const seedOutput = seedTask.stdout;
     logger.info({ exitCode: seedTask.exitCode }, 'Seed command finished');
 
-    // Contar novos veÃ­culos
+    // Contar novos veículos
     const newCount = await prisma.vehicle.count();
-    logger.info(`ðŸ“Š Novos veÃ­culos: ${newCount}`);
+    logger.info(`📊 Novos veículos: ${newCount}`);
 
-    // Executar geraÃ§Ã£o de embeddings
-    logger.info('ðŸ”„ Gerando embeddings OpenAI...');
+    // Executar geração de embeddings
+    logger.info('🔄 Gerando embeddings OpenAI...');
     const embeddingsTask = await runAdminTask('generateEmbeddings');
     const embeddingsOutput = embeddingsTask.stdout;
     logger.info({ exitCode: embeddingsTask.exitCode }, 'Embeddings command finished');
 
-    logger.info("âœ… Seed Renatinhu's Cars concluÃ­do com sucesso!");
+    logger.info("✅ Seed Renatinhu's Cars concluído com sucesso!");
 
     res.json({
       success: true,
-      message: "âœ… Seed Renatinhu's Cars executado com sucesso!",
+      message: "✅ Seed Renatinhu's Cars executado com sucesso!",
       summary: {
         vehiclesRemoved: oldCount,
         vehiclesAdded: newCount,
       },
-      seedOutput: seedOutput.split('\n').slice(-10).join('\n'), // Ãšltimas 10 linhas
+      seedOutput: seedOutput.split('\n').slice(-10).join('\n'), // Últimas 10 linhas
       embeddingsOutput: embeddingsOutput.split('\n').slice(-10).join('\n'),
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Erro ao executar seed');
+    logger.error({ error }, '❌ Erro ao executar seed');
 
     const errorDetails =
       error instanceof AdminTaskExecutionError
@@ -139,7 +139,7 @@ router.get('/seed-renatinhu', requireSecret, async (req, res) => {
  */
 router.get('/seed-robustcar', requireSecret, async (req, res) => {
   try {
-    logger.info('ðŸš€ Seed Robust Car iniciado via HTTP endpoint');
+    logger.info('🚀 Seed Robust Car iniciado via HTTP endpoint');
 
     // Verificar se arquivo existe
     const { existsSync } = await import('fs');
@@ -147,34 +147,34 @@ router.get('/seed-robustcar', requireSecret, async (req, res) => {
     const jsonPath = join(process.cwd(), 'scripts', 'robustcar-vehicles.json');
 
     if (!existsSync(jsonPath)) {
-      throw new Error(`Arquivo nÃ£o encontrado: ${jsonPath}`);
+      throw new Error(`Arquivo não encontrado: ${jsonPath}`);
     }
 
-    logger.info(`âœ… Arquivo encontrado: ${jsonPath}`);
+    logger.info(`✅ Arquivo encontrado: ${jsonPath}`);
 
     // Executar seed
-    logger.info('ðŸ“¦ Populando banco de dados...');
+    logger.info('📦 Populando banco de dados...');
     const seedTask = await runAdminTask('seedRobustcar');
     const seedOutput = seedTask.stdout;
     logger.info({ exitCode: seedTask.exitCode }, 'Legacy seed command finished');
 
-    // Executar geraÃ§Ã£o de embeddings
-    logger.info('ðŸ”„ Gerando embeddings OpenAI...');
+    // Executar geração de embeddings
+    logger.info('🔄 Gerando embeddings OpenAI...');
     const embeddingsTask = await runAdminTask('generateEmbeddings');
     const embeddingsOutput = embeddingsTask.stdout;
     logger.info({ exitCode: embeddingsTask.exitCode }, 'Embeddings command finished');
 
-    logger.info('âœ… Seed e embeddings concluÃ­dos com sucesso!');
+    logger.info('✅ Seed e embeddings concluídos com sucesso!');
 
     res.json({
       success: true,
-      message: 'âœ… Seed e embeddings executados com sucesso!',
-      seedOutput: seedOutput.split('\n').slice(-10).join('\n'), // Ãšltimas 10 linhas
+      message: '✅ Seed e embeddings executados com sucesso!',
+      seedOutput: seedOutput.split('\n').slice(-10).join('\n'), // Últimas 10 linhas
       embeddingsOutput: embeddingsOutput.split('\n').slice(-10).join('\n'),
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Erro ao executar seed');
+    logger.error({ error }, '❌ Erro ao executar seed');
 
     const errorDetails =
       error instanceof AdminTaskExecutionError
@@ -208,12 +208,12 @@ router.get('/seed-robustcar', requireSecret, async (req, res) => {
  */
 router.post('/schema-push', requireSecret, async (req, res) => {
   try {
-    logger.info('ðŸ”§ Admin: Applying Prisma schema...');
+    logger.info('🔧 Admin: Applying Prisma schema...');
 
     const schemaTask = await runAdminTask('schemaPush');
     const output = schemaTask.stdout || schemaTask.stderr;
 
-    logger.info('âœ… Admin: Schema applied successfully');
+    logger.info('✅ Admin: Schema applied successfully');
 
     res.json({
       success: true,
@@ -221,7 +221,7 @@ router.post('/schema-push', requireSecret, async (req, res) => {
       output: output.substring(output.length - 500), // Last 500 chars
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: Schema push failed');
+    logger.error({ error }, '❌ Admin: Schema push failed');
     res.status(500).json({
       success: false,
       error: 'Schema push failed',
@@ -233,13 +233,13 @@ router.post('/schema-push', requireSecret, async (req, res) => {
 
 /**
  * GET /admin/update-urls
- * Atualiza URLs dos veÃ­culos para o site da Renatinhu's Cars
+ * Atualiza URLs dos veículos para o site da Renatinhu's Cars
  * URL Pattern: https://www.renatinhuscars.com.br/?veiculo={marca}+{modelo}+{versao}&id={id}
- * O ID Ã© extraÃ­do do fotoUrl (padrÃ£o: 394_{id}_1-1.jpg)
+ * O ID é extraído do fotoUrl (padrão: 394_{id}_1-1.jpg)
  */
 router.get('/update-urls', requireSecret, async (req, res) => {
   try {
-    logger.info('ðŸ”— Admin: Atualizando URLs dos veÃ­culos...');
+    logger.info('🔗 Admin: Atualizando URLs dos veículos...');
 
     const BASE_URL = 'https://www.renatinhuscars.com.br/';
 
@@ -307,22 +307,22 @@ router.get('/update-urls', requireSecret, async (req, res) => {
       updated++;
     }
 
-    logger.info(`âœ… URLs atualizadas: ${updated}, JÃ¡ atualizadas: ${skipped}, Sem ID: ${failed}`);
+    logger.info(`✅ URLs atualizadas: ${updated}, Já atualizadas: ${skipped}, Sem ID: ${failed}`);
 
     res.json({
       success: true,
-      message: 'âœ… URLs dos veÃ­culos atualizadas!',
+      message: '✅ URLs dos veículos atualizadas!',
       summary: {
         updated,
         skipped,
         failed,
         total: vehicles.length,
       },
-      updatedVehicles: updatedVehicles.slice(0, 10), // Primeiros 10 para nÃ£o sobrecarregar
+      updatedVehicles: updatedVehicles.slice(0, 10), // Primeiros 10 para não sobrecarregar
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Erro ao atualizar URLs');
+    logger.error({ error }, '❌ Erro ao atualizar URLs');
     res.status(500).json({
       success: false,
       error: 'Erro ao atualizar URLs',
@@ -389,7 +389,7 @@ router.post('/update-uber', requireSecret, async (req, res) => {
  */
 async function updateUberWithLLM(req: any, res: any) {
   try {
-    logger.info('ðŸš– Admin: Updating Uber eligibility with LLM...');
+    logger.info('🚖 Admin: Updating Uber eligibility with LLM...');
 
     const { uberEligibilityValidator } =
       await import('../services/uber-eligibility-validator.service');
@@ -440,7 +440,7 @@ async function updateUberWithLLM(req: any, res: any) {
 
     logger.info(
       { uberXCount, uberComfortCount, uberBlackCount },
-      'âœ… Admin: Uber eligibility updated (LLM)'
+      '✅ Admin: Uber eligibility updated (LLM)'
     );
 
     res.json({
@@ -456,7 +456,7 @@ async function updateUberWithLLM(req: any, res: any) {
       results: results.slice(0, 10),
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: Update Uber eligibility with LLM failed');
+    logger.error({ error }, '❌ Admin: Update Uber eligibility with LLM failed');
     res.status(500).json({
       success: false,
       error: 'Update failed',
@@ -468,7 +468,7 @@ async function updateUberWithLLM(req: any, res: any) {
 /**
  * Update Uber eligibility based on official requirements (sem whitelist)
  *
- * CRITÃ‰RIOS UBER/99 OFICIAIS:
+ * CRITÉRIOS UBER/99 OFICIAIS:
  *
  * Uber X / 99Pop:
  * - Ano: 2012 ou mais recente
@@ -478,8 +478,8 @@ async function updateUberWithLLM(req: any, res: any) {
  *
  * Uber Comfort / 99TOP:
  * - Ano: 2015 ou mais recente
- * - Sedan mÃ©dio/grande
- * - EspaÃ§o interno generoso
+ * - Sedan médio/grande
+ * - Espaço interno generoso
  *
  * Uber Black:
  * - Ano: 2018 ou mais recente
@@ -489,7 +489,7 @@ async function updateUberWithLLM(req: any, res: any) {
  */
 async function updateUberWithWhitelist(req: any, res: any) {
   try {
-    logger.info('ðŸš– Admin: Updating Uber eligibility (critÃ©rios oficiais)...');
+    logger.info('🚖 Admin: Updating Uber eligibility (critérios oficiais)...');
 
     const vehicles = await prisma.vehicle.findMany();
 
@@ -516,7 +516,7 @@ async function updateUberWithWhitelist(req: any, res: any) {
       const isUberXBodyType = uberXBodyTypes.some(type => carrNorm.includes(type));
       const isUberBlackBodyType = uberBlackBodyTypes.some(type => carrNorm.includes(type));
 
-      // Uber X / 99Pop - CritÃ©rios oficiais (SEM whitelist)
+      // Uber X / 99Pop - Critérios oficiais (SEM whitelist)
       const isUberX =
         !isNeverAllowed &&
         vehicle.ano >= 2012 &&
@@ -532,7 +532,7 @@ async function updateUberWithWhitelist(req: any, res: any) {
         vehicle.portas >= 4 &&
         (carrNorm.includes('sedan') || carrNorm.includes('minivan'));
 
-      // Uber Black - CritÃ©rios oficiais (SEM whitelist)
+      // Uber Black - Critérios oficiais (SEM whitelist)
       const isUberBlack =
         !isNeverAllowed &&
         vehicle.ano >= 2018 &&
@@ -597,7 +597,7 @@ async function updateUberWithWhitelist(req: any, res: any) {
           modelo: vehicle.modelo,
           ano: vehicle.ano,
           carroceria: vehicle.carroceria,
-          reason: `Carroceria "${vehicle.carroceria}" nÃ£o aceita para apps`,
+          reason: `Carroceria "${vehicle.carroceria}" não aceita para apps`,
         });
       }
     }
@@ -611,7 +611,7 @@ async function updateUberWithWhitelist(req: any, res: any) {
       trabalho: trabalhoCount,
     };
 
-    logger.info({ summary }, 'âœ… Admin: Uber eligibility updated');
+    logger.info({ summary }, '✅ Admin: Uber eligibility updated');
 
     res.json({
       success: true,
@@ -621,7 +621,7 @@ async function updateUberWithWhitelist(req: any, res: any) {
       rejectedVehicles: rejectedVehicles.slice(0, 5), // Show some rejected
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: Update Uber eligibility failed');
+    logger.error({ error }, '❌ Admin: Update Uber eligibility failed');
     res.status(500).json({
       success: false,
       error: 'Update failed',
@@ -668,7 +668,7 @@ router.get('/vehicles-uber', requireSecret, async (req, res) => {
       vehicles,
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: List Uber vehicles failed');
+    logger.error({ error }, '❌ Admin: List Uber vehicles failed');
     res.status(500).json({
       success: false,
       error: 'Failed to list vehicles',
@@ -679,11 +679,11 @@ router.get('/vehicles-uber', requireSecret, async (req, res) => {
 
 /**
  * POST /admin/validate-urls
- * Valida URLs dos veÃ­culos e marca indisponÃ­veis os que tÃªm links quebrados
+ * Valida URLs dos veículos e marca indisponíveis os que têm links quebrados
  */
 router.post('/validate-urls', requireSecret, async (req, res) => {
   try {
-    logger.info('ðŸ” Admin: Validando URLs dos veÃ­culos...');
+    logger.info('🔍 Admin: Validando URLs dos veículos...');
 
     const vehicles = await prisma.vehicle.findMany({
       where: {
@@ -699,13 +699,13 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
       },
     });
 
-    logger.info(`ðŸ“Š Total de veÃ­culos para validar: ${vehicles.length}`);
+    logger.info(`📊 Total de veículos para validar: ${vehicles.length}`);
 
     const https = await import('https');
     const invalidVehicles: any[] = [];
     let validCount = 0;
 
-    // FunÃ§Ã£o para verificar URL
+    // Função para verificar URL
     const checkUrl = (url: string): Promise<{ valid: boolean; reason?: string }> => {
       return new Promise(resolve => {
         if (!url) {
@@ -731,15 +731,15 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
               }
 
               const isInvalid =
-                html.includes('pÃ¡gina nÃ£o encontrada') ||
-                html.includes('veÃ­culo nÃ£o disponÃ­vel') ||
-                html.includes('anÃºncio nÃ£o encontrado') ||
+                html.includes('página não encontrada') ||
+                html.includes('veículo não disponível') ||
+                html.includes('anúncio não encontrado') ||
                 html.includes('vendido') ||
-                html.includes('nÃ£o existe') ||
+                html.includes('não existe') ||
                 (html.length < 5000 && !html.includes('quilometragem'));
 
               if (isInvalid) {
-                resolve({ valid: false, reason: 'PÃ¡gina invÃ¡lida/vendido' });
+                resolve({ valid: false, reason: 'Página inválida/vendido' });
                 return;
               }
 
@@ -786,7 +786,7 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
       }
     }
 
-    // Marcar veÃ­culos invÃ¡lidos como indisponÃ­veis
+    // Marcar veículos inválidos como indisponíveis
     if (invalidVehicles.length > 0) {
       const invalidIds = invalidVehicles.map(v => v.id);
       await prisma.vehicle.updateMany({
@@ -799,12 +799,12 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
 
     logger.info(
       { validCount, invalidCount: invalidVehicles.length, finalCount },
-      'âœ… Admin: ValidaÃ§Ã£o concluÃ­da'
+      '✅ Admin: Validação concluída'
     );
 
     res.json({
       success: true,
-      message: 'ValidaÃ§Ã£o de URLs concluÃ­da',
+      message: 'Validação de URLs concluída',
       summary: {
         total: vehicles.length,
         valid: validCount,
@@ -814,10 +814,10 @@ router.post('/validate-urls', requireSecret, async (req, res) => {
       invalidVehicles: invalidVehicles.slice(0, 20),
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: ValidaÃ§Ã£o de URLs falhou');
+    logger.error({ error }, '❌ Admin: Validação de URLs falhou');
     res.status(500).json({
       success: false,
-      error: 'ValidaÃ§Ã£o falhou',
+      error: 'Validação falhou',
       details: error.message,
     });
   }
@@ -833,14 +833,14 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
   try {
     const useLLM = req.query.useLLM === 'true' || req.body.useLLM === true;
 
-    logger.info({ useLLM }, 'ðŸš€ Admin: Iniciando scraping da RobustCar...');
+    logger.info({ useLLM }, '🚀 Admin: Iniciando scraping da RobustCar...');
 
     const https = await import('https');
     const baseUrl = 'https://robustcar.com.br';
     const searchUrl = 'https://robustcar.com.br/busca//pag/';
     const maxPages = 6;
 
-    // Importar classificador LLM se necessÃ¡rio
+    // Importar classificador LLM se necessário
     // let classifyVehicle: any = null;
     // if (useLLM) {
     //   // const { vehicleClassifier } = await import('../services/vehicle-classifier.service');
@@ -848,7 +848,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
     //   logger.warn('[WARN] LLM classification temporarily disabled due to missing service method');
     // }
 
-    // Fallback: Mapeamento estÃ¡tico de categorias
+    // Fallback: Mapeamento estático de categorias
     const CATEGORY_MAP: Record<string, string> = {
       CRETA: 'SUV',
       COMPASS: 'SUV',
@@ -903,7 +903,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
       return 'HATCH';
     };
 
-    // FunÃ§Ã£o para fazer requisiÃ§Ã£o HTTPS
+    // Função para fazer requisição HTTPS
     const fetchPage = (url: string): Promise<string> => {
       return new Promise((resolve, reject) => {
         https
@@ -923,7 +923,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
       });
     };
 
-    // Extrair veÃ­culos do HTML
+    // Extrair veículos do HTML
     const extractVehicles = (html: string): any[] => {
       const vehicles: any[] = [];
       const vehicleBlocks = html.split(/<h3[^>]*class="[^"]*titulo[^"]*"/).slice(1);
@@ -981,14 +981,14 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
         const vehicles = extractVehicles(html);
         if (vehicles.length === 0) break;
         allVehicles.push(...vehicles);
-        logger.info(`ðŸ“¥ PÃ¡gina ${page}: ${vehicles.length} veÃ­culos`);
+        logger.info(`📥 Página ${page}: ${vehicles.length} veículos`);
         await new Promise(r => setTimeout(r, 500));
       } catch (error) {
         logger.error({ page, error }, 'Erro no scraping');
       }
     }
 
-    logger.info(`ðŸ“Š Total scrapeado: ${allVehicles.length} veÃ­culos`);
+    logger.info(`📊 Total scrapeado: ${allVehicles.length} veículos`);
 
     // Atualizar banco de dados
     let created = 0;
@@ -1042,7 +1042,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           carroceria: vehicle.category,
           url: vehicle.detailUrl,
           disponivel: true,
-          // AptidÃµes (do LLM se disponÃ­vel)
+          // Aptidões (do LLM se disponível)
           aptoUber: false,
           aptoUberBlack: false,
           aptoFamilia: false,
@@ -1068,11 +1068,11 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           created++;
         }
       } catch (error) {
-        logger.error({ vehicle, error }, 'Erro ao salvar veÃ­culo');
+        logger.error({ vehicle, error }, 'Erro ao salvar veículo');
       }
     }
 
-    // Marcar veÃ­culos antigos como indisponÃ­veis
+    // Marcar veículos antigos como indisponíveis
     const validUrls = allVehicles.map(v => v.detailUrl);
     const outdatedResult = await prisma.vehicle.updateMany({
       where: {
@@ -1086,12 +1086,12 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
     logger.info(
       { created, updated, llmClassified, outdated: outdatedResult.count, finalCount },
-      'âœ… Admin: Scraping concluÃ­do'
+      '✅ Admin: Scraping concluído'
     );
 
     res.json({
       success: true,
-      message: 'Scraping e atualizaÃ§Ã£o concluÃ­dos',
+      message: 'Scraping e atualização concluídos',
       method: useLLM ? 'LLM classification' : 'Static mapping',
       summary: {
         scraped: allVehicles.length,
@@ -1103,7 +1103,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: Scraping falhou');
+    logger.error({ error }, '❌ Admin: Scraping falhou');
     res.status(500).json({
       success: false,
       error: 'Scraping falhou',
@@ -1114,14 +1114,14 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
 
 /**
  * POST /admin/refresh-inventory
- * Executa validaÃ§Ã£o de URLs + scraping + atualizaÃ§Ã£o (completo)
+ * Executa validação de URLs + scraping + atualização (completo)
  */
 router.post('/refresh-inventory', requireSecret, async (req, res) => {
   try {
-    logger.info('ðŸ”„ Admin: Refresh completo do inventÃ¡rio...');
+    logger.info('🔄 Admin: Refresh completo do inventário...');
 
     // 1. Validar URLs existentes
-    logger.info('ðŸ” Passo 1/2: Validando URLs existentes...');
+    logger.info('🔍 Passo 1/2: Validando URLs existentes...');
 
     const vehiclesToValidate = await prisma.vehicle.findMany({
       where: { disponivel: true, url: { not: null } },
@@ -1174,8 +1174,8 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
       invalidCount = invalidIds.length;
     }
 
-    // 2. Scraping bÃ¡sico (primeiras 3 pÃ¡ginas para rapidez)
-    logger.info('ðŸš€ Passo 2/2: Scraping rÃ¡pido...');
+    // 2. Scraping básico (primeiras 3 páginas para rapidez)
+    logger.info('🚀 Passo 2/2: Scraping rápido...');
 
     const baseUrl = 'https://robustcar.com.br';
     const fetchPage = (url: string): Promise<string> => {
@@ -1208,11 +1208,11 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
 
     const finalCount = await prisma.vehicle.count({ where: { disponivel: true } });
 
-    logger.info({ invalidCount, newVehicles, finalCount }, 'âœ… Admin: Refresh concluÃ­do');
+    logger.info({ invalidCount, newVehicles, finalCount }, '✅ Admin: Refresh concluído');
 
     res.json({
       success: true,
-      message: 'Refresh do inventÃ¡rio concluÃ­do',
+      message: 'Refresh do inventário concluído',
       summary: {
         urlsInvalidated: invalidCount,
         potentialNewVehicles: newVehicles,
@@ -1220,11 +1220,11 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
       },
       note:
         newVehicles > 0
-          ? `Encontrados ${newVehicles} novos veÃ­culos. Execute /admin/scrape-robustcar para importÃ¡-los.`
-          : 'InventÃ¡rio atualizado, sem novos veÃ­culos.',
+          ? `Encontrados ${newVehicles} novos veículos. Execute /admin/scrape-robustcar para importá-los.`
+          : 'Inventário atualizado, sem novos veículos.',
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: Refresh falhou');
+    logger.error({ error }, '❌ Admin: Refresh falhou');
     res.status(500).json({
       success: false,
       error: 'Refresh falhou',
@@ -1235,11 +1235,11 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
 
 /**
  * GET /admin/debug-vehicles
- * Mostra estatÃ­sticas dos veÃ­culos no banco para debug
+ * Mostra estatísticas dos veículos no banco para debug
  */
 router.get('/debug-vehicles', requireSecret, async (req, res) => {
   try {
-    // Total de veÃ­culos
+    // Total de veículos
     const total = await prisma.vehicle.count();
     const available = await prisma.vehicle.count({ where: { disponivel: true } });
 
@@ -1251,7 +1251,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
       orderBy: { _count: { carroceria: 'desc' } },
     });
 
-    // Buscar pickups especificamente (case insensitive nÃ£o funciona no groupBy)
+    // Buscar pickups especificamente (case insensitive não funciona no groupBy)
     const pickups = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
@@ -1275,7 +1275,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
       },
     });
 
-    // Listar todos os valores Ãºnicos de carroceria
+    // Listar todos os valores únicos de carroceria
     const allBodyTypes = await prisma.vehicle.findMany({
       where: { disponivel: true },
       select: { carroceria: true },
@@ -1300,7 +1300,7 @@ router.get('/debug-vehicles', requireSecret, async (req, res) => {
       })),
     });
   } catch (error: any) {
-    logger.error({ error }, 'âŒ Admin: Debug vehicles failed');
+    logger.error({ error }, '❌ Admin: Debug vehicles failed');
     res.status(500).json({
       success: false,
       error: error.message,
@@ -1349,8 +1349,8 @@ router.get('/debug-env', requireSecret, async (_req, res) => {
         seedExists: existsSync(seedPath),
       },
       env: {
-        DATABASE_URL: process.env.DATABASE_URL ? 'âœ… Configurado' : 'âŒ NÃ£o configurado',
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY ? 'âœ… Configurado' : 'âŒ NÃ£o configurado',
+        DATABASE_URL: process.env.DATABASE_URL ? '✅ Configurado' : '❌ Não configurado',
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '✅ Configurado' : '❌ Não configurado',
         NODE_ENV: process.env.NODE_ENV,
       },
       files: {
