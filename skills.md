@@ -502,10 +502,13 @@ LANGCHAIN_PROJECT=carinsight
 
 ### Deploy Railway
 
-1. Push para `main` → CI/CD roda automaticamente
-2. Jobs: test → lint → build → deploy
-3. Deploy via Railway CLI: `railway up --detach --service faciliauto-mvp-v2`
-4. Rollback: `git revert HEAD && git push`
+> **⚠️ REGRA OBRIGATÓRIA**: Antes de qualquer `git push`, SEMPRE rodar `npm run verify:strict` (format:check + lint + build + test:run). Nunca subir código sem passar no CI local primeiro.
+
+1. Rodar `npm run verify:strict` — deve passar 100%
+2. Push para `main` → CI/CD roda automaticamente
+3. Jobs: test → lint → build → deploy
+4. Deploy via Railway CLI: `railway up --detach --service faciliauto-mvp-v2`
+5. Rollback: `git revert HEAD && git push`
 
 **Validação**: `src/config/env.ts` (schema Zod)
 
