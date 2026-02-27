@@ -190,11 +190,7 @@ function mockResponse(messages: ChatMessage[]): {
   }
 
   // Recommendation reasoning
-  if (
-    content.includes('explique') ||
-    content.includes('por que') ||
-    content.includes('veículo:')
-  ) {
+  if (content.includes('explique') || content.includes('por que') || content.includes('veículo:')) {
     return {
       content:
         'Excelente custo-benefício! Atende suas necessidades de espaço e está dentro do orçamento.',
