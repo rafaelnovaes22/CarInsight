@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Name Correction Detector
  *
  * Detects when a user is correcting their previously stored name.

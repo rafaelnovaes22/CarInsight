@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FallbackResponseFormatter
  *
  * Formats fallback results into user-friendly Portuguese messages for WhatsApp.

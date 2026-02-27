@@ -1,4 +1,4 @@
-﻿/**
+/**
  * VehicleExpertAgent
  *
  * AI agent specialized in vehicle sales conversations.

@@ -1,4 +1,4 @@
-﻿import OpenAI from 'openai';
+import OpenAI from 'openai';
 import Groq from 'groq-sdk';
 import { env } from '../config/env';
 import { logger } from './logger';

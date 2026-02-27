@@ -1,4 +1,4 @@
-﻿import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { tavilySearchService } from '../services/tavily-search.service';
 import { openai } from '../lib/openai';
 import { logger } from '../lib/logger';

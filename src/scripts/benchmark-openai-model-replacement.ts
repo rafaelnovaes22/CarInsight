@@ -1,4 +1,4 @@
-﻿import OpenAI from 'openai';
+import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 
 dotenv.config();

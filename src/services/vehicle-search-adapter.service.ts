@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Vehicle Search Adapter
  *
  * Adapter to use inMemoryVectorStore with the interface expected by VehicleExpertAgent

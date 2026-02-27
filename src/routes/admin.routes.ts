@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import { AdminTaskExecutionError, runAdminTask } from '../services/admin-task-runner.service';
 import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';

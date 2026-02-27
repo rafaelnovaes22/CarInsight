@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Suggestion Response Handler
  *
  * Handles user responses when the bot is waiting for a yes/no confirmation

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Uber Eligibility Validator
  *
  * Uses LLM to validate Uber/99 eligibility based on official criteria

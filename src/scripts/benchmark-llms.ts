@@ -1,4 +1,4 @@
-﻿import Groq from 'groq-sdk';
+import Groq from 'groq-sdk';
 import OpenAI from 'openai';
 import { PrismaClient } from '@prisma/client';
 import * as dotenv from 'dotenv';

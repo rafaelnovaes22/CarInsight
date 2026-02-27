@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { logger } from '../lib/logger';
 import { env } from '../config/env';
 import { cache } from '../lib/redis';
@@ -353,7 +353,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         {
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
           },
           timeout: 10000,
         }
@@ -454,7 +454,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         {
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
           },
         }
       );
@@ -488,7 +488,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         {
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
           },
         }
       );
@@ -525,7 +525,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         {
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
           },
         }
       );
