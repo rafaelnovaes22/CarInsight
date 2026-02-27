@@ -176,6 +176,27 @@ export class VehicleExpertAgent {
             { suspected, confirmed: suspected * 1000 },
             'Budget confirmed by user (x1000)'
           );
+
+          // Guard: se acabou de confirmar budget mas falta usage, perguntar imediatamente
+          if (!updatedProfile.usage && !updatedProfile.usoPrincipal) {
+            const isMoto =
+              updatedProfile.bodyType === 'moto' || updatedProfile.priorities?.includes('moto');
+            const vehicleEmoji = isMoto ? '🏍️' : '🚗';
+            const nextQuestion = `Ótimo, anotei! ${vehicleEmoji} Qual vai ser o uso principal? Cidade, viagens, trabalho...?`;
+
+            return {
+              response: nextQuestion,
+              extractedPreferences: updatedProfile,
+              needsMoreInfo: ['usage'],
+              canRecommend: false,
+              nextMode: context.mode,
+              metadata: {
+                processingTime: Date.now() - startTime,
+                confidence: 0.9,
+                llmUsed: 'rule-based',
+              },
+            };
+          }
           // Continue normal flow with corrected budget
         } else if (hasNewNumber) {
           // User sent a different number — let extraction handle it normally

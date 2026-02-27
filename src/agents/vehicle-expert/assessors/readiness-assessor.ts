@@ -103,16 +103,16 @@ export function assessReadiness(
     canRecommend = true;
     action = 'recommend_now';
     reasoning = 'Informações essenciais coletadas';
-  } else if (missingRequired.length === 1 && context.metadata.messageCount >= 5) {
+  } else if (missingRequired.length === 1 && context.metadata.messageCount >= 8) {
     // Has most info and conversation is getting long
     canRecommend = true;
     action = 'recommend_now';
-    reasoning = 'Informação suficiente após várias mensagens';
-  } else if (context.metadata.messageCount >= 8) {
+    reasoning = `Informação suficiente após várias mensagens (faltando: ${missingRequired.join(', ')})`;
+  } else if (context.metadata.messageCount >= 12) {
     // Conversation too long, recommend anyway
     canRecommend = true;
     action = 'recommend_now';
-    reasoning = 'Conversa muito longa, recomendar com informações parciais';
+    reasoning = `Conversa muito longa, recomendar com informações parciais (faltando: ${missingRequired.join(', ')})`;
   } else {
     canRecommend = false;
     action = 'continue_asking';
