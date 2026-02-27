@@ -326,14 +326,18 @@ export class WhatsAppMetaService implements IWhatsAppService {
    * Send text message (Implementation of IWhatsAppService)
    */
   async sendMessage(to: string, text: string, options?: SendMessageOptions): Promise<void> {
-    try {
-      logger.info('ðŸ”„ Calling Meta API...', {
-        to: this.maskPhoneNumber(to),
-        apiUrl: this.apiUrl,
-        textLength: text.length,
-      });
+    const MAX_WHATSAPP_LENGTH = 4096;
+    let body = text;
+    if (body.length > MAX_WHATSAPP_LENGTH) {
+      logger.warn(
+        { originalLength: body.length, to: this.maskPhoneNumber(to) },
+        'Message exceeds WhatsApp limit, truncating'
+      );
+      body = body.substring(0, MAX_WHATSAPP_LENGTH - 3) + '...';
+    }
 
-      const response = await axios.post(
+    const makeRequest = async () => {
+      return axios.post(
         this.apiUrl,
         {
           messaging_product: 'whatsapp',
@@ -342,7 +346,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
           type: 'text',
           text: {
             preview_url: options?.previewUrl ?? false,
-            body: text,
+            body,
           },
           context: options?.quotedMessageId ? { message_id: options.quotedMessageId } : undefined,
         },
@@ -354,16 +358,56 @@ export class WhatsAppMetaService implements IWhatsAppService {
           timeout: 10000,
         }
       );
+    };
+
+    try {
+      logger.info('ðŸ”„ Calling Meta API...', {
+        to: this.maskPhoneNumber(to),
+        apiUrl: this.apiUrl,
+        textLength: body.length,
+      });
+
+      const response = await makeRequest();
 
       logger.info('âœ… Message sent via Meta API', {
         messageId: response.data.messages?.[0]?.id,
         to: this.maskPhoneNumber(to),
       });
     } catch (error: any) {
+      const status = error.response?.status;
+      const isRetryable =
+        !status || status >= 500 || error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT';
+
+      if (isRetryable) {
+        logger.warn(
+          { status, code: error.code, to: this.maskPhoneNumber(to) },
+          'Meta API transient error, retrying in 1s...'
+        );
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+          const response = await makeRequest();
+          logger.info('âœ… Message sent via Meta API (retry)', {
+            messageId: response.data.messages?.[0]?.id,
+            to: this.maskPhoneNumber(to),
+          });
+          return;
+        } catch (retryError: any) {
+          logger.error(
+            {
+              error: retryError.response?.data || retryError.message,
+              status: retryError.response?.status,
+              to: this.maskPhoneNumber(to),
+            },
+            'âŒ Failed to send message via Meta API (retry also failed)'
+          );
+          throw retryError;
+        }
+      }
+
       logger.error(
         {
           error: error.response?.data || error.message,
-          status: error.response?.status,
+          status,
           statusText: error.response?.statusText,
           to: this.maskPhoneNumber(to),
           apiUrl: this.apiUrl,

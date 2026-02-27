@@ -21,8 +21,8 @@ class RedisClientService {
       this.client = new Redis(redisUrl, {
         maxRetriesPerRequest: 3,
         retryStrategy(times) {
-          if (times > 5) {
-            logger.error('Redis: Limite máximo de tentativas de reconexão atingido.');
+          if (times > 3) {
+            logger.warn('Redis: Limite máximo de tentativas de reconexão atingido.');
             return null; // Parar de tentar
           }
           const delay = Math.min(times * 200, 2000);
@@ -36,7 +36,7 @@ class RedisClientService {
       });
 
       this.client.on('error', err => {
-        logger.error({ err: err.message }, 'Erro na conexão com Redis');
+        logger.warn({ err: err.message }, 'Erro na conexão com Redis');
         this.isConnected = false;
       });
 

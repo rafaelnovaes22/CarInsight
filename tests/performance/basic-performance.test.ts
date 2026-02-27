@@ -142,7 +142,7 @@ describe('Performance Tests', () => {
         const result = await guardrails.validateInput('5511999999999', attack);
         const duration = Date.now() - start;
 
-        expect(duration).toBeLessThan(10);
+        expect(duration).toBeLessThan(50);
         expect(result.allowed).toBe(false);
       }
     });

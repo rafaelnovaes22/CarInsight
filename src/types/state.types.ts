@@ -99,6 +99,12 @@ export interface CustomerProfile {
   _awaitingTradeInDetails?: boolean; // Aguardando detalhes do veículo de troca
   _acceptsSuggestions?: boolean; // Usuário aceitou receber sugestões (respondeu "sugestões" quando perguntado sobre preferência)
   tradeInKm?: number; // Km do veículo na troca
+
+  // Budget/down payment confirmation guardrails
+  _awaitingBudgetConfirmation?: boolean; // Valor suspeito de orçamento (ex: "100" em vez de "100 mil")
+  _suspectedBudget?: number; // Valor bruto enviado pelo usuário (ex: 100)
+  _awaitingDownPaymentConfirmation?: boolean; // Valor de entrada muito baixo
+  _suspectedDownPayment?: number; // Valor bruto de entrada enviado pelo usuário
 }
 
 /**

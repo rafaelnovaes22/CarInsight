@@ -9,11 +9,33 @@ const router = Router();
 // IMPORTANT: This endpoint must be protected in production
 const SEED_SECRET = process.env.SEED_SECRET;
 
+// Rate limiting for failed admin auth attempts
+const AUTH_MAX_ATTEMPTS = 5;
+const AUTH_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const failedAttempts = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(req: any): string {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || 'unknown';
+}
+
 // Middleware para validar secret
 function requireSecret(req: any, res: any, next: () => void) {
   if (!SEED_SECRET) {
     logger.error('SEED_SECRET is not configured; admin routes are disabled');
     return res.status(503).json({ error: 'Admin routes are disabled' });
+  }
+
+  const ip = getClientIp(req);
+
+  // Check rate limit
+  const attempts = failedAttempts.get(ip);
+  if (attempts) {
+    if (Date.now() > attempts.resetAt) {
+      failedAttempts.delete(ip);
+    } else if (attempts.count >= AUTH_MAX_ATTEMPTS) {
+      logger.warn({ ip }, 'Admin auth rate limited');
+      return res.status(429).json({ error: 'Too many attempts. Try again later.' });
+    }
   }
 
   const headerSecret = req.headers['x-admin-secret'];
@@ -22,7 +44,14 @@ function requireSecret(req: any, res: any, next: () => void) {
   const secret = headerSecret || bearerSecret;
 
   if (secret !== SEED_SECRET) {
-    logger.warn('Unauthorized admin access attempt');
+    // Track failed attempt
+    const existing = failedAttempts.get(ip);
+    if (existing && Date.now() <= existing.resetAt) {
+      existing.count++;
+    } else {
+      failedAttempts.set(ip, { count: 1, resetAt: Date.now() + AUTH_WINDOW_MS });
+    }
+    logger.warn({ ip }, 'Unauthorized admin access attempt');
     return res.status(403).json({ error: 'Unauthorized - Invalid secret' });
   }
   next();

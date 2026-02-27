@@ -10,6 +10,9 @@ import { conversationalHandler } from './conversational-handler.service';
 import { calculateCost } from '../lib/llm-router';
 import { maskPhoneNumber } from '../lib/privacy';
 
+/** Cached flag – set to false on first explanation-column error so we stop trying */
+let explanationColumnAvailable = true;
+
 /**
  * Options for audio message handling
  * Requirements: 5.4
@@ -376,33 +379,28 @@ Para começar, qual é o seu nome?`;
             position: i + 1,
           };
 
+          const explanation = rec.explanation ? (rec.explanation as any) : undefined;
+          const data =
+            explanationColumnAvailable && explanation ? { ...baseData, explanation } : baseData;
+
           try {
-            // Try to persist structured explanation when schema/client are up-to-date.
-            // If runtime/client still uses old schema, fallback below keeps compatibility.
-            await prisma.recommendation.create({
-              data: {
-                ...baseData,
-                explanation: rec.explanation ? (rec.explanation as any) : undefined,
-              } as any,
-            });
+            await prisma.recommendation.create({ data: data as any });
           } catch (error: any) {
             const message = String(error?.message || '');
 
-            // Ignore duplicate errors
             if (message.includes('Unique constraint')) {
               continue;
             }
 
-            const isExplanationCompatibilityIssue =
+            if (
               message.includes('Unknown argument `explanation`') ||
               (message.includes('column') && message.includes('explanation')) ||
-              (message.includes('does not exist') && message.includes('explanation'));
-
-            if (isExplanationCompatibilityIssue) {
+              (message.includes('does not exist') && message.includes('explanation'))
+            ) {
+              explanationColumnAvailable = false;
+              logger.warn('Explanation column not available in DB, disabling for this session');
               try {
-                await prisma.recommendation.create({
-                  data: baseData,
-                });
+                await prisma.recommendation.create({ data: baseData });
               } catch (fallbackError: any) {
                 const fallbackMessage = String(fallbackError?.message || '');
                 if (!fallbackMessage.includes('Unique constraint')) {

@@ -34,6 +34,16 @@ export function inferBodyType(model: string, explicitBodyType?: string): BodyTyp
     if (bodyLower.includes('suv')) return { type: 'suv', name: 'SUVs' };
     if (bodyLower.includes('pickup') || bodyLower.includes('picape'))
       return { type: 'pickup', name: 'pickups' };
+    if (bodyLower.includes('esportivo') || bodyLower.includes('sport'))
+      return { type: 'esportivo', name: 'esportivos' };
+    if (bodyLower.includes('van') || bodyLower.includes('minivan'))
+      return { type: 'van', name: 'vans' };
+    if (
+      bodyLower.includes('conversivel') ||
+      bodyLower.includes('convers\u00edvel') ||
+      bodyLower.includes('cabriolet')
+    )
+      return { type: 'conversivel', name: 'convers\u00edveis' };
   }
 
   // Infer from model name

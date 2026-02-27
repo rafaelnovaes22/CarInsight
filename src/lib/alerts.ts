@@ -105,9 +105,9 @@ export class AlertService {
  */
 export const alerts = {
   /**
-   * Alert when a node takes too long (>3s = bad UX)
+   * Alert when a node takes too long (>5s = bad UX, accounts for multi-LLM-call nodes)
    */
-  slowNode: (node: string, latencyMs: number, threshold: number = 3000) => {
+  slowNode: (node: string, latencyMs: number, threshold: number = 5000) => {
     if (latencyMs > threshold) {
       AlertService.send({
         severity: 'warning',

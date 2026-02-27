@@ -13,6 +13,9 @@ import {
   RecommendationStage,
 } from '../services/performance-metrics.service';
 
+/** Cached flag – set to false on first explanation-column error so we stop trying */
+let explanationColumnAvailable = true;
+
 interface VehicleMatch {
   vehicle: any;
   matchScore: number;
@@ -232,21 +235,21 @@ export class RecommendationAgent {
         position: i + 1,
       };
 
+      const explanation = (matches[i] as any).explanation || undefined;
+      const data =
+        explanationColumnAvailable && explanation ? { ...baseData, explanation } : baseData;
+
       try {
-        await prisma.recommendation.create({
-          data: {
-            ...baseData,
-            explanation: (matches[i] as any).explanation || undefined,
-          } as any,
-        });
+        await prisma.recommendation.create({ data: data as any });
       } catch (error: any) {
         const message = String(error?.message || '');
-        const isExplanationCompatibilityIssue =
+        if (
           message.includes('Unknown argument `explanation`') ||
           (message.includes('column') && message.includes('explanation')) ||
-          (message.includes('does not exist') && message.includes('explanation'));
-
-        if (isExplanationCompatibilityIssue) {
+          (message.includes('does not exist') && message.includes('explanation'))
+        ) {
+          explanationColumnAvailable = false;
+          logger.warn('Explanation column not available in DB, disabling for this session');
           await prisma.recommendation.create({ data: baseData });
         } else {
           throw error;

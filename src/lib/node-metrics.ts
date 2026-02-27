@@ -65,8 +65,8 @@ export class NodeTimer {
 
     logger.info(metrics, `${this.nodeName}Node: Execution complete`);
 
-    // Auto-alert for slow nodes (>3s threshold)
-    if (latencyMs > 3000) {
+    // Auto-alert for slow nodes (>5s threshold, accounts for multi-LLM-call nodes)
+    if (latencyMs > 5000) {
       // Dynamic import to avoid circular dependency
       import('./alerts').then(({ alerts }) => {
         alerts.slowNode(this.nodeName, latencyMs);

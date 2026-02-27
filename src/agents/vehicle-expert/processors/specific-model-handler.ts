@@ -230,7 +230,8 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
     ? `${capitalize(searchedItem)}${yearText}`
     : `esse modelo${yearText}`;
 
-  const bodyTypeInfo = inferBodyType(searchedItem || '');
+  const explicitBodyType = updatedProfile.bodyType || extracted.extracted.bodyType;
+  const bodyTypeInfo = inferBodyType(searchedItem || '', explicitBodyType);
 
   if (bodyTypeInfo) {
     logger.info(

@@ -519,15 +519,44 @@ Saída: {
     const sanitized: Partial<CustomerProfile> = {};
     const maxAcceptedYear = new Date().getFullYear() + 1;
 
-    // Budget validation
+    // Budget validation with suspicious value guardrail
+    // Values <= 1000 are likely missing "mil" (e.g. "100" meaning "100 mil")
+    const SUSPICIOUS_BUDGET_THRESHOLD = 1000;
     if (extracted.budget !== undefined && extracted.budget !== null) {
-      sanitized.budget = Math.max(0, Math.floor(extracted.budget));
+      const budget = Math.max(0, Math.floor(extracted.budget));
+      if (budget > 0 && budget <= SUSPICIOUS_BUDGET_THRESHOLD) {
+        sanitized._suspectedBudget = budget;
+        sanitized._awaitingBudgetConfirmation = true;
+        // Do NOT set budget — wait for user confirmation
+      } else {
+        sanitized.budget = budget;
+      }
     }
     if (extracted.budgetMin !== undefined && extracted.budgetMin !== null) {
-      sanitized.budgetMin = Math.max(0, Math.floor(extracted.budgetMin));
+      const budgetMin = Math.max(0, Math.floor(extracted.budgetMin));
+      if (budgetMin > SUSPICIOUS_BUDGET_THRESHOLD) {
+        sanitized.budgetMin = budgetMin;
+      }
     }
     if (extracted.budgetMax !== undefined && extracted.budgetMax !== null) {
-      sanitized.budgetMax = Math.max(0, Math.floor(extracted.budgetMax));
+      const budgetMax = Math.max(0, Math.floor(extracted.budgetMax));
+      if (budgetMax > SUSPICIOUS_BUDGET_THRESHOLD) {
+        sanitized.budgetMax = budgetMax;
+      }
+    }
+
+    // Down payment validation guardrail
+    // Minimum down payment is ~20% of cheapest vehicle (~R$ 10k) = R$ 2k
+    const MIN_DOWN_PAYMENT = 2000;
+    if (extracted.financingDownPayment !== undefined && extracted.financingDownPayment !== null) {
+      const dp = Math.max(0, Math.floor(extracted.financingDownPayment));
+      if (dp > 0 && dp < MIN_DOWN_PAYMENT) {
+        sanitized._suspectedDownPayment = dp;
+        sanitized._awaitingDownPaymentConfirmation = true;
+        // Do NOT set financingDownPayment — wait for user confirmation
+      } else {
+        sanitized.financingDownPayment = dp;
+      }
     }
 
     // People validation (1-10)
