@@ -69,10 +69,7 @@ describe('generateNextQuestion fallback', () => {
   });
 
   it('should NOT ask about usage when profile.usage already exists', async () => {
-    const options = buildOptions(
-      { budget: 50000, usage: 'viagem' },
-      ['bodyType']
-    );
+    const options = buildOptions({ budget: 50000, usage: 'viagem' }, ['bodyType']);
 
     const result = await generateNextQuestion(options);
 
@@ -80,10 +77,10 @@ describe('generateNextQuestion fallback', () => {
   });
 
   it('should NOT ask about usage when profile.usoPrincipal already exists', async () => {
-    const options = buildOptions(
-      { budget: 50000, usoPrincipal: 'trabalho' } as any,
-      ['usage', 'bodyType']
-    );
+    const options = buildOptions({ budget: 50000, usoPrincipal: 'trabalho' } as any, [
+      'usage',
+      'bodyType',
+    ]);
 
     const result = await generateNextQuestion(options);
 
@@ -91,10 +88,7 @@ describe('generateNextQuestion fallback', () => {
   });
 
   it('should ask about bodyType when budget and usage are already filled', async () => {
-    const options = buildOptions(
-      { budget: 50000, usage: 'cidade' },
-      ['bodyType']
-    );
+    const options = buildOptions({ budget: 50000, usage: 'cidade' }, ['bodyType']);
 
     const result = await generateNextQuestion(options);
 
@@ -102,10 +96,7 @@ describe('generateNextQuestion fallback', () => {
   });
 
   it('should use "na moto" term for motorcycle profiles', async () => {
-    const options = buildOptions(
-      { bodyType: 'moto' },
-      ['budget', 'usage']
-    );
+    const options = buildOptions({ bodyType: 'moto' }, ['budget', 'usage']);
 
     const result = await generateNextQuestion(options);
 
@@ -114,10 +105,7 @@ describe('generateNextQuestion fallback', () => {
   });
 
   it('should use "na moto" when priorities include moto', async () => {
-    const options = buildOptions(
-      { priorities: ['moto'] },
-      ['budget', 'usage']
-    );
+    const options = buildOptions({ priorities: ['moto'] }, ['budget', 'usage']);
 
     const result = await generateNextQuestion(options);
 

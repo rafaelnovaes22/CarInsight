@@ -26,7 +26,10 @@ vi.mock('../../src/lib/llm-router', () => ({
     }
 
     // Question generation
-    if (systemMessage.includes('PRÓXIMA MELHOR PERGUNTA') || systemMessage.includes('próxima melhor pergunta')) {
+    if (
+      systemMessage.includes('PRÓXIMA MELHOR PERGUNTA') ||
+      systemMessage.includes('próxima melhor pergunta')
+    ) {
       // Should ask about bodyType if budget and usage are filled
       return 'Que tipo de veículo você prefere? SUV, sedan, hatch?';
     }

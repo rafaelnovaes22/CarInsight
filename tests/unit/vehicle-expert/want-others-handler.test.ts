@@ -56,7 +56,10 @@ vi.mock('../../../src/agents/vehicle-expert/utils/vehicle-inference', () => ({
   determineCategory: vi.fn(() => ''),
 }));
 
-import { handleWantOthers, WantOthersContext } from '../../../src/agents/vehicle-expert/handlers/want-others.handler';
+import {
+  handleWantOthers,
+  WantOthersContext,
+} from '../../../src/agents/vehicle-expert/handlers/want-others.handler';
 import { prisma } from '../../../src/lib/prisma';
 
 describe('handleWantOthers — handleListCategories (empty lastShownVehicles)', () => {
