@@ -127,11 +127,27 @@ export async function generateNextQuestion(
       ? `\n\n⚠️ IMPORTANTE: O cliente mencionou "${appName}" - USE ESTE NOME nas suas respostas, NÃO substitua por outro nome de app!`
       : '';
 
+    // Build list of already-answered fields to prevent re-asking
+    const answeredFields: string[] = [];
+    if (profile.budget) answeredFields.push('orçamento/budget');
+    if (profile.usage || profile.usoPrincipal) answeredFields.push('uso principal/usage');
+    if (profile.bodyType) answeredFields.push('tipo de veículo/bodyType');
+    if (profile.people || profile.minSeats) answeredFields.push('quantidade de pessoas');
+    if (profile.transmission) answeredFields.push('câmbio/transmissão');
+    if (profile.minYear) answeredFields.push('ano mínimo');
+    if (profile.brand) answeredFields.push('marca');
+    if (profile.model) answeredFields.push('modelo');
+
+    const answeredContext =
+      answeredFields.length > 0
+        ? `\n\n⛔ CAMPOS JÁ RESPONDIDOS (NÃO PERGUNTE SOBRE ESTES): ${answeredFields.join(', ')}`
+        : '';
+
     const prompt = `${SYSTEM_PROMPT}
 
 PERFIL ATUAL DO CLIENTE:
 ${JSON.stringify(profile, null, 2)}
-${appContext}
+${appContext}${answeredContext}
 
 INFORMAÇÕES QUE AINDA PRECISAMOS:
 ${missingFields.join(', ')}
@@ -150,6 +166,8 @@ Gere a PRÓXIMA MELHOR PERGUNTA para fazer ao cliente.
         5. Se apropriado, ofereça contexto antes de perguntar
         6. Use emojis com moderação (apenas se natural)
         7. Se o cliente mencionou um app de transporte específico (99, Uber), USE ESSE NOME na sua resposta
+        8. NUNCA repita uma pergunta sobre algo que o cliente já respondeu (veja CAMPOS JÁ RESPONDIDOS acima)
+        9. Se o cliente já informou o uso (ex: lazer, trabalho, família), NÃO pergunte novamente para que vai usar o carro
 
 EXEMPLO BOM:
 "Legal! Para viagens em família, SUVs e sedans espaçosos são ótimas opções. Qual sua faixa de orçamento aproximada?"
@@ -186,10 +204,12 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
     const vehicleEmoji = isMoto ? '🏍️' : '🚗';
 
     let fallbackQuestion = `Me conta mais sobre o que você busca ${isMoto ? 'na moto' : 'no carro'} ideal?`;
-    if (missingFields.includes('budget') || !profile.budget) {
+    if (missingFields.includes('budget') && !profile.budget) {
       fallbackQuestion = `💰 Até quanto você pretende investir ${vehicleTerm}?`;
-    } else if (missingFields.includes('usage') || !profile.usage) {
+    } else if (missingFields.includes('usage') && !profile.usage && !profile.usoPrincipal) {
       fallbackQuestion = `${vehicleEmoji} Qual vai ser o uso principal? Cidade, viagens, trabalho?`;
+    } else if (!profile.bodyType) {
+      fallbackQuestion = `${vehicleEmoji} Que tipo de carro você prefere? SUV, sedan, hatch, pickup?`;
     }
 
     return { question: fallbackQuestion };

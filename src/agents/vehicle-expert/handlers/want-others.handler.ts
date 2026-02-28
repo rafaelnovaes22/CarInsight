@@ -12,6 +12,7 @@
  */
 
 import { logger } from '../../../lib/logger';
+import { prisma } from '../../../lib/prisma';
 import { vehicleSearchAdapter } from '../../../services/vehicle-search-adapter.service';
 import { CustomerProfile, VehicleRecommendation } from '../../../types/state.types';
 import { formatRecommendations as formatRecommendationsUtil } from '../formatters';
@@ -92,6 +93,76 @@ function buildSearchQuery(bodyType: string, category: string): string {
 }
 
 // ============================================================================
+// CATEGORY LISTING (when no vehicles were shown)
+// ============================================================================
+
+const CATEGORY_LABELS: Record<string, { name: string; emoji: string }> = {
+  suv: { name: 'SUVs', emoji: '🚙' },
+  sedan: { name: 'Sedans', emoji: '🚗' },
+  hatch: { name: 'Hatches', emoji: '🚘' },
+  pickup: { name: 'Pickups', emoji: '🛻' },
+  minivan: { name: 'Minivans', emoji: '🚐' },
+  moto: { name: 'Motos', emoji: '🏍️' },
+};
+
+/**
+ * List available vehicle categories when no vehicles were previously shown.
+ * Queries the database for category counts and presents them to the user.
+ */
+async function handleListCategories(ctx: WantOthersContext): Promise<HandlerResult> {
+  const { extracted, updatedProfile, startTime } = ctx;
+
+  try {
+    const categoryCounts = await prisma.vehicle.groupBy({
+      by: ['carroceria'],
+      _count: { id: true },
+      where: { disponivel: true },
+    });
+
+    if (categoryCounts.length === 0) {
+      return { handled: false };
+    }
+
+    // Sort by count descending
+    const sorted = categoryCounts
+      .filter(c => c._count.id > 0)
+      .sort((a, b) => b._count.id - a._count.id);
+
+    const lines = sorted.map(c => {
+      const key = c.carroceria.toLowerCase().trim();
+      const label = CATEGORY_LABELS[key] || { name: c.carroceria, emoji: '🚗' };
+      return `${label.emoji} *${label.name}* — ${c._count.id} disponíve${c._count.id > 1 ? 'is' : 'l'}`;
+    });
+
+    const message =
+      `Temos estas categorias disponíveis no estoque:\n\n` +
+      lines.join('\n') +
+      `\n\nQual categoria te interessa? Me diz que eu mostro as opções! 😊`;
+
+    return {
+      handled: true,
+      response: buildResponse(
+        message,
+        {
+          ...extracted.extracted,
+          _showedRecommendation: false,
+          _waitingForSuggestionResponse: true,
+        },
+        {
+          needsMoreInfo: ['bodyType'],
+          nextMode: 'discovery',
+          startTime,
+          confidence: 0.9,
+        }
+      ),
+    };
+  } catch (error) {
+    logger.error({ error }, 'Failed to list available categories');
+    return { handled: false };
+  }
+}
+
+// ============================================================================
 // MAIN HANDLER
 // ============================================================================
 
@@ -105,9 +176,10 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
   const { userMessage, lastShownVehicles, lastSearchType, extracted, updatedProfile, startTime } =
     ctx;
 
-  // Guard: Need at least one shown vehicle
+  // When no vehicles were previously shown (e.g. after "não encontrei" message),
+  // list available categories so user can pick one
   if (!lastShownVehicles || lastShownVehicles.length === 0) {
-    return { handled: false };
+    return handleListCategories(ctx);
   }
 
   const firstVehicle = lastShownVehicles[0];

@@ -115,7 +115,7 @@ export async function formatRecommendations(
 Posso ajustar os critérios? Por exemplo:
 - Aumentar o orçamento em 10-20%?
 - Considerar anos um pouco mais antigos?
-- Ver outras categorias de veículos?
+- Ver outras categorias (SUV, sedan, hatch, pickup)?
 
 Me diz o que prefere!`;
   }

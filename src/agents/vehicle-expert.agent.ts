@@ -973,6 +973,26 @@ export class VehicleExpertAgent {
         }
       }
 
+      // 2.54. Handle "outras categorias" when recommendation showed no results
+      // (showedRecommendation=true but lastShownVehicles is empty)
+      if (showedRecommendation && (!lastShownVehicles || lastShownVehicles.length === 0)) {
+        const postIntent = detectPostRecommendationIntent(userMessage, []);
+        if (postIntent === 'want_others') {
+          const wantOthersCtx: WantOthersContext = {
+            userMessage,
+            lastShownVehicles: [],
+            lastSearchType,
+            extracted,
+            updatedProfile,
+            startTime,
+          };
+          const wantOthersResult = await handleWantOthers(wantOthersCtx);
+          if (wantOthersResult.handled && wantOthersResult.response) {
+            return wantOthersResult.response;
+          }
+        }
+      }
+
       // 2.55. Check if user is responding after seeing a recommendation
       if (showedRecommendation && lastShownVehicles && lastShownVehicles.length > 0) {
         // AUTO-DETECTION: Trade-In Discussion (Post-Recommendation)
