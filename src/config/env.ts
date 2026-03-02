@@ -47,6 +47,12 @@ const envSchema = z.object({
     .transform(val => val === 'true'),
   SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE: z.coerce.number().default(0),
 
+  // Message Queue (BullMQ)
+  ENABLE_MESSAGE_QUEUE: z
+    .string()
+    .default('false')
+    .transform(val => val === 'true'),
+
   // Audio Transcription
   ENABLE_AUDIO_TRANSCRIPTION: z
     .string()

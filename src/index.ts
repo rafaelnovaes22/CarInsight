@@ -1,9 +1,12 @@
 import express from 'express';
 import path from 'path';
+import type { Worker } from 'bullmq';
 import { env } from './config/env';
 import { logger } from './lib/logger';
 import { maskPhoneNumber } from './lib/privacy';
 import { prisma } from './lib/prisma';
+import { createMessageQueue, closeMessageQueue } from './lib/queue';
+import { redisService } from './config/redis.client';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
 import webhookRoutes from './routes/webhook.routes';
 import evolutionWebhookRoutes from './routes/webhook-evolution.routes';
@@ -58,9 +61,18 @@ app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
-// Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check with dependency monitoring
+app.get('/health', async (_req, res) => {
+  const dbOk = await prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
+  const vectorOk = inMemoryVectorStore.getCount() > 0;
+  const status = dbOk ? 'ok' : 'degraded';
+  res.status(dbOk ? 200 : 503).json({
+    status,
+    timestamp: new Date().toISOString(),
+    version: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) || 'local',
+    uptime: Math.floor(process.uptime()),
+    checks: { database: dbOk, vectorStore: vectorOk },
+  });
 });
 
 // Privacy Policy (required by Meta)
@@ -134,6 +146,23 @@ async function start() {
       logger.info({ vehicleCount }, 'Database ready');
     }
 
+    // Initialize message queue if enabled
+    let _messageWorker: Worker | null = null;
+    if (env.ENABLE_MESSAGE_QUEUE) {
+      const redisClient = redisService.getClient();
+      if (redisClient) {
+        const connection = { host: redisClient.options.host, port: redisClient.options.port };
+        createMessageQueue(connection);
+        const { createMessageWorker } = await import('./workers/message.worker');
+        _messageWorker = createMessageWorker(connection);
+        logger.info('Message queue and worker initialized');
+      } else {
+        logger.warn(
+          'ENABLE_MESSAGE_QUEUE is true but Redis is not available, using direct processing'
+        );
+      }
+    }
+
     // Initialize vector store in background (non-blocking)
     logger.info('Starting vector store initialization in background...');
     inMemoryVectorStore
@@ -166,14 +195,13 @@ async function start() {
   }
 }
 
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+async function shutdown(signal: string) {
+  logger.info({ signal }, 'Shutdown signal received, closing gracefully');
+  await closeMessageQueue().catch(() => {});
   process.exit(0);
-});
+}
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 start();

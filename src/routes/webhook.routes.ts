@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { env } from '../config/env';
 import { logger } from '../lib/logger';
+import { getMessageQueue } from '../lib/queue';
 import WhatsAppMetaService from '../services/whatsapp-meta.service';
 
 const router = Router();
@@ -108,9 +109,26 @@ router.post('/whatsapp', async (req: Request, res: Response) => {
 
     // Process webhook asynchronously
     if (body?.object === 'whatsapp_business_account' && body.entry) {
-      whatsappMeta.processWebhook(body).catch(error => {
-        logger.error({ error }, 'Error processing webhook');
-      });
+      const queue = getMessageQueue();
+      if (env.ENABLE_MESSAGE_QUEUE && queue) {
+        const messageId = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id;
+        queue
+          .add(
+            'meta-webhook',
+            { source: 'meta' as const, body, receivedAt: new Date().toISOString() },
+            { jobId: messageId || undefined }
+          )
+          .catch(err => {
+            logger.error({ err }, 'Failed to enqueue webhook, processing directly');
+            whatsappMeta.processWebhook(body).catch(error => {
+              logger.error({ error }, 'Error processing webhook');
+            });
+          });
+      } else {
+        whatsappMeta.processWebhook(body).catch(error => {
+          logger.error({ error }, 'Error processing webhook');
+        });
+      }
     }
   } catch (error) {
     logger.error({ error }, 'Error receiving webhook');
