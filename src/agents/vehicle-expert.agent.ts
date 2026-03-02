@@ -6,7 +6,6 @@
  * and generates personalized recommendations.
  */
 
-import { chatCompletion } from '../lib/llm-router';
 import { logger } from '../lib/logger';
 import { RunTree } from 'langsmith';
 import { getCurrentRunTree } from 'langsmith/traceable';
@@ -16,37 +15,21 @@ import { UseCase } from '../services/deterministic-ranker.service';
 import { preferenceExtractor } from './preference-extractor.agent';
 import { exactSearchParser } from '../services/exact-search-parser.service';
 import { CustomerProfile, VehicleRecommendation } from '../types/state.types';
-import {
-  ConversationContext,
-  ConversationResponse,
-  ConversationMode,
-  ReadinessAssessment,
-  QuestionGenerationOptions,
-  VehicleSearchQuery,
-} from '../types/conversation.types';
+import { ConversationContext, ConversationResponse } from '../types/conversation.types';
 
 // Import constants from refactored module
 import {
   SYSTEM_PROMPT,
   isSevenSeater,
-  isFiveSeater,
   capitalize,
   capitalizeWords,
-  SEDAN_COMPACT_MODELS,
-  SEDAN_MEDIUM_MODELS,
-  detectBodyTypeFromModel,
-  detectVehicleCategory,
 } from './vehicle-expert/constants';
 
 // Import extractors
-import { extractTradeInInfo, inferBrandFromModel } from './vehicle-expert/extractors';
+import { extractTradeInInfo } from './vehicle-expert/extractors';
 
 // Import formatters
-import {
-  formatRecommendations as formatRecommendationsUtil,
-  generateRecommendationIntro as generateRecommendationIntroUtil,
-  type SearchType,
-} from './vehicle-expert/formatters';
+import { formatRecommendations as formatRecommendationsUtil } from './vehicle-expert/formatters';
 
 // Import builders
 import { buildSearchQuery as buildSearchQueryUtil } from './vehicle-expert/builders';
@@ -64,8 +47,6 @@ import {
   generateNextQuestion as generateNextQuestionUtil,
   handleUberBlackQuestion,
   handleUberEligibilityQuestion,
-  handleTradeInInitial,
-  handleTradeInAfterSelection,
   handleSuggestionResponse,
   handleSpecificModel,
   type SuggestionResponseContext,
@@ -76,36 +57,20 @@ import {
 import {
   detectUserQuestion,
   detectAffirmativeResponse,
-  detectNegativeResponse,
-  detectSearchIntent,
   detectPostRecommendationIntent,
   isPostRecommendationResponse,
   isRecommendationRequest,
-  type SearchIntent,
-  type PostRecommendationIntent,
 } from './vehicle-expert/intent-detector';
 
 // Import post-recommendation handlers
 import {
   routePostRecommendationIntent,
   isFinancingResponse,
-  handleFinancingResponse,
   handleWantOthers,
   type PostRecommendationContext,
   type ShownVehicle,
   type WantOthersContext,
 } from './vehicle-expert/handlers';
-
-/**
- * Helper function to get the correct app name based on user's mention
- * Returns the name the user actually used (99, Uber, or generic "app")
- */
-function getAppName(profile: Partial<CustomerProfile>): string {
-  if (profile.appMencionado === '99') return '99';
-  if (profile.appMencionado === 'uber') return 'Uber';
-  if (profile.appMencionado === 'app') return 'app de transporte';
-  return 'Uber/99'; // Default when not specified
-}
 
 /**
  * Helper function to get the app category name (e.g., "99Pop" or "Uber X")
@@ -904,8 +869,8 @@ export class VehicleExpertAgent {
         if (tradeInInfo.model || tradeInInfo.km) {
           logger.info({ userMessage, tradeInInfo }, 'Processing trade-in vehicle details');
 
-          const vehicleName = `${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}`;
-          const tradeInText = [
+          const _vehicleName = `${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}`;
+          const _tradeInText = [
             tradeInInfo.brand,
             tradeInInfo.model,
             tradeInInfo.year,
@@ -2283,7 +2248,7 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
       if (isFamily) {
         const hasCadeirinha =
           profile.priorities?.includes('cadeirinha') || profile.priorities?.includes('crianca');
-        const peopleCount = profile.people || 4;
+        const _peopleCount = profile.people || 4;
 
         filteredResults = rankedResults.filter(rec => {
           const model = rec.vehicle.model?.toLowerCase() || '';

@@ -6,7 +6,7 @@
 
 import { logger } from '../../../lib/logger';
 import { CustomerProfile } from '../../../types/state.types';
-import { ConversationContext, ConversationResponse } from '../../../types/conversation.types';
+import { ConversationResponse } from '../../../types/conversation.types';
 import { inferBrandFromModel } from '../extractors';
 import { capitalize } from '../constants';
 

@@ -1,5 +1,5 @@
 import { StateGraph, END } from '@langchain/langgraph';
-import { IGraphState, createInitialState } from '../types/graph.types';
+import { IGraphState } from '../types/graph.types';
 import {
   greetingNode,
   discoveryNode,
@@ -11,7 +11,6 @@ import {
 } from './nodes';
 import { PrismaCheckpointer } from './persistence/prisma-saver';
 import { logger } from '../lib/logger';
-import { RunnableConfig } from '@langchain/core/runnables';
 
 /**
  * Route function that determines the next node based on the 'next' state property

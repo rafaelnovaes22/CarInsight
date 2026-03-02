@@ -225,7 +225,7 @@ export class RecommendationMetricsService {
     const engagementScores: number[] = [];
     const matchScores: number[] = [];
 
-    for (const [convId, recs] of byConversation) {
+    for (const [, recs] of byConversation) {
       // Sort by position
       const sortedRecs = recs.sort((a, b) => a.position - b.position);
 

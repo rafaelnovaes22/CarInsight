@@ -18,7 +18,7 @@ export const handleInterest = (ctx: PostRecommendationContext): HandlerResult =>
 
   const firstVehicle = lastShownVehicles[0];
   const vehicleName = `${firstVehicle.brand} ${firstVehicle.model} ${firstVehicle.year}`;
-  const vehiclePrice = firstVehicle.price.toLocaleString('pt-BR');
+  const _vehiclePrice = firstVehicle.price.toLocaleString('pt-BR');
 
   logger.info({ vehicleName, userMessage }, 'User expressed interest in shown vehicle');
 

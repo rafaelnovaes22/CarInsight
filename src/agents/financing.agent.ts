@@ -1,5 +1,3 @@
-import { logger } from '../lib/logger';
-import { CustomerProfile } from '../types/state.types';
 import { ConversationContext, ConversationResponse } from '../types/conversation.types';
 import {
   simulateFinancing,
@@ -7,13 +5,6 @@ import {
   extractMoneyValue,
 } from '../services/financing-simulator.service';
 import { extractTradeInInfo } from './vehicle-expert/extractors'; // Reusing existing extractor if suitable, or copy logic
-
-// Import types for internal use
-interface FinancingContext {
-  userMessage: string;
-  profile: Partial<CustomerProfile>;
-  lastShownVehicles: any[];
-}
 
 export class FinancingAgent {
   /**

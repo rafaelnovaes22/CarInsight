@@ -19,14 +19,12 @@ import {
   FallbackMetadata,
   SimilarityCriteria,
   DEFAULT_FALLBACK_CONFIG,
-  FALLBACK_PRIORITIES,
 } from './fallback.types';
 import {
   getVehicleProfile,
   getTypicalPriceRange,
   getModelCategory,
   normalizeCategory,
-  VehicleCategory,
 } from './vehicle-profiles';
 import { SimilarityCalculator } from './similarity-calculator.service';
 

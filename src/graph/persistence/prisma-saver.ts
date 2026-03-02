@@ -105,7 +105,7 @@ export class PrismaCheckpointer extends BaseCheckpointSaver {
     config: RunnableConfig,
     checkpoint: Checkpoint,
     metadata: Record<string, any>,
-    newVersions: Record<string, string | number>
+    _newVersions: Record<string, string | number>
   ): Promise<RunnableConfig> {
     const thread_id = config.configurable?.thread_id;
     const checkpoint_ns = config.configurable?.checkpoint_ns || '';
@@ -144,7 +144,11 @@ export class PrismaCheckpointer extends BaseCheckpointSaver {
   }
 
   // Use 'any' to bypass strict signature mismatch if necessary, or match the exact signature expected by BaseCheckpointSaver
-  async putWrites(config: RunnableConfig, writes: PendingWrite[], taskId: string): Promise<void> {
+  async putWrites(
+    _config: RunnableConfig,
+    _writes: PendingWrite[],
+    _taskId: string
+  ): Promise<void> {
     // Not strictly implemented for MVP
   }
 

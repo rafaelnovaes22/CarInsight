@@ -122,9 +122,6 @@ export class UberRulesProvider {
     const url = `https://www.uber.com/br/pt-br/eligible-vehicles/?city=${citySlug}`;
 
     // Start with SP and RJ only (others fallback to SP baseline until we add crawled rules)
-    const isSP = citySlug === 'sao-paulo';
-    const isRJ = citySlug === 'rio-de-janeiro';
-
     const rules: UberRulesByModality = {
       uberX: { eligible: [] },
       uberComfort: { eligible: [] },

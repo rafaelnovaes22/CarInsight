@@ -6,7 +6,6 @@ import { LangGraphConversation } from '../graph/langgraph-conversation';
 import { ConversationState } from '../types/state.types';
 import { dataRightsService } from './data-rights.service';
 import { featureFlags } from '../lib/feature-flags';
-import { conversationalHandler } from './conversational-handler.service';
 import { calculateCost } from '../lib/llm-router';
 import { maskPhoneNumber } from '../lib/privacy';
 

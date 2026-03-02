@@ -1,5 +1,4 @@
 import { guardrails } from './services/guardrails.service';
-import { logger } from './lib/logger';
 
 console.log('🛡️  Testing Guardrails...\n');
 

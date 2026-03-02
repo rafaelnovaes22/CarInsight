@@ -7,7 +7,7 @@ import { logger } from '../lib/logger';
 import { ConversationState, BotMessage, GraphContext } from '../types/state.types';
 import { IGraphState } from '../types/graph.types';
 import { createConversationGraph } from './workflow';
-import { HumanMessage, AIMessage, BaseMessage } from '@langchain/core/messages';
+import { HumanMessage } from '@langchain/core/messages';
 import { Runnable } from '@langchain/core/runnables';
 
 /**

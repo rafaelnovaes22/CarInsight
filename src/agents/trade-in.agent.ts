@@ -1,4 +1,3 @@
-import { logger } from '../lib/logger';
 import { ConversationContext, ConversationResponse } from '../types/conversation.types';
 import { extractTradeInInfo, inferBrandFromModel } from './vehicle-expert/extractors';
 import { capitalize } from './vehicle-expert/constants';

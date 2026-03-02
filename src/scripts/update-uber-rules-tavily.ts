@@ -3,7 +3,6 @@ dotenv.config();
 
 import { tavilySearchService } from '../services/tavily-search.service';
 import { chatCompletion } from '../lib/llm-router';
-import { logger } from '../lib/logger';
 
 async function main() {
   console.log('🚀 Starting Uber Rules Update POC (Tavily + LLM)...');

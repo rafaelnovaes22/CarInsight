@@ -59,7 +59,7 @@ class InMemoryVectorStore {
         try {
           embedding = JSON.parse(vehicle.embeddingString);
           loadedFromDb++;
-        } catch (e) {
+        } catch {
           // Embedding inválido, regenerar
           embedding = await this.generateAndSaveEmbedding(vehicle.id, description);
           generatedNew++;

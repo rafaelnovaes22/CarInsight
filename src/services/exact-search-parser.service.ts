@@ -9,20 +9,7 @@
  */
 
 // Lazy logger import to avoid env validation issues during testing
-let logger: { debug: (...args: any[]) => void } | null = null;
-
-async function getLogger() {
-  if (!logger) {
-    try {
-      const loggerModule = await import('../lib/logger');
-      logger = loggerModule.logger;
-    } catch {
-      // Fallback for testing environment
-      logger = { debug: () => {} };
-    }
-  }
-  return logger;
-}
+const logger: { debug: (...args: any[]) => void } | null = null;
 
 /**
  * Extracted filters from user query

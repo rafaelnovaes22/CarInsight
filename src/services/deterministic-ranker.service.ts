@@ -199,7 +199,7 @@ export class DeterministicRankerService {
 
       // Calcular score total e gerar reasoning
       const rankedVehicles = vehicles
-        .map(v => this.calculateVehicleScore(v, useCase, context))
+        .map(v => this.calculateVehicleScore(v, useCase))
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 
@@ -325,11 +325,7 @@ export class DeterministicRankerService {
   /**
    * Calcula score total do veículo baseado nos pesos do caso de uso
    */
-  private calculateVehicleScore(
-    vehicle: any,
-    useCase: UseCase,
-    context: RankingContext
-  ): RankedVehicle {
+  private calculateVehicleScore(vehicle: any, useCase: UseCase): RankedVehicle {
     const weights = USE_CASE_WEIGHTS[useCase];
 
     // Calcular score ponderado

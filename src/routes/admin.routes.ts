@@ -330,42 +330,12 @@ router.get('/update-urls', requireSecret, async (req, res) => {
     });
   }
 });
-// Whitelist de modelos Uber
-const UBER_X_MODELS: any = {
-  honda: ['civic', 'city', 'fit'],
-  toyota: ['corolla', 'etios', 'yaris'],
-  chevrolet: ['onix', 'prisma', 'cruze', 'cobalt'],
-  volkswagen: ['gol', 'voyage', 'polo', 'virtus', 'jetta', 'fox'],
-  fiat: ['argo', 'cronos', 'siena', 'grand siena', 'palio', 'uno', 'mobi'],
-  ford: ['ka', 'fiesta'],
-  hyundai: ['hb20', 'hb20s', 'accent', 'elantra'],
-  nissan: ['march', 'versa', 'sentra'],
-  renault: ['logan', 'sandero', 'kwid'],
-};
-
-const UBER_BLACK_MODELS: any = {
-  honda: ['civic'],
-  toyota: ['corolla'],
-  chevrolet: ['cruze'],
-  volkswagen: ['jetta'],
-  nissan: ['sentra'],
-};
-
-const NEVER_ALLOWED_TYPES = ['suv', 'pickup', 'picape', 'minivan', 'van'];
-
 function normalizeStr(str: string): string {
   return str
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
-}
-
-function isInWhitelist(marca: string, modelo: string, whitelist: any): boolean {
-  const marcaNorm = normalizeStr(marca);
-  const modeloNorm = normalizeStr(modelo);
-  if (!whitelist[marcaNorm]) return false;
-  return whitelist[marcaNorm].some((m: string) => modeloNorm.includes(m) || m.includes(modeloNorm));
 }
 
 /**
@@ -936,7 +906,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
           const titleMatch = block.match(/>(\d{4})\s+(\w+(?:\s+\w+)?)\s+([^<]+)</);
           if (!titleMatch) continue;
 
-          const [_, yearFromTitle, brand, modelVersion] = titleMatch;
+          const [, yearFromTitle, brand, modelVersion] = titleMatch;
           const listItems = block.match(/<li>([^<]+)<\/li>/g) || [];
           const listData = listItems.map(li => li.replace(/<\/?li>/g, '').trim());
           const priceMatch = block.match(/class="preco"[^>]*>([^<]+)/);
@@ -966,7 +936,7 @@ router.post('/scrape-robustcar', requireSecret, async (req, res) => {
             detailUrl: urlMatch[1].startsWith('http') ? urlMatch[1] : `${baseUrl}${urlMatch[1]}`,
             category: detectCategoryFallback(brand, model), // Categoria inicial, pode ser atualizada pelo LLM
           });
-        } catch (e) {
+        } catch {
           // Skip malformed entries
         }
       }
@@ -1201,7 +1171,7 @@ router.post('/refresh-inventory', requireSecret, async (req, res) => {
           const exists = await prisma.vehicle.findFirst({ where: { url } });
           if (!exists) newVehicles++;
         }
-      } catch (e) {
+      } catch {
         logger.error({ page }, 'Erro no scraping');
       }
     }

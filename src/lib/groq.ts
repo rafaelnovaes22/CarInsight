@@ -1,9 +1,6 @@
 import Groq from 'groq-sdk';
 import { env } from '../config/env';
-import { logger } from './logger';
 import { chatCompletion as routerChatCompletion } from './llm-router';
-
-const isMockMode = !env.GROQ_API_KEY || env.GROQ_API_KEY === 'gsk-mock-key-for-development';
 
 export const groq = new Groq({
   apiKey: env.GROQ_API_KEY || 'mock-key',

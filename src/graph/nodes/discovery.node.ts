@@ -1,7 +1,7 @@
 import { vehicleExpert } from '../../agents/vehicle-expert.agent';
 import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
-import { AIMessage, HumanMessage } from '@langchain/core/messages';
+import { AIMessage } from '@langchain/core/messages';
 import { RunnableConfig } from '@langchain/core/runnables';
 import { createNodeTimer } from '../../lib/node-metrics';
 import { detectNameCorrection } from '../langgraph/extractors/name-correction-detector';

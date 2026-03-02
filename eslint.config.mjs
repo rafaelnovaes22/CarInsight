@@ -15,7 +15,14 @@ export default tseslint.config(
     rules: {
       // Desabilitado para MVP - habilitar gradualmente com strict mode
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
 

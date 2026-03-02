@@ -102,7 +102,7 @@ export class WhatsAppEvolutionService implements IWhatsAppService {
         },
         { headers: this.getHeaders() }
       );
-    } catch (error) {
+    } catch {
       // Ignore errors for typing indicator
     }
   }
@@ -112,7 +112,7 @@ export class WhatsAppEvolutionService implements IWhatsAppService {
    * Na Evolution, isso é tricky. Se a mídia já veio no webhook como base64, não precisamos buscar.
    * Se precisamos buscar, usamos /chat/findMessage/{instance} para tentar recuperar.
    */
-  async getMediaUrl(mediaId: string): Promise<string> {
+  async getMediaUrl(_mediaId: string): Promise<string> {
     // TODO: Implementar lógica de recuperação de mídia se necessário.
     // Por enquanto, lança erro pois a Evolution envia base64 no webhook geralmente.
     throw new Error(

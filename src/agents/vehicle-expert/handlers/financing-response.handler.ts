@@ -193,7 +193,7 @@ const extractTradeInVehicle = (
   const normalized = message.toLowerCase();
 
   // Check if message mentions trade-in context
-  const hasTradeInContext =
+  const _hasTradeInContext =
     TRADEIN_PATTERNS.tradeInContext.test(normalized) ||
     /troca|meu\s*(carro|veículo)|tenho\s*(um|uma)/i.test(normalized);
 

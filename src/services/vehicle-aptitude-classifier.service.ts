@@ -164,7 +164,6 @@ export function getDeterministicClassification(
 ): VehicleAptitudeResult {
   const carroceria = vehicle.carroceria.toLowerCase();
   const modelo = vehicle.modelo.toLowerCase();
-  const marca = vehicle.marca.toLowerCase();
   const currentYear = new Date().getFullYear();
 
   // Detectar tipo de carroceria

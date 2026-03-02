@@ -4,7 +4,7 @@
  * Types and interfaces used by post-recommendation handlers.
  */
 
-import { CustomerProfile, VehicleRecommendation } from '../../../types/state.types';
+import { CustomerProfile } from '../../../types/state.types';
 import { ConversationContext, ConversationResponse } from '../../../types/conversation.types';
 
 /**

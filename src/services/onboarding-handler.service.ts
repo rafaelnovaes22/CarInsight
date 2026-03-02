@@ -154,7 +154,7 @@ Para começar, qual é o seu nome?`;
    */
   private async handleNameCollection(
     message: string,
-    state: ConversationState
+    _state: ConversationState
   ): Promise<{ response: string; updatedProfile: Partial<CustomerProfile> }> {
     const extractedName = await this.extractName(message);
 
@@ -207,7 +207,6 @@ Me conta: o que você está procurando?`;
     // Extract context using LLM
     const context = await this.extractContext(message);
 
-    const customerName = state.profile?.customerName || 'amigo';
     const currentBudget = state.profile?.orcamento || state.profile?.budget;
     const currentUsage = state.profile?.usoPrincipal;
 
@@ -424,8 +423,6 @@ JSON:`;
    * Simple budget extraction without LLM
    */
   private extractBudgetSimple(message: string): number | null {
-    const lower = message.toLowerCase().replace(/\s+/g, '');
-
     // Match patterns like: 50mil, 50k, 50000, R$50.000, 50.000
     const patterns = [
       /(\d+)\s*mil/i, // 50 mil, 50mil

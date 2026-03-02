@@ -3,7 +3,7 @@ import { logger } from '../lib/logger';
 import { env } from '../config/env';
 import { cache } from '../lib/redis';
 import { MessageHandlerV2 } from './message-handler-v2.service';
-import { AudioTranscriptionService, TranscriptionResult } from './audio-transcription.service';
+import { AudioTranscriptionService } from './audio-transcription.service';
 import { IWhatsAppService, SendMessageOptions } from '../interfaces/whatsapp-service.interface';
 
 interface MetaWebhookMessage {
@@ -441,7 +441,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
               text: bodyText,
             },
             action: {
-              buttons: buttons.map((btn, idx) => ({
+              buttons: buttons.map(btn => ({
                 type: 'reply',
                 reply: {
                   id: btn.id,

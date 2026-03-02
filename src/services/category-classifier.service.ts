@@ -88,7 +88,7 @@ export class CategoryClassifierService {
     ]);
 
     // Aggregate results
-    const aggregated = this.aggregateResultsWithUber(uberResult, llmResults, vehicleData);
+    const aggregated = this.aggregateResultsWithUber(uberResult, llmResults);
 
     logger.info(
       {
@@ -315,8 +315,7 @@ export class CategoryClassifierService {
       reasoning: string;
       confidence: number;
     },
-    llmResults: SingleCategoryResult[],
-    vehicle: VehicleData
+    llmResults: SingleCategoryResult[]
   ): FullClassificationResult {
     const confidence: Record<CategoryName, 'alta' | 'media' | 'baixa'> = {
       uberX:
@@ -381,10 +380,7 @@ export class CategoryClassifierService {
   /**
    * Aggregate individual results into final classification
    */
-  private static aggregateResults(
-    results: SingleCategoryResult[],
-    vehicle: VehicleData
-  ): FullClassificationResult {
+  private static aggregateResults(results: SingleCategoryResult[]): FullClassificationResult {
     const confidence: Record<CategoryName, 'alta' | 'media' | 'baixa'> = {} as any;
     const reasoning: Record<CategoryName, string> = {} as any;
 

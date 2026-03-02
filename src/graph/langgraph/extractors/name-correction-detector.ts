@@ -13,7 +13,6 @@
 
 import { logger } from '../../../lib/logger';
 import { extractName } from './name-extractor';
-import { TRANSCRIPTION_FIXES } from '../constants';
 
 /**
  * Result of name correction detection

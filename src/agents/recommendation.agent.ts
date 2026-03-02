@@ -6,12 +6,7 @@ import { exactSearchService, ExactSearchResult, Vehicle } from '../services/exac
 import { FallbackService } from '../services/fallback.service';
 import { FallbackResponseFormatter } from '../services/fallback-response-formatter.service';
 import { FallbackResult } from '../services/fallback.types';
-import {
-  performanceMetrics,
-  measureTime,
-  measureLLMCall,
-  RecommendationStage,
-} from '../services/performance-metrics.service';
+import { performanceMetrics } from '../services/performance-metrics.service';
 
 /** Cached flag – set to false on first explanation-column error so we stop trying */
 let explanationColumnAvailable = true;
@@ -60,7 +55,6 @@ export class RecommendationAgent {
     // Start performance tracking
     // **Feature: latency-optimization** - Requirements: 6.3, 6.4
     const requestId = performanceMetrics.startRequest(conversationId);
-    let llmCallCount = 0;
 
     try {
       // Track vehicle search stage
@@ -124,7 +118,7 @@ export class RecommendationAgent {
             ? `Anos disponíveis: ${specificModelResult.availableYears.join(', ')}`
             : '';
 
-          const matches = specificModelResult.yearAlternatives.slice(0, 3).map((match, index) => ({
+          const matches = specificModelResult.yearAlternatives.slice(0, 3).map(match => ({
             vehicle: match.vehicle,
             matchScore: match.matchScore,
             reasoning: `📅 ${match.reasoning}${yearMessage ? ` | ${yearMessage}` : ''}`,
@@ -169,7 +163,6 @@ export class RecommendationAgent {
       const evaluatedVehicles = await this.evaluateVehiclesWithLLM(filteredVehicles, answers);
       const llmDuration = Date.now() - llmStartTime;
       performanceMetrics.recordLLMCall(requestId, llmDuration, { purpose: 'vehicle_evaluation' });
-      llmCallCount++;
       performanceMetrics.endStage(requestId, 'response_generation', true, {
         evaluatedCount: evaluatedVehicles.length,
       });
@@ -938,7 +931,7 @@ Avalie cada veículo e retorne o JSON com as avaliações.`,
    */
   private fallbackEvaluation(
     vehicles: any[],
-    answers: Record<string, any>
+    _answers: Record<string, any>
   ): LLMVehicleEvaluation[] {
     return vehicles.map(vehicle => ({
       vehicleId: vehicle.id,

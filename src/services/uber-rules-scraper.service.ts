@@ -1,10 +1,6 @@
 import { chromium } from 'playwright';
 import { firecrawlService } from './firecrawl.service';
-import {
-  UberCitySlug,
-  UberRulesByModality,
-  UberEligibleModelRule,
-} from './uber-rules-provider.service';
+import { UberCitySlug, UberRulesByModality } from './uber-rules-provider.service';
 import { logger } from '../lib/logger';
 
 export class UberRulesScraperService {
@@ -58,7 +54,7 @@ export class UberRulesScraperService {
               }
             }
           }
-        } catch (err) {
+        } catch {
           /* ignore */
         }
 
@@ -68,7 +64,7 @@ export class UberRulesScraperService {
           await page.waitForFunction(() => document.body.innerText.length > 5000, null, {
             timeout: 15000,
           });
-        } catch (e) {
+        } catch {
           /* ignore */
         }
 

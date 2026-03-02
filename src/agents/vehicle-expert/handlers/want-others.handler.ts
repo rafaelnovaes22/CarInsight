@@ -14,7 +14,7 @@
 import { logger } from '../../../lib/logger';
 import { prisma } from '../../../lib/prisma';
 import { vehicleSearchAdapter } from '../../../services/vehicle-search-adapter.service';
-import { CustomerProfile, VehicleRecommendation } from '../../../types/state.types';
+import { CustomerProfile } from '../../../types/state.types';
 import { formatRecommendations as formatRecommendationsUtil } from '../formatters';
 import type { ShownVehicle, HandlerResult } from '../handlers/types';
 import { buildResponse } from '../utils/response-builder';
@@ -110,7 +110,7 @@ const CATEGORY_LABELS: Record<string, { name: string; emoji: string }> = {
  * Queries the database for category counts and presents them to the user.
  */
 async function handleListCategories(ctx: WantOthersContext): Promise<HandlerResult> {
-  const { extracted, updatedProfile, startTime } = ctx;
+  const { extracted, startTime } = ctx;
 
   try {
     const categoryCounts = await prisma.vehicle.groupBy({

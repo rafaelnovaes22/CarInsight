@@ -151,7 +151,7 @@ export class GuardrailsService {
       await multi.exec();
 
       return { allowed: true };
-    } catch (error) {
+    } catch {
       logger.error('Erro ao acessar Redis. Efetuando fallback para Rate Limit local em memória.');
       return this.checkRateLimitLocal(phoneNumber);
     }
@@ -325,8 +325,6 @@ export class GuardrailsService {
    * Check for inappropriate content in output
    */
   private containsInappropriateContent(output: string): boolean {
-    const lowerOutput = output.toLowerCase();
-
     // Basic content filtering
     const inappropriatePatterns = [
       // Violence

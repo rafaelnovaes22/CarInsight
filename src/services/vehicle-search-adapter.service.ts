@@ -24,12 +24,7 @@ import { FallbackService } from './fallback.service';
 import { FallbackResult, FallbackVehicleMatch } from './fallback.types';
 import { recommendationEvidence } from './recommendation-evidence.service';
 import { recommendationExplainer } from './recommendation-explainer.service';
-import {
-  deterministicRanker,
-  UseCase,
-  RankingContext,
-  DeterministicRankingResult,
-} from './deterministic-ranker.service';
+import { deterministicRanker, UseCase, RankingContext } from './deterministic-ranker.service';
 
 interface SearchFilters {
   phoneNumber?: string;

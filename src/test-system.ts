@@ -1,7 +1,6 @@
 import { MessageHandlerV2 } from './services/message-handler-v2.service';
 import { prisma } from './lib/prisma';
 import { logger } from './lib/logger';
-import { env } from './config/env';
 
 async function testCompleteSystem() {
   logger.info('🎯 Starting COMPLETE SYSTEM TEST...\n');
@@ -193,7 +192,7 @@ async function testCompleteSystem() {
     metrics.steps.forEach(step => {
       const status = step.status || '✅';
       const details = Object.entries(step)
-        .filter(([k, v]) => k !== 'step' && k !== 'status')
+        .filter(([k]) => k !== 'step' && k !== 'status')
         .map(([k, v]) => `${k}: ${v}`)
         .join(', ');
       console.log(`   ${status} ${step.step} ${details ? `(${details})` : ''}`);
@@ -241,11 +240,6 @@ async function testCompleteSystem() {
   } finally {
     await prisma.$disconnect();
   }
-}
-
-// Helper to sleep
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Run test

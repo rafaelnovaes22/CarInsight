@@ -7,7 +7,7 @@ import { detectNameCorrection } from '../langgraph/extractors/name-correction-de
 import { CustomerProfile } from '../../types/state.types';
 import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
-import { HumanMessage, AIMessage } from '@langchain/core/messages';
+import { AIMessage } from '@langchain/core/messages';
 
 /**
  * Greeting Node
@@ -65,7 +65,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   }
 
   // Check if it's a greeting
-  const isGreeting = /^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|hello|hi|e aí|eai)/i.test(
+  const _isGreeting = /^(oi|olá|ola|bom dia|boa tarde|boa noite|hey|hello|hi|e aí|eai)/i.test(
     message.trim()
   );
 
@@ -114,7 +114,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
 
   // SCENARIO A: Name AND Vehicle Desired (Immediate Search)
   if (possibleName && earlyProfileUpdate.model && !isTradeInContext) {
-    const carText = earlyProfileUpdate.minYear
+    const _carText = earlyProfileUpdate.minYear
       ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
       : earlyProfileUpdate.model;
 

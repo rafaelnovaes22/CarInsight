@@ -1,10 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import {
-  generateEmbedding,
-  embeddingToString,
-  getEmbeddingStats,
-  EMBEDDING_MODEL,
-} from '../lib/embeddings';
+import { generateEmbedding, getEmbeddingStats, EMBEDDING_MODEL } from '../lib/embeddings';
 import { logger } from '../lib/logger';
 
 const prisma = new PrismaClient();
@@ -61,12 +56,6 @@ async function generateAllEmbeddings(options: GenerateEmbeddingsOptions = {}): P
     console.log('\n🚀 Iniciando geração de embeddings...\n');
 
     // Buscar veículos
-    const whereClause = forceRegenerate
-      ? {}
-      : {
-          /* We'll filter the vehicles that need embeddings via raw query or fetching all and checking locally if Prisma can't filter Unsupported columns */
-        };
-
     // Since Prisma can't easily filter Unsupported columns via Prisma Client natively in all versions,
     // we fetch IDs using raw SQL
     const missingEmbeddingsQuery = await prisma.$queryRaw<{ id: string }[]>`

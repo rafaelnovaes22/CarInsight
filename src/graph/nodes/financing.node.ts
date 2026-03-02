@@ -2,7 +2,7 @@ import { IGraphState } from '../../types/graph.types';
 import { financingAgent } from '../../agents/financing.agent';
 import { AIMessage } from '@langchain/core/messages';
 import { createNodeTimer } from '../../lib/node-metrics';
-import { ConversationContext, ConversationResponse } from '../../types/conversation.types';
+import { ConversationContext } from '../../types/conversation.types';
 
 export async function financingNode(state: IGraphState): Promise<Partial<IGraphState>> {
   const timer = createNodeTimer('financing');

@@ -1,6 +1,5 @@
 import { env } from './config/env';
 import axios from 'axios';
-import { logger } from './lib/logger';
 
 async function checkWhatsAppConfig() {
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

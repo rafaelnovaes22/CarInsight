@@ -1774,7 +1774,7 @@ async function main() {
   // Create vehicles
   for (const vehicle of vehiclesData) {
     // Remove ID and creation dates to allow clean insertion
-    const { id, createdAt, updatedAt, ...data } = vehicle as any;
+    const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...data } = vehicle as any;
 
     await prisma.vehicle.create({
       data: {

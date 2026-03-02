@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { generateEmbedding, stringToEmbedding, searchSimilar } from '../lib/embeddings';
+import { generateEmbedding } from '../lib/embeddings';
 import { logger } from '../lib/logger';
 
 const prisma = new PrismaClient();
@@ -65,7 +65,7 @@ export class VectorSearchService {
         { count: number }[]
       >`SELECT COUNT(*) as count FROM "Vehicle" WHERE "embedding" IS NOT NULL`;
       return Number(result[0].count) > 0;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
