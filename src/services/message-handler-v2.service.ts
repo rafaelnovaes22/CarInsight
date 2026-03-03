@@ -280,20 +280,14 @@ Para começar, qual é o seu nome?`;
         }
       }
 
-      // 🚦 FEATURE FLAG: Decide between conversational or quiz mode
-      const useConversational = featureFlags.shouldUseConversationalMode(phoneNumber);
-      const useLangGraph = featureFlags.isEnabled('USE_LANGGRAPH', phoneNumber);
-
       logger.info(
         {
           conversationId: conversation.id,
           phoneNumber: maskPhoneNumber(phoneNumber),
-          useConversational,
-          useLangGraph,
           hasCache: !!currentState,
           currentNode: currentState?.graph.currentNode,
         },
-        'Routing decision'
+        'Processing message via LangGraph'
       );
 
       // Start tracking time

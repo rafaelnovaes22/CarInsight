@@ -120,11 +120,6 @@ vi.mock('../../src/lib/feature-flags', () => ({
   },
 }));
 
-// Mock conversational handler
-vi.mock('../../src/services/conversational-handler.service', () => ({
-  conversationalHandler: {},
-}));
-
 import { MessageHandlerV2 } from '../../src/services/message-handler-v2.service';
 
 /**
