@@ -1843,4 +1843,44 @@ router.get('/recommendations/report', requireSecret, async (req, res) => {
   }
 });
 
+/**
+ * PUT /admin/prompts/:key
+ * Updates a system prompt in the DB and invalidates cache.
+ * Body: { content: string }
+ */
+router.put('/prompts/:key', requireSecret, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string') {
+      return res.status(400).json({ error: 'content is required and must be a string' });
+    }
+
+    const updated = await prisma.system_prompts.update({
+      where: { key },
+      data: { content, updatedAt: new Date(), version: { increment: 1 } },
+    });
+
+    // Invalidate cache
+    const { systemPromptService } = await import('../services/system-prompt.service');
+    systemPromptService.refreshCache();
+
+    logger.info({ key, version: updated.version }, 'Admin: System prompt updated');
+
+    res.json({
+      success: true,
+      key: updated.key,
+      version: updated.version,
+      updatedAt: updated.updatedAt,
+    });
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: `Prompt key '${req.params.key}' not found` });
+    }
+    logger.error({ error }, 'Admin: Failed to update system prompt');
+    res.status(500).json({ error: 'Failed to update prompt', details: error.message });
+  }
+});
+
 export default router;

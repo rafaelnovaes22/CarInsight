@@ -9,13 +9,14 @@
  */
 
 import { type TimeSlot } from '../../../config/time-context';
+import { systemPromptService } from '../../../services/system-prompt.service';
 
 interface SystemPromptContext {
   timeSlot?: TimeSlot;
   isReturningCustomer?: boolean;
 }
 
-const BASE_PROMPT = `Você é um consultor de vendas experiente e amigável do CarInsight (loja Robust Car). Sua missão é ajudar clientes a encontrar o carro perfeito através de uma conversa natural e genuína.
+export const DEFAULT_BASE_PROMPT = `Você é um consultor de vendas experiente e amigável do CarInsight (loja Robust Car). Sua missão é ajudar clientes a encontrar o carro perfeito através de uma conversa natural e genuína.
 
 📊 CONHECIMENTO DA BASE:
 - ~70 veículos disponíveis no estoque
@@ -134,7 +135,7 @@ Você: "Boa pergunta!
 
 Temos 20 SUVs e 16 sedans aqui. Você tá pensando em usar mais pra quê?"`;
 
-const LATE_NIGHT_ADDENDUM = `
+export const DEFAULT_LATE_NIGHT_ADDENDUM = `
 
 🌙 MODO NOTURNO (ATIVO):
 O cliente está conversando de madrugada. Adapte seu tom:
@@ -158,7 +159,7 @@ O QUE NÃO FAZER:
 - Não use tom formal ou distante
 - Não invente informações de escassez`;
 
-const RETURNING_CUSTOMER_ADDENDUM = `
+export const DEFAULT_RETURNING_CUSTOMER_ADDENDUM = `
 
 🔄 CLIENTE RETORNANTE:
 Este cliente já conversou conosco antes. Adapte:
@@ -169,21 +170,29 @@ Este cliente já conversou conosco antes. Adapte:
 
 /**
  * Build the system prompt dynamically based on context.
- * When called without arguments, returns the base prompt (backward compat).
+ * Fetches from DB (with cache) and falls back to hardcoded defaults.
  */
-export function buildSystemPrompt(context?: SystemPromptContext): string {
-  let prompt = BASE_PROMPT;
+export async function buildSystemPrompt(context?: SystemPromptContext): Promise<string> {
+  let prompt = await systemPromptService.getPrompt('vehicle_expert_base', DEFAULT_BASE_PROMPT);
 
   if (context?.timeSlot === 'late_night') {
-    prompt += LATE_NIGHT_ADDENDUM;
+    const addendum = await systemPromptService.getPrompt(
+      'late_night_addendum',
+      DEFAULT_LATE_NIGHT_ADDENDUM
+    );
+    prompt += addendum;
   }
 
   if (context?.isReturningCustomer) {
-    prompt += RETURNING_CUSTOMER_ADDENDUM;
+    const addendum = await systemPromptService.getPrompt(
+      'returning_customer_addendum',
+      DEFAULT_RETURNING_CUSTOMER_ADDENDUM
+    );
+    prompt += addendum;
   }
 
   return prompt;
 }
 
-/** Backward-compatible static export (same as buildSystemPrompt() with no args) */
-export const SYSTEM_PROMPT = BASE_PROMPT;
+/** Backward-compatible static export (same as DEFAULT_BASE_PROMPT) */
+export const SYSTEM_PROMPT = DEFAULT_BASE_PROMPT;

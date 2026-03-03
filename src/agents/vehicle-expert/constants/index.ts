@@ -24,7 +24,13 @@ export {
 } from './vehicle-models';
 
 // System prompt
-export { SYSTEM_PROMPT, buildSystemPrompt } from './system-prompt';
+export {
+  SYSTEM_PROMPT,
+  buildSystemPrompt,
+  DEFAULT_BASE_PROMPT,
+  DEFAULT_LATE_NIGHT_ADDENDUM,
+  DEFAULT_RETURNING_CUSTOMER_ADDENDUM,
+} from './system-prompt';
 
 // Utilities
 export { capitalize, capitalizeWords, formatPrice, formatMileage } from './utils';

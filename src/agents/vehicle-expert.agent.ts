@@ -100,7 +100,7 @@ export class VehicleExpertAgent {
    * Get the appropriate system prompt based on context.
    * When emotional selling context is provided, builds a dynamic prompt.
    */
-  private getSystemPrompt(context: ConversationContext): string {
+  private async getSystemPrompt(context: ConversationContext): Promise<string> {
     if (context.timeSlot) {
       return buildSystemPrompt({
         timeSlot: context.timeSlot,
