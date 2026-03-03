@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { generateEmbedding } from '../lib/embeddings';
+import { logger } from '../lib/logger';
 
 const prisma = new PrismaClient();
 
@@ -30,13 +31,13 @@ class InMemoryVectorStore {
 
     // Inicializa em background sem bloquear o servidor
     this.initializeInBackground().catch(error => {
-      console.error('❌ Erro ao inicializar vector store:', error);
+      logger.error({ err: error }, 'Erro ao inicializar vector store');
       this.initializing = false;
     });
   }
 
   private async initializeInBackground(): Promise<void> {
-    console.log('🧠 Inicializando vector store in-memory (background)...');
+    logger.info('Inicializando vector store in-memory (background)');
 
     // Use raw query to fetch the embedding as text (Prisma omits Unsupported columns in findMany)
     const vehicles = await prisma.$queryRaw<any[]>`
@@ -45,7 +46,7 @@ class InMemoryVectorStore {
       WHERE v.disponivel = true
     `;
 
-    console.log(`📊 Carregando embeddings para ${vehicles.length} veículos...`);
+    logger.info({ count: vehicles.length }, 'Carregando embeddings para veículos');
 
     let loadedFromDb = 0;
     let generatedNew = 0;
@@ -86,9 +87,7 @@ class InMemoryVectorStore {
 
     this.initialized = true;
     this.initializing = false;
-    console.log(
-      `✅ Vector store pronto: ${loadedFromDb} carregados do DB, ${generatedNew} gerados novos`
-    );
+    logger.info({ loadedFromDb, generatedNew }, 'Vector store pronto');
   }
 
   /**
@@ -116,7 +115,7 @@ class InMemoryVectorStore {
         vehicleId
       )
       .catch(error => {
-        console.warn(`⚠️ Erro ao salvar embedding do veículo ${vehicleId}:`, error.message);
+        logger.warn({ vehicleId, err: error.message }, 'Erro ao salvar embedding do veículo');
       });
 
     return embedding;
@@ -125,12 +124,12 @@ class InMemoryVectorStore {
   async search(queryText: string, limit: number = 5): Promise<string[]> {
     // Se não está inicializado, retorna array vazio (fallback para SQL)
     if (!this.initialized) {
-      console.log('⚠️  Vector store ainda não pronto, usando fallback SQL');
+      logger.info('Vector store ainda não pronto, usando fallback SQL');
       return [];
     }
 
     if (!queryText || queryText.trim() === '') {
-      console.warn('⚠️  Busca vetorial chamada com string vazia. Retornando [].');
+      logger.warn('Busca vetorial chamada com string vazia');
       return [];
     }
 
@@ -153,7 +152,7 @@ class InMemoryVectorStore {
   ): Promise<Array<{ vehicleId: string; score: number }>> {
     // Se não está inicializado, retorna array vazio (fallback para SQL)
     if (!this.initialized) {
-      console.log('⚠️  Vector store ainda não pronto, usando fallback SQL');
+      logger.info('Vector store ainda não pronto, usando fallback SQL');
       return [];
     }
 
@@ -180,7 +179,7 @@ class InMemoryVectorStore {
   async clear(): Promise<void> {
     this.embeddings = [];
     this.initialized = false;
-    console.log('🗑️  Vector store limpo');
+    logger.info('Vector store limpo');
   }
 
   private buildVehicleDescription(vehicle: any): string {

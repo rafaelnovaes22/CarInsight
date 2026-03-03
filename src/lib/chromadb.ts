@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { logger } from './logger';
 
 const JINA_API_URL = 'https://api.jina.ai/v1/embeddings';
 
 export async function initChromaDB(): Promise<void> {
-  console.log('ℹ️  Usando Jina AI para embeddings (grátis)');
+  logger.info('Usando Jina AI para embeddings');
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
@@ -11,7 +12,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
   // Se não tem API key, usa mock
   if (!apiKey || apiKey === 'sk-mock-key') {
-    console.warn('⚠️  JINA_API_KEY não configurada, usando mock embeddings');
+    logger.warn('JINA_API_KEY não configurada, usando mock embeddings');
     return generateMockEmbedding(text);
   }
 
@@ -34,8 +35,8 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
     return response.data.data[0].embedding;
   } catch (error: any) {
-    console.error('❌ Erro ao gerar embedding com Jina AI:', error.message);
-    console.warn('⚠️  Usando mock embedding como fallback');
+    logger.error({ err: error.message }, 'Erro ao gerar embedding com Jina AI');
+    logger.warn('Usando mock embedding como fallback');
     return generateMockEmbedding(text);
   }
 }
@@ -77,5 +78,5 @@ export async function isChromaDBAvailable(): Promise<boolean> {
 }
 
 export async function closeChromaDB(): Promise<void> {
-  console.log('🔌 ChromaDB desconectado');
+  logger.info('ChromaDB desconectado');
 }
