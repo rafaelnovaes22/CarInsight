@@ -59,6 +59,7 @@
     "verify": "npm run format && npm run lint:warn && npm run test:unit",
     "verify:strict": "npm run format:check && npm run lint && tsc --noEmit && npm run test:run",
     "push:safe": "npm run verify:strict && git push origin main && git push novais main",
+    "push:staging": "npm run verify:strict && git push origin develop && git push novais develop",
     "push:origin": "npm run verify:strict && git push origin main",
     "push:novais": "npm run verify:strict && git push novais main",
     "benchmark": "tsx src/evaluation/run-benchmark.ts",
