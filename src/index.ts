@@ -188,6 +188,13 @@ async function start() {
           'Meta Cloud API not fully configured. Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID.'
         );
       }
+
+      // Start follow-up scheduler if enabled
+      if (env.ENABLE_FOLLOW_UP) {
+        import('./workers/follow-up-scheduler')
+          .then(({ startFollowUpScheduler }) => startFollowUpScheduler())
+          .catch(err => logger.error({ err }, 'Failed to start follow-up scheduler'));
+      }
     });
   } catch (error) {
     logger.error({ error }, 'Failed to start application');
@@ -197,6 +204,13 @@ async function start() {
 
 async function shutdown(signal: string) {
   logger.info({ signal }, 'Shutdown signal received, closing gracefully');
+  // Stop follow-up scheduler
+  try {
+    const { stopFollowUpScheduler } = await import('./workers/follow-up-scheduler');
+    stopFollowUpScheduler();
+  } catch {
+    // Module may not have been loaded
+  }
   await closeMessageQueue().catch(() => {});
   process.exit(0);
 }
