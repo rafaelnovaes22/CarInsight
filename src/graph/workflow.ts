@@ -82,7 +82,13 @@ export const createConversationGraph = (config?: { checkpointer?: any }) => {
   const workflow = new StateGraph<IGraphState>({
     channels: {
       messages: {
-        value: (x: any[], y: any[]) => x.concat(y),
+        value: (x: any[], y: any[]) => {
+          const MAX_MESSAGES = 30;
+          const combined = x.concat(y);
+          if (combined.length <= MAX_MESSAGES) return combined;
+          // Keep first message (system/greeting) + last N-1
+          return [combined[0], ...combined.slice(-(MAX_MESSAGES - 1))];
+        },
         default: () => [],
       },
       phoneNumber: {
