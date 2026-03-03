@@ -20,6 +20,7 @@ import { ConversationContext, ConversationResponse } from '../types/conversation
 // Import constants from refactored module
 import {
   SYSTEM_PROMPT,
+  buildSystemPrompt,
   isSevenSeater,
   capitalize,
   capitalizeWords,
@@ -94,6 +95,20 @@ function getAppCategoryName(
 
 export class VehicleExpertAgent {
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
+
+  /**
+   * Get the appropriate system prompt based on context.
+   * When emotional selling context is provided, builds a dynamic prompt.
+   */
+  private getSystemPrompt(context: ConversationContext): string {
+    if (context.timeSlot) {
+      return buildSystemPrompt({
+        timeSlot: context.timeSlot,
+        isReturningCustomer: false, // TODO: detect from conversation history
+      });
+    }
+    return this.SYSTEM_PROMPT;
+  }
 
   /**
    * Main chat interface - processes user message and generates response

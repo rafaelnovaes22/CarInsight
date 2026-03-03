@@ -8,6 +8,8 @@ import { dataRightsService } from './data-rights.service';
 import { featureFlags } from '../lib/feature-flags';
 import { calculateCost } from '../lib/llm-router';
 import { maskPhoneNumber } from '../lib/privacy';
+import { followUpService } from './follow-up.service';
+import { conversionTracker } from './conversion-tracker.service';
 
 /** Cached flag – set to false on first explanation-column error so we stop trying */
 let explanationColumnAvailable = true;
@@ -47,6 +49,17 @@ export class MessageHandlerV2 {
       const sanitizedMessage = inputValidation.sanitizedInput || message;
       const lowerMessage = sanitizedMessage.toLowerCase().trim();
 
+      // Cancel pending follow-ups when customer re-engages
+      if (featureFlags.isEnabled('ENABLE_FOLLOW_UP')) {
+        await followUpService.cancelPendingFollowUps(phoneNumber);
+
+        // Handle opt-out command
+        if (lowerMessage === 'parar' || lowerMessage === 'pare') {
+          await followUpService.handleOptOut(phoneNumber);
+          return 'Pronto! Você não receberá mais mensagens de acompanhamento. Se precisar de algo, é só chamar! 😊';
+        }
+      }
+
       // 🔄 Check for exit/restart commands (available at any time)
       const exitCommands = ['sair', 'encerrar', 'tchau', 'bye', 'adeus'];
       const restartCommands = [
@@ -70,6 +83,11 @@ export class MessageHandlerV2 {
       ];
 
       if (exitCommands.some(cmd => lowerMessage.includes(cmd))) {
+        // Schedule abandoned_cart follow-up if user saw recommendations
+        if (featureFlags.isEnabled('ENABLE_FOLLOW_UP')) {
+          await this.scheduleExitFollowUp(phoneNumber);
+        }
+
         await this.resetConversation(phoneNumber);
         logger.info({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'User requested exit');
         return `Obrigado por usar o CarInsight! 👋
@@ -426,6 +444,43 @@ Para começar, qual é o seu nome?`;
         // Mark lead as sent to prevent duplicates
         newState.metadata.flags = [...newState.metadata.flags, 'lead_sent'];
         await cache.set(stateKey, JSON.stringify(newState), 86400);
+      }
+
+      // Schedule follow-up if applicable
+      if (
+        featureFlags.isEnabled('ENABLE_FOLLOW_UP') &&
+        newState.recommendations.length > 0 &&
+        !newState.metadata.flags.includes('follow_up_scheduled')
+      ) {
+        const score = conversionTracker.calculateScore(
+          newState.profile || {},
+          {
+            startedAt: new Date(newState.metadata.startedAt),
+            lastMessageAt: new Date(newState.metadata.lastMessageAt),
+            flags: newState.metadata.flags,
+            messageCount: newState.messages.length,
+          },
+          phoneNumber
+        );
+
+        // Update conversation score
+        await prisma.conversation.update({
+          where: { id: conversation.id },
+          data: { conversionScore: Math.min(score, 32767) },
+        });
+
+        if (conversionTracker.shouldScheduleFollowUp(score, true)) {
+          const vehicleName = this.getFirstVehicleName(newState.recommendations);
+          await followUpService.scheduleFollowUp({
+            conversationId: conversation.id,
+            phoneNumber,
+            type: 'post_recommendation',
+            customerName: newState.profile?.customerName,
+            vehicleName,
+          });
+          newState.metadata.flags = [...newState.metadata.flags, 'follow_up_scheduled'];
+          await cache.set(stateKey, JSON.stringify(newState), 86400);
+        }
       }
 
       return finalResponse;
@@ -787,5 +842,52 @@ Responderemos em até 15 dias úteis, conforme LGPD.`;
 
     // No data rights command detected
     return null;
+  }
+
+  /**
+   * Schedule follow-up when user exits with viewed recommendations.
+   */
+  private async scheduleExitFollowUp(phoneNumber: string): Promise<void> {
+    try {
+      const conversation = await prisma.conversation.findFirst({
+        where: { phoneNumber, status: 'active' },
+        select: { id: true, customerName: true },
+      });
+
+      if (!conversation) return;
+
+      const stateKey = `conversation:${conversation.id}:state`;
+      const cachedStateJson = await cache.get(stateKey);
+      if (!cachedStateJson) return;
+
+      const state: ConversationState = JSON.parse(cachedStateJson);
+      if (state.recommendations.length === 0) return;
+
+      const vehicleName = this.getFirstVehicleName(state.recommendations);
+
+      await followUpService.scheduleFollowUp({
+        conversationId: conversation.id,
+        phoneNumber,
+        type: 'abandoned_cart',
+        customerName: state.profile?.customerName || conversation.customerName || undefined,
+        vehicleName,
+      });
+    } catch (error) {
+      logger.error(
+        { error, phoneNumber: maskPhoneNumber(phoneNumber) },
+        'Error scheduling exit follow-up'
+      );
+    }
+  }
+
+  /**
+   * Extract the first vehicle name from recommendations.
+   */
+  private getFirstVehicleName(recommendations: any[]): string | undefined {
+    const first = recommendations[0];
+    if (!first?.vehicle) return undefined;
+    const brand = first.vehicle.marca || first.vehicle.brand || '';
+    const model = first.vehicle.modelo || first.vehicle.model || '';
+    return `${brand} ${model}`.trim() || undefined;
   }
 }

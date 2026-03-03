@@ -135,6 +135,30 @@ export const CONVERSATION_STYLE = {
   EMOJI_POSITIVE: ['😊', '👍', '🚗', '✨'],
   EMOJI_THINKING: ['🤔', ''],
   EMOJI_CONFIRM: ['👌', '✅', ''],
+
+  // Late-night openers (madrugada)
+  LATE_NIGHT_OPENERS: [
+    'Pesquisando carro a essa hora? Isso sim é dedicação! 😊',
+    'Boa noite! Bom te ver por aqui nesse horário!',
+    'E aí, noite de pesquisa? Tô aqui pra ajudar!',
+    'Opa! Não dorme quem tá atrás do carro certo, né?',
+  ],
+
+  // Aspirational closings (fechamentos aspiracionais)
+  ASPIRATION_CLOSINGS: [
+    'Esse carro vai transformar seu dia a dia!',
+    'Imagina a sensação de dirigir esse aí...',
+    'Você merece um carro que combine com você!',
+    'O carro certo faz toda a diferença, né?',
+  ],
+
+  // Late-night empathy phrases
+  EMPATHY_LATE_NIGHT: [
+    'Tô aqui pra te ajudar, sem pressa nenhuma.',
+    'Pode perguntar o que quiser, tô junto!',
+    'Seu tempo vale — vamos com calma.',
+    'Decisão importante merece atenção. Tô aqui!',
+  ],
 };
 
 // ============================================================================
@@ -226,4 +250,44 @@ export function maybeAddEmoji(text: string, probability: number = 0.3): string {
     return `${text} ${emoji}`;
   }
   return text;
+}
+
+// ============================================================================
+// Time-Aware Variations
+// ============================================================================
+
+type TimeAwareCategory = 'LATE_NIGHT_OPENERS' | 'ASPIRATION_CLOSINGS' | 'EMPATHY_LATE_NIGHT';
+
+/**
+ * Get a time-aware variation based on category and time slot.
+ * Falls back to default categories when not in the target time slot.
+ */
+export function getTimeAwareVariation(
+  category: TimeAwareCategory,
+  timeSlot: 'morning' | 'afternoon' | 'evening' | 'late_night'
+): string {
+  // Late-night specific categories only apply during late_night
+  if (category === 'LATE_NIGHT_OPENERS') {
+    if (timeSlot === 'late_night') {
+      return getRandomVariation(CONVERSATION_STYLE.LATE_NIGHT_OPENERS);
+    }
+    // Fallback to time greeting for non-late-night
+    return `${getTimeGreeting()}! 😊`;
+  }
+
+  if (category === 'ASPIRATION_CLOSINGS') {
+    if (timeSlot === 'late_night' || timeSlot === 'evening') {
+      return getRandomVariation(CONVERSATION_STYLE.ASPIRATION_CLOSINGS);
+    }
+    return getVehicleClosingMessage();
+  }
+
+  if (category === 'EMPATHY_LATE_NIGHT') {
+    if (timeSlot === 'late_night') {
+      return getRandomVariation(CONVERSATION_STYLE.EMPATHY_LATE_NIGHT);
+    }
+    return '';
+  }
+
+  return '';
 }

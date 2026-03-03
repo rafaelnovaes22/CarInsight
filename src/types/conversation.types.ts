@@ -43,6 +43,10 @@ export interface ConversationContext {
     questionsAsked: number;
     userQuestions: number;
   };
+
+  // Emotional selling context (optional, set when ENABLE_EMOTIONAL_SELLING is on)
+  timeSlot?: 'morning' | 'afternoon' | 'evening' | 'late_night';
+  emotionalMode?: 'rational' | 'balanced' | 'aspirational' | 'emotional';
 }
 
 /**

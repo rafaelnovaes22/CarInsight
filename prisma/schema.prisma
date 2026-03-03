@@ -103,10 +103,33 @@ model Conversation {
   startedAt       DateTime         @default(now())
   lastMessageAt   DateTime         @default(now())
   closedAt        DateTime?
+  // Conversion & Follow-up tracking
+  followUpCount   Int              @default(0)
+  lastFollowUpAt  DateTime?
+  abandonedAt     DateTime?
+  conversionScore Int?             @db.SmallInt
   events          Event[]
   lead            Lead?
   messages        Message[]
   recommendations Recommendation[]
+  followUps       FollowUp[]
+}
+
+model FollowUp {
+  id             String       @id @default(uuid())
+  conversationId String
+  phoneNumber    String
+  type           String       // 'abandoned_cart' | 'post_recommendation' | 'post_sale' | 'referral'
+  sequence       Int          @default(1)
+  status         String       @default("pending") // pending | sent | replied | cancelled
+  scheduledAt    DateTime
+  sentAt         DateTime?
+  content        String?
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumber])
+  @@index([status, scheduledAt])
 }
 
 model Event {
@@ -180,6 +203,11 @@ model Lead {
   updatedAt          DateTime     @updatedAt
   crmSynced          Boolean      @default(false)
   crmId              String?
+  // Retention & Referral
+  satisfactionScore  Int?         @db.SmallInt // 1-5 NPS score
+  referralCode       String?      @unique
+  referredBy         String?      // referral code used by this customer
+  followUpOptIn      Boolean      @default(true)
   conversation       Conversation @relation(fields: [conversationId], references: [id])
 
   @@index([phone])

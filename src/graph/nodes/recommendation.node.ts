@@ -10,6 +10,9 @@ import {
   getVehicleClosingMessage,
   getHandoffMessage,
 } from '../../config/conversation-style';
+import { getTimeSlot } from '../../config/time-context';
+import { getRecommendationFraming, getEmotionalClosing } from '../../config/emotional-copy';
+import { featureFlags } from '../../lib/feature-flags';
 
 /**
  * Formata número de telefone para exibição
@@ -222,6 +225,7 @@ function toShownVehicles(recommendations: any[]) {
 
 /**
  * Format recommendations into WhatsApp message - ESTILO NATURAL
+ * When emotional selling is enabled, adds emotional framing based on time slot.
  */
 function formatRecommendations(recommendations: any[]): string {
   if (recommendations.length === 0) {
@@ -232,8 +236,19 @@ function formatRecommendations(recommendations: any[]): string {
     ]);
   }
 
+  const emotionalEnabled = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
+  const timeSlot = getTimeSlot();
+  const useEmotional = emotionalEnabled && (timeSlot === 'late_night' || timeSlot === 'evening');
+
   // Intro natural (sem emoji excessivo)
   let message = `${getVehicleIntroMessage()}\n\n`;
+
+  // Badges for best match and best value
+  const bestValueIndex = recommendations.reduce((best: number, rec: any, i: number) => {
+    const score = rec.vehicle?.scoreCustoBeneficio ?? 0;
+    const bestScore = recommendations[best]?.vehicle?.scoreCustoBeneficio ?? 0;
+    return score > bestScore ? i : best;
+  }, 0);
 
   recommendations.forEach((rec, index) => {
     const vehicle = rec.vehicle;
@@ -249,8 +264,16 @@ function formatRecommendations(recommendations: any[]): string {
     const color = vehicle.cor || vehicle.color;
     const link = getVehicleLink(vehicle);
 
+    // Badge (only when emotional selling is on)
+    let badge = '';
+    if (useEmotional) {
+      if (index === 0 && recommendations.length > 1) badge = ' ⭐ Mais popular';
+      else if (index === bestValueIndex && recommendations.length > 1)
+        badge = ' 💰 Melhor custo-benefício';
+    }
+
     // Formato compacto e natural
-    message += `*${num}. ${brand} ${model}* ${ano}\n`;
+    message += `*${num}. ${brand} ${model}* ${ano}${badge}\n`;
     message += `   ${km} • R$ ${price}`;
 
     // Cor só se relevante
@@ -276,11 +299,24 @@ function formatRecommendations(recommendations: any[]): string {
       message += `   _Ponto de atenção: ${explanationConcern}_\n`;
     }
 
+    // Emotional framing after each vehicle (late_night/evening only)
+    if (useEmotional) {
+      const vehicleName = `${brand} ${model}`.trim();
+      const framing = getRecommendationFraming(vehicleName, timeSlot);
+      if (framing) {
+        message += `   _${framing}_\n`;
+      }
+    }
+
     message += `\n`;
   });
 
-  // Fechamento natural (sem menu estruturado)
-  message += getVehicleClosingMessage();
+  // Fechamento: emocional ou natural
+  if (useEmotional) {
+    message += getEmotionalClosing(timeSlot);
+  } else {
+    message += getVehicleClosingMessage();
+  }
 
   return message;
 }

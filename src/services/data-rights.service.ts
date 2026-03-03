@@ -47,27 +47,32 @@ export class DataRightsService {
           return;
         }
 
-        // 1. Deletar mensagens (através da conversa, por causa do cascade)
+        // 1. Deletar follow-ups
+        const deletedFollowUps = await tx.followUp.deleteMany({
+          where: { conversationId: conversation.id },
+        });
+
+        // 2. Deletar mensagens (através da conversa, por causa do cascade)
         const deletedMessages = await tx.message.deleteMany({
           where: { conversationId: conversation.id },
         });
 
-        // 2. Deletar eventos
+        // 3. Deletar eventos
         const deletedEvents = await tx.event.deleteMany({
           where: { conversationId: conversation.id },
         });
 
-        // 3. Deletar recomendações
+        // 4. Deletar recomendações
         const deletedRecommendations = await tx.recommendation.deleteMany({
           where: { conversationId: conversation.id },
         });
 
-        // 4. Deletar lead (se existir)
+        // 5. Deletar lead (se existir)
         const deletedLeads = await tx.lead.deleteMany({
           where: { phone: phoneNumber },
         });
 
-        // 5. Deletar conversas
+        // 6. Deletar conversas
         const deletedConversations = await tx.conversation.deleteMany({
           where: { phoneNumber },
         });
@@ -76,6 +81,7 @@ export class DataRightsService {
           logger.info(
             {
               phoneNumber: maskPhoneNumber(phoneNumber),
+              followUps: deletedFollowUps.count,
               messages: deletedMessages.count,
               events: deletedEvents.count,
               recommendations: deletedRecommendations.count,

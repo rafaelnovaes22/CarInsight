@@ -108,6 +108,9 @@ export class FeatureFlagService {
       USE_LANGGRAPH: true, // Enabled after successful migration (Phase 3)
       ENABLE_CONVERSATIONAL_MODE: env.ENABLE_CONVERSATIONAL_MODE,
       USE_SLM_EXPLANATIONS: env.USE_SLM_EXPLANATIONS,
+      ENABLE_EMOTIONAL_SELLING: env.ENABLE_EMOTIONAL_SELLING,
+      ENABLE_FOLLOW_UP: env.ENABLE_FOLLOW_UP,
+      ENABLE_RETENTION: env.ENABLE_RETENTION,
     };
 
     const isGloballyEnabled = envFlags[flagName] ?? false;

@@ -9,6 +9,8 @@ import {
   detectExplicitRecommendationRequest,
   isInformationProvision,
 } from '../../agents/vehicle-expert/intent-detector';
+import { isLateNight } from '../../config/time-context';
+import { featureFlags } from '../../lib/feature-flags';
 
 function resolveConversationId(state: IGraphState, config?: RunnableConfig): string {
   const threadId = (config?.configurable as Record<string, unknown> | undefined)?.thread_id;
@@ -147,9 +149,14 @@ export async function discoveryNode(
     // If profile is now complete after this info provision, ask if they want to see options
     // Requirements: 2.5
     if (hasCompletedProfile && !isExplicitRequest) {
+      const emotionalEnabled = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
+      const lateNight = emotionalEnabled && isLateNight();
+      const optionsAsk = lateNight
+        ? 'Sem compromisso, quer que eu te mostre algumas opções que combinam com o que você falou?'
+        : 'Quer que eu te mostre algumas opções?';
       responseMessage = response.response
-        ? `${response.response} Quer que eu te mostre algumas opções?`
-        : 'Entendi! Quer que eu te mostre algumas opções de veículos?';
+        ? `${response.response} ${optionsAsk}`
+        : `Entendi! ${optionsAsk}`;
     }
   } else if (isExplicitRequest) {
     // Explicit recommendation request - allow transition

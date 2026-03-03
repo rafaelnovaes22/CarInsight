@@ -47,6 +47,20 @@ const envSchema = z.object({
     .transform(val => val === 'true'),
   SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE: z.coerce.number().default(0),
 
+  // Emotional Selling & Conversion
+  ENABLE_EMOTIONAL_SELLING: z
+    .string()
+    .default('false')
+    .transform(val => val === 'true'),
+  ENABLE_FOLLOW_UP: z
+    .string()
+    .default('false')
+    .transform(val => val === 'true'),
+  ENABLE_RETENTION: z
+    .string()
+    .default('false')
+    .transform(val => val === 'true'),
+
   // Message Queue (BullMQ)
   ENABLE_MESSAGE_QUEUE: z
     .string()

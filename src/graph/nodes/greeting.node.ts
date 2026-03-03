@@ -8,6 +8,10 @@ import { CustomerProfile } from '../../types/state.types';
 import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
 import { AIMessage } from '@langchain/core/messages';
+import { getTimeSlot, isLateNight } from '../../config/time-context';
+import { getTimeAwareVariation } from '../../config/conversation-style';
+import { getEmotionalCopy } from '../../config/emotional-copy';
+import { featureFlags } from '../../lib/feature-flags';
 
 /**
  * Greeting Node
@@ -188,13 +192,15 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   // SCENARIO C: Only Name
   if (possibleName) {
     const firstName = possibleName.split(' ')[0];
-    const alreadyGreeted = state.messages.length > 2;
+    const emotionalEnabled = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
+    const timeSlot = getTimeSlot();
 
     let responseText = '';
-    if (alreadyGreeted) {
-      responseText = `👋 Olá, ${firstName}! Me conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
+    if (emotionalEnabled && isLateNight()) {
+      const opener = getTimeAwareVariation('LATE_NIGHT_OPENERS', timeSlot);
+      const empathy = getEmotionalCopy('CONEXAO', timeSlot);
+      responseText = `${opener}\n\n${firstName}, ${empathy.charAt(0).toLowerCase() + empathy.slice(1)}\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
     } else {
-      // Even if not "already greeted" deep in history, if they gave a name, treat it as a continuation
       responseText = `👋 Olá, ${firstName}! Me conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
     }
 
@@ -229,12 +235,17 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   }
 
   // SCENARIO E: Confused / No info
+  const emotionalEnabledE = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
+  const timeSlotE = getTimeSlot();
+  let greetingTextE = `👋 Olá! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`;
+
+  if (emotionalEnabledE && isLateNight()) {
+    const opener = getTimeAwareVariation('LATE_NIGHT_OPENERS', timeSlotE);
+    greetingTextE = `${opener}\n\nSou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`;
+  }
+
   return {
     next: 'greeting',
-    messages: [
-      new AIMessage(
-        `👋 Olá! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`
-      ),
-    ],
+    messages: [new AIMessage(greetingTextE)],
   };
 }

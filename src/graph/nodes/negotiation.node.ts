@@ -3,6 +3,8 @@ import { ConversationContext } from '../../types/conversation.types';
 import { IGraphState } from '../../types/graph.types';
 import { AIMessage } from '@langchain/core/messages';
 import { createNodeTimer } from '../../lib/node-metrics';
+import { getTimeSlot, getEmotionalMode } from '../../config/time-context';
+import { featureFlags } from '../../lib/feature-flags';
 
 /**
  * Negotiation Node
@@ -43,6 +45,10 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
   });
 
   // 3. Context with mode='negotiation'
+  const emotionalEnabled = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
+  const timeSlot = emotionalEnabled ? getTimeSlot() : undefined;
+  const emotionalMode = emotionalEnabled ? getEmotionalMode() : undefined;
+
   const context: ConversationContext = {
     conversationId: 'graph-execution',
     phoneNumber: state.phoneNumber || 'unknown',
@@ -57,6 +63,8 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
       questionsAsked: 0,
       userQuestions: 0,
     },
+    timeSlot,
+    emotionalMode,
   };
 
   // 4. Call Vehicle Expert
