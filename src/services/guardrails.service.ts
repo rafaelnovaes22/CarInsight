@@ -1,7 +1,6 @@
 import { logger } from '../lib/logger';
 import { maskPhoneNumber } from '../lib/privacy';
 import { autoAddDisclaimers } from '../config/disclosure.messages';
-import { redisService } from '../config/redis.client';
 
 export interface GuardrailResult {
   allowed: boolean;
@@ -16,7 +15,7 @@ export class GuardrailsService {
   // Maximum messages per minute per user
   private readonly MAX_MESSAGES_PER_MINUTE = 10;
 
-  // Rate limiting storage (in production, use Redis)
+  // Rate limiting storage
   private rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
   /**
@@ -24,7 +23,7 @@ export class GuardrailsService {
    */
   async validateInput(phoneNumber: string, message: string): Promise<GuardrailResult> {
     // 1. Check rate limiting
-    const rateLimitCheck = await this.checkRateLimit(phoneNumber);
+    const rateLimitCheck = this.checkRateLimit(phoneNumber);
     if (!rateLimitCheck.allowed) {
       return rateLimitCheck;
     }
@@ -110,57 +109,9 @@ export class GuardrailsService {
   }
 
   /**
-   * Check if user has exceeded rate limit (async approach using Redis with Map fallback)
+   * Check if user has exceeded rate limit
    */
-  private async checkRateLimit(phoneNumber: string): Promise<GuardrailResult> {
-    const redis = redisService.getClient();
-
-    if (redis && redisService.isAvailable()) {
-      return this.checkRateLimitRedis(redis, phoneNumber);
-    }
-
-    return this.checkRateLimitLocal(phoneNumber);
-  }
-
-  /**
-   * Rate limit implementation using Redis (Persistent, distributed)
-   */
-  private async checkRateLimitRedis(
-    redis: import('ioredis').Redis,
-    phoneNumber: string
-  ): Promise<GuardrailResult> {
-    const key = `ratelimit:${phoneNumber}`;
-
-    try {
-      const currentCountStr = await redis.get(key);
-      const currentCount = currentCountStr ? parseInt(currentCountStr, 10) : 0;
-
-      if (currentCount >= this.MAX_MESSAGES_PER_MINUTE) {
-        logger.warn({ phoneNumber: maskPhoneNumber(phoneNumber) }, 'Rate limit exceeded (Redis)');
-        return {
-          allowed: false,
-          reason: 'Muitas mensagens em pouco tempo. Por favor, aguarde um minuto.',
-        };
-      }
-
-      const multi = redis.multi();
-      multi.incr(key);
-      if (currentCount === 0) {
-        multi.expire(key, 60); // 1 minute expiration
-      }
-      await multi.exec();
-
-      return { allowed: true };
-    } catch {
-      logger.error('Erro ao acessar Redis. Efetuando fallback para Rate Limit local em memória.');
-      return this.checkRateLimitLocal(phoneNumber);
-    }
-  }
-
-  /**
-   * Rate limit implementation using in-memory Map (Fallback)
-   */
-  private checkRateLimitLocal(phoneNumber: string): GuardrailResult {
+  private checkRateLimit(phoneNumber: string): GuardrailResult {
     const now = Date.now();
     const record = this.rateLimitMap.get(phoneNumber);
 

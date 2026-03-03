@@ -199,13 +199,13 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
       );
     });
 
-    it('does NOT transition to recommendation on usage input (Requirement 2.4)', async () => {
+    it('auto-transitions when usage input completes the profile (Requirement 2.4)', async () => {
       await fc.assert(
         fc.asyncProperty(usageDescriptionGenerator, async usage => {
-          const state = createStateWithPartialProfile();
+          const state = createStateWithPartialProfile(); // has budget, no usage
           state.messages = [new HumanMessage(usage)];
 
-          // Mock agent response that would normally trigger recommendation
+          // Mock agent response that extracts usage — profile becomes complete
           mockChat.mockResolvedValue({
             extractedPreferences: { usage },
             response: 'Entendi o uso',
@@ -215,21 +215,20 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
 
           const result = await discoveryNode(state);
 
-          // Should NOT transition to recommendation
-          expect(result.next).not.toBe('recommendation');
-          expect(result.next).toBe('discovery');
+          // Profile is now complete (budget + usage) → auto-transition
+          expect(result.next).toBe('recommendation');
         }),
         { numRuns: 100 }
       );
     });
 
-    it('does NOT transition to recommendation on body type input (Requirement 2.4)', async () => {
+    it('auto-transitions when body type input completes the profile (Requirement 2.4)', async () => {
       await fc.assert(
         fc.asyncProperty(bodyTypeGenerator, async bodyType => {
-          const state = createStateWithPartialProfile();
+          const state = createStateWithPartialProfile(); // has budget, no bodyType
           state.messages = [new HumanMessage(bodyType)];
 
-          // Mock agent response that would normally trigger recommendation
+          // Mock agent response that extracts bodyType — profile becomes complete
           mockChat.mockResolvedValue({
             extractedPreferences: { bodyType },
             response: 'Entendi o tipo',
@@ -239,9 +238,8 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
 
           const result = await discoveryNode(state);
 
-          // Should NOT transition to recommendation
-          expect(result.next).not.toBe('recommendation');
-          expect(result.next).toBe('discovery');
+          // Profile is now complete (budget + bodyType) → auto-transition
+          expect(result.next).toBe('recommendation');
         }),
         { numRuns: 100 }
       );
@@ -270,7 +268,7 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
       );
     });
 
-    it('blocks automatic recommendation transition even when agent says canRecommend (Requirement 2.4)', async () => {
+    it('auto-transitions to recommendation when profile is complete and agent says canRecommend (Requirement 2.4)', async () => {
       await fc.assert(
         fc.asyncProperty(informationProvisionGenerator, async infoMessage => {
           const state = createStateWithCompleteProfile();
@@ -281,15 +279,14 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
             extractedPreferences: {},
             response: 'Vou te mostrar opções',
             canRecommend: true,
-            nextMode: 'recommendation', // Agent explicitly wants to go to recommendation
+            nextMode: 'recommendation',
             recommendations: [{ id: '1', brand: 'Honda', model: 'Civic', price: 90000 }],
           });
 
           const result = await discoveryNode(state);
 
-          // Should NOT transition to recommendation without explicit request
-          expect(result.next).not.toBe('recommendation');
-          expect(result.next).toBe('discovery');
+          // Should auto-transition when profile is complete
+          expect(result.next).toBe('recommendation');
         }),
         { numRuns: 100 }
       );
@@ -301,15 +298,15 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
   // ============================================================================
 
   /**
-   * **Property 8: Ask Before Showing When Profile Complete**
+   * **Property 8: Auto-Transition When Profile Complete**
    * **Validates: Requirements 2.5**
    *
    * For any discovery state where budget AND (usage OR bodyType) are present
-   * AND no explicit recommendation request was made, the response SHALL
-   * contain a question asking if the user wants to see options.
+   * AND the agent says canRecommend, the node SHALL auto-transition to
+   * recommendation instead of asking.
    */
-  describe('Property 8: Ask Before Showing When Profile Complete', () => {
-    it('asks if user wants to see options when profile becomes complete with budget input (Requirement 2.5)', async () => {
+  describe('Property 8: Auto-Transition When Profile Complete', () => {
+    it('auto-transitions to recommendation when profile becomes complete with budget input (Requirement 2.5)', async () => {
       await fc.assert(
         fc.asyncProperty(budgetValueGenerator, async budget => {
           // State already has usage, now receiving budget
@@ -331,18 +328,14 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
 
           const result = await discoveryNode(state);
 
-          // Should ask if user wants to see options
-          expect(result.messages).toBeDefined();
-          expect(result.messages).toHaveLength(1);
-          const responseContent = result.messages![0].content as string;
-          // Match "quer que eu te mostre algumas opções" or similar patterns
-          expect(responseContent.toLowerCase()).toMatch(/quer.*mostr.*opç/i);
+          // Should auto-transition to recommendation
+          expect(result.next).toBe('recommendation');
         }),
         { numRuns: 100 }
       );
     });
 
-    it('asks if user wants to see options when profile becomes complete with usage input (Requirement 2.5)', async () => {
+    it('auto-transitions to recommendation when profile becomes complete with usage input (Requirement 2.5)', async () => {
       await fc.assert(
         fc.asyncProperty(usageDescriptionGenerator, async usage => {
           // State already has budget, now receiving usage
@@ -364,18 +357,14 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
 
           const result = await discoveryNode(state);
 
-          // Should ask if user wants to see options
-          expect(result.messages).toBeDefined();
-          expect(result.messages).toHaveLength(1);
-          const responseContent = result.messages![0].content as string;
-          // Match "quer que eu te mostre algumas opções" or similar patterns
-          expect(responseContent.toLowerCase()).toMatch(/quer.*mostr.*opç/i);
+          // Should auto-transition to recommendation
+          expect(result.next).toBe('recommendation');
         }),
         { numRuns: 100 }
       );
     });
 
-    it('asks if user wants to see options when profile becomes complete with bodyType input (Requirement 2.5)', async () => {
+    it('auto-transitions to recommendation when profile becomes complete with bodyType input (Requirement 2.5)', async () => {
       await fc.assert(
         fc.asyncProperty(bodyTypeGenerator, async bodyType => {
           // State already has budget, now receiving bodyType
@@ -397,12 +386,8 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
 
           const result = await discoveryNode(state);
 
-          // Should ask if user wants to see options
-          expect(result.messages).toBeDefined();
-          expect(result.messages).toHaveLength(1);
-          const responseContent = result.messages![0].content as string;
-          // Match "quer que eu te mostre algumas opções" or similar patterns
-          expect(responseContent.toLowerCase()).toMatch(/quer.*mostr.*opç/i);
+          // Should auto-transition to recommendation
+          expect(result.next).toBe('recommendation');
         }),
         { numRuns: 100 }
       );

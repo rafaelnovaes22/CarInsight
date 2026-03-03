@@ -1,12 +1,9 @@
 import express from 'express';
 import path from 'path';
-import type { Worker } from 'bullmq';
 import { env } from './config/env';
 import { logger } from './lib/logger';
 import { maskPhoneNumber } from './lib/privacy';
 import { prisma } from './lib/prisma';
-import { createMessageQueue, closeMessageQueue } from './lib/queue';
-import { redisService } from './config/redis.client';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
 import webhookRoutes from './routes/webhook.routes';
 import evolutionWebhookRoutes from './routes/webhook-evolution.routes';
@@ -146,23 +143,6 @@ async function start() {
       logger.info({ vehicleCount }, 'Database ready');
     }
 
-    // Initialize message queue if enabled
-    let _messageWorker: Worker | null = null;
-    if (env.ENABLE_MESSAGE_QUEUE) {
-      const redisClient = redisService.getClient();
-      if (redisClient) {
-        const connection = { host: redisClient.options.host, port: redisClient.options.port };
-        createMessageQueue(connection);
-        const { createMessageWorker } = await import('./workers/message.worker');
-        _messageWorker = createMessageWorker(connection);
-        logger.info('Message queue and worker initialized');
-      } else {
-        logger.warn(
-          'ENABLE_MESSAGE_QUEUE is true but Redis is not available, using direct processing'
-        );
-      }
-    }
-
     // Initialize vector store in background (non-blocking)
     logger.info('Starting vector store initialization in background...');
     inMemoryVectorStore
@@ -211,7 +191,6 @@ async function shutdown(signal: string) {
   } catch {
     // Module may not have been loaded
   }
-  await closeMessageQueue().catch(() => {});
   process.exit(0);
 }
 

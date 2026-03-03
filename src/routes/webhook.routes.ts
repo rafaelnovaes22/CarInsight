@@ -2,7 +2,6 @@ import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { env } from '../config/env';
 import { logger } from '../lib/logger';
-import { getMessageQueue } from '../lib/queue';
 import WhatsAppMetaService from '../services/whatsapp-meta.service';
 
 const router = Router();
@@ -96,39 +95,28 @@ router.post('/whatsapp', async (req: Request, res: Response) => {
 
     const body = req.body;
 
-    logger.info(
-      {
-        object: body?.object,
-        entries: body?.entry?.length || 0,
-      },
-      'Webhook received'
-    );
+    const messageCount =
+      body.entry?.reduce(
+        (acc: number, e: any) =>
+          acc +
+          (e.changes?.reduce((a: number, c: any) => a + (c.value?.messages?.length || 0), 0) || 0),
+        0
+      ) || 0;
+
+    if (messageCount > 0) {
+      logger.info({ entries: body?.entry?.length, messageCount }, 'Webhook received');
+    } else {
+      logger.debug({ entries: body?.entry?.length }, 'Webhook status update');
+    }
 
     // Respond immediately (Meta requires quick acknowledgement)
     res.status(200).send('EVENT_RECEIVED');
 
     // Process webhook asynchronously
     if (body?.object === 'whatsapp_business_account' && body.entry) {
-      const queue = getMessageQueue();
-      if (env.ENABLE_MESSAGE_QUEUE && queue) {
-        const messageId = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id;
-        queue
-          .add(
-            'meta-webhook',
-            { source: 'meta' as const, body, receivedAt: new Date().toISOString() },
-            { jobId: messageId || undefined }
-          )
-          .catch(err => {
-            logger.error({ err }, 'Failed to enqueue webhook, processing directly');
-            whatsappMeta.processWebhook(body).catch(error => {
-              logger.error({ error }, 'Error processing webhook');
-            });
-          });
-      } else {
-        whatsappMeta.processWebhook(body).catch(error => {
-          logger.error({ error }, 'Error processing webhook');
-        });
-      }
+      whatsappMeta.processWebhook(body).catch(error => {
+        logger.error({ error }, 'Error processing webhook');
+      });
     }
   } catch (error) {
     logger.error({ error }, 'Error receiving webhook');

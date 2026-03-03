@@ -1,9 +1,8 @@
 import { Router } from 'express';
+import { env } from '../config/env';
 import { logger } from '../lib/logger';
-import { getMessageQueue } from '../lib/queue';
 import { MessageHandlerV2 } from '../services/message-handler-v2.service';
 import { WhatsAppEvolutionService } from '../services/whatsapp-evolution.service';
-import { env } from '../config/env';
 
 const router = Router();
 const messageHandler = new MessageHandlerV2();
@@ -66,18 +65,8 @@ router.post('/evolution', async (req, res) => {
 
     logger.info({ from: `${phoneNumber.slice(0, 6)}****` }, 'Received message via Evolution');
 
-    const queue = getMessageQueue();
-    if (env.ENABLE_MESSAGE_QUEUE && queue) {
-      await queue.add('evolution-webhook', {
-        source: 'evolution' as const,
-        phoneNumber,
-        content,
-        receivedAt: new Date().toISOString(),
-      });
-    } else {
-      const response = await messageHandler.handleMessage(phoneNumber, content);
-      await evolutionService.sendMessage(phoneNumber, response);
-    }
+    const response = await messageHandler.handleMessage(phoneNumber, content);
+    await evolutionService.sendMessage(phoneNumber, response);
 
     return res.status(200).json({ success: true });
   } catch (error: any) {

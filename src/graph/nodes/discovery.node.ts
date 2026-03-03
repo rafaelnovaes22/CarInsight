@@ -9,8 +9,6 @@ import {
   detectExplicitRecommendationRequest,
   isInformationProvision,
 } from '../../agents/vehicle-expert/intent-detector';
-import { isLateNight } from '../../config/time-context';
-import { featureFlags } from '../../lib/feature-flags';
 
 function resolveConversationId(state: IGraphState, config?: RunnableConfig): string {
   const threadId = (config?.configurable as Record<string, unknown> | undefined)?.thread_id;
@@ -135,28 +133,22 @@ export async function discoveryNode(
   // 6. Determine Next Node with recommendation control
   // Requirements: 2.1, 2.2, 2.4, 2.5
   let next = 'discovery'; // Default: stay in discovery/loop
-  let responseMessage = response.response;
+  const responseMessage = response.response;
 
   // Check if profile is complete (has budget AND usage/bodyType)
   const hasCompletedProfile =
     updatedProfile.budget && (updatedProfile.usage || updatedProfile.bodyType);
 
   if (isInfoProvision) {
-    // Pure information provision - stay in discovery, don't auto-trigger recommendations
-    // Requirements: 2.1, 2.2
-    next = 'discovery';
-
-    // If profile is now complete after this info provision, ask if they want to see options
-    // Requirements: 2.5
-    if (hasCompletedProfile && !isExplicitRequest) {
-      const emotionalEnabled = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
-      const lateNight = emotionalEnabled && isLateNight();
-      const optionsAsk = lateNight
-        ? 'Sem compromisso, quer que eu te mostre algumas opções que combinam com o que você falou?'
-        : 'Quer que eu te mostre algumas opções?';
-      responseMessage = response.response
-        ? `${response.response} ${optionsAsk}`
-        : `Entendi! ${optionsAsk}`;
+    // Pure information provision - auto-transition when profile is complete
+    if (
+      hasCompletedProfile &&
+      (response.nextMode === 'recommendation' ||
+        (response.canRecommend && response.recommendations && response.recommendations.length > 0))
+    ) {
+      next = 'recommendation';
+    } else {
+      next = 'discovery';
     }
   } else if (isExplicitRequest) {
     // Explicit recommendation request - allow transition
@@ -171,18 +163,10 @@ export async function discoveryNode(
       next = 'recommendation';
     }
   } else if (response.nextMode) {
-    // Respect agent's decision for non-recommendation modes (e.g., financing, trade_in)
-    // But block automatic recommendation transitions
-    if (response.nextMode === 'recommendation') {
-      // Don't auto-transition to recommendation without explicit request
+    if (response.nextMode === 'recommendation' && hasCompletedProfile) {
+      next = 'recommendation';
+    } else if (response.nextMode === 'recommendation') {
       next = 'discovery';
-      // Ask if they want to see options when profile is complete
-      // Requirements: 2.5
-      if (hasCompletedProfile) {
-        responseMessage = response.response
-          ? `${response.response} Quer que eu te mostre algumas opções?`
-          : 'Quer que eu te mostre algumas opções de veículos?';
-      }
     } else {
       next = response.nextMode;
     }
@@ -191,15 +175,8 @@ export async function discoveryNode(
     response.recommendations &&
     response.recommendations.length > 0
   ) {
-    // Agent says we can recommend, but we need explicit request
-    // Requirements: 2.4
-    next = 'discovery';
-    // Ask if they want to see options
-    // Requirements: 2.5
     if (hasCompletedProfile) {
-      responseMessage = response.response
-        ? `${response.response} Quer que eu te mostre algumas opções?`
-        : 'Quer que eu te mostre algumas opções de veículos?';
+      next = 'recommendation';
     }
   }
 

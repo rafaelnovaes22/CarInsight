@@ -8,7 +8,6 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   // DATABASE_URL is required in dev/prod, but unit tests run without a database.
   DATABASE_URL: z.string().optional(),
-  REDIS_URL: z.string().optional(),
 
   // LLM Providers (com fallback automático)
   OPENAI_API_KEY: z.string().default('sk-mock-key-for-development'), // Primário para LLM e Embeddings
@@ -57,12 +56,6 @@ const envSchema = z.object({
     .default('false')
     .transform(val => val === 'true'),
   ENABLE_RETENTION: z
-    .string()
-    .default('false')
-    .transform(val => val === 'true'),
-
-  // Message Queue (BullMQ)
-  ENABLE_MESSAGE_QUEUE: z
     .string()
     .default('false')
     .transform(val => val === 'true'),
