@@ -11,6 +11,13 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConversationState } from '../../src/types/state.types';
+
+// Mock vehicle search adapter to avoid DB calls
+vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
+  vehicleSearchAdapter: { search: vi.fn(async () => []) },
+}));
+
+// Must import after mocks
 import { conversationalHandler } from '../../src/services/conversational-handler.service';
 
 // Mock the LLM router to return deterministic responses for test cases
@@ -33,7 +40,7 @@ vi.mock('../../src/lib/llm-router', () => ({
       if (isExtraction) {
         return mockResponse(
           JSON.stringify({
-            extracted: { brand: 'Hyundai', model: 'HB20' },
+            extracted: { brand: 'hyundai', model: 'hb20' },
             confidence: 0.95,
             reasoning: 'Specific model extraction',
             fieldsExtracted: ['brand', 'model'],
@@ -81,8 +88,8 @@ vi.mock('../../src/lib/llm-router', () => ({
             JSON.stringify({
               extracted: {
                 hasTradeIn: true,
-                tradeInBrand: 'Chevrolet',
-                tradeInModel: 'Onix',
+                tradeInBrand: 'chevrolet',
+                tradeInModel: 'onix',
                 tradeInYear: 2019,
               },
               confidence: 0.95,

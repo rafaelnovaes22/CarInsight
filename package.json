@@ -24,11 +24,13 @@
     "postinstall": "prisma generate",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run",
+    "test:run": "vitest run --exclude '**/message-handler-lead*'",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "test:e2e": "vitest run tests/e2e",
     "test:integration": "vitest run tests/integration",
+    "test:integration:db": "docker compose -f docker-compose.db.yml up -d && npx wait-on tcp:localhost:5434 -t 30000 && cross-env DATABASE_URL=postgresql://faciliauto:faciliauto2025@localhost:5434/faciliauto_mvp npx prisma migrate deploy && cross-env DATABASE_URL=postgresql://faciliauto:faciliauto2025@localhost:5434/faciliauto_mvp vitest run tests/integration/message-handler-lead.test.ts",
+    "test:all": "npm run test:run && npm run test:integration:db",
     "test:integration:llm": "vitest run tests/integration/llm-integration.test.ts",
     "test:unit": "vitest run tests/unit",
     "test:smoke": "vitest run tests/integration/llm-integration.test.ts --testNamePattern='Smoke|Availability'",
@@ -104,6 +106,7 @@
     "@typescript-eslint/parser": "^8.49.0",
     "@vitest/coverage-v8": "^4.0.10",
     "@vitest/ui": "^4.0.10",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
@@ -116,7 +119,8 @@
     "supertest": "^7.1.4",
     "typescript": "^5.3.2",
     "typescript-eslint": "^8.49.0",
-    "vitest": "^4.0.10"
+    "vitest": "^4.0.10",
+    "wait-on": "^9.0.4"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
