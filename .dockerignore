@@ -23,7 +23,6 @@ logs
 dist
 tests
 docs
-scripts
 .github
 .husky
 verify_output.txt
