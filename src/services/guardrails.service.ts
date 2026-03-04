@@ -1,6 +1,20 @@
+/**
+ * Guardrails Service
+ * 
+ * Serviço de segurança e validação de input/output com:
+ * - Rate limiting distribuído (Redis/Memory)
+ * - Detecção de prompt injection
+ * - Validação de conteúdo
+ * - Sanitização de input
+ * 
+ * ISO 42001 Compliance: Validações para IA segura
+ */
+
 import { logger } from '../lib/logger';
 import { maskPhoneNumber } from '../lib/privacy';
 import { autoAddDisclaimers } from '../config/disclosure.messages';
+import { getRateLimitService, type RateLimitService } from './rate-limit.service';
+import type { RateLimitConfig } from '../lib/rate-limit/types';
 
 export interface GuardrailResult {
   allowed: boolean;
@@ -8,22 +22,91 @@ export interface GuardrailResult {
   sanitizedInput?: string;
 }
 
+export interface GuardrailsOptions {
+  /** Rate limit service customizado (para testes) */
+  rateLimitService?: RateLimitService;
+  /** Configuração de rate limiting */
+  rateLimitConfig?: RateLimitConfig;
+  /** Desabilitar rate limiting */
+  disableRateLimit?: boolean;
+}
+
+/**
+ * Serviço de Guardrails para validação de segurança
+ * 
+ * NOTA: Para rate limiting distribuído em produção, configure REDIS_URL.
+ * Sem Redis, usa fallback em memória (não compartilha entre instâncias).
+ */
 export class GuardrailsService {
   // Maximum message length
   private readonly MAX_MESSAGE_LENGTH = 1000;
 
-  // Maximum messages per minute per user
-  private readonly MAX_MESSAGES_PER_MINUTE = 10;
+  // Rate limiting
+  private rateLimitService: RateLimitService | null = null;
+  private rateLimitConfig: RateLimitConfig;
+  private disableRateLimit: boolean;
+  private initialized = false;
 
-  // Rate limiting storage
+  // LEGACY: Rate limiting in-memory (para compatibilidade durante transição)
+  private readonly MAX_MESSAGES_PER_MINUTE = 10;
   private rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+  private useLegacyRateLimit = false;
+
+  constructor(options: GuardrailsOptions = {}) {
+    this.rateLimitService = options.rateLimitService ?? null;
+    this.rateLimitConfig = options.rateLimitConfig ?? {
+      maxRequests: 10,
+      windowMs: 60000,
+    };
+    this.disableRateLimit = options.disableRateLimit ?? false;
+  }
+
+  /**
+   * Inicializa o serviço (deve ser chamado antes do primeiro uso)
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+
+    // Se já tem rate limit service injetado, usar ele
+    if (this.rateLimitService) {
+      logger.info('Guardrails using provided rate limit service');
+      this.initialized = true;
+      return;
+    }
+
+    // Se rate limit desabilitado, não inicializar
+    if (this.disableRateLimit) {
+      logger.info('Rate limiting disabled');
+      this.initialized = true;
+      return;
+    }
+
+    try {
+      // Tentar obter serviço singleton
+      this.rateLimitService = await getRateLimitService();
+      logger.info('Guardrails initialized with distributed rate limiting');
+    } catch (error) {
+      logger.warn(
+        { error: (error as Error).message },
+        'Failed to initialize distributed rate limiting, using legacy mode'
+      );
+      this.useLegacyRateLimit = true;
+    }
+
+    this.initialized = true;
+  }
 
   /**
    * Validate incoming user message
    */
   async validateInput(phoneNumber: string, message: string): Promise<GuardrailResult> {
+    // Garantir inicialização
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
     // 1. Check rate limiting
-    const rateLimitCheck = this.checkRateLimit(phoneNumber);
+    const rateLimitCheck = await this.checkRateLimit(phoneNumber);
     if (!rateLimitCheck.allowed) {
       return rateLimitCheck;
     }
@@ -110,8 +193,46 @@ export class GuardrailsService {
 
   /**
    * Check if user has exceeded rate limit
+   * 
+   * Usa RateLimitService distribuído se disponível, senão fallback para legacy.
    */
-  private checkRateLimit(phoneNumber: string): GuardrailResult {
+  private async checkRateLimit(phoneNumber: string): Promise<GuardrailResult> {
+    // Se desabilitado, permitir
+    if (this.disableRateLimit) {
+      return { allowed: true };
+    }
+
+    // Usar serviço distribuído se disponível
+    if (this.rateLimitService && !this.useLegacyRateLimit) {
+      try {
+        const status = await this.rateLimitService.checkWhatsAppLimit(phoneNumber);
+
+        if (!status.allowed) {
+          const retrySeconds = Math.ceil((status.retryAfterMs ?? 60000) / 1000);
+          return {
+            allowed: false,
+            reason: `Você está enviando mensagens muito rapidamente. Por favor, aguarde ${retrySeconds} segundos.`,
+          };
+        }
+
+        return { allowed: true };
+      } catch (error) {
+        logger.error({ error, phoneNumber }, 'Rate limit service failed, using legacy');
+        // Fallback para legacy em caso de erro
+      }
+    }
+
+    // LEGACY: Rate limiting in-memory (fallback)
+    return this.checkLegacyRateLimit(phoneNumber);
+  }
+
+  /**
+   * LEGACY: Rate limiting usando Map em memória
+   * 
+   * NOTA: Não compartilha estado entre instâncias!
+   * Mantido para compatibilidade durante transição.
+   */
+  private checkLegacyRateLimit(phoneNumber: string): GuardrailResult {
     const now = Date.now();
     const record = this.rateLimitMap.get(phoneNumber);
 
@@ -127,7 +248,7 @@ export class GuardrailsService {
     if (record.count >= this.MAX_MESSAGES_PER_MINUTE) {
       logger.warn(
         { phoneNumber: maskPhoneNumber(phoneNumber), count: record.count },
-        'Rate limit exceeded'
+        'Rate limit exceeded (legacy mode)'
       );
       return {
         allowed: false,
@@ -223,7 +344,8 @@ export class GuardrailsService {
     }
 
     // Check for repeated characters (flooding)
-    if (/(.)\1{10,}/.test(message)) {
+    if (/(.)
+{10,}/.test(message)) {
       return {
         allowed: false,
         reason: 'Desculpe, não entendi sua mensagem. Pode reformular?',
@@ -295,9 +417,16 @@ export class GuardrailsService {
   }
 
   /**
-   * Clean up old rate limit records (call periodically)
+   * LEGACY: Clean up old rate limit records (call periodically)
+   * 
+   * NOTA: Apenas necessário para legacy mode. RateLimitService gerencia próprio cleanup.
    */
   cleanupRateLimits(): void {
+    // Se usando serviço distribuído, não precisa de cleanup manual
+    if (this.rateLimitService && !this.useLegacyRateLimit) {
+      return;
+    }
+
     const now = Date.now();
     for (const [phone, record] of this.rateLimitMap.entries()) {
       if (now > record.resetAt) {
@@ -305,10 +434,52 @@ export class GuardrailsService {
       }
     }
   }
+
+  /**
+   * Retorna estatísticas do serviço
+   */
+  getStats(): {
+    initialized: boolean;
+    useDistributed: boolean;
+    useLegacy: boolean;
+    legacyKeysCount: number;
+  } {
+    return {
+      initialized: this.initialized,
+      useDistributed: !!this.rateLimitService && !this.useLegacyRateLimit,
+      useLegacy: this.useLegacyRateLimit || !this.rateLimitService,
+      legacyKeysCount: this.rateLimitMap.size,
+    };
+  }
 }
 
-// Singleton instance
+// Singleton instance (lazy initialization)
+let guardrailsInstance: GuardrailsService | null = null;
+
+/**
+ * Obtém instância singleton do GuardrailsService
+ */
+export async function getGuardrails(): Promise<GuardrailsService> {
+  if (!guardrailsInstance) {
+    guardrailsInstance = new GuardrailsService();
+    await guardrailsInstance.initialize();
+  }
+  return guardrailsInstance;
+}
+
+/**
+ * Reseta instância singleton (para testes)
+ */
+export function resetGuardrails(): void {
+  guardrailsInstance = null;
+}
+
+// Legacy singleton para compatibilidade (não recomendado para novo código)
 export const guardrails = new GuardrailsService();
 
-// Cleanup rate limits every minute
-setInterval(() => guardrails.cleanupRateLimits(), 60000);
+// Cleanup rate limits every minute (apenas para legacy)
+setInterval(() => {
+  if (!guardrailsInstance || guardrailsInstance.getStats().useLegacy) {
+    guardrails.cleanupRateLimits();
+  }
+}, 60000);

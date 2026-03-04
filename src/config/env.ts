@@ -34,6 +34,14 @@ const envSchema = z.object({
   EVOLUTION_API_KEY: z.string().optional(),
   EVOLUTION_INSTANCE_NAME: z.string().default('carinsight'),
 
+  // Redis Configuration (para rate limiting distribuído e cache)
+  REDIS_URL: z.string().optional(), // ex: redis://localhost:6379
+  REDIS_RATE_LIMIT_TTL: z.coerce.number().default(60), // TTL em segundos
+
+  // Rate Limiting Configuration
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(10), // msgs por janela
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000), // janela em ms (1 min)
+
   // Feature Flags
   ENABLE_CONVERSATIONAL_MODE: z
     .string()

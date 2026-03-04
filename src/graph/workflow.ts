@@ -65,6 +65,8 @@ const routeNode = (state: IGraphState) => {
     case 'end':
     case 'handoff':
       return END;
+    case 'trade_in':
+      return 'trade_in';
     default: {
       // Keep the user in discovery if profile already exists to avoid name-collection loops.
       const fallbackNode = state.profile?.customerName ? 'discovery' : 'greeting';

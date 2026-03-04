@@ -5,6 +5,7 @@ import { cache } from '../lib/redis';
 import { MessageHandlerV2 } from './message-handler-v2.service';
 import { AudioTranscriptionService } from './audio-transcription.service';
 import { IWhatsAppService, SendMessageOptions } from '../interfaces/whatsapp-service.interface';
+import { whatsAppRateLimiter } from '../lib/whatsapp-rate-limit';
 
 interface MetaWebhookMessage {
   from: string;
@@ -335,6 +336,9 @@ export class WhatsAppMetaService implements IWhatsAppService {
       );
       body = body.substring(0, MAX_WHATSAPP_LENGTH - 3) + '...';
     }
+
+    // Rate limiting: aguardar slot disponível
+    await whatsAppRateLimiter.acquireSlot();
 
     const makeRequest = async () => {
       return axios.post(

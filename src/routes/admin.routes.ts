@@ -3,6 +3,7 @@ import { AdminTaskExecutionError, runAdminTask } from '../services/admin-task-ru
 import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
 import { metricsService, MetricsPeriod } from '../services/metrics.service';
+import { getMetrics, getMetricsContentType } from '../services/metrics.service';
 
 const router = Router();
 
@@ -1880,6 +1881,58 @@ router.put('/prompts/:key', requireSecret, async (req, res) => {
     }
     logger.error({ error }, 'Admin: Failed to update system prompt');
     res.status(500).json({ error: 'Failed to update prompt', details: error.message });
+  }
+});
+
+// ============================================================================
+// Prometheus Metrics Endpoint
+// ============================================================================
+
+/**
+ * GET /admin/prometheus
+ * Returns Prometheus metrics for scraping
+ * No authentication required (Prometheus scraper)
+ * 
+ * Configure Prometheus to scrape:
+ *   - targets: ['your-app.com/admin/prometheus']
+ *   - scrape_interval: 15s
+ */
+router.get('/prometheus', async (req, res) => {
+  try {
+    const metrics = await getMetrics();
+    res.set('Content-Type', getMetricsContentType());
+    res.end(metrics);
+  } catch (error: any) {
+    logger.error({ error }, 'Failed to generate Prometheus metrics');
+    res.status(500).end('# Error generating metrics');
+  }
+});
+
+/**
+ * GET /admin/rate-limit/status
+ * Returns current rate limiting status and health
+ */
+router.get('/rate-limit/status', requireSecret, async (req, res) => {
+  try {
+    const { getRateLimitService } = await import('../services/rate-limit.service');
+    const rateLimit = await getRateLimitService();
+
+    const health = await rateLimit.healthCheck();
+    const stats = rateLimit.getServiceStats();
+
+    res.json({
+      success: true,
+      health,
+      stats,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Admin: Failed to get rate limit status');
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get rate limit status',
+      details: error.message,
+    });
   }
 });
 

@@ -28,19 +28,25 @@ export async function tradeInNode(state: IGraphState): Promise<Partial<IGraphSta
       profile: {
         ...state.profile,
         ...response.extractedPreferences,
+        // Store trade-in info if provided
+        tradeInVehicle: response.extractedPreferences?.tradeInVehicle || state.profile?.tradeInVehicle,
       },
-      next: response.nextMode || 'negotiation',
+      // FIX: Go to END after trade-in processing, not negotiation
+      // This prevents duplicate processing of the same message
+      next: 'end',
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),
+        tradeInProcessed: true,
       },
     };
     timer.logSuccess(state, result);
     return result;
   }
 
-  timer.logSuccess(state, { next: 'negotiation' });
+  // If no response, end conversation gracefully
+  timer.logSuccess(state, { next: 'end' });
   return {
-    next: 'negotiation',
+    next: 'end',
   };
 }
