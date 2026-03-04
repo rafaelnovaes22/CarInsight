@@ -64,6 +64,7 @@ export interface CustomerProfile {
   tradeInModel?: string; // Modelo do veículo na troca
   tradeInYear?: number; // Ano do veículo na troca
   tradeInEstimatedValue?: number; // Valor estimado
+  tradeInVehicle?: string; // Veículo na troca (marca + modelo)
 
   // Financing
   wantsFinancing?: boolean; // Se quer financiar

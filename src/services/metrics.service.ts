@@ -421,7 +421,7 @@ export async function getMetrics(period: '24h' | '7d' | '30d' = '24h'): Promise<
 
   // Messages
   const totalMessages = await prisma.message.count({
-    where: { createdAt: { gte: startDate } },
+    where: { createdAt: { gte: startDate } } as any,
   });
 
   const avgPerConversation =
@@ -431,7 +431,7 @@ export async function getMetrics(period: '24h' | '7d' | '30d' = '24h'): Promise<
   const conversationsWithDuration = await prisma.conversation.findMany({
     where: {
       startedAt: { gte: startDate },
-      lastMessageAt: { not: null },
+      lastMessageAt: { not: null } as any,
     },
     select: { startedAt: true, lastMessageAt: true },
   });

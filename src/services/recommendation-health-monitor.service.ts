@@ -1,6 +1,7 @@
 import { AlertService } from '../lib/alerts';
 import { logger } from '../lib/logger';
-import { MetricsPeriod } from './metrics.service';
+// MetricsPeriod type definition (previously imported from metrics.service)
+type MetricsPeriod = '24h' | '7d' | '30d';
 import { AccuracyMetrics, recommendationMetrics } from './recommendation-metrics.service';
 
 export type RecommendationHealthStatus = 'healthy' | 'warning' | 'critical';

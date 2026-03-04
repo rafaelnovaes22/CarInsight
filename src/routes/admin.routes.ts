@@ -2,8 +2,14 @@ import { Router } from 'express';
 import { AdminTaskExecutionError, runAdminTask } from '../services/admin-task-runner.service';
 import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
-import { metricsService, MetricsPeriod } from '../services/metrics.service';
-import { getPrometheusMetrics, getMetricsContentType } from '../services/metrics.service';
+import {
+  getMetrics,
+  getPrometheusMetrics,
+  getMetricsContentType,
+} from '../services/metrics.service';
+
+// Type definition for metrics period
+type MetricsPeriod = '24h' | '7d' | '30d';
 
 const router = Router();
 
@@ -1345,7 +1351,7 @@ router.get('/debug-env', requireSecret, async (_req, res) => {
  */
 router.get('/metrics', requireSecret, async (req, res) => {
   try {
-    const period = (req.query.period as MetricsPeriod) || '24h';
+    const period = (req.query.period as MetricsPeriod | string) || '24h';
 
     if (!['24h', '7d', '30d'].includes(period)) {
       return res.status(400).json({
@@ -1355,7 +1361,7 @@ router.get('/metrics', requireSecret, async (req, res) => {
     }
 
     logger.info({ period }, 'Admin: Getting metrics');
-    const metrics = await metricsService.getMetrics(period);
+    const metrics = await getMetrics(period as any);
 
     res.json({
       success: true,
@@ -1377,11 +1383,10 @@ router.get('/metrics', requireSecret, async (req, res) => {
  */
 router.get('/metrics/performance', requireSecret, async (req, res) => {
   try {
-    const performance = await metricsService.getPerformanceMetrics();
+    const performance = await getMetrics('24h');
 
     res.json({
       success: true,
-      generatedAt: new Date().toISOString(),
       ...performance,
     });
   } catch (error: any) {
@@ -1403,7 +1408,8 @@ router.get('/metrics/performance', requireSecret, async (req, res) => {
 router.get('/metrics/trend', requireSecret, async (req, res) => {
   try {
     const days = parseInt(req.query.days as string) || 7;
-    const trend = await metricsService.getDailyTrend(days);
+    const period = days <= 7 ? '7d' : '30d';
+    const trend = await getMetrics(period);
 
     res.json({
       success: true,
