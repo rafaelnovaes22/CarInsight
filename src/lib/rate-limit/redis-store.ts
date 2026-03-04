@@ -1,6 +1,6 @@
 /**
  * Redis Rate Limit Store
- * 
+ *
  * Implementação de rate limiting usando Redis com algoritmo Sliding Window.
  * Usa Lua scripts para garantir atomicidade das operações.
  */
@@ -123,7 +123,7 @@ export class RedisRateLimitStore implements RateLimitStore {
     try {
       // Dynamic import para evitar erro se redis não estiver instalado
       const { createClient } = await import('redis');
-      
+
       this.client = createClient({
         url: process.env.REDIS_URL || 'redis://localhost:6379',
         socket: {
@@ -158,9 +158,9 @@ export class RedisRateLimitStore implements RateLimitStore {
       await this.loadScripts();
 
       logger.info(
-        { 
+        {
           useSlidingWindow: this.useSlidingWindow,
-          keyPrefix: this.keyPrefix 
+          keyPrefix: this.keyPrefix,
         },
         'Redis rate limit store initialized'
       );
@@ -177,9 +177,9 @@ export class RedisRateLimitStore implements RateLimitStore {
     try {
       // Sliding window script
       this.slidingWindowScriptSha = await this.client.scriptLoad(SLIDING_WINDOW_SCRIPT);
-      // Fixed window script  
+      // Fixed window script
       this.fixedWindowScriptSha = await this.client.scriptLoad(FIXED_WINDOW_SCRIPT);
-      
+
       logger.debug('Redis Lua scripts loaded');
     } catch (error) {
       logger.error({ error }, 'Failed to load Lua scripts');
@@ -197,21 +197,18 @@ export class RedisRateLimitStore implements RateLimitStore {
     const now = Date.now();
 
     try {
-      const scriptSha = this.useSlidingWindow 
-        ? this.slidingWindowScriptSha 
+      const scriptSha = this.useSlidingWindow
+        ? this.slidingWindowScriptSha
         : this.fixedWindowScriptSha;
 
       const args = this.useSlidingWindow
         ? [config.windowMs, config.maxRequests, now, this.slidingWindowWeight]
         : [config.windowMs, config.maxRequests, now];
 
-      const result = await this.client.evalSha(
-        scriptSha,
-        {
-          keys: [prefixedKey],
-          arguments: args.map(String),
-        }
-      ) as [number, number, number, number, number];
+      const result = (await this.client.evalSha(scriptSha, {
+        keys: [prefixedKey],
+        arguments: args.map(String),
+      })) as [number, number, number, number, number];
 
       const [allowed, remaining, currentCount, resetAtMs, retryAfterMs] = result;
 
@@ -269,7 +266,10 @@ export class RedisRateLimitStore implements RateLimitStore {
   /**
    * Obtém estatísticas atuais sem incrementar
    */
-  async getStats(key: string, config: RateLimitConfig): Promise<{
+  async getStats(
+    key: string,
+    config: RateLimitConfig
+  ): Promise<{
     current: number;
     windowStart: number;
     resetAt: number;
@@ -284,12 +284,11 @@ export class RedisRateLimitStore implements RateLimitStore {
       // Remover entradas antigas e contar
       await this.client.zRemRangeByScore(prefixedKey, 0, windowStart);
       const count = await this.client.zCard(prefixedKey);
-      
+
       // Obter o timestamp mais antigo na janela
       const oldestEntries = await this.client.zRangeWithScores(prefixedKey, 0, 0);
-      const resetAt = oldestEntries.length > 0
-        ? oldestEntries[0].score + config.windowMs
-        : now + config.windowMs;
+      const resetAt =
+        oldestEntries.length > 0 ? oldestEntries[0].score + config.windowMs : now + config.windowMs;
 
       return {
         current: count,
@@ -349,9 +348,7 @@ export class RedisRateLimitStore implements RateLimitStore {
 /**
  * Factory para criar store com auto-conexão
  */
-export async function createRedisStore(
-  options?: RedisStoreOptions
-): Promise<RedisRateLimitStore> {
+export async function createRedisStore(options?: RedisStoreOptions): Promise<RedisRateLimitStore> {
   const store = new RedisRateLimitStore(options);
   await store.connect();
   return store;

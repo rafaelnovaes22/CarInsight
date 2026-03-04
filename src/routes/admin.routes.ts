@@ -1892,7 +1892,7 @@ router.put('/prompts/:key', requireSecret, async (req, res) => {
  * GET /admin/prometheus
  * Returns Prometheus metrics for scraping
  * No authentication required (Prometheus scraper)
- * 
+ *
  * Configure Prometheus to scrape:
  *   - targets: ['your-app.com/admin/prometheus']
  *   - scrape_interval: 15s

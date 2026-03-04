@@ -29,7 +29,8 @@ export async function tradeInNode(state: IGraphState): Promise<Partial<IGraphSta
         ...state.profile,
         ...response.extractedPreferences,
         // Store trade-in info if provided
-        tradeInVehicle: response.extractedPreferences?.tradeInVehicle || state.profile?.tradeInVehicle,
+        tradeInVehicle:
+          response.extractedPreferences?.tradeInVehicle || state.profile?.tradeInVehicle,
       },
       // FIX: Go to END after trade-in processing, not negotiation
       // This prevents duplicate processing of the same message

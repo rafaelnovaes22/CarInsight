@@ -1,6 +1,6 @@
 /**
  * Rate Limit Service
- * 
+ *
  * Serviço unificado de rate limiting com suporte a:
  * - Múltiplas stores (Redis primária, Memory fallback)
  * - Auto-fallback quando primária falha
@@ -10,10 +10,7 @@
 
 import { logger } from '../lib/logger';
 import { maskPhoneNumber } from '../lib/privacy';
-import {
-  createMemoryStore,
-  MemoryRateLimitStore,
-} from '../lib/rate-limit/memory-store';
+import { createMemoryStore, MemoryRateLimitStore } from '../lib/rate-limit/memory-store';
 import { createRedisStore, RedisRateLimitStore } from '../lib/rate-limit/redis-store';
 import type {
   RateLimitConfig,
@@ -62,7 +59,7 @@ const RESOURCE_CONFIGS: Map<string, RateLimitConfig> = new Map([
 
 /**
  * Serviço de Rate Limiting
- * 
+ *
  * Gerencia rate limiting com suporte a múltiplas stores e fallback automático.
  */
 export class RateLimitService {
@@ -107,23 +104,23 @@ export class RateLimitService {
           useSlidingWindow: true,
           keyPrefix: 'ratelimit',
         });
-        
+
         this.primaryStore = redisStore;
         logger.info('Rate limit service initialized with Redis');
-        
+
         // Métrica: Redis conectado
         if (this.enableMetrics) {
           const { redisMetrics } = await import('./metrics.service');
           redisMetrics.connected.set(1);
         }
-        
+
         return;
       } catch (error) {
         logger.warn(
           { error: (error as Error).message },
           'Failed to connect to Redis, using memory fallback'
         );
-        
+
         // Métrica: Redis desconectado
         if (this.enableMetrics) {
           const { redisMetrics } = await import('./metrics.service');
@@ -140,15 +137,13 @@ export class RateLimitService {
 
   /**
    * Verifica rate limit para uma chave
-   * 
+   *
    * @param key - Identificador único (ex: phone number)
    * @param resource - Tipo de recurso (ex: 'whatsapp:message')
    * @returns Status do rate limiting
    */
   async checkLimit(key: string, resource?: string): Promise<RateLimitStatus> {
-    const config = resource 
-      ? (RESOURCE_CONFIGS.get(resource) ?? DEFAULT_CONFIG)
-      : DEFAULT_CONFIG;
+    const config = resource ? (RESOURCE_CONFIGS.get(resource) ?? DEFAULT_CONFIG) : DEFAULT_CONFIG;
 
     const store = await this.getStore();
     const storeType = store === this.primaryStore ? 'redis' : 'memory';
@@ -205,12 +200,12 @@ export class RateLimitService {
       return status;
     } catch (error) {
       logger.error({ error, key, resource }, 'Rate limit check failed');
-      
+
       // Métrica de erro
       if (this.enableMetrics) {
         rateLimitMetrics.errorsTotal.inc({ error_type: 'check_failed' });
       }
-      
+
       // Em caso de erro, permitir a requisição (fail open) ou usar fallback
       if (this.autoFallback && store === this.primaryStore) {
         this.primaryFailed = true;
@@ -254,17 +249,15 @@ export class RateLimitService {
    * Incrementa contador sem verificar limite (para tracking)
    */
   async increment(key: string, resource?: string): Promise<void> {
-    const config = resource 
-      ? (RESOURCE_CONFIGS.get(resource) ?? DEFAULT_CONFIG)
-      : DEFAULT_CONFIG;
+    const config = resource ? (RESOURCE_CONFIGS.get(resource) ?? DEFAULT_CONFIG) : DEFAULT_CONFIG;
 
     const store = await this.getStore();
-    
+
     try {
       await store.increment(key, config);
     } catch (error) {
       logger.error({ error, key }, 'Failed to increment rate limit');
-      
+
       if (this.enableMetrics) {
         rateLimitMetrics.errorsTotal.inc({ error_type: 'increment_failed' });
       }
@@ -313,12 +306,10 @@ export class RateLimitService {
     key: string,
     resource?: string
   ): Promise<{ current: number; resetAt: Date; limit: number }> {
-    const config = resource 
-      ? (RESOURCE_CONFIGS.get(resource) ?? DEFAULT_CONFIG)
-      : DEFAULT_CONFIG;
+    const config = resource ? (RESOURCE_CONFIGS.get(resource) ?? DEFAULT_CONFIG) : DEFAULT_CONFIG;
 
     const store = await this.getStore();
-    
+
     try {
       const stats = await store.getStats(key, config);
       return {
@@ -474,8 +465,6 @@ export function resetRateLimitService(): void {
 /**
  * Cria nova instância (para testes ou configuração customizada)
  */
-export function createRateLimitService(
-  options: RateLimitServiceOptions
-): RateLimitService {
+export function createRateLimitService(options: RateLimitServiceOptions): RateLimitService {
   return new RateLimitService(options);
 }

@@ -1,16 +1,13 @@
 /**
  * Rate Limit Service Tests
- * 
+ *
  * Testes unitários para o sistema de rate limiting.
  * Cobre MemoryStore, RateLimitService e integração básica.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MemoryRateLimitStore } from '../../src/lib/rate-limit/memory-store';
-import {
-  RateLimitService,
-  createRateLimitService,
-} from '../../src/services/rate-limit.service';
+import { RateLimitService, createRateLimitService } from '../../src/services/rate-limit.service';
 import type { RateLimitConfig } from '../../src/lib/rate-limit/types';
 
 describe('Rate Limiting', () => {
@@ -247,7 +244,7 @@ describe('Rate Limiting', () => {
       const serviceWithCallback = createRateLimitService({
         primaryStore: new MemoryRateLimitStore(),
         enableLogging: false,
-        onEvent: (event) => events.push(event),
+        onEvent: event => events.push(event),
       });
 
       await serviceWithCallback.checkLimit('test:key');
@@ -264,7 +261,7 @@ describe('Rate Limiting', () => {
       const serviceWithCallback = createRateLimitService({
         primaryStore: new MemoryRateLimitStore(),
         enableLogging: false,
-        onEvent: (event) => events.push(event),
+        onEvent: event => events.push(event),
       });
 
       await serviceWithCallback.checkWhatsAppLimit('5511999999999');
@@ -300,7 +297,7 @@ describe('Rate Limiting', () => {
   describe('Integration: Guardrails + RateLimit', () => {
     it('should use distributed rate limiting when available', async () => {
       const { GuardrailsService } = await import('../../src/services/guardrails.service');
-      
+
       const memoryStore = new MemoryRateLimitStore();
       const rateLimitService = createRateLimitService({
         primaryStore: memoryStore,
@@ -324,7 +321,7 @@ describe('Rate Limiting', () => {
 
     it('should fallback to legacy when service fails', async () => {
       const { GuardrailsService } = await import('../../src/services/guardrails.service');
-      
+
       const guardrails = new GuardrailsService({
         disableRateLimit: false,
       });

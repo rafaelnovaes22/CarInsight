@@ -1,16 +1,16 @@
 /**
  * WhatsApp Rate Limiter
- * 
+ *
  * Controla taxa de envio de mensagens para evitar:
  * - Rate limiting da Meta API
  * - Bloqueio do número
  * - Erros 429 (Too Many Requests)
- * 
+ *
  * Limites Meta WhatsApp Business API:
  * - Tier 1: 80 msgs/segundo
  * - Tier 2: 200 msgs/segundo
  * - Tier 3: 1000 msgs/segundo
- * 
+ *
  * Usamos limites conservadores (10 msgs/seg) para segurança.
  */
 
@@ -28,10 +28,10 @@ interface RateLimitConfig {
 }
 
 const DEFAULT_CONFIG: RateLimitConfig = {
-  maxPerWindow: 10,      // 10 mensagens
-  windowMs: 1000,        // por segundo
-  baseDelayMs: 1000,     // 1s de delay inicial
-  maxRetries: 3,         // máximo 3 retries
+  maxPerWindow: 10, // 10 mensagens
+  windowMs: 1000, // por segundo
+  baseDelayMs: 1000, // 1s de delay inicial
+  maxRetries: 3, // máximo 3 retries
 };
 
 /**
@@ -53,17 +53,15 @@ export class WhatsAppRateLimiter {
    */
   async acquireSlot(): Promise<void> {
     const now = Date.now();
-    
+
     // Limpar timestamps antigos
-    this.sentTimestamps = this.sentTimestamps.filter(
-      t => now - t < this.config.windowMs
-    );
+    this.sentTimestamps = this.sentTimestamps.filter(t => now - t < this.config.windowMs);
 
     // Se atingiu limite, aguardar
     if (this.sentTimestamps.length >= this.config.maxPerWindow) {
       const oldest = this.sentTimestamps[0];
       const waitTime = this.config.windowMs - (now - oldest);
-      
+
       if (waitTime > 0) {
         logger.debug(
           { waitTime, queueSize: this.sentTimestamps.length },
@@ -91,10 +89,7 @@ export class WhatsAppRateLimiter {
   /**
    * Executa função com rate limiting e retry
    */
-  async executeWithLimit<T>(
-    fn: () => Promise<T>,
-    context?: Record<string, any>
-  ): Promise<T> {
+  async executeWithLimit<T>(fn: () => Promise<T>, context?: Record<string, any>): Promise<T> {
     // Adquirir slot
     await this.acquireSlot();
 
@@ -102,20 +97,17 @@ export class WhatsAppRateLimiter {
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         const result = await fn();
-        
+
         // Resetar contador de erros em caso de sucesso
         if (this.consecutiveErrors > 0) {
-          logger.info(
-            { previousErrors: this.consecutiveErrors },
-            'WhatsApp API recovered'
-          );
+          logger.info({ previousErrors: this.consecutiveErrors }, 'WhatsApp API recovered');
           this.consecutiveErrors = 0;
         }
-        
+
         return result;
       } catch (error: any) {
         const isRetryable = this.isRetryableError(error);
-        
+
         if (!isRetryable || attempt === this.config.maxRetries) {
           throw error;
         }
@@ -173,9 +165,10 @@ export class WhatsAppRateLimiter {
     const now = Date.now();
     const recentErrors = this.consecutiveErrors;
     const timeSinceLastError = this.lastErrorTime ? now - this.lastErrorTime : null;
-    
+
     // Considera saudável se não há erros recentes (< 5 min)
-    const isHealthy = recentErrors === 0 || (timeSinceLastError !== null && timeSinceLastError > 300000);
+    const isHealthy =
+      recentErrors === 0 || (timeSinceLastError !== null && timeSinceLastError > 300000);
 
     return {
       queueSize: this.sentTimestamps.length,
@@ -201,18 +194,13 @@ export const whatsAppRateLimiter = new WhatsAppRateLimiter();
 /**
  * Decorator para métodos que chamam WhatsApp API
  */
-export function withRateLimit(
-  target: any,
-  propertyKey: string,
-  descriptor: PropertyDescriptor
-) {
+export function withRateLimit(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
 
   descriptor.value = async function (...args: any[]) {
-    return whatsAppRateLimiter.executeWithLimit(
-      () => originalMethod.apply(this, args),
-      { method: propertyKey }
-    );
+    return whatsAppRateLimiter.executeWithLimit(() => originalMethod.apply(this, args), {
+      method: propertyKey,
+    });
   };
 
   return descriptor;

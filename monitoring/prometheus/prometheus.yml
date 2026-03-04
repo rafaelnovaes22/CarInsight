@@ -36,16 +36,16 @@ scrape_configs:
       - targets: ['host.docker.internal:3000']
         labels:
           environment: 'development'
-      
+
       # Para produção (substitua pela URL real)
       # - targets: ['seu-app.railway.app']
       #   labels:
       #     environment: 'production'
-    
+
     metrics_path: /admin/prometheus
     scrape_interval: 15s
     scrape_timeout: 10s
-    
+
     # Se usar autenticação no endpoint
     # basic_auth:
     #   username: admin

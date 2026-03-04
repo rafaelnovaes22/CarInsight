@@ -1,11 +1,11 @@
 /**
  * Metrics Service
- * 
+ *
  * Exporta métricas Prometheus para monitoramento de:
  * - Rate limiting (requests, bloqueios, latência)
  * - Performance da aplicação
  * - Saúde de serviços externos (Redis, LLMs)
- * 
+ *
  * Endpoint: GET /metrics (exposto via admin.routes.ts)
  */
 

@@ -1,6 +1,6 @@
 /**
  * Rate Limit Integration Tests
- * 
+ *
  * Testes de integração para rate limiting com Redis (se disponível)
  * ou usando testcontainers.
  */
@@ -158,7 +158,7 @@ describe('Rate Limit Integration', () => {
       const events: any[] = [];
       const trackingService = createRateLimitService({
         enableLogging: false,
-        onEvent: (event) => events.push(event),
+        onEvent: event => events.push(event),
       });
 
       await trackingService.checkWhatsAppLimit('5511999999007');
@@ -175,7 +175,7 @@ describe('Rate Limit Integration', () => {
       const events: any[] = [];
       const trackingService = createRateLimitService({
         enableLogging: false,
-        onEvent: (event) => events.push(event),
+        onEvent: event => events.push(event),
       });
 
       const phoneNumber = '5511999999008';
@@ -224,14 +224,14 @@ describe('Rate Limit Integration', () => {
  * Nota: Testes com Redis real são opcionais e requerem:
  * - Redis rodando localmente ou
  * - Testcontainer Redis
- * 
+ *
  * Para executar testes com Redis:
  * REDIS_URL=redis://localhost:6379 npm test tests/integration/rate-limit-integration.test.ts
  */
 describe.skipIf(!process.env.REDIS_URL)('Rate Limit with Redis', () => {
   it('should connect to Redis when available', async () => {
     const { createRedisStore } = await import('../../src/lib/rate-limit/redis-store');
-    
+
     const store = await createRedisStore({
       url: process.env.REDIS_URL,
     });

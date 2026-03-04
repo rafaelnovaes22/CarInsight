@@ -1,6 +1,6 @@
 /**
  * In-Memory Rate Limit Store
- * 
+ *
  * Implementação de fallback usando Map em memória.
  * Usa quando Redis não está disponível ou para desenvolvimento/testes.
  */
@@ -26,7 +26,7 @@ export interface MemoryStoreOptions {
 
 /**
  * Store em memória para rate limiting
- * 
+ *
  * NOTA: Não compartilha estado entre instâncias!
  * Use apenas como fallback ou em ambiente single-instance.
  */
@@ -40,7 +40,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
   constructor(options: MemoryStoreOptions = {}) {
     this.useSlidingWindow = options.useSlidingWindow ?? true;
     this.name = options.name ?? 'memory';
-    
+
     // Iniciar cleanup periódico
     const cleanupMs = options.cleanupIntervalMs ?? 60000;
     this.cleanupInterval = setInterval(() => this.cleanup(), cleanupMs);
@@ -60,7 +60,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
 
     // Obter ou criar entrada
     let entry = this.storage.get(key);
-    
+
     if (!entry || now > entry.resetAt) {
       // Nova janela
       entry = {
@@ -79,12 +79,12 @@ export class MemoryRateLimitStore implements RateLimitStore {
 
     // Verificar limite
     const allowed = entry.count < config.maxRequests;
-    
+
     if (allowed) {
       // Incrementar
       entry.count++;
       entry.timestamps.push(now);
-      
+
       // Atualizar storage
       this.storage.set(key, entry);
     }
@@ -107,9 +107,9 @@ export class MemoryRateLimitStore implements RateLimitStore {
    */
   async increment(key: string, config: RateLimitConfig): Promise<void> {
     const now = Date.now();
-    
+
     let entry = this.storage.get(key);
-    
+
     if (!entry || now > entry.resetAt) {
       entry = {
         count: 0,
@@ -121,7 +121,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
 
     entry.count++;
     entry.timestamps.push(now);
-    
+
     this.storage.set(key, entry);
   }
 
@@ -136,7 +136,10 @@ export class MemoryRateLimitStore implements RateLimitStore {
   /**
    * Obtém estatísticas
    */
-  async getStats(key: string, config: RateLimitConfig): Promise<{
+  async getStats(
+    key: string,
+    config: RateLimitConfig
+  ): Promise<{
     current: number;
     windowStart: number;
     resetAt: number;
@@ -193,9 +196,10 @@ export class MemoryRateLimitStore implements RateLimitStore {
     // Estimativa simples de memória
     const bytesPerEntry = 200; // Aproximação
     const totalBytes = this.storage.size * bytesPerEntry;
-    const memoryEstimate = totalBytes > 1024 * 1024
-      ? `${(totalBytes / 1024 / 1024).toFixed(2)} MB`
-      : `${(totalBytes / 1024).toFixed(2)} KB`;
+    const memoryEstimate =
+      totalBytes > 1024 * 1024
+        ? `${(totalBytes / 1024 / 1024).toFixed(2)} MB`
+        : `${(totalBytes / 1024).toFixed(2)} KB`;
 
     return {
       totalKeys: this.storage.size,
@@ -221,7 +225,7 @@ export class MemoryRateLimitStore implements RateLimitStore {
         const originalLength = entry.timestamps.length;
         entry.timestamps = entry.timestamps.filter(ts => ts > windowStart);
         entry.count = entry.timestamps.length;
-        
+
         if (entry.timestamps.length !== originalLength) {
           this.storage.set(key, entry);
         }

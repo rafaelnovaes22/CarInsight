@@ -1,6 +1,6 @@
 /**
  * Rate Limiting Types
- * 
+ *
  * Define as interfaces e tipos para o sistema de rate limiting distribuído.
  */
 
@@ -64,7 +64,10 @@ export interface RateLimitStore {
    * @param key - Identificador único
    * @param config - Configuração de rate limiting
    */
-  getStats(key: string, config: RateLimitConfig): Promise<{
+  getStats(
+    key: string,
+    config: RateLimitConfig
+  ): Promise<{
     current: number;
     windowStart: number;
     resetAt: number;

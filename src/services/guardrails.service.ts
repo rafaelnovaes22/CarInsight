@@ -1,12 +1,12 @@
 /**
  * Guardrails Service
- * 
+ *
  * Serviço de segurança e validação de input/output com:
  * - Rate limiting distribuído (Redis/Memory)
  * - Detecção de prompt injection
  * - Validação de conteúdo
  * - Sanitização de input
- * 
+ *
  * ISO 42001 Compliance: Validações para IA segura
  */
 
@@ -33,7 +33,7 @@ export interface GuardrailsOptions {
 
 /**
  * Serviço de Guardrails para validação de segurança
- * 
+ *
  * NOTA: Para rate limiting distribuído em produção, configure REDIS_URL.
  * Sem Redis, usa fallback em memória (não compartilha entre instâncias).
  */
@@ -193,7 +193,7 @@ export class GuardrailsService {
 
   /**
    * Check if user has exceeded rate limit
-   * 
+   *
    * Usa RateLimitService distribuído se disponível, senão fallback para legacy.
    */
   private async checkRateLimit(phoneNumber: string): Promise<GuardrailResult> {
@@ -228,7 +228,7 @@ export class GuardrailsService {
 
   /**
    * LEGACY: Rate limiting usando Map em memória
-   * 
+   *
    * NOTA: Não compartilha estado entre instâncias!
    * Mantido para compatibilidade durante transição.
    */
@@ -344,8 +344,7 @@ export class GuardrailsService {
     }
 
     // Check for repeated characters (flooding)
-    if (/(.)
-{10,}/.test(message)) {
+    if (/([a-zA-Z0-9])\1{10,}/.test(message)) {
       return {
         allowed: false,
         reason: 'Desculpe, não entendi sua mensagem. Pode reformular?',
@@ -418,7 +417,7 @@ export class GuardrailsService {
 
   /**
    * LEGACY: Clean up old rate limit records (call periodically)
-   * 
+   *
    * NOTA: Apenas necessário para legacy mode. RateLimitService gerencia próprio cleanup.
    */
   cleanupRateLimits(): void {

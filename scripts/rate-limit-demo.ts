@@ -1,6 +1,6 @@
 /**
  * Rate Limit Demo Script
- * 
+ *
  * Demonstra o uso do sistema de rate limiting.
  * Executar: npx tsx scripts/rate-limit-demo.ts
  */
@@ -33,9 +33,7 @@ async function demoRateLimitService() {
     );
 
     if (!status.allowed && status.retryAfterMs) {
-      console.log(
-        `      ⏱️  Tente novamente em ${Math.ceil(status.retryAfterMs / 1000)} segundos`
-      );
+      console.log(`      ⏱️  Tente novamente em ${Math.ceil(status.retryAfterMs / 1000)} segundos`);
     }
   }
   console.log();
@@ -50,11 +48,13 @@ async function demoRateLimitService() {
   console.log('4️⃣  Resetando contador...');
   await rateLimit.reset(`whatsapp:${phoneNumber}`);
   const afterReset = await rateLimit.checkWhatsAppLimit(phoneNumber);
-  console.log(`   ✅ Após reset: ${afterReset.allowed ? 'PERMITIDA' : 'BLOQUEADA'} (restantes: ${afterReset.remaining})`);
+  console.log(
+    `   ✅ Após reset: ${afterReset.allowed ? 'PERMITIDA' : 'BLOQUEADA'} (restantes: ${afterReset.remaining})`
+  );
   console.log();
 
   console.log('5️⃣  Testando diferentes endpoints...');
-  
+
   // Admin endpoint
   service.registerResourceConfig('api:admin', {
     maxRequests: 100,
@@ -69,7 +69,9 @@ async function demoRateLimitService() {
     windowMs: 60000,
   });
   const webhookStatus = await rateLimit.checkApiLimit('webhook:001', 'webhook');
-  console.log(`   Webhook API: ${webhookStatus.allowed ? '✅' : '❌'} (limite: ${webhookStatus.limit})`);
+  console.log(
+    `   Webhook API: ${webhookStatus.allowed ? '✅' : '❌'} (limite: ${webhookStatus.limit})`
+  );
   console.log();
 
   await rateLimit.close();
@@ -93,8 +95,10 @@ async function demoGuardrailsIntegration() {
   for (let i = 1; i <= 12; i++) {
     const result = await guardrails.validateInput(phoneNumber, `Mensagem de teste ${i}`);
     const icon = result.allowed ? '✅' : '❌';
-    console.log(`   ${icon} Mensagem ${i.toString().padStart(2)}: ${result.allowed ? 'PERMITIDA' : 'BLOQUEADA'}`);
-    
+    console.log(
+      `   ${icon} Mensagem ${i.toString().padStart(2)}: ${result.allowed ? 'PERMITIDA' : 'BLOQUEADA'}`
+    );
+
     if (!result.allowed && result.reason) {
       console.log(`      Motivo: ${result.reason}`);
     }
@@ -112,7 +116,9 @@ async function demoGuardrailsIntegration() {
   for (const test of injectionTests) {
     const result = await guardrails.validateInput('5511777777777', test.msg);
     const pass = result.allowed === test.expected;
-    console.log(`   ${pass ? '✅' : '❌'} "${test.msg.substring(0, 30)}..." → ${result.allowed ? 'PERMITIDA' : 'BLOQUEADA'}`);
+    console.log(
+      `   ${pass ? '✅' : '❌'} "${test.msg.substring(0, 30)}..." → ${result.allowed ? 'PERMITIDA' : 'BLOQUEADA'}`
+    );
   }
   console.log();
 }
@@ -122,7 +128,7 @@ async function main() {
     await demoRateLimitService();
     console.log('────────────────────────────────────────\n');
     await demoGuardrailsIntegration();
-    
+
     console.log('\n✨ Demo completo!');
     process.exit(0);
   } catch (error) {
