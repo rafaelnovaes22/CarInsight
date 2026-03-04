@@ -173,28 +173,29 @@ export class RateLimitService {
         );
       }
 
+      // Emit event
+      const event: RateLimitEvent = {
+        event: status.allowed ? 'rate_limit_checked' : 'rate_limit_exceeded',
+        key: this.maskKey(key),
+        allowed: status.allowed,
+        limit: status.limit,
+        remaining: status.remaining,
+        currentWindowCount: status.currentWindowCount,
+        resetAt: status.resetAt,
+        retryAfterMs: status.retryAfterMs,
+        timestamp: new Date(),
+        storeType,
+      };
+
+      this.onEvent?.(event);
+
       // Log event
       if (this.enableLogging) {
-        const event: RateLimitEvent = {
-          event: status.allowed ? 'rate_limit_checked' : 'rate_limit_exceeded',
-          key: this.maskKey(key),
-          allowed: status.allowed,
-          limit: status.limit,
-          remaining: status.remaining,
-          currentWindowCount: status.currentWindowCount,
-          resetAt: status.resetAt,
-          retryAfterMs: status.retryAfterMs,
-          timestamp: new Date(),
-          storeType,
-        };
-
         if (status.allowed) {
           logger.debug(event, 'Rate limit check');
         } else {
           logger.warn(event, 'Rate limit exceeded');
         }
-
-        this.onEvent?.(event);
       }
 
       return status;

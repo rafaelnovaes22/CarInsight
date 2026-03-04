@@ -3,7 +3,7 @@ import { AdminTaskExecutionError, runAdminTask } from '../services/admin-task-ru
 import { logger } from '../lib/logger';
 import { prisma } from '../lib/prisma';
 import { metricsService, MetricsPeriod } from '../services/metrics.service';
-import { getMetrics, getMetricsContentType } from '../services/metrics.service';
+import { getPrometheusMetrics, getMetricsContentType } from '../services/metrics.service';
 
 const router = Router();
 
@@ -1899,7 +1899,7 @@ router.put('/prompts/:key', requireSecret, async (req, res) => {
  */
 router.get('/prometheus', async (req, res) => {
   try {
-    const metrics = await getMetrics();
+    const metrics = await getPrometheusMetrics();
     res.set('Content-Type', getMetricsContentType());
     res.end(metrics);
   } catch (error: any) {

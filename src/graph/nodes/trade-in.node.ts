@@ -32,9 +32,8 @@ export async function tradeInNode(state: IGraphState): Promise<Partial<IGraphSta
         tradeInVehicle:
           response.extractedPreferences?.tradeInVehicle || state.profile?.tradeInVehicle,
       },
-      // FIX: Go to END after trade-in processing, not negotiation
-      // This prevents duplicate processing of the same message
-      next: 'end',
+      // Use nextMode from agent response, fallback to 'end'
+      next: (response as any).nextMode || 'end',
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),

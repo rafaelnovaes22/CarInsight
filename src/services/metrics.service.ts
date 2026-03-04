@@ -309,8 +309,171 @@ export async function observeAsync<T>(
 /**
  * Exporta as métricas no formato Prometheus
  */
-export async function getMetrics(): Promise<string> {
+export async function getPrometheusMetrics(): Promise<string> {
   return register.metrics();
+}
+
+/**
+ * Retorna métricas de negócio agregadas
+ */
+export async function getMetrics(period: '24h' | '7d' | '30d' = '24h'): Promise<{
+  period: string;
+  generatedAt: string;
+  conversations: {
+    total: number;
+    active: number;
+    completed: number;
+    resolved: number;
+    avgDurationMinutes: number;
+  };
+  leads: {
+    total: number;
+    new: number;
+    contacted: number;
+    converted: number;
+    conversionRate: number;
+  };
+  messages: {
+    total: number;
+    avgPerConversation: number;
+  };
+  recommendations: {
+    total: number;
+    avgScore: number;
+    topModels: Array<{ model: string; count: number }>;
+  };
+}> {
+  const { prisma } = await import('../lib/prisma');
+
+  // Calcular data de início baseada no período
+  const now = new Date();
+  const startDate = new Date(now);
+  if (period === '24h') {
+    startDate.setHours(startDate.getHours() - 24);
+  } else if (period === '7d') {
+    startDate.setDate(startDate.getDate() - 7);
+  } else if (period === '30d') {
+    startDate.setDate(startDate.getDate() - 30);
+  }
+
+  // Conversations
+  const [totalConversations, activeConversations, completedConversations, resolvedConversations] =
+    await Promise.all([
+      prisma.conversation.count({ where: { startedAt: { gte: startDate } } }),
+      prisma.conversation.count({
+        where: { startedAt: { gte: startDate }, status: 'active' },
+      }),
+      prisma.conversation.count({
+        where: { startedAt: { gte: startDate }, status: 'completed' },
+      }),
+      prisma.conversation.count({
+        where: { startedAt: { gte: startDate }, status: 'resolved' },
+      }),
+    ]);
+
+  // Leads
+  const [totalLeads, newLeads, contactedLeads, convertedLeads] = await Promise.all([
+    prisma.lead.count({ where: { createdAt: { gte: startDate } } }),
+    prisma.lead.count({ where: { createdAt: { gte: startDate }, status: 'new' } }),
+    prisma.lead.count({ where: { createdAt: { gte: startDate }, status: 'contacted' } }),
+    prisma.lead.count({ where: { createdAt: { gte: startDate }, status: 'converted' } }),
+  ]);
+
+  const conversionRate = totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0;
+
+  // Recommendations
+  const recommendations = await prisma.recommendation.findMany({
+    where: { createdAt: { gte: startDate } },
+    select: { matchScore: true, vehicleId: true },
+  });
+
+  const avgScore =
+    recommendations.length > 0
+      ? Math.round(
+          recommendations.reduce((sum, r) => sum + (r.matchScore || 0), 0) / recommendations.length
+        )
+      : 0;
+
+  // Top recommended models
+  const vehicleCounts = new Map<string, number>();
+  for (const rec of recommendations) {
+    const count = vehicleCounts.get(rec.vehicleId) || 0;
+    vehicleCounts.set(rec.vehicleId, count + 1);
+  }
+
+  const topVehicleIds = Array.from(vehicleCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([id]) => id);
+
+  const vehicles =
+    topVehicleIds.length > 0
+      ? await prisma.vehicle.findMany({
+          where: { id: { in: topVehicleIds } },
+          select: { id: true, marca: true, modelo: true },
+        })
+      : [];
+
+  const topModels = vehicles.map(v => ({
+    model: `${v.marca} ${v.modelo}`,
+    count: vehicleCounts.get(v.id) || 0,
+  }));
+
+  // Messages
+  const totalMessages = await prisma.message.count({
+    where: { createdAt: { gte: startDate } },
+  });
+
+  const avgPerConversation =
+    totalConversations > 0 ? Math.round(totalMessages / totalConversations) : 0;
+
+  // Average conversation duration
+  const conversationsWithDuration = await prisma.conversation.findMany({
+    where: {
+      startedAt: { gte: startDate },
+      lastMessageAt: { not: null },
+    },
+    select: { startedAt: true, lastMessageAt: true },
+  });
+
+  let avgDurationMinutes = 0;
+  if (conversationsWithDuration.length > 0) {
+    const totalDuration = conversationsWithDuration.reduce((sum, c) => {
+      if (c.lastMessageAt) {
+        return sum + (c.lastMessageAt.getTime() - c.startedAt.getTime());
+      }
+      return sum;
+    }, 0);
+    avgDurationMinutes = Math.round(totalDuration / conversationsWithDuration.length / 60000);
+  }
+
+  return {
+    period,
+    generatedAt: new Date().toISOString(),
+    conversations: {
+      total: totalConversations,
+      active: activeConversations,
+      completed: completedConversations,
+      resolved: resolvedConversations,
+      avgDurationMinutes,
+    },
+    leads: {
+      total: totalLeads,
+      new: newLeads,
+      contacted: contactedLeads,
+      converted: convertedLeads,
+      conversionRate,
+    },
+    messages: {
+      total: totalMessages,
+      avgPerConversation,
+    },
+    recommendations: {
+      total: recommendations.length,
+      avgScore,
+      topModels,
+    },
+  };
 }
 
 /**
