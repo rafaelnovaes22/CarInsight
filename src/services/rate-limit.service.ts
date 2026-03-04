@@ -10,8 +10,8 @@
 
 import { logger } from '../lib/logger';
 import { maskPhoneNumber } from '../lib/privacy';
-import { createMemoryStore, MemoryRateLimitStore } from '../lib/rate-limit/memory-store';
-import { createRedisStore, RedisRateLimitStore } from '../lib/rate-limit/redis-store';
+import { createMemoryStore } from '../lib/rate-limit/memory-store';
+import { createRedisStore } from '../lib/rate-limit/redis-store';
 import type {
   RateLimitConfig,
   RateLimitEvent,

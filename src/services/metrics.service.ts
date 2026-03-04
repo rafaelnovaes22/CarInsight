@@ -9,7 +9,6 @@
  * Endpoint: GET /metrics (exposto via admin.routes.ts)
  */
 
-import { logger } from '../lib/logger';
 import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
 
 // Coleção automática de métricas default (CPU, memória, etc)
