@@ -250,26 +250,30 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
 
     it('does NOT transition on explicit request when only budget is present (Requirement 2.4)', async () => {
       await fc.assert(
-        fc.asyncProperty(explicitRequestGenerator, budgetValueGenerator, async (request, budget) => {
-          const state = createInitialState();
-          state.profile = {
-            ...state.profile,
-            customerName: 'João',
-            budget,
-          };
-          state.messages = [new HumanMessage(request)];
+        fc.asyncProperty(
+          explicitRequestGenerator,
+          budgetValueGenerator,
+          async (request, budget) => {
+            const state = createInitialState();
+            state.profile = {
+              ...state.profile,
+              customerName: 'João',
+              budget,
+            };
+            state.messages = [new HumanMessage(request)];
 
-          mockChat.mockResolvedValue({
-            extractedPreferences: {},
-            response: 'Posso te ajudar, mas ainda preciso entender melhor o uso.',
-            canRecommend: true,
-            recommendations: [{ id: '1', brand: 'Honda', model: 'Civic', price: 90000 }],
-          });
+            mockChat.mockResolvedValue({
+              extractedPreferences: {},
+              response: 'Posso te ajudar, mas ainda preciso entender melhor o uso.',
+              canRecommend: true,
+              recommendations: [{ id: '1', brand: 'Honda', model: 'Civic', price: 90000 }],
+            });
 
-          const result = await discoveryNode(state);
+            const result = await discoveryNode(state);
 
-          expect(result.next).toBe('discovery');
-        }),
+            expect(result.next).toBe('discovery');
+          }
+        ),
         { numRuns: 100 }
       );
     });

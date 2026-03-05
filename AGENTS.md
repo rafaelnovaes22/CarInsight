@@ -31,6 +31,8 @@ npm run verify
 1. **Corrija os erros antes de fazer push**
 2. Nunca faça push com código quebrado
 3. Se não conseguir corrigir, informe o usuário sobre os erros encontrados
+4. Se `npm run format` alterar arquivos, **inclua essas alterações no commit**
+5. Após qualquer correção, **reexecute todo o checklist local** antes do push
 
 #### Somente após sucesso:
 
@@ -52,6 +54,8 @@ npm run verify
 - [ ] `npm run lint` - Sem erros de lint
 - [ ] `npm run build` - TypeScript compila sem erros
 - [ ] Testes passam (se aplicável)
+- [ ] Alterações geradas por `format` foram commitadas
+- [ ] Checklist reexecutado depois de cada correção
 - [ ] `.env.example` atualizado (se adicionou novas variáveis)
 - [ ] Documentação atualizada (se necessário)
 
