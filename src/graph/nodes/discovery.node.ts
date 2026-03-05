@@ -130,9 +130,12 @@ export async function discoveryNode(
     ...state.profile,
     ...response.extractedPreferences,
   };
+  const hadBudgetBeforeMessage = !!state.profile?.budget;
+  const hasBudgetAfterUpdate = !!updatedProfile.budget;
+  const hasUseCaseAfterUpdate = !!(updatedProfile.usage || updatedProfile.bodyType);
+  const hasRecommendationReadyProfile = hasBudgetAfterUpdate && hasUseCaseAfterUpdate;
 
   // 6. Determine Next Node with recommendation control
-  // FIXED: Prioritize canRecommend over hasCompletedProfile
   let next = 'discovery'; // Default: stay in discovery/loop
   const responseMessage = response.response;
   const hasAssistantMessage = !!(responseMessage && responseMessage.trim() !== '');
@@ -142,9 +145,9 @@ export async function discoveryNode(
     response.canRecommend && response.recommendations && response.recommendations.length > 0;
 
   if (isInfoProvision) {
-    // Pure information provision - auto-transition when we have recommendations
-    // FIXED: Prioritize canRecommend over hasCompletedProfile
-    if (hasRecommendations) {
+    // Pure information provision only auto-transitions when the user already had
+    // a budget context or the current message completes the recommendation profile.
+    if (hasRecommendations && (hadBudgetBeforeMessage || hasRecommendationReadyProfile)) {
       next = 'recommendation';
     } else {
       next = 'discovery';
