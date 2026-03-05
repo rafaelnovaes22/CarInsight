@@ -17,6 +17,165 @@ const crypto = require('crypto');
 const INIT_MIGRATION = '20260223141837_init_pgvector';
 const FOLLOWUP_MIGRATION = '20260303022200_add_followup_and_retention_fields';
 
+/**
+ * Splits SQL into top-level statements.
+ * Handles quotes, comments, and dollar-quoted blocks (DO $$ ... $$).
+ */
+function splitSqlStatements(sql) {
+  const statements = [];
+  let current = '';
+  let index = 0;
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+  let dollarTag = null;
+
+  while (index < sql.length) {
+    const char = sql[index];
+    const next = sql[index + 1];
+
+    if (inLineComment) {
+      current += char;
+      if (char === '\n') inLineComment = false;
+      index += 1;
+      continue;
+    }
+
+    if (inBlockComment) {
+      current += char;
+      if (char === '*' && next === '/') {
+        current += next;
+        index += 2;
+        inBlockComment = false;
+        continue;
+      }
+      index += 1;
+      continue;
+    }
+
+    if (dollarTag) {
+      if (sql.startsWith(dollarTag, index)) {
+        current += dollarTag;
+        index += dollarTag.length;
+        dollarTag = null;
+      } else {
+        current += char;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (inSingleQuote) {
+      current += char;
+      if (char === "'" && next === "'") {
+        current += next;
+        index += 2;
+        continue;
+      }
+      if (char === "'") inSingleQuote = false;
+      index += 1;
+      continue;
+    }
+
+    if (inDoubleQuote) {
+      current += char;
+      if (char === '"' && next === '"') {
+        current += next;
+        index += 2;
+        continue;
+      }
+      if (char === '"') inDoubleQuote = false;
+      index += 1;
+      continue;
+    }
+
+    if (char === '-' && next === '-') {
+      current += '--';
+      index += 2;
+      inLineComment = true;
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      current += '/*';
+      index += 2;
+      inBlockComment = true;
+      continue;
+    }
+
+    if (char === "'") {
+      current += char;
+      inSingleQuote = true;
+      index += 1;
+      continue;
+    }
+
+    if (char === '"') {
+      current += char;
+      inDoubleQuote = true;
+      index += 1;
+      continue;
+    }
+
+    if (char === '$') {
+      const slice = sql.slice(index);
+      const match = slice.match(/^\$[A-Za-z_][A-Za-z0-9_]*\$/) || slice.match(/^\$\$/);
+      if (match) {
+        dollarTag = match[0];
+        current += dollarTag;
+        index += dollarTag.length;
+        continue;
+      }
+    }
+
+    if (char === ';') {
+      const statement = current.trim();
+      if (statement) statements.push(statement);
+      current = '';
+      index += 1;
+      continue;
+    }
+
+    current += char;
+    index += 1;
+  }
+
+  if (current.trim()) statements.push(current.trim());
+  return statements;
+}
+
+/**
+ * Executes statements one by one. Prisma prepared statements only accept one command at a time.
+ */
+async function executeSqlStatements(prisma, sql) {
+  const statements = splitSqlStatements(sql);
+  let executedCount = 0;
+
+  for (const rawStatement of statements) {
+    const executableStatement = rawStatement
+      .replace(/--.*$/gm, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .trim()
+      .replace(/;\s*$/, '');
+
+    if (!executableStatement) continue;
+
+    try {
+      await prisma.$executeRawUnsafe(executableStatement);
+      executedCount += 1;
+    } catch (error) {
+      console.error(
+        `fix-migrations: SQL execution failed at statement ${executedCount + 1}/${statements.length}`
+      );
+      console.error(`fix-migrations: statement preview: ${executableStatement.slice(0, 220)}`);
+      throw error;
+    }
+  }
+
+  console.log(`fix-migrations: executed ${executedCount} SQL statements`);
+}
+
 async function main() {
   const prisma = new PrismaClient();
   try {
@@ -40,10 +199,10 @@ async function main() {
       const hasVector = await checkPgVector(prisma);
 
       if (hasVector) {
-        console.log('fix-migrations: pgvector available — migrate deploy will handle it');
+        console.log('fix-migrations: pgvector available - migrate deploy will handle it');
         // Let migrate deploy run normally
       } else {
-        console.log('fix-migrations: pgvector NOT available — creating tables manually');
+        console.log('fix-migrations: pgvector NOT available - creating tables manually');
         await createTablesWithoutVector(prisma);
         console.log('fix-migrations: all tables created, migrations marked as applied');
       }
@@ -59,7 +218,8 @@ async function main() {
 
     console.log('fix-migrations: done');
   } catch (e) {
-    console.error('fix-migrations: error —', e.message);
+    console.error('fix-migrations: error -', e.message);
+    process.exitCode = 1;
   } finally {
     await prisma.$disconnect();
   }
@@ -115,10 +275,10 @@ async function createTablesWithoutVector(prisma) {
   // Modify init SQL: skip CREATE EXTENSION and use TEXT instead of vector(1536)
   const initSqlModified = initSqlOriginal
     .replace(
-      'CREATE EXTENSION IF NOT EXISTS "vector";',
+      /CREATE EXTENSION IF NOT EXISTS "vector";?/i,
       '-- pgvector not available, skipping CREATE EXTENSION'
     )
-    .replace('"embedding" vector(1536),', '"embedding" TEXT,');
+    .replace(/"embedding"\s+vector\(1536\),/i, '"embedding" TEXT,');
 
   // Ensure _prisma_migrations table exists
   await prisma.$executeRawUnsafe(`
@@ -136,7 +296,7 @@ async function createTablesWithoutVector(prisma) {
 
   // Execute init migration (modified)
   console.log('fix-migrations: executing init migration (without pgvector)...');
-  await prisma.$executeRawUnsafe(initSqlModified);
+  await executeSqlStatements(prisma, initSqlModified);
 
   // Record init migration with ORIGINAL file checksum (so Prisma doesn't detect drift)
   const initChecksum = computeChecksum(initSqlOriginal);
@@ -145,7 +305,7 @@ async function createTablesWithoutVector(prisma) {
 
   // Execute followup migration
   console.log('fix-migrations: executing followup migration...');
-  await prisma.$executeRawUnsafe(followupSql);
+  await executeSqlStatements(prisma, followupSql);
 
   const followupChecksum = computeChecksum(followupSql);
   await recordMigration(prisma, FOLLOWUP_MIGRATION, followupChecksum);
@@ -317,9 +477,16 @@ async function patchMissingColumns(prisma) {
         console.log(`fix-migrations: added missing column ${patch.table}.${patch.column}`);
       }
     } catch (e) {
-      console.log(`fix-migrations: warning patching ${patch.table}.${patch.column} — ${e.message}`);
+      console.log(`fix-migrations: warning patching ${patch.table}.${patch.column} - ${e.message}`);
     }
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  splitSqlStatements,
+  executeSqlStatements,
+};
