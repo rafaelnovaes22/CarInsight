@@ -57,6 +57,7 @@
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "clean:artifacts": "node -e \"const fs=require('fs');['test-output.txt','results.txt','err.txt','err2.txt','tsc-errors.txt','tsc-errors.log','vitest-err.txt','vitest-err2.txt','vitest-err3.txt'].forEach(f=>{try{fs.rmSync(f,{force:true});}catch{}})\"",
     "verify": "npm run format && npm run lint:warn && npm run test:unit",
     "verify:strict": "npm run format:check && npm run lint && tsc --noEmit && npm run test:run",
     "push:safe": "npm run verify:strict && git push origin main && git push novais main",

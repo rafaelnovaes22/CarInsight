@@ -115,3 +115,12 @@ url_audit.txt
 temp_site.html
 temp_instance_controller.js
 temp_monitor_service.js
+test-output.txt
+results.txt
+err.txt
+err2.txt
+tsc-errors.txt
+tsc-errors.log
+vitest-err.txt
+vitest-err2.txt
+vitest-err3.txt

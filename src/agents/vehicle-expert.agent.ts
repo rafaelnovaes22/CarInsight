@@ -93,6 +93,54 @@ function getAppCategoryName(
   }
 }
 
+type PendingRecommendationSource = 'model' | 'uber' | 'year' | 'others';
+
+interface PendingRecommendationBatch {
+  source: PendingRecommendationSource;
+  items: VehicleRecommendation[];
+}
+
+function getProfileBudget(profile?: Partial<CustomerProfile>): number | undefined {
+  if (!profile) return undefined;
+  return profile.budget ?? profile.budgetMax ?? profile.orcamento;
+}
+
+function getPendingRecommendationBatch(
+  profile?: Partial<CustomerProfile>
+): PendingRecommendationBatch | null {
+  if (!profile) return null;
+
+  const batches: PendingRecommendationBatch[] = [
+    { source: 'model', items: profile._pendingRecommendations || [] },
+    { source: 'year', items: profile._pendingYearRecommendations || [] },
+    { source: 'others', items: profile._pendingOtherRecommendations || [] },
+    { source: 'uber', items: profile._pendingUberRecommendations || [] },
+  ];
+
+  return batches.find(batch => batch.items.length > 0) || null;
+}
+
+function extractRecommendationPrice(rec: VehicleRecommendation): number | null {
+  const raw = rec?.vehicle?.price ?? rec?.vehicle?.preco;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  if (typeof raw === 'string') {
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function toLastShownVehicles(recommendations: VehicleRecommendation[]) {
+  return recommendations.map(rec => ({
+    vehicleId: rec.vehicleId,
+    brand: rec.vehicle?.brand ?? rec.vehicle?.marca ?? '',
+    model: rec.vehicle?.model ?? rec.vehicle?.modelo ?? '',
+    year: rec.vehicle?.year ?? rec.vehicle?.ano ?? 0,
+    price: extractRecommendationPrice(rec) ?? 0,
+    bodyType: rec.vehicle?.bodyType ?? rec.vehicle?.carroceria,
+  }));
+}
+
 export class VehicleExpertAgent {
   private readonly SYSTEM_PROMPT = SYSTEM_PROMPT;
 
@@ -136,6 +184,8 @@ export class VehicleExpertAgent {
         context.profile,
         extracted.extracted
       );
+      const pendingBatch = getPendingRecommendationBatch(updatedProfile);
+      const hasPendingBudgetFlow = !!pendingBatch;
 
       // 2.0.-2. GUARDRAIL: Handle suspicious budget confirmation flow
       if (context.profile?._awaitingBudgetConfirmation && context.profile._suspectedBudget) {
@@ -158,7 +208,7 @@ export class VehicleExpertAgent {
           );
 
           // Guard: se acabou de confirmar budget mas falta usage, perguntar imediatamente
-          if (!updatedProfile.usage && !updatedProfile.usoPrincipal) {
+          if (!hasPendingBudgetFlow && !updatedProfile.usage && !updatedProfile.usoPrincipal) {
             const isMoto =
               updatedProfile.bodyType === 'moto' || updatedProfile.priorities?.includes('moto');
             const vehicleEmoji = isMoto ? '🏍️' : '🚗';
@@ -469,6 +519,106 @@ export class VehicleExpertAgent {
         updatedProfile._lastSearchType = undefined;
       }
 
+      // 2.0.-0. Resume pending recommendations as soon as budget is provided
+      const activePendingBatch = getPendingRecommendationBatch(updatedProfile);
+      const currentBudget = getProfileBudget(updatedProfile);
+      const previousBudget = getProfileBudget(context.profile);
+      const budgetMentionedNow =
+        extracted.extracted.budget !== undefined ||
+        extracted.extracted.budgetMax !== undefined ||
+        extracted.extracted.orcamento !== undefined;
+      const shouldResumePending =
+        !!activePendingBatch &&
+        currentBudget !== undefined &&
+        Number.isFinite(currentBudget) &&
+        (budgetMentionedNow || previousBudget === undefined);
+
+      if (shouldResumePending) {
+        const withinBudget = activePendingBatch.items
+          .filter(rec => {
+            const price = extractRecommendationPrice(rec);
+            return price === null || price <= currentBudget!;
+          })
+          .sort((a, b) => {
+            const aPrice = extractRecommendationPrice(a) ?? Number.POSITIVE_INFINITY;
+            const bPrice = extractRecommendationPrice(b) ?? Number.POSITIVE_INFINITY;
+            return aPrice - bPrice;
+          });
+
+        if (withinBudget.length === 0) {
+          const lowestPrice = activePendingBatch.items
+            .map(rec => extractRecommendationPrice(rec))
+            .filter((price): price is number => price !== null)
+            .sort((a, b) => a - b)[0];
+
+          const budgetText = currentBudget!.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+          const minPriceText =
+            lowestPrice !== undefined
+              ? ` As opções disponíveis começam em R$ ${lowestPrice.toLocaleString('pt-BR', {
+                  minimumFractionDigits: 0,
+                })}.`
+              : '';
+
+          return {
+            response: `Perfeito, anotei seu orçamento de R$ ${budgetText}.${minPriceText}\n\nQuer ajustar o orçamento ou prefere que eu te mostre modelos similares mais em conta?`,
+            extractedPreferences: {
+              ...updatedProfile,
+              _showedRecommendation: false,
+              _lastShownVehicles: undefined,
+              _lastSearchType: undefined,
+              _waitingForBudgetForModel: true,
+            },
+            needsMoreInfo: ['budget'],
+            canRecommend: false,
+            nextMode: 'discovery',
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: 0.95,
+              llmUsed: 'rule-based',
+            },
+          };
+        }
+
+        const recommendationsToShow = withinBudget.slice(0, 5);
+        const recommendationFlow =
+          activePendingBatch.source === 'model' || activePendingBatch.source === 'year'
+            ? 'specific'
+            : 'recommendation';
+        const formattedResponse = await formatRecommendationsUtil(
+          recommendationsToShow,
+          updatedProfile,
+          recommendationFlow
+        );
+
+        return {
+          response: formattedResponse,
+          extractedPreferences: {
+            ...updatedProfile,
+            _pendingRecommendations: undefined,
+            _pendingUberRecommendations: undefined,
+            _pendingYearRecommendations: undefined,
+            _pendingOtherRecommendations: undefined,
+            _waitingForBudgetForModel: undefined,
+            _waitingForSuggestionResponse: false,
+            _waitingForUberXAlternatives: false,
+            _availableYears: undefined,
+            _searchedItem: undefined,
+            _showedRecommendation: true,
+            _lastSearchType: recommendationFlow as 'specific' | 'recommendation',
+            _lastShownVehicles: toLastShownVehicles(recommendationsToShow),
+          },
+          needsMoreInfo: [],
+          canRecommend: true,
+          recommendations: recommendationsToShow,
+          nextMode: 'recommendation',
+          metadata: {
+            processingTime: Date.now() - startTime,
+            confidence: 0.98,
+            llmUsed: 'rule-based',
+          },
+        };
+      }
+
       // 2.0. Check for Uber Black question (delegated to handler)
       const uberResult = await handleUberBlackQuestion(
         userMessage,
@@ -660,7 +810,40 @@ export class VehicleExpertAgent {
 
           if (foundExact) {
             // Encontrou exatamente o que queria
-            logger.info('Exact match found - returning recommendation immediately');
+            logger.info('Exact match found');
+
+            // GUARDRAIL: Must have budget before recommending, even for exact model+year
+            if (!updatedProfile.budget) {
+              const firstMatch = exactResults[0];
+              const price = firstMatch.vehicle.price;
+              const priceFormatted = price.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+              const vehicleName = capitalize(targetModel);
+
+              logger.info(
+                { model: targetModel, year: targetYear },
+                'Exact match found but no budget - asking for budget first'
+              );
+
+              return {
+                response: `Encontrei ${exactResults.length} ${exactResults.length > 1 ? 'opções' : 'opção'} de ${vehicleName} ${targetYear}! ${exactResults.length > 1 ? 'Os preços começam' : 'O preço começa'} em R$ ${priceFormatted}.\n\nQual é o seu orçamento? Assim eu mostro só as opções que cabem no seu bolso. 😊`,
+                extractedPreferences: {
+                  ...updatedProfile,
+                  minYear: targetYear,
+                  model: targetModel,
+                  _pendingRecommendations: exactResults,
+                  _waitingForBudgetForModel: true,
+                },
+                needsMoreInfo: ['budget'],
+                canRecommend: false,
+                nextMode: 'discovery',
+                metadata: {
+                  processingTime: Date.now() - startTime,
+                  confidence: 1.0,
+                  llmUsed: 'rule-based',
+                  exactMatch: true,
+                } as any,
+              };
+            }
 
             // Extrair anos disponíveis
             const availableYears = [...new Set(exactResults.map(r => r.vehicle.year))].sort(

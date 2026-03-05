@@ -15,29 +15,8 @@ import { logger } from '../lib/logger';
 /**
  * Route function that determines the next node based on the 'next' state property
  */
-const routeNode = (state: IGraphState) => {
-  // Stop execution if the last message was from the AI (waiting for user input)
-  // Stop execution if the last message was from the AI (waiting for user input)
-  const lastMessage = state.messages[state.messages.length - 1];
-
-  // Robust check for AI message (handles serialized objects)
-  let isAi = false;
-  if (lastMessage) {
-    if (typeof lastMessage._getType === 'function') {
-      isAi = lastMessage._getType() === 'ai';
-    } else {
-      // Serialized check
-      const msg = lastMessage as any;
-      isAi = msg.type === 'ai' || msg.id?.includes('AIMessage');
-    }
-  }
-
-  if (isAi) {
-    return END;
-  }
-
+const resolveNextNode = (state: IGraphState): string | typeof END => {
   const nextNode = state.next;
-  logger.info({ nextNode }, 'Router: Validating transition');
 
   // Map state 'next' values to actual graph nodes
   switch (nextNode) {
@@ -72,6 +51,55 @@ const routeNode = (state: IGraphState) => {
       return fallbackNode;
     }
   }
+};
+
+const routeNode = (state: IGraphState) => {
+  // Stop execution if the last message was from the AI (waiting for user input)
+  const lastMessage = state.messages[state.messages.length - 1];
+
+  // Robust check for AI message (handles serialized objects)
+  let isAi = false;
+  if (lastMessage) {
+    if (typeof lastMessage._getType === 'function') {
+      isAi = lastMessage._getType() === 'ai';
+    } else {
+      // Serialized check
+      const msg = lastMessage as any;
+      isAi = msg.type === 'ai' || msg.id?.includes('AIMessage');
+    }
+  }
+
+  if (isAi) {
+    return END;
+  }
+
+  const nextNode = resolveNextNode(state);
+  logger.info({ nextNode }, 'Router: Validating transition');
+
+  // Circuit breaker for repeated TECHNICAL loops (same node re-entering without progress)
+  const isTechnicalLoop =
+    typeof nextNode === 'string' &&
+    !!state.metadata.lastLoopNode &&
+    state.metadata.lastLoopNode === nextNode;
+
+  if (isTechnicalLoop && state.metadata.loopCount >= 8) {
+    logger.warn(
+      { loopCount: state.metadata.loopCount, lastLoopNode: state.metadata.lastLoopNode },
+      'Router: Technical loop circuit breaker triggered'
+    );
+    return END;
+  }
+
+  // Error circuit breaker remains global
+  if (state.metadata.errorCount >= 5) {
+    logger.warn(
+      { errorCount: state.metadata.errorCount, nextNode },
+      'Router: Error circuit breaker triggered'
+    );
+    return END;
+  }
+
+  return nextNode;
 };
 
 /**
@@ -113,6 +141,7 @@ export const createConversationGraph = (config?: { checkpointer?: any }) => {
           startedAt: Date.now(),
           lastMessageAt: Date.now(),
           loopCount: 0,
+          lastLoopNode: undefined,
           errorCount: 0,
           flags: [],
         }),

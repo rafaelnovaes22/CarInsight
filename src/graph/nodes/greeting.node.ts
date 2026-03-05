@@ -33,6 +33,12 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
   }
 
   const message = lastMessage.content;
+  const buildNonLoopMetadata = () => ({
+    ...state.metadata,
+    lastMessageAt: Date.now(),
+    loopCount: 0,
+    lastLoopNode: undefined,
+  });
 
   // Check for name correction FIRST if we already have a name
   // Requirements: 1.2, 1.3, 1.4, 1.5
@@ -57,6 +63,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
           ...state.profile,
           customerName: correctionResult.correctedName, // Update profile (Requirement 1.2)
         },
+        metadata: buildNonLoopMetadata(),
         messages: [
           new AIMessage(
             `Desculpa, ${firstName}! 😊 Como posso te ajudar hoje?` // Acknowledgment (Requirement 1.3)
@@ -86,12 +93,14 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       logger.info({ next: normalizedNext }, 'GreetingNode: Name exists, preserving current stage');
       return {
         next: normalizedNext,
+        metadata: buildNonLoopMetadata(),
       };
     }
 
     logger.info('GreetingNode: Name exists, passing to discovery');
     return {
       next: 'discovery',
+      metadata: buildNonLoopMetadata(),
     };
   }
 
@@ -164,6 +173,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         ...searchResult.extractedPreferences,
       },
       recommendations: searchResult.recommendations || [],
+      metadata: buildNonLoopMetadata(),
       messages: [new AIMessage(greetingPart + searchResult.response)],
     };
   }
@@ -181,6 +191,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         customerName: possibleName,
         ...earlyProfileUpdate,
       },
+      metadata: buildNonLoopMetadata(),
       messages: [
         new AIMessage(
           `Prazer, ${possibleName}! 😊\n\nEntendi! Você tem um *${tradeInText}* para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`
@@ -210,21 +221,45 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         ...state.profile,
         customerName: possibleName,
       },
+      metadata: buildNonLoopMetadata(),
       messages: [new AIMessage(responseText)],
     };
   }
 
   // SCENARIO D: Only Vehicle (No name)
   if (earlyProfileUpdate.model) {
+    const alreadyAsked = state.metadata.flags.includes('asked_name_once');
     const carText = earlyProfileUpdate.minYear
       ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
       : earlyProfileUpdate.model;
 
+    if (alreadyAsked) {
+      // Segunda tentativa sem nome → prosseguir para discovery
+      return {
+        next: 'discovery',
+        profile: { ...state.profile, ...earlyProfileUpdate },
+        metadata: buildNonLoopMetadata(),
+        messages: [
+          new AIMessage(
+            `Tudo bem! Vamos encontrar seu *${carText}*. 😊\n\nMe conta mais sobre o que você precisa? (Orçamento, ano, uso...)`
+          ),
+        ],
+      };
+    }
+
+    // Primeira tentativa → pedir nome + adicionar flag
     return {
-      next: 'greeting', // Loop back to get name
+      next: 'greeting',
       profile: {
         ...state.profile,
         ...earlyProfileUpdate,
+      },
+      metadata: {
+        ...state.metadata,
+        lastMessageAt: Date.now(),
+        flags: [...state.metadata.flags, 'asked_name_once'],
+        loopCount: 0,
+        lastLoopNode: undefined,
       },
       messages: [
         new AIMessage(
@@ -246,6 +281,12 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
 
   return {
     next: 'greeting',
+    metadata: {
+      ...state.metadata,
+      lastMessageAt: Date.now(),
+      loopCount: 0,
+      lastLoopNode: undefined,
+    },
     messages: [new AIMessage(greetingTextE)],
   };
 }

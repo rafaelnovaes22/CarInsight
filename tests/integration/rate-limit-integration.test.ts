@@ -8,6 +8,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { RateLimitService, createRateLimitService } from '../../src/services/rate-limit.service';
 import { MemoryRateLimitStore } from '../../src/lib/rate-limit/memory-store';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 describe('Rate Limit Integration', () => {
   let service: RateLimitService;
@@ -228,12 +231,22 @@ describe('Rate Limit Integration', () => {
  * Para executar testes com Redis:
  * REDIS_URL=redis://localhost:6379 npm test tests/integration/rate-limit-integration.test.ts
  */
-describe.skipIf(!process.env.REDIS_URL)('Rate Limit with Redis', () => {
+const hasRedisEnv = Boolean(process.env.REDIS_URL);
+const hasRedisPackage = (() => {
+  try {
+    require.resolve('redis');
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+describe.skipIf(!(hasRedisEnv && hasRedisPackage))('Rate Limit with Redis', () => {
   it('should connect to Redis when available', async () => {
     const { createRedisStore } = await import('../../src/lib/rate-limit/redis-store');
 
     const store = await createRedisStore({
-      url: process.env.REDIS_URL,
+      url: process.env.REDIS_URL!,
     });
 
     const isHealthy = await store.isHealthy();

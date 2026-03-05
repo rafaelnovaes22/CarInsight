@@ -132,6 +132,19 @@ describe('LangGraph Nodes Logic', () => {
 
       expect(result.next).toBe('discovery');
     });
+
+    it('should reset loop metadata on greeting responses with assistant message', async () => {
+      const state = createInitialState();
+      state.metadata.loopCount = 6;
+      state.metadata.lastLoopNode = 'discovery';
+      state.messages = [new HumanMessage('Oi')];
+
+      const result = await greetingNode(state);
+
+      expect(result.next).toBe('greeting');
+      expect(result.metadata?.loopCount).toBe(0);
+      expect(result.metadata?.lastLoopNode).toBeUndefined();
+    });
   });
 
   // ============================================
@@ -219,6 +232,48 @@ describe('LangGraph Nodes Logic', () => {
       const result = await discoveryNode(state);
 
       expect(result.metadata?.flags).toContain('handoff_requested');
+    });
+
+    it('should increment loopCount only for technical self-loop without assistant message', async () => {
+      const state = createInitialState();
+      state.metadata.loopCount = 2;
+      state.metadata.lastLoopNode = 'discovery';
+      state.messages = [new HumanMessage('continua')];
+
+      mockChat.mockResolvedValue({
+        extractedPreferences: {},
+        response: '',
+        canRecommend: false,
+        nextMode: 'discovery',
+      });
+
+      const result = await discoveryNode(state);
+
+      expect(result.next).toBe('discovery');
+      expect(result.messages).toBeUndefined();
+      expect(result.metadata?.loopCount).toBe(3);
+      expect(result.metadata?.lastLoopNode).toBe('discovery');
+    });
+
+    it('should reset loopCount when discovery emits assistant message', async () => {
+      const state = createInitialState();
+      state.metadata.loopCount = 7;
+      state.metadata.lastLoopNode = 'discovery';
+      state.messages = [new HumanMessage('oi')];
+
+      mockChat.mockResolvedValue({
+        extractedPreferences: {},
+        response: 'Me conta mais sobre o uso principal.',
+        canRecommend: false,
+        nextMode: 'discovery',
+      });
+
+      const result = await discoveryNode(state);
+
+      expect(result.next).toBe('discovery');
+      expect(result.messages).toBeDefined();
+      expect(result.metadata?.loopCount).toBe(0);
+      expect(result.metadata?.lastLoopNode).toBeUndefined();
     });
   });
 

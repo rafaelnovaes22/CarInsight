@@ -73,11 +73,118 @@ describe('Vehicle Expert Intent Detection', () => {
 
     const result = await vehicleExpert.chat(userMessage, context);
 
-    expect(result.nextMode).toBe('recommendation');
-    expect(result.recommendations).toHaveLength(1);
-    expect(result.recommendations![0].vehicle.year).toBe(2019);
-    expect(result.response).toContain('Onix 2019'); // Should find exact match
-    expect(result.extractedPreferences._lastSearchType).toBe('specific');
+    // Budget guardrail: without budget, system asks for budget before showing recommendations
+    expect(result.nextMode).toBe('discovery');
+    expect(result.canRecommend).toBe(false);
+    expect(result.response).toContain('orçamento'); // Should ask for budget
+    expect(result.extractedPreferences._waitingForBudgetForModel).toBe(true);
+  });
+
+  it('should resume pending model recommendations when user provides budget', async () => {
+    const mockVehicle: VehicleRecommendation = {
+      vehicleId: 'v-onix-2019',
+      matchScore: 100,
+      reasoning: 'Exact match',
+      highlights: [],
+      concerns: [],
+      vehicle: {
+        id: 'v-onix-2019',
+        brand: 'Chevrolet',
+        model: 'Onix',
+        year: 2019,
+        price: 50000,
+        mileage: 30000,
+        bodyType: 'hatch',
+      },
+    };
+
+    vi.spyOn(preferenceExtractorModule.preferenceExtractor, 'extract')
+      .mockResolvedValueOnce({
+        extracted: { brand: 'chevrolet', model: 'onix', minYear: 2019 },
+        confidence: 0.95,
+        fieldsExtracted: ['brand', 'model', 'minYear'],
+        reasoning: 'Model and year found',
+      })
+      .mockResolvedValueOnce({
+        extracted: { budget: 80000, budgetMax: 80000 },
+        confidence: 0.95,
+        fieldsExtracted: ['budget'],
+        reasoning: 'Budget found',
+      });
+
+    (vehicleSearchAdapter.search as any).mockResolvedValue([mockVehicle]);
+
+    const first = await vehicleExpert.chat('Quero um Onix 2019', context);
+    expect(first.canRecommend).toBe(false);
+    expect(first.extractedPreferences._pendingRecommendations).toBeDefined();
+
+    context.profile = first.extractedPreferences;
+    context.messages = [
+      { role: 'assistant', content: first.response, timestamp: new Date() },
+      { role: 'user', content: 'Meu orçamento é 80 mil', timestamp: new Date() },
+    ];
+
+    const second = await vehicleExpert.chat('Meu orçamento é 80 mil', context);
+
+    expect(second.canRecommend).toBe(true);
+    expect(second.nextMode).toBe('recommendation');
+    expect(second.recommendations).toHaveLength(1);
+    expect(second.recommendations![0].vehicle.model).toBe('Onix');
+    expect(second.extractedPreferences._pendingRecommendations).toBeUndefined();
+    expect(second.extractedPreferences._waitingForBudgetForModel).toBeUndefined();
+  });
+
+  it('should keep pending flow when budget is below pending vehicle prices', async () => {
+    const expensiveVehicle: VehicleRecommendation = {
+      vehicleId: 'v-civic-2020',
+      matchScore: 100,
+      reasoning: 'Exact match',
+      highlights: [],
+      concerns: [],
+      vehicle: {
+        id: 'v-civic-2020',
+        brand: 'Honda',
+        model: 'Civic',
+        year: 2020,
+        price: 90000,
+        mileage: 25000,
+        bodyType: 'sedan',
+      },
+    };
+
+    vi.spyOn(preferenceExtractorModule.preferenceExtractor, 'extract')
+      .mockResolvedValueOnce({
+        extracted: { brand: 'honda', model: 'civic', minYear: 2020 },
+        confidence: 0.95,
+        fieldsExtracted: ['brand', 'model', 'minYear'],
+        reasoning: 'Model and year found',
+      })
+      .mockResolvedValueOnce({
+        extracted: { budget: 70000, budgetMax: 70000 },
+        confidence: 0.95,
+        fieldsExtracted: ['budget'],
+        reasoning: 'Budget found',
+      });
+
+    (vehicleSearchAdapter.search as any).mockResolvedValue([expensiveVehicle]);
+
+    const first = await vehicleExpert.chat('Quero um Civic 2020', context);
+    expect(first.canRecommend).toBe(false);
+    expect(first.extractedPreferences._pendingRecommendations).toBeDefined();
+
+    context.profile = first.extractedPreferences;
+    context.messages = [
+      { role: 'assistant', content: first.response, timestamp: new Date() },
+      { role: 'user', content: 'Meu orçamento é 70 mil', timestamp: new Date() },
+    ];
+
+    const second = await vehicleExpert.chat('Meu orçamento é 70 mil', context);
+
+    expect(second.canRecommend).toBe(false);
+    expect(second.nextMode).toBe('discovery');
+    expect(second.needsMoreInfo).toContain('budget');
+    expect(second.response.toLowerCase()).toContain('ajustar o orçamento');
+    expect(second.extractedPreferences._pendingRecommendations).toBeDefined();
   });
 
   it('should handle Alternative Year selection', async () => {

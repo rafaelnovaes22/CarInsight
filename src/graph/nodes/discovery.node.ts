@@ -9,6 +9,7 @@ import {
   detectExplicitRecommendationRequest,
   isInformationProvision,
 } from '../../agents/vehicle-expert/intent-detector';
+import { logger } from '../../lib/logger';
 
 function resolveConversationId(state: IGraphState, config?: RunnableConfig): string {
   const threadId = (config?.configurable as Record<string, unknown> | undefined)?.thread_id;
@@ -131,53 +132,38 @@ export async function discoveryNode(
   };
 
   // 6. Determine Next Node with recommendation control
-  // Requirements: 2.1, 2.2, 2.4, 2.5
+  // FIXED: Prioritize canRecommend over hasCompletedProfile
   let next = 'discovery'; // Default: stay in discovery/loop
   const responseMessage = response.response;
+  const hasAssistantMessage = !!(responseMessage && responseMessage.trim() !== '');
 
-  // Check if profile is complete (has budget AND usage/bodyType)
-  const hasCompletedProfile =
-    updatedProfile.budget && (updatedProfile.usage || updatedProfile.bodyType);
+  // Check if we have valid recommendations
+  const hasRecommendations =
+    response.canRecommend && response.recommendations && response.recommendations.length > 0;
 
   if (isInfoProvision) {
-    // Pure information provision - auto-transition when profile is complete
-    if (
-      hasCompletedProfile &&
-      (response.nextMode === 'recommendation' ||
-        (response.canRecommend && response.recommendations && response.recommendations.length > 0))
-    ) {
+    // Pure information provision - auto-transition when we have recommendations
+    // FIXED: Prioritize canRecommend over hasCompletedProfile
+    if (hasRecommendations) {
       next = 'recommendation';
     } else {
       next = 'discovery';
     }
   } else if (isExplicitRequest) {
     // Explicit recommendation request - allow transition
-    // Requirements: 2.4
-    if (response.nextMode) {
-      next = response.nextMode;
-    } else if (
-      response.canRecommend &&
-      response.recommendations &&
-      response.recommendations.length > 0
-    ) {
+    if (hasRecommendations) {
       next = 'recommendation';
+    } else if (response.nextMode) {
+      next = response.nextMode;
     }
   } else if (response.nextMode) {
-    if (response.nextMode === 'recommendation' && hasCompletedProfile) {
-      next = 'recommendation';
-    } else if (response.nextMode === 'recommendation') {
-      next = 'discovery';
-    } else {
-      next = response.nextMode;
-    }
-  } else if (
-    response.canRecommend &&
-    response.recommendations &&
-    response.recommendations.length > 0
-  ) {
-    if (hasCompletedProfile) {
-      next = 'recommendation';
-    }
+    next = response.nextMode;
+  }
+
+  // Safety check: if expert says recommendation but no recommendations, stay in discovery
+  if (next === 'recommendation' && !hasRecommendations && !state.recommendations?.length) {
+    logger.warn('DiscoveryNode: Attempted transition to recommendation without recommendations');
+    next = 'discovery';
   }
 
   const result: Partial<IGraphState> = {
@@ -190,10 +176,18 @@ export async function discoveryNode(
   // Propagate handoff_requested flag if detected
   const tokenUsage = response.metadata?.tokenUsage;
   const llmUsed = response.metadata?.llmUsed;
+  const isTechnicalLoop = next === 'discovery' && !hasAssistantMessage;
+  const loopCount = isTechnicalLoop
+    ? state.metadata.lastLoopNode === 'discovery'
+      ? (state.metadata.loopCount || 0) + 1
+      : 1
+    : 0;
 
   result.metadata = {
     ...state.metadata,
     lastMessageAt: Date.now(),
+    loopCount,
+    lastLoopNode: isTechnicalLoop ? 'discovery' : undefined,
     flags:
       isHandoffRequest && !state.metadata.flags.includes('handoff_requested')
         ? [...state.metadata.flags, 'handoff_requested']
@@ -205,7 +199,7 @@ export async function discoveryNode(
   // Only add message if there is actual content
   // If response is empty (delegation), we don't add AIMessage so the Router
   // sees the User message as the last one and continues execution.
-  if (responseMessage && responseMessage.trim() !== '') {
+  if (hasAssistantMessage) {
     result.messages = [new AIMessage(responseMessage)];
   }
 

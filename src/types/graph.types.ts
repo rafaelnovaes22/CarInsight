@@ -24,6 +24,7 @@ export interface IGraphState {
     startedAt: number;
     lastMessageAt: number;
     loopCount: number;
+    lastLoopNode?: string;
     errorCount: number;
     flags: string[];
     tokenUsage?: any;
@@ -48,6 +49,7 @@ export function createInitialState(): IGraphState {
       startedAt: Date.now(),
       lastMessageAt: Date.now(),
       loopCount: 0,
+      lastLoopNode: undefined,
       errorCount: 0,
       flags: [],
     },
