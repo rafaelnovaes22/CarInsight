@@ -167,39 +167,42 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
   // ============================================================================
 
   /**
-   * **Property 7: Recommendation Transition Only On Explicit Request**
+   * **Property 7: Recommendation Transition Only With Recommendation-Ready Profile**
    * **Validates: Requirements 2.4**
    *
-   * For any state transition to 'recommendation' from 'discovery',
-   * there SHALL have been either an explicit recommendation request
-   * OR an affirmative response to a "want to see options?" question.
+   * Orçamento é obrigatório, mas não suficiente sozinho. Para qualquer transição
+   * automática para recommendation, o perfil precisa ter orçamento e contexto
+   * mínimo adicional (usage/usoPrincipal ou bodyType), salvo regras tratadas
+   * antes no agente.
    */
-  describe('Property 7: Recommendation Transition Only On Explicit Request', () => {
+  describe('Property 7: Recommendation Transition Only With Recommendation-Ready Profile', () => {
     it('does NOT transition to recommendation on pure budget input (Requirement 2.4)', async () => {
       await fc.assert(
         fc.asyncProperty(budgetValueGenerator, async budget => {
-          const state = createStateWithEmptyProfile();
+          const state = createInitialState();
+          state.profile = {
+            ...state.profile,
+            customerName: 'João',
+            budget: budget,
+          };
           state.messages = [new HumanMessage(budget.toString())];
 
-          // Mock agent response that would normally trigger recommendation
           mockChat.mockResolvedValue({
             extractedPreferences: { budget },
-            response: 'Entendi seu orçamento',
+            response: 'Entendi seu orçamento. Me conta melhor o uso que você precisa.',
             canRecommend: true,
             recommendations: [{ id: '1', brand: 'Honda', model: 'Civic', price: budget }],
           });
 
           const result = await discoveryNode(state);
 
-          // Should NOT transition to recommendation
-          expect(result.next).not.toBe('recommendation');
           expect(result.next).toBe('discovery');
         }),
         { numRuns: 100 }
       );
     });
 
-    it('auto-transitions when usage input completes the profile (Requirement 2.4)', async () => {
+    it('auto-transitions when usage input completes the profile (still works)', async () => {
       await fc.assert(
         fc.asyncProperty(usageDescriptionGenerator, async usage => {
           const state = createStateWithPartialProfile(); // has budget, no usage
@@ -222,7 +225,7 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
       );
     });
 
-    it('auto-transitions when body type input completes the profile (Requirement 2.4)', async () => {
+    it('auto-transitions when body type input completes the profile (still works)', async () => {
       await fc.assert(
         fc.asyncProperty(bodyTypeGenerator, async bodyType => {
           const state = createStateWithPartialProfile(); // has budget, no bodyType
@@ -245,7 +248,33 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
       );
     });
 
-    it('DOES transition to recommendation on explicit request (Requirement 2.4)', async () => {
+    it('does NOT transition on explicit request when only budget is present (Requirement 2.4)', async () => {
+      await fc.assert(
+        fc.asyncProperty(explicitRequestGenerator, budgetValueGenerator, async (request, budget) => {
+          const state = createInitialState();
+          state.profile = {
+            ...state.profile,
+            customerName: 'João',
+            budget,
+          };
+          state.messages = [new HumanMessage(request)];
+
+          mockChat.mockResolvedValue({
+            extractedPreferences: {},
+            response: 'Posso te ajudar, mas ainda preciso entender melhor o uso.',
+            canRecommend: true,
+            recommendations: [{ id: '1', brand: 'Honda', model: 'Civic', price: 90000 }],
+          });
+
+          const result = await discoveryNode(state);
+
+          expect(result.next).toBe('discovery');
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('DOES transition to recommendation on explicit request when profile is complete', async () => {
       await fc.assert(
         fc.asyncProperty(explicitRequestGenerator, async request => {
           const state = createStateWithCompleteProfile();
@@ -268,7 +297,7 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
       );
     });
 
-    it('auto-transitions to recommendation when profile is complete and agent says canRecommend (Requirement 2.4)', async () => {
+    it('auto-transitions when agent says canRecommend and profile is complete', async () => {
       await fc.assert(
         fc.asyncProperty(informationProvisionGenerator, async infoMessage => {
           const state = createStateWithCompleteProfile();
@@ -285,7 +314,7 @@ describe('Discovery Node Recommendation Control Property Tests', () => {
 
           const result = await discoveryNode(state);
 
-          // Should auto-transition when profile is complete
+          // Should auto-transition when profile is complete AND agent says canRecommend
           expect(result.next).toBe('recommendation');
         }),
         { numRuns: 100 }

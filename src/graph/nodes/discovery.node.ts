@@ -130,9 +130,12 @@ export async function discoveryNode(
     ...state.profile,
     ...response.extractedPreferences,
   };
-  const hadBudgetBeforeMessage = !!state.profile?.budget;
   const hasBudgetAfterUpdate = !!updatedProfile.budget;
-  const hasUseCaseAfterUpdate = !!(updatedProfile.usage || updatedProfile.bodyType);
+  const hasUseCaseAfterUpdate = !!(
+    updatedProfile.usage ||
+    updatedProfile.usoPrincipal ||
+    updatedProfile.bodyType
+  );
   const hasRecommendationReadyProfile = hasBudgetAfterUpdate && hasUseCaseAfterUpdate;
 
   // 6. Determine Next Node with recommendation control
@@ -145,16 +148,16 @@ export async function discoveryNode(
     response.canRecommend && response.recommendations && response.recommendations.length > 0;
 
   if (isInfoProvision) {
-    // Pure information provision only auto-transitions when the user already had
-    // a budget context or the current message completes the recommendation profile.
-    if (hasRecommendations && (hadBudgetBeforeMessage || hasRecommendationReadyProfile)) {
+    // Pure information provision only auto-transitions when the profile is
+    // recommendation-ready: budget plus use context or body type.
+    if (hasRecommendations && hasRecommendationReadyProfile) {
       next = 'recommendation';
     } else {
       next = 'discovery';
     }
   } else if (isExplicitRequest) {
-    // Explicit recommendation request - allow transition
-    if (hasRecommendations) {
+    // Even explicit requests must respect the minimum recommendation profile.
+    if (hasRecommendations && hasRecommendationReadyProfile) {
       next = 'recommendation';
     } else if (response.nextMode) {
       next = response.nextMode;

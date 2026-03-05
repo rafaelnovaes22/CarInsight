@@ -188,8 +188,29 @@ describe('LangGraph Nodes Logic', () => {
       expect(context.conversationId).toBe('thread-abc-123');
     });
 
-    it('should move to recommendation if expert returns recommendations', async () => {
+    it('should stay in discovery if expert returns recommendations but profile is incomplete', async () => {
       const state = createInitialState();
+      state.messages = [new HumanMessage('Quero um Civic 2020')];
+
+      mockChat.mockResolvedValue({
+        extractedPreferences: { model: 'Civic' },
+        response: 'Encontrei este Civic:',
+        canRecommend: true,
+        recommendations: [{ vehicleId: 'v1' }],
+      });
+
+      const result = await discoveryNode(state);
+
+      expect(result.next).toBe('discovery');
+    });
+
+    it('should move to recommendation only when recommendations arrive with a ready profile', async () => {
+      const state = createInitialState();
+      state.profile = {
+        ...state.profile,
+        budget: 90000,
+        usage: 'cidade',
+      };
       state.messages = [new HumanMessage('Quero um Civic 2020')];
 
       mockChat.mockResolvedValue({
