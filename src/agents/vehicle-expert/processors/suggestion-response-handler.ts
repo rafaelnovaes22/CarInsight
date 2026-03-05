@@ -123,6 +123,30 @@ async function handleUberXAlternatives(
   });
 
   if (uberXVehicles.length > 0) {
+    // GUARDRAIL: Must have budget before recommending
+    if (!ctx.updatedProfile.budget) {
+      const firstPrice = uberXVehicles[0].vehicle.price.toLocaleString('pt-BR', {
+        minimumFractionDigits: 0,
+      });
+      return {
+        handled: true,
+        response: buildResponse(
+          `Encontrei ${uberXVehicles.length} veículos aptos para ${appCategory}! Os preços começam em R$ ${firstPrice}.\n\nQual é o seu orçamento? Assim mostro só as opções que cabem no seu bolso. 😊`,
+          {
+            ...ctx.extracted.extracted,
+            _waitingForUberXAlternatives: false,
+            _pendingUberRecommendations: uberXVehicles,
+          },
+          {
+            canRecommend: false,
+            needsMoreInfo: ['budget'],
+            nextMode: 'discovery',
+            startTime: ctx.startTime,
+          }
+        ),
+      };
+    }
+
     const formattedResponse = await formatRecommendationsUtil(
       uberXVehicles,
       ctx.updatedProfile,
@@ -212,6 +236,33 @@ async function handleAlternativeYears(
   const matchingResults = results.filter(r => r.vehicle.year === firstAvailableYear);
 
   if (matchingResults.length > 0) {
+    // GUARDRAIL: Must have budget before recommending
+    if (!ctx.updatedProfile.budget) {
+      const firstPrice = matchingResults[0].vehicle.price.toLocaleString('pt-BR', {
+        minimumFractionDigits: 0,
+      });
+      return {
+        handled: true,
+        response: buildResponse(
+          `Encontrei ${matchingResults.length} ${matchingResults.length > 1 ? 'opções' : 'opção'} de ${ctx.searchedItem} ${firstAvailableYear}! ${matchingResults.length > 1 ? 'Os preços' : 'O preço'} começa em R$ ${firstPrice}.\n\nQual é o seu orçamento? Assim mostro só as opções que cabem no seu bolso. 😊`,
+          {
+            ...ctx.updatedProfile,
+            minYear: firstAvailableYear,
+            _availableYears: undefined,
+            _waitingForSuggestionResponse: false,
+            _searchedItem: undefined,
+            _pendingYearRecommendations: matchingResults,
+          },
+          {
+            canRecommend: false,
+            needsMoreInfo: ['budget'],
+            nextMode: 'discovery',
+            startTime: ctx.startTime,
+          }
+        ),
+      };
+    }
+
     const formattedResponse = await formatRecommendationsUtil(
       matchingResults,
       {

@@ -16,8 +16,20 @@ import { ConversationContext, ReadinessAssessment } from '../../../types/convers
  */
 export function assessReadiness(
   profile: Partial<CustomerProfile>,
-  context: ConversationContext
+  _context: ConversationContext
 ): ReadinessAssessment {
+  // BUDGET IS MANDATORY - Always check first before any recommendation
+  if (!profile.budget) {
+    return {
+      canRecommend: false,
+      confidence: 30,
+      missingRequired: ['budget'],
+      missingOptional: ['usage', 'bodyType', 'minYear'].filter(field => !(profile as any)[field]),
+      action: 'continue_asking',
+      reasoning: 'Orçamento é obrigatório antes de recomendar veículos',
+    };
+  }
+
   // SPECIAL CASE: If user specified bodyType (moto, pickup, SUV, etc.), we can recommend immediately
   // This prevents loops where we keep asking for budget/usage when user just wants to see what's available
   const hasSpecificBodyType =
@@ -25,18 +37,6 @@ export function assessReadiness(
     ['moto', 'pickup', 'suv', 'sedan', 'hatch', 'minivan'].includes(profile.bodyType);
 
   if (hasSpecificBodyType) {
-    // Budget is required even with specific body type
-    if (!profile.budget) {
-      return {
-        canRecommend: false,
-        confidence: 50,
-        missingRequired: ['budget'],
-        missingOptional: ['usage', 'minYear'].filter(field => !(profile as any)[field]),
-        action: 'continue_asking',
-        reasoning: `Tipo de veículo especificado (${profile.bodyType}) mas falta o orçamento`,
-      };
-    }
-
     return {
       canRecommend: true,
       confidence: 80, // Good confidence with specific body type + budget
@@ -80,43 +80,35 @@ export function assessReadiness(
     };
   }
 
-  // Required fields for general searches
-  const required = ['budget', 'usage'];
+  // Required fields for general searches (budget is already checked above)
+  const required = ['usage'];
   const missingRequired = required.filter(field => !(profile as any)[field]);
 
   // Optional but helpful fields
   const optional = ['bodyType', 'minYear', 'transmission'];
   const missingOptional = optional.filter(field => !(profile as any)[field]);
 
-  // Calculate confidence
-  const requiredScore = ((required.length - missingRequired.length) / required.length) * 100;
+  // Calculate confidence (budget is already confirmed present)
+  const hasBudget = 100; // Budget is guaranteed at this point
+  const requiredScore = ((required.length - missingRequired.length) / required.length) * 70;
   const optionalScore = ((optional.length - missingOptional.length) / optional.length) * 30;
-  const confidence = Math.min(100, requiredScore + optionalScore);
+  const confidence = Math.min(100, hasBudget + requiredScore + optionalScore);
 
-  // Decision logic
+  // Decision logic - BUDGET IS MANDATORY (already checked above)
   let canRecommend = false;
   let action: 'continue_asking' | 'recommend_now' | 'ask_confirmation' = 'continue_asking';
   let reasoning = '';
 
   if (missingRequired.length === 0) {
-    // Has all required fields
+    // Has budget (guaranteed) AND usage
     canRecommend = true;
     action = 'recommend_now';
-    reasoning = 'Informações essenciais coletadas';
-  } else if (missingRequired.length === 1 && context.metadata.messageCount >= 8) {
-    // Has most info and conversation is getting long
-    canRecommend = true;
-    action = 'recommend_now';
-    reasoning = `Informação suficiente após várias mensagens (faltando: ${missingRequired.join(', ')})`;
-  } else if (context.metadata.messageCount >= 12) {
-    // Conversation too long, recommend anyway
-    canRecommend = true;
-    action = 'recommend_now';
-    reasoning = `Conversa muito longa, recomendar com informações parciais (faltando: ${missingRequired.join(', ')})`;
+    reasoning = 'Orçamento e uso definidos - pode recomendar';
   } else {
+    // Has budget but missing usage - ask for it
     canRecommend = false;
     action = 'continue_asking';
-    reasoning = `Faltam campos essenciais: ${missingRequired.join(', ')}`;
+    reasoning = `Orçamento definido, mas preciso saber o uso principal`;
   }
 
   return {

@@ -38,13 +38,13 @@ NODE_ENV=production
 PORT=3000
 ```
 
-### Opcionais (Fallback Embeddings)
+### Obrigatórias (Alta Disponibilidade)
 
 ```bash
-# Embeddings Fallback (recomendado para alta disponibilidade)
+# Embeddings Fallback (recomendado)
 COHERE_API_KEY=...
 
-# Redis (cache - opcional)
+# Redis (Obrigatório em Produção para Rate Limit e Cache do WhatsApp)
 REDIS_URL=redis://...
 
 # CRM (futuro)
@@ -66,12 +66,14 @@ CRM_WEBHOOK_URL=
 2. Selecionar: `rafaelnovaes22/faciliauto-mvp-v2`
 3. Branch: `main`
 
-### 3. Adicionar PostgreSQL
+### 3. Adicionar Serviços de Apoio (PostgreSQL e Redis)
 
 1. No projeto, clicar "+ New"
 2. Selecionar "Database" → "PostgreSQL"
-3. Railway gera `DATABASE_URL` automaticamente
-4. Copiar e adicionar nas variáveis do serviço principal
+3. Novamente, clicar "+ New"
+4. Selecionar "Database" → "Redis"
+5. Em cada banco recém-criado, o Railway gerará `DATABASE_URL` e `REDIS_URL`
+6. Copiar essas duas URLs e adicioná-las nas variáveis do serviço principal da API (faciliauto-mvp-v2)
 
 ### 4. Configurar Variáveis de Ambiente
 
@@ -81,7 +83,6 @@ CRM_WEBHOOK_URL=
 2. Aba "Variables"
 3. Adicionar uma por uma:
 
-```
 OPENAI_API_KEY = sk-...
 GROQ_API_KEY = gsk-...
 COHERE_API_KEY = ... (opcional)
@@ -90,7 +91,8 @@ META_WHATSAPP_PHONE_NUMBER_ID = 123...
 META_WEBHOOK_VERIFY_TOKEN = faciliauto_webhook_2025
 NODE_ENV = production
 PORT = 3000
-```
+DATABASE_URL = postgresql://...
+REDIS_URL = redis://...
 
 **Método 2: Via Railway CLI** (mais rápido)
 

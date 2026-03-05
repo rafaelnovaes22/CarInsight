@@ -8,7 +8,16 @@ export async function financingNode(state: IGraphState): Promise<Partial<IGraphS
   const timer = createNodeTimer('financing');
 
   const lastMessage = state.messages[state.messages.length - 1];
-  const userMessage = lastMessage.content.toString();
+
+  if (!lastMessage || typeof lastMessage.content !== 'string') {
+    timer.logError(state, 'No valid message to process');
+    return {
+      next: 'end',
+      messages: [new AIMessage('Desculpe, não entendi. Posso transferir você para um consultor?')],
+    };
+  }
+
+  const userMessage = lastMessage.content;
 
   // Context adapter
   const context: ConversationContext = {

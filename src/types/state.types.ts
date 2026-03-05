@@ -95,6 +95,13 @@ export interface CustomerProfile {
   _waitingForSimilarApproval?: boolean; // Se estamos aguardando o usuário aceitar ver similares
   _pendingSimilarResults?: VehicleRecommendation[]; // Resultados similares aguardando aprovação
 
+  // Pending recommendations waiting for budget (guardrail)
+  _pendingRecommendations?: VehicleRecommendation[]; // Recomendações pendentes aguardando orçamento
+  _pendingUberRecommendations?: VehicleRecommendation[]; // Recomendações Uber pendentes aguardando orçamento
+  _pendingYearRecommendations?: VehicleRecommendation[]; // Recomendações de ano alternativo pendentes aguardando orçamento
+  _pendingOtherRecommendations?: VehicleRecommendation[]; // Outras recomendações pendentes aguardando orçamento
+  _waitingForBudgetForModel?: boolean; // Aguardando orçamento para mostrar modelo específico
+
   // Financing/Trade-in flow control
   _awaitingFinancingDetails?: boolean; // Aguardando detalhes de financiamento (entrada, troca)
   _awaitingTradeInDetails?: boolean; // Aguardando detalhes do veículo de troca
