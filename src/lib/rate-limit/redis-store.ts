@@ -121,8 +121,6 @@ export class RedisRateLimitStore implements RateLimitStore {
    */
   async connect(): Promise<void> {
     try {
-      // Dynamic import para evitar erro se redis não estiver instalado
-      // @ts-expect-error - redis é opcional, não instalado em dev
       const { createClient } = await import('redis');
 
       this.client = createClient({

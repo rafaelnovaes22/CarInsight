@@ -9,6 +9,8 @@ import webhookRoutes from './routes/webhook.routes';
 import evolutionWebhookRoutes from './routes/webhook-evolution.routes';
 import adminRoutes from './routes/admin.routes';
 import debugRoutes from './routes/debug.routes';
+import { initializeRedis, isRedisConnected, closeRedis } from './lib/redis';
+import { getRateLimitService } from './services/rate-limit.service';
 
 const app = express();
 
@@ -62,13 +64,14 @@ app.get('/', (_req, res) => {
 app.get('/health', async (_req, res) => {
   const dbOk = await prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
   const vectorOk = inMemoryVectorStore.getCount() > 0;
+  const redisOk = isRedisConnected();
   const status = dbOk ? 'ok' : 'degraded';
   res.status(dbOk ? 200 : 503).json({
     status,
     timestamp: new Date().toISOString(),
     version: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) || 'local',
     uptime: Math.floor(process.uptime()),
-    checks: { database: dbOk, vectorStore: vectorOk },
+    checks: { database: dbOk, vectorStore: vectorOk, redis: redisOk },
   });
 });
 
@@ -143,6 +146,12 @@ async function start() {
       logger.info({ vehicleCount }, 'Database ready');
     }
 
+    // Initialize Redis cache (non-blocking)
+    await initializeRedis();
+
+    // Initialize rate limit service (uses Redis if available)
+    await getRateLimitService();
+
     // Initialize vector store in background (non-blocking)
     logger.info('Starting vector store initialization in background...');
     inMemoryVectorStore
@@ -191,6 +200,8 @@ async function shutdown(signal: string) {
   } catch {
     // Module may not have been loaded
   }
+  // Close Redis connection
+  await closeRedis().catch(() => {});
   process.exit(0);
 }
 
