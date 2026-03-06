@@ -4,8 +4,11 @@ import { env } from '../config/env';
 import { logger } from './logger';
 
 // Configuração dos providers
+const EMBEDDING_TIMEOUT_MS = 15000; // 15s timeout for embedding calls
+
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY || 'mock-key',
+  timeout: EMBEDDING_TIMEOUT_MS,
 });
 
 const cohere = new CohereClient({
@@ -131,12 +134,15 @@ async function callOpenAIEmbedding(
 async function callCohereEmbedding(
   text: string
 ): Promise<{ embedding: number[]; usage: any; model: string }> {
-  const response = await cohere.embed({
-    texts: [text.trim()],
-    model: 'embed-multilingual-v3.0',
-    inputType: 'search_document',
-    embeddingTypes: ['float'],
-  });
+  const response = await cohere.embed(
+    {
+      texts: [text.trim()],
+      model: 'embed-multilingual-v3.0',
+      inputType: 'search_document',
+      embeddingTypes: ['float'],
+    },
+    { timeoutInSeconds: EMBEDDING_TIMEOUT_MS / 1000 }
+  );
 
   // Cohere retorna 1024 dimensões, normalizar para 1536 para compatibilidade
   const floatEmbeddings = Array.isArray(response.embeddings)
@@ -180,12 +186,15 @@ async function callCohereEmbeddingBatch(
 ): Promise<{ embeddings: number[][]; usage: any; model: string }> {
   const cleanTexts = texts.map(t => t.trim()).filter(t => t.length > 0);
 
-  const response = await cohere.embed({
-    texts: cleanTexts,
-    model: 'embed-multilingual-v3.0',
-    inputType: 'search_document',
-    embeddingTypes: ['float'],
-  });
+  const response = await cohere.embed(
+    {
+      texts: cleanTexts,
+      model: 'embed-multilingual-v3.0',
+      inputType: 'search_document',
+      embeddingTypes: ['float'],
+    },
+    { timeoutInSeconds: EMBEDDING_TIMEOUT_MS / 1000 }
+  );
 
   // Normalizar todos os embeddings para 1536 dimensões
   const floatEmbeddingsBatch = Array.isArray(response.embeddings)

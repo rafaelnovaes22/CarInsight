@@ -77,6 +77,7 @@ export class AudioTranscriptionService {
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
           },
+          timeout: 10000,
         });
 
         const mediaUrl = mediaUrlResponse.data.url;
@@ -87,6 +88,7 @@ export class AudioTranscriptionService {
             Authorization: `Bearer ${this.accessToken}`,
           },
           responseType: 'arraybuffer',
+          timeout: 30000,
         });
 
         return Buffer.from(audioResponse.data);

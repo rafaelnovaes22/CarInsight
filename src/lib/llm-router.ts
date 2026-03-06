@@ -5,12 +5,16 @@ import { logger } from './logger';
 import { traceable } from 'langsmith/traceable';
 
 // Configuração dos providers
+const LLM_TIMEOUT_MS = 30000; // 30s timeout for LLM calls
+
 const openai = new OpenAI({
   apiKey: env.OPENAI_API_KEY || 'mock-key',
+  timeout: LLM_TIMEOUT_MS,
 });
 
 const groq = new Groq({
   apiKey: env.GROQ_API_KEY || 'mock-key',
+  timeout: LLM_TIMEOUT_MS,
 });
 
 export interface ChatMessage {

@@ -4,6 +4,7 @@ import { chatCompletion as routerChatCompletion } from './llm-router';
 
 export const groq = new Groq({
   apiKey: env.GROQ_API_KEY || 'mock-key',
+  timeout: 30000, // 30s timeout (covers Whisper transcription)
 });
 
 export interface ChatMessage {

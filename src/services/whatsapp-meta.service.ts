@@ -63,6 +63,8 @@ const AUDIO_ERROR_MESSAGES: Record<string, string> = {
   DISABLED: 'No momento não estou conseguindo ouvir áudios. Pode digitar sua mensagem, por favor?',
 };
 
+const META_API_TIMEOUT_MS = 10000; // 10s timeout for Meta API calls
+
 export class WhatsAppMetaService implements IWhatsAppService {
   private static readonly MESSAGE_PROCESSED_TTL_SECONDS = 24 * 60 * 60;
   private static readonly MESSAGE_INFLIGHT_TTL_SECONDS = 2 * 60;
@@ -460,6 +462,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
             Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json; charset=utf-8',
           },
+          timeout: META_API_TIMEOUT_MS,
         }
       );
 
@@ -494,6 +497,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
             Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json; charset=utf-8',
           },
+          timeout: META_API_TIMEOUT_MS,
         }
       );
     } catch (error) {
@@ -531,6 +535,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
             Authorization: `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json; charset=utf-8',
           },
+          timeout: META_API_TIMEOUT_MS,
         }
       );
 
@@ -559,6 +564,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
         },
+        timeout: META_API_TIMEOUT_MS,
       });
 
       return response.data.url;
