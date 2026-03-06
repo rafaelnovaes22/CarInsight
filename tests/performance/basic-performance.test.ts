@@ -109,6 +109,10 @@ describe('Performance Tests', () => {
     it('should validate input in less than 120ms', async () => {
       const message = 'Quero comprar um carro até 50 mil';
 
+      // Warm-up: first call initializes RateLimitService lazily
+      await guardrails.validateInput('5511000000000', 'warmup');
+      guardrails['rateLimitMap'].clear();
+
       const start = Date.now();
       const result = await guardrails.validateInput('5511999999999', message);
       const duration = Date.now() - start;

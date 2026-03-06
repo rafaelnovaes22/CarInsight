@@ -231,17 +231,15 @@ describe('Rate Limit Integration', () => {
  * Para executar testes com Redis:
  * REDIS_URL=redis://localhost:6379 npm test tests/integration/rate-limit-integration.test.ts
  */
-const hasRedisEnv = Boolean(process.env.REDIS_URL);
-const hasRedisPackage = (() => {
-  try {
-    require.resolve('redis');
-    return true;
-  } catch {
-    return false;
-  }
-})();
+/**
+ * Redis integration tests only run when REDIS_INTEGRATION=true is set,
+ * since REDIS_URL may be configured but Redis may not be running locally.
+ *
+ * To run: REDIS_INTEGRATION=true npm test tests/integration/rate-limit-integration.test.ts
+ */
+const runRedisTests = process.env.REDIS_INTEGRATION === 'true' && Boolean(process.env.REDIS_URL);
 
-describe.skipIf(!(hasRedisEnv && hasRedisPackage))('Rate Limit with Redis', () => {
+describe.skipIf(!runRedisTests)('Rate Limit with Redis', () => {
   it('should connect to Redis when available', async () => {
     const { createRedisStore } = await import('../../src/lib/rate-limit/redis-store');
 
