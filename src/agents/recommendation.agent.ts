@@ -7,12 +7,13 @@ import { FallbackService } from '../services/fallback.service';
 import { FallbackResponseFormatter } from '../services/fallback-response-formatter.service';
 import { FallbackResult } from '../services/fallback.types';
 import { performanceMetrics } from '../services/performance-metrics.service';
+import type { VehicleData } from '../types/state.types';
 
 /** Cached flag – set to false on first explanation-column error so we stop trying */
 let explanationColumnAvailable = true;
 
 interface VehicleMatch {
-  vehicle: any;
+  vehicle: VehicleData;
   matchScore: number;
   reasoning: string;
 }

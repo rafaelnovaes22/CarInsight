@@ -2,6 +2,49 @@
  * LangGraph State Types for FaciliAuto Bot
  */
 
+/**
+ * Vehicle data attached to recommendations.
+ *
+ * Can be either:
+ * - A raw Prisma Vehicle (PT fields: marca, modelo, ano, preco, km, ...)
+ * - A transformed object with EN aliases (brand, model, year, price, mileage, ...)
+ *
+ * The index signature preserves backward compatibility with dynamic property access.
+ * EN aliases (brand, model, year, price, mileage, bodyType, etc.) are accessed via
+ * the index signature and return `any`.
+ */
+export interface VehicleData {
+  id: string;
+  [key: string]: any;
+}
+
+/**
+ * Token usage statistics from LLM calls (OpenAI/Groq format)
+ */
+export interface TokenUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens?: number;
+}
+
+/**
+ * All possible values for the graph `next` state property.
+ * Maps to actual graph nodes via resolveNextNode in workflow.ts.
+ */
+export type GraphNodeName =
+  | 'greeting'
+  | 'discovery'
+  | 'clarification'
+  | 'ready_to_recommend'
+  | 'search'
+  | 'recommendation'
+  | 'refinement'
+  | 'financing'
+  | 'trade_in'
+  | 'negotiation'
+  | 'end'
+  | 'handoff';
+
 export interface QuizAnswers {
   budget?: number;
   usage?: 'cidade' | 'viagem' | 'trabalho' | 'misto' | 'diario';
@@ -146,7 +189,7 @@ export interface VehicleRecommendation {
   reasoning: string;
   highlights: string[];
   concerns: string[];
-  vehicle?: any; // Full vehicle object from DB
+  vehicle: VehicleData;
   explanation?: RecommendationExplanation;
   exactSearchMetadata?: ExactSearchMetadata; // Metadata from exact search (Feature: exact-vehicle-search)
 }
@@ -201,7 +244,7 @@ export interface ConversationState {
     lastMessageAt: Date;
     leadQuality?: 'hot' | 'warm' | 'cold';
     flags: string[];
-    tokenUsage?: any;
+    tokenUsage?: TokenUsage;
     llmUsed?: string;
   };
 }

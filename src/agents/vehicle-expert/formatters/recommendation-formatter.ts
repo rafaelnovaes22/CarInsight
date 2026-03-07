@@ -224,7 +224,7 @@ export function generateRecommendationIntro(
   profile: Partial<CustomerProfile>,
   count: number,
   searchType: SearchType = 'recommendation',
-  firstVehicle?: { brand: string; model: string; year: number }
+  firstVehicle?: Record<string, any>
 ): string {
   // Para busca específica, usar mensagem direta
   if (searchType === 'specific') {

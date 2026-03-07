@@ -3,7 +3,7 @@
  * Supports natural language interaction with VehicleExpertAgent
  */
 
-import { CustomerProfile, VehicleRecommendation, BotMessage } from './state.types';
+import { CustomerProfile, VehicleRecommendation, BotMessage, TokenUsage } from './state.types';
 
 /**
  * Conversation modes (lifecycle stages)
@@ -81,7 +81,7 @@ export interface ConversationResponse {
     noSevenSeaters?: boolean; // Indicates no 7-seat vehicles were found for user request
     exactMatch?: boolean; // Indicates if response comes from exact model+year search
     alternativeYears?: boolean; // Indicates if response suggests alternative years
-    tokenUsage?: any; // Token usage statistics
+    tokenUsage?: TokenUsage;
   };
 }
 

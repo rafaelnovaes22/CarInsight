@@ -1,5 +1,5 @@
 import { BaseMessage } from '@langchain/core/messages';
-import { CustomerProfile, VehicleRecommendation, QuizState } from './state.types';
+import { CustomerProfile, VehicleRecommendation, QuizState, TokenUsage } from './state.types';
 
 /**
  * Definition of the Conversation Graph State
@@ -16,7 +16,7 @@ export interface IGraphState {
   profile: Partial<CustomerProfile>;
   recommendations: VehicleRecommendation[];
 
-  // Control flow
+  // Control flow (see GraphNodeName for valid values)
   next: string;
 
   // Metadata & Metrics
@@ -27,7 +27,7 @@ export interface IGraphState {
     lastLoopNode?: string;
     errorCount: number;
     flags: string[];
-    tokenUsage?: any;
+    tokenUsage?: TokenUsage;
     llmUsed?: string;
   };
 
