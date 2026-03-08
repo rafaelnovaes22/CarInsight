@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { greetingNode } from '../../../src/graph/nodes/greeting.node';
 import { discoveryNode } from '../../../src/graph/nodes/discovery.node';
 import { searchNode } from '../../../src/graph/nodes/search.node';
-import { recommendationNode } from '../../../src/graph/nodes/recommendation.node';
+import { recommendationNode } from '../../../src/graph/nodes/recommendation';
 import { createInitialState } from '../../../src/types/graph.types';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 

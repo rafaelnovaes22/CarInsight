@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { recommendationNode } from '../../../src/graph/nodes/recommendation.node';
+import { recommendationNode } from '../../../src/graph/nodes/recommendation';
 import { createInitialState } from '../../../src/types/graph.types';
 import { HumanMessage } from '@langchain/core/messages';
 
