@@ -7,10 +7,18 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MemoryRateLimitStore } from '../../src/lib/rate-limit/memory-store';
-import { RateLimitService, createRateLimitService } from '../../src/services/rate-limit.service';
+import {
+  RateLimitService,
+  createRateLimitService,
+  resetRateLimitService,
+} from '../../src/services/rate-limit.service';
 import type { RateLimitConfig } from '../../src/lib/rate-limit/types';
 
 describe('Rate Limiting', () => {
+  beforeEach(() => {
+    resetRateLimitService();
+  });
+
   describe('MemoryRateLimitStore', () => {
     let store: MemoryRateLimitStore;
     const config: RateLimitConfig = {
@@ -321,6 +329,10 @@ describe('Rate Limiting', () => {
 
     it('should fallback to legacy when service fails', async () => {
       const { GuardrailsService } = await import('../../src/services/guardrails.service');
+      const rateLimitModule = await import('../../src/services/rate-limit.service');
+      const getRateLimitSpy = vi
+        .spyOn(rateLimitModule, 'getRateLimitService')
+        .mockRejectedValueOnce(new Error('service unavailable'));
 
       const guardrails = new GuardrailsService({
         disableRateLimit: false,
@@ -331,6 +343,7 @@ describe('Rate Limiting', () => {
 
       const result = await guardrails.validateInput('5511999999999', 'Hello');
       expect(result.allowed).toBe(true);
+      getRateLimitSpy.mockRestore();
     });
   });
 });

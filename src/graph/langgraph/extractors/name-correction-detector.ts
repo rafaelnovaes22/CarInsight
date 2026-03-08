@@ -37,18 +37,19 @@ export interface NameCorrectionDetectorConfig {
 }
 
 function normalizeCommonMojibake(input: string): string {
-  return input
-    .replace(/ã/g, 'ã')
-    .replace(/á/g, 'á')
-    .replace(/â/g, 'â')
-    .replace(/é/g, 'é')
-    .replace(/ê/g, 'ê')
-    .replace(/í/g, 'í')
-    .replace(/ó/g, 'ó')
-    .replace(/ô/g, 'ô')
-    .replace(/õ/g, 'õ')
-    .replace(/ú/g, 'ú')
-    .replace(/ç/g, 'ç');
+  if (!/[Ãâ]/.test(input)) {
+    return input;
+  }
+
+  try {
+    const repaired = Buffer.from(input, 'latin1').toString('utf8');
+    const originalNoise = (input.match(/[Ãâ]/g) || []).length;
+    const repairedNoise = (repaired.match(/[Ãâ]/g) || []).length;
+
+    return repairedNoise < originalNoise ? repaired : input;
+  } catch {
+    return input;
+  }
 }
 
 /**
