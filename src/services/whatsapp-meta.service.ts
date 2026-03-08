@@ -80,6 +80,7 @@ export class WhatsAppMetaService implements IWhatsAppService {
   private static readonly MESSAGE_PROCESSED_TTL_SECONDS = 24 * 60 * 60;
   private static readonly MESSAGE_INFLIGHT_TTL_SECONDS = 2 * 60;
   private static readonly inFlightMessageIds = new Set<string>();
+  private static readonly phoneQueues = new Map<string, Promise<void>>();
 
   private messageHandler: MessageHandlerV2;
   private audioTranscriptionService: AudioTranscriptionService;
@@ -171,52 +172,55 @@ export class WhatsAppMetaService implements IWhatsAppService {
     }
 
     let handledSuccessfully = false;
+    const phoneNumber = message.from;
 
     try {
-      // Route audio messages to audio handler
-      if (message.type === 'audio' && message.audio) {
-        await this.handleAudioMessage(message);
+      await this.runSerialForPhone(phoneNumber, async () => {
+        // Route audio messages to audio handler
+        if (message.type === 'audio' && message.audio) {
+          await this.handleAudioMessage(message);
+          handledSuccessfully = true;
+          return;
+        }
+
+        // Only process text messages
+        if (message.type !== 'text' || !message.text) {
+          logger.info('⚠️ Ignoring non-text message', { type: message.type, id: message.id });
+          handledSuccessfully = true;
+          return;
+        }
+
+        const phoneNumber = message.from;
+        const messageText = message.text.body;
+
+        logger.info('📱 Message received', {
+          from: this.maskPhoneNumber(phoneNumber),
+          textLength: messageText.length,
+        });
+
+        // Mark message as read
+        await this.markMessageAsRead(message.id);
+
+        // Process with our bot
+        logger.info('🤖 Processing with bot...');
+        const response = await this.messageHandler.handleMessage(phoneNumber, messageText, {
+          waMessageId: message.id,
+        });
+
+        logger.info('📤 Sending response...', {
+          to: this.maskPhoneNumber(phoneNumber),
+          responseLength: response.length,
+        });
+
+        // Send response back
+        await this.sendMessage(phoneNumber, response);
+
+        logger.info('✅ Response sent successfully', {
+          to: this.maskPhoneNumber(phoneNumber),
+          length: response.length,
+        });
         handledSuccessfully = true;
-        return;
-      }
-
-      // Only process text messages
-      if (message.type !== 'text' || !message.text) {
-        logger.info('⚠️ Ignoring non-text message', { type: message.type, id: message.id });
-        handledSuccessfully = true;
-        return;
-      }
-
-      const phoneNumber = message.from;
-      const messageText = message.text.body;
-
-      logger.info('📱 Message received', {
-        from: this.maskPhoneNumber(phoneNumber),
-        textLength: messageText.length,
       });
-
-      // Mark message as read
-      await this.markMessageAsRead(message.id);
-
-      // Process with our bot
-      logger.info('🤖 Processing with bot...');
-      const response = await this.messageHandler.handleMessage(phoneNumber, messageText, {
-        waMessageId: message.id,
-      });
-
-      logger.info('📤 Sending response...', {
-        to: this.maskPhoneNumber(phoneNumber),
-        responseLength: response.length,
-      });
-
-      // Send response back
-      await this.sendMessage(phoneNumber, response);
-
-      logger.info('✅ Response sent successfully', {
-        to: this.maskPhoneNumber(phoneNumber),
-        length: response.length,
-      });
-      handledSuccessfully = true;
     } catch (error: any) {
       logger.error(
         {
@@ -650,6 +654,39 @@ export class WhatsAppMetaService implements IWhatsAppService {
     const inFlightKey = this.getInFlightMessageKey(messageId);
     await cache.del(inFlightKey);
     WhatsAppMetaService.inFlightMessageIds.delete(messageId);
+  }
+
+  private async runSerialForPhone(phoneNumber: string, work: () => Promise<void>): Promise<void> {
+    if (!phoneNumber) {
+      await work();
+      return;
+    }
+
+    const existing = WhatsAppMetaService.phoneQueues.get(phoneNumber);
+    if (existing) {
+      logger.info(
+        { phoneNumber: this.maskPhoneNumber(phoneNumber) },
+        'Message queued behind in-flight conversation processing'
+      );
+    }
+
+    let release!: () => void;
+    const current = new Promise<void>(resolve => {
+      release = resolve;
+    });
+
+    WhatsAppMetaService.phoneQueues.set(phoneNumber, current);
+
+    try {
+      await existing?.catch(() => {});
+      await work();
+    } finally {
+      release();
+
+      if (WhatsAppMetaService.phoneQueues.get(phoneNumber) === current) {
+        WhatsAppMetaService.phoneQueues.delete(phoneNumber);
+      }
+    }
   }
 
   private maskPhoneNumber(phoneNumber: string): string {
