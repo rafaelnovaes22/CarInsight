@@ -65,6 +65,17 @@ const AUDIO_ERROR_MESSAGES: Record<string, string> = {
 
 const META_API_TIMEOUT_MS = 10000; // 10s timeout for Meta API calls
 
+function getAxiosErrorDetails(error: any) {
+  return {
+    message: error?.message,
+    code: error?.code,
+    status: error?.response?.status,
+    statusText: error?.response?.statusText,
+    data: error?.response?.data,
+    metaError: error?.response?.data?.error,
+  };
+}
+
 export class WhatsAppMetaService implements IWhatsAppService {
   private static readonly MESSAGE_PROCESSED_TTL_SECONDS = 24 * 60 * 60;
   private static readonly MESSAGE_INFLIGHT_TTL_SECONDS = 2 * 60;
@@ -400,9 +411,10 @@ export class WhatsAppMetaService implements IWhatsAppService {
         } catch (retryError: any) {
           logger.error(
             {
-              error: retryError.response?.data || retryError.message,
-              status: retryError.response?.status,
+              ...getAxiosErrorDetails(retryError),
               to: this.maskPhoneNumber(to),
+              payloadPreview: body.slice(0, 200),
+              quotedMessageId: options?.quotedMessageId,
             },
             '❌ Failed to send message via Meta API (retry also failed)'
           );
@@ -412,12 +424,12 @@ export class WhatsAppMetaService implements IWhatsAppService {
 
       logger.error(
         {
-          error: error.response?.data || error.message,
-          status,
-          statusText: error.response?.statusText,
+          ...getAxiosErrorDetails(error),
           to: this.maskPhoneNumber(to),
           apiUrl: this.apiUrl,
           hasToken: !!this.accessToken,
+          payloadPreview: body.slice(0, 200),
+          quotedMessageId: options?.quotedMessageId,
         },
         '❌ Failed to send message via Meta API'
       );

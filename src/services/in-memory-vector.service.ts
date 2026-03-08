@@ -115,7 +115,18 @@ class InMemoryVectorStore {
         vehicleId
       )
       .catch(error => {
-        logger.warn({ vehicleId, err: error.message }, 'Erro ao salvar embedding do veículo');
+        logger.warn(
+          {
+            vehicleId,
+            embeddingDimensions: embedding.length,
+            embeddingModel: 'text-embedding-3-small',
+            err: error,
+            errorMessage: error?.message,
+            errorCode: error?.code,
+            errorMeta: error?.meta,
+          },
+          'Erro ao salvar embedding do veículo'
+        );
       });
 
     return embedding;

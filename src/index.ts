@@ -157,7 +157,7 @@ async function start() {
     inMemoryVectorStore
       .initialize()
       .then(() => {
-        logger.info({ embeddings: inMemoryVectorStore.getCount() }, 'Vector store ready');
+        logger.info('Vector store background initialization started');
       })
       .catch(error => {
         logger.error({ error }, 'Vector store failed, SQL fallback will be used');
