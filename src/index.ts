@@ -164,7 +164,7 @@ async function start() {
       });
 
     // Start Express server
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info({ port: PORT }, 'Server running');
       logger.info({ dashboard: `http://localhost:${PORT}` }, 'Dashboard');
       logger.info({ health: `http://localhost:${PORT}/health` }, 'Health endpoint');
@@ -185,8 +185,13 @@ async function start() {
           .catch(err => logger.error({ err }, 'Failed to start follow-up scheduler'));
       }
     });
+
+    server.on('error', error => {
+      logger.error({ err: error, port: PORT }, 'HTTP server failed to start');
+      process.exit(1);
+    });
   } catch (error) {
-    logger.error({ error }, 'Failed to start application');
+    logger.error({ err: error }, 'Failed to start application');
     process.exit(1);
   }
 }
@@ -207,5 +212,12 @@ async function shutdown(signal: string) {
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', reason => {
+  logger.error({ err: reason }, 'Unhandled promise rejection');
+});
+process.on('uncaughtException', error => {
+  logger.fatal({ err: error }, 'Uncaught exception');
+  process.exit(1);
+});
 
 start();

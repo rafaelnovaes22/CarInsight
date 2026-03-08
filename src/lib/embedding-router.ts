@@ -15,6 +15,10 @@ const cohere = new CohereClient({
   token: env.COHERE_API_KEY || 'mock-key',
 });
 
+function isConfiguredApiKey(apiKey: string | undefined, mockValues: string[]): boolean {
+  return !!apiKey && !mockValues.includes(apiKey);
+}
+
 export interface EmbeddingProviderConfig {
   name: string;
   model: string;
@@ -30,7 +34,7 @@ const EMBEDDING_PROVIDERS: EmbeddingProviderConfig[] = [
     name: 'openai',
     model: 'text-embedding-3-small',
     dimensions: 1536,
-    enabled: !!env.OPENAI_API_KEY && env.OPENAI_API_KEY !== 'mock-key',
+    enabled: isConfiguredApiKey(env.OPENAI_API_KEY, ['mock-key', 'sk-mock-key-for-development']),
     priority: 1, // Primário
     costPer1MTokens: 0.02, // $0.02 por 1M tokens
   },
@@ -38,7 +42,7 @@ const EMBEDDING_PROVIDERS: EmbeddingProviderConfig[] = [
     name: 'cohere',
     model: 'embed-multilingual-v3.0',
     dimensions: 1024,
-    enabled: !!env.COHERE_API_KEY && env.COHERE_API_KEY !== 'mock-key',
+    enabled: isConfiguredApiKey(env.COHERE_API_KEY, ['mock-key']),
     priority: 2, // Fallback (excelente em português)
     costPer1MTokens: 0.01, // $0.01 por 1M tokens
   },
