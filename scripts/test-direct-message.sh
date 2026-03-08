@@ -1,12 +1,19 @@
 #!/bin/bash
-curl -X POST "https://graph.facebook.com/v18.0/897098916813396/messages" \
-  -H "Authorization: Bearer EAAMIPp5PujgBQEKIE2kVUNQySHUNb76p5ZC1KoDinJeSOh9LsSvjLflWGFfTt2JryzMXR5yWkMyacsUWseXClPJ0t6BVOJ3xiIIZAuoTzqP6QxgG8qq6xnHHuEBnLiB37fUFQYTnZBgJf0UMxEiEYZAyMP8HNIfH6FWFo89xrQnY04fcca5LXPGuVeagmuXYYgZDZD" \
+
+set -euo pipefail
+
+: "${META_WHATSAPP_TOKEN:?META_WHATSAPP_TOKEN nao definido}"
+: "${META_WHATSAPP_PHONE_NUMBER_ID:?META_WHATSAPP_PHONE_NUMBER_ID nao definido}"
+: "${META_TEST_RECIPIENT:?META_TEST_RECIPIENT nao definido}"
+
+curl -X POST "https://graph.facebook.com/v18.0/${META_WHATSAPP_PHONE_NUMBER_ID}/messages" \
+  -H "Authorization: Bearer ${META_WHATSAPP_TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "messaging_product": "whatsapp",
-    "to": "5511949105033",
-    "type": "text",
-    "text": {
-      "body": "🤖 Teste direto da API\n\nSe você está vendo essa mensagem, a integração está funcionando!\n\nResponda com qualquer coisa para continuar."
+  -d "{
+    \"messaging_product\": \"whatsapp\",
+    \"to\": \"${META_TEST_RECIPIENT}\",
+    \"type\": \"text\",
+    \"text\": {
+      \"body\": \"Teste direto da API\\n\\nSe voce esta vendo essa mensagem, a integracao esta funcionando.\\n\\nResponda com qualquer coisa para continuar.\"
     }
-  }'
+  }"
