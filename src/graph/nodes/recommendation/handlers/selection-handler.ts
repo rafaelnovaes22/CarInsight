@@ -5,16 +5,44 @@ import { addFlag } from '../../../../utils/state-flags';
 import { getVehicleLink } from '../utils/vehicle-helpers';
 import { formatPrice } from '../utils/formatters';
 
+function findVehicleByName(
+  message: string,
+  recommendations: HandlerContext['state']['recommendations']
+): number {
+  const lower = message
+    .toLowerCase()
+    .replace(/^(o|a|os|as|quero\s+o|quero\s+a)\s+/i, '')
+    .trim();
+  for (let i = 0; i < recommendations.length; i++) {
+    const v = recommendations[i].vehicle;
+    const model = (v.modelo || v.model || '').toLowerCase();
+    const brand = (v.marca || v.brand || '').toLowerCase();
+    if (model && lower.includes(model)) return i;
+    if (brand && lower.includes(brand)) return i;
+    if (model && model.includes(lower) && lower.length >= 3) return i;
+  }
+  return -1;
+}
+
 export const selectionHandler: IntentHandler = {
   name: 'selection',
   priority: 50,
 
-  canHandle({ lowerMessage }: HandlerContext): boolean {
-    return /^[1-3]$/.test(lowerMessage.trim());
+  canHandle({ lowerMessage, state }: HandlerContext): boolean {
+    if (/^[1-3]$/.test(lowerMessage.trim())) return true;
+    if (state.recommendations.length > 0) {
+      return findVehicleByName(lowerMessage, state.recommendations) >= 0;
+    }
+    return false;
   },
 
   handle({ state, lowerMessage }: HandlerContext): HandlerResult {
-    const vehicleIndex = parseInt(lowerMessage.trim()) - 1;
+    let vehicleIndex: number;
+    if (/^[1-3]$/.test(lowerMessage.trim())) {
+      vehicleIndex = parseInt(lowerMessage.trim()) - 1;
+    } else {
+      vehicleIndex = findVehicleByName(lowerMessage, state.recommendations);
+    }
     if (vehicleIndex < 0 || vehicleIndex >= state.recommendations.length) {
       return { handled: false };
     }

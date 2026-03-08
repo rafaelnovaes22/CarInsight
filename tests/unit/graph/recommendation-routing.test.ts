@@ -49,4 +49,53 @@ describe('RecommendationNode routing (golden)', () => {
     expect(result.next).toBe('negotiation');
     expect(result.messages).toBeUndefined();
   });
+
+  it('selects vehicle by model name', async () => {
+    const state = createInitialState();
+    state.recommendations = [
+      {
+        vehicleId: 'v1',
+        vehicle: { modelo: 'Santana', marca: 'Volkswagen', ano: 2020 } as never,
+        score: 0.9,
+        rank: 1,
+        reasons: [],
+      },
+    ];
+    state.messages = [new HumanMessage('O Santana')];
+
+    const result = await recommendationNode(state);
+
+    expect(result.messages).toBeDefined();
+    expect(result.messages?.length).toBe(1);
+    const content = String(result.messages![0].content);
+    expect(content).toContain('Santana');
+    expect(content).toContain('Ano');
+  });
+
+  it('selects vehicle by name with article prefix', async () => {
+    const state = createInitialState();
+    state.recommendations = [
+      {
+        vehicleId: 'v1',
+        vehicle: { modelo: 'Gol', marca: 'Volkswagen', ano: 2019 } as never,
+        score: 0.8,
+        rank: 1,
+        reasons: [],
+      },
+      {
+        vehicleId: 'v2',
+        vehicle: { modelo: 'Onix', marca: 'Chevrolet', ano: 2021 } as never,
+        score: 0.7,
+        rank: 2,
+        reasons: [],
+      },
+    ];
+    state.messages = [new HumanMessage('o onix')];
+
+    const result = await recommendationNode(state);
+
+    expect(result.messages).toBeDefined();
+    const content = String(result.messages![0].content);
+    expect(content).toContain('Onix');
+  });
 });
