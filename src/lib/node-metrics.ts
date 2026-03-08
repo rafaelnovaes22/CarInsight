@@ -7,6 +7,7 @@
 
 import { logger } from './logger';
 import { IGraphState } from '../types/graph.types';
+import { computeFiber } from '../utils/conversation-fiber';
 
 /**
  * Metrics data collected during node execution
@@ -24,6 +25,10 @@ export interface NodeMetrics {
   nextNode?: string;
   /** Whether recommendations were generated */
   hasRecommendations?: boolean;
+  /** Current conversation fiber (phase) */
+  fiber?: string;
+  /** Conversation completeness (0.0 - 1.0) */
+  completeness?: number;
   /** Error message if execution failed */
   error?: string;
 }
@@ -53,6 +58,16 @@ export class NodeTimer {
    */
   logSuccess(state: IGraphState, result: Partial<IGraphState>): void {
     const latencyMs = this.getElapsedMs();
+
+    // Compute fiber from the post-execution state (merge result into state)
+    const postState = {
+      ...state,
+      ...result,
+      profile: { ...state.profile, ...result.profile },
+      metadata: { ...state.metadata, ...result.metadata },
+    } as IGraphState;
+    const fiberResult = computeFiber(postState);
+
     const metrics: NodeMetrics = {
       node: this.nodeName,
       latencyMs,
@@ -61,6 +76,8 @@ export class NodeTimer {
       nextNode: result.next,
       hasRecommendations:
         (result.recommendations?.length || 0) > 0 || (state.recommendations?.length || 0) > 0,
+      fiber: fiberResult.label,
+      completeness: fiberResult.completeness,
     };
 
     logger.info(metrics, `${this.nodeName}Node: Execution complete`);
