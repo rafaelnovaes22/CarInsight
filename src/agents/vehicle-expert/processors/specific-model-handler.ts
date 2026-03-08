@@ -145,6 +145,34 @@ export async function handleSpecificModel(ctx: SpecificModelContext): Promise<Ha
 
   // Found matching results
   if (matchingResults.length > 0) {
+    // GUARDRAIL: Must have budget before recommending, even for specific model
+    if (!updatedProfile.budget) {
+      const firstMatch = matchingResults[0];
+      const price = firstMatch.vehicle.price;
+      const priceFormatted = price.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
+      const vehicleName = requestedModel
+        ? capitalize(requestedModel)
+        : firstMatch.vehicle.brand + ' ' + firstMatch.vehicle.model;
+
+      return {
+        handled: true,
+        response: buildResponse(
+          `Encontrei ${matchingResults.length} ${matchingResults.length > 1 ? 'opções' : 'opção'} de ${vehicleName}! ${matchingResults.length > 1 ? 'Os preços' : 'O preço'} começa em R$ ${priceFormatted}.\n\nQual é o seu orçamento? Assim eu mostro só as opções que cabem no seu bolso. 😊`,
+          {
+            ...extracted.extracted,
+            _pendingRecommendations: matchingResults,
+            _waitingForBudgetForModel: true,
+          },
+          {
+            canRecommend: false,
+            needsMoreInfo: ['budget'],
+            nextMode: 'discovery',
+            startTime,
+          }
+        ),
+      };
+    }
+
     const formattedResponse = await formatRecommendationsUtil(
       matchingResults,
       updatedProfile,

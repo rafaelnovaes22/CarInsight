@@ -251,6 +251,30 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
 
   // 8. Handle results
   if (newResults.length > 0) {
+    // GUARDRAIL: Must have budget before recommending
+    const userBudget = updatedProfile.budget || updatedProfile.budgetMax;
+    if (!userBudget) {
+      const firstPrice = newResults[0].vehicle.price.toLocaleString('pt-BR', {
+        minimumFractionDigits: 0,
+      });
+      return {
+        handled: true,
+        response: buildResponse(
+          `Encontrei ${newResults.length} outras opções! ${newResults.length > 1 ? 'Os preços' : 'O preço'} começa em R$ ${firstPrice}.\n\nQual é o seu orçamento? Assim mostro só as opções que cabem no seu bolso. 😊`,
+          {
+            ...extracted.extracted,
+            _pendingOtherRecommendations: newResults.slice(0, 5),
+          },
+          {
+            canRecommend: false,
+            needsMoreInfo: ['budget'],
+            nextMode: 'discovery',
+            startTime,
+          }
+        ),
+      };
+    }
+
     const formattedResponse = await formatRecommendationsUtil(
       newResults.slice(0, 5),
       updatedProfile,
