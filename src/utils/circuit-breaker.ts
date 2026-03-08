@@ -69,9 +69,7 @@ export function computeLoopCount(
   }
 
   const count =
-    state.metadata.lastLoopNode === currentNode
-      ? (state.metadata.loopCount || 0) + 1
-      : 1;
+    state.metadata.lastLoopNode === currentNode ? (state.metadata.loopCount || 0) + 1 : 1;
 
   return { loopCount: count, lastLoopNode: currentNode };
 }

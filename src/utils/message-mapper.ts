@@ -20,10 +20,7 @@ function detectMessageRole(message: BaseMessage): 'user' | 'assistant' {
   }
 
   const msg = message as unknown as Record<string, unknown>;
-  if (
-    msg.type === 'human' ||
-    (typeof msg.id === 'string' && msg.id.includes('HumanMessage'))
-  ) {
+  if (msg.type === 'human' || (typeof msg.id === 'string' && msg.id.includes('HumanMessage'))) {
     return 'user';
   }
 

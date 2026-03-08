@@ -31,7 +31,7 @@ describe('handoff-detector', () => {
       'quanto custa esse carro?',
       'tem SUV disponível?',
       'meu orçamento é 80 mil',
-    ])('should not detect handoff in normal messages: "%s"', (message) => {
+    ])('should not detect handoff in normal messages: "%s"', message => {
       const result = detectHandoffRequest(message);
       expect(result.isHandoffRequest).toBe(false);
       expect(result.matchedKeywords).toHaveLength(0);
