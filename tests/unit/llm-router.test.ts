@@ -81,13 +81,29 @@ describe('LLM Router', () => {
       expect(openai?.model).toBe('gpt-4.1-mini');
     });
 
-    it('deve incluir Groq como fallback', () => {
+    it('deve incluir Gemini como fallback', () => {
+      const status = getLLMProvidersStatus();
+      const gemini = status.find(p => p.name === 'gemini');
+
+      expect(gemini).toBeDefined();
+      expect(gemini?.priority).toBe(2);
+      expect(gemini?.model).toBe('gemini-2.5-flash');
+      expect(gemini?.costPer1MTokens).toEqual({ input: 0.15, output: 0.6 });
+    });
+
+    it('deve incluir Groq como fallback de emergência', () => {
       const status = getLLMProvidersStatus();
       const groq = status.find(p => p.name === 'groq');
 
       expect(groq).toBeDefined();
-      expect(groq?.priority).toBe(2);
+      expect(groq?.priority).toBe(3);
       expect(groq?.model).toBe('llama-3.1-8b-instant');
+    });
+
+    it('deve ter 3 providers configurados', () => {
+      const status = getLLMProvidersStatus();
+      expect(status.length).toBe(3);
+      expect(status.map(p => p.name)).toEqual(['openai', 'gemini', 'groq']);
     });
   });
 

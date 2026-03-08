@@ -76,6 +76,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@langchain/core": "^1.1.20",
     "@langchain/langgraph": "^1.1.4",
     "@langchain/langgraph-checkpoint": "^1.0.0",

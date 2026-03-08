@@ -12,6 +12,7 @@ const envSchema = z.object({
   // LLM Providers (com fallback automático)
   OPENAI_API_KEY: z.string().default('sk-mock-key-for-development'), // Primário para LLM e Embeddings
   GROQ_API_KEY: z.string().optional().default('gsk-mock-key-for-development'), // Fallback para LLM
+  GEMINI_API_KEY: z.string().optional().default('gemini-mock-key'), // Fallback para LLM (Gemini 2.5 Flash)
   COHERE_API_KEY: z.string().optional(), // Fallback para Embeddings
 
   WHATSAPP_NAME: z.string().default('CarInsight'),

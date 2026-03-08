@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env';
 import { logger } from './logger';
 import { traceable } from 'langsmith/traceable';
@@ -16,6 +17,8 @@ const groq = new Groq({
   apiKey: env.GROQ_API_KEY || 'mock-key',
   timeout: LLM_TIMEOUT_MS,
 });
+
+const geminiClient = new GoogleGenerativeAI(env.GEMINI_API_KEY || 'gemini-mock-key');
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -47,11 +50,18 @@ const LLM_PROVIDERS: LLMProviderConfig[] = [
     costPer1MTokens: { input: 0.4, output: 1.6 },
   },
   {
+    name: 'gemini',
+    model: 'gemini-2.5-flash',
+    enabled: !!env.GEMINI_API_KEY && env.GEMINI_API_KEY !== 'gemini-mock-key',
+    priority: 2, // Fallback rápido e econômico
+    costPer1MTokens: { input: 0.15, output: 0.6 },
+  },
+  {
     name: 'groq',
-    // Modelo Llama 3.1 8B Instant (Fallback rápido e econômico)
+    // Modelo Llama 3.1 8B Instant (Fallback de emergência)
     model: 'llama-3.1-8b-instant',
     enabled: !!env.GROQ_API_KEY && env.GROQ_API_KEY !== 'mock-key',
-    priority: 2, // Fallback
+    priority: 3, // Fallback de emergência
     costPer1MTokens: { input: 0.05, output: 0.08 },
   },
 ];
@@ -141,6 +151,54 @@ const callGroq = traceable(
 );
 
 /**
+ * Executa chamada para Google Gemini 2.5 Flash
+ */
+const callGemini = traceable(
+  async function callGemini(
+    messages: ChatMessage[],
+    options: LLMRouterOptions
+  ): Promise<{ content: string; usage: any; model: string }> {
+    const model = geminiClient.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: {
+        temperature: options.temperature ?? 0.3,
+        maxOutputTokens: options.maxTokens ?? 500,
+      },
+    });
+
+    // Separar system instruction das mensagens de conversa
+    const systemMsg = messages.find(m => m.role === 'system');
+    const chatMessages = messages.filter(m => m.role !== 'system');
+
+    const contents = chatMessages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+
+    const response = await model.generateContent({
+      contents,
+      systemInstruction: systemMsg
+        ? { role: 'user', parts: [{ text: systemMsg.content }] }
+        : undefined,
+    });
+
+    const result = response.response;
+    const usage = result.usageMetadata;
+
+    return {
+      content: result.text() || '',
+      usage: {
+        prompt_tokens: usage?.promptTokenCount || 0,
+        completion_tokens: usage?.candidatesTokenCount || 0,
+        total_tokens: usage?.totalTokenCount || 0,
+      },
+      model: 'gemini-2.5-flash',
+    };
+  },
+  { name: 'call_gemini', run_type: 'llm' }
+);
+
+/**
  * Modo mock para desenvolvimento sem API keys
  */
 function mockResponse(messages: ChatMessage[]): {
@@ -215,8 +273,9 @@ function mockResponse(messages: ChatMessage[]): {
  *
  * Ordem de prioridade:
  * 1. gpt-4.1-mini (OpenAI) - Primário
- * 2. LLaMA 3.1 8B Instant (Groq) - Fallback
- * 3. Mock Mode - Se nenhum disponível
+ * 2. Gemini 2.5 Flash (Google) - Fallback rápido e econômico
+ * 3. LLaMA 3.1 8B Instant (Groq) - Fallback de emergência
+ * 4. Mock Mode - Se nenhum disponível
  */
 export async function chatCompletion(
   messages: ChatMessage[],
@@ -255,6 +314,8 @@ export async function chatCompletion(
         let result;
         if (provider.name === 'openai') {
           result = await callOpenAI(messages, options);
+        } else if (provider.name === 'gemini') {
+          result = await callGemini(messages, options);
         } else if (provider.name === 'groq') {
           result = await callGroq(messages, options);
         } else {
