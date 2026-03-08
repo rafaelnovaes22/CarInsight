@@ -11,18 +11,49 @@
 
 import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
 
+type RegisteredMetric = Counter<string> | Histogram<string> | Gauge<string>;
+
+const metricsGlobal = globalThis as typeof globalThis & {
+  __carinsightDefaultMetricsRegistered?: boolean;
+};
+
+function getOrCreateMetric<T extends RegisteredMetric>(name: string, factory: () => T): T {
+  const existing = register.getSingleMetric(name);
+  if (existing) {
+    return existing as T;
+  }
+  return factory();
+}
+
+function getOrCreateCounter(config: ConstructorParameters<typeof Counter>[0]): Counter<string> {
+  return getOrCreateMetric(config.name, () => new Counter(config));
+}
+
+function getOrCreateHistogram(
+  config: ConstructorParameters<typeof Histogram>[0]
+): Histogram<string> {
+  return getOrCreateMetric(config.name, () => new Histogram(config));
+}
+
+function getOrCreateGauge(config: ConstructorParameters<typeof Gauge>[0]): Gauge<string> {
+  return getOrCreateMetric(config.name, () => new Gauge(config));
+}
+
 // Coleção automática de métricas default (CPU, memória, etc)
-collectDefaultMetrics({
-  register,
-  prefix: 'carinsight_',
-});
+if (!metricsGlobal.__carinsightDefaultMetricsRegistered) {
+  collectDefaultMetrics({
+    register,
+    prefix: 'carinsight_',
+  });
+  metricsGlobal.__carinsightDefaultMetricsRegistered = true;
+}
 
 /**
  * Métricas de Rate Limiting
  */
 export const rateLimitMetrics = {
   // Contador total de requisições verificadas
-  requestsTotal: new Counter({
+  requestsTotal: getOrCreateCounter({
     name: 'carinsight_rate_limit_requests_total',
     help: 'Total de requisições verificadas no rate limit',
     labelNames: ['resource', 'status'], // status: allowed, blocked
@@ -30,7 +61,7 @@ export const rateLimitMetrics = {
   }),
 
   // Contador de bloqueios por recurso
-  blockedTotal: new Counter({
+  blockedTotal: getOrCreateCounter({
     name: 'carinsight_rate_limit_blocked_total',
     help: 'Total de requisições bloqueadas por rate limit',
     labelNames: ['resource', 'reason'],
@@ -38,7 +69,7 @@ export const rateLimitMetrics = {
   }),
 
   // Histograma de latência do rate limiting
-  duration: new Histogram({
+  duration: getOrCreateHistogram({
     name: 'carinsight_rate_limit_duration_seconds',
     help: 'Tempo de verificação do rate limit',
     labelNames: ['resource', 'store_type'], // store_type: redis, memory
@@ -47,7 +78,7 @@ export const rateLimitMetrics = {
   }),
 
   // Gauge de requisições ativas na janela atual
-  activeRequests: new Gauge({
+  activeRequests: getOrCreateGauge({
     name: 'carinsight_rate_limit_active_requests',
     help: 'Número de requisições na janela atual por chave',
     labelNames: ['resource', 'key_hash'], // key_hash é hash da chave (privacy)
@@ -55,7 +86,7 @@ export const rateLimitMetrics = {
   }),
 
   // Contador de erros no rate limiting
-  errorsTotal: new Counter({
+  errorsTotal: getOrCreateCounter({
     name: 'carinsight_rate_limit_errors_total',
     help: 'Total de erros no serviço de rate limiting',
     labelNames: ['error_type'], // store_error, config_error, etc
@@ -68,7 +99,7 @@ export const rateLimitMetrics = {
  */
 export const whatsappMetrics = {
   // Mensagens recebidas
-  messagesReceived: new Counter({
+  messagesReceived: getOrCreateCounter({
     name: 'carinsight_whatsapp_messages_received_total',
     help: 'Total de mensagens recebidas via WhatsApp',
     labelNames: ['type'], // text, audio, image, etc
@@ -76,7 +107,7 @@ export const whatsappMetrics = {
   }),
 
   // Mensagens enviadas
-  messagesSent: new Counter({
+  messagesSent: getOrCreateCounter({
     name: 'carinsight_whatsapp_messages_sent_total',
     help: 'Total de mensagens enviadas via WhatsApp',
     labelNames: ['type', 'status'], // status: success, error
@@ -84,7 +115,7 @@ export const whatsappMetrics = {
   }),
 
   // Latência de processamento de mensagens
-  processingDuration: new Histogram({
+  processingDuration: getOrCreateHistogram({
     name: 'carinsight_whatsapp_processing_duration_seconds',
     help: 'Tempo de processamento de mensagens',
     labelNames: ['type'],
@@ -93,7 +124,7 @@ export const whatsappMetrics = {
   }),
 
   // Conversas ativas
-  activeConversations: new Gauge({
+  activeConversations: getOrCreateGauge({
     name: 'carinsight_whatsapp_active_conversations',
     help: 'Número de conversas ativas',
     registers: [register],
@@ -105,7 +136,7 @@ export const whatsappMetrics = {
  */
 export const llmMetrics = {
   // Requisições por provider
-  requestsTotal: new Counter({
+  requestsTotal: getOrCreateCounter({
     name: 'carinsight_llm_requests_total',
     help: 'Total de requisições a LLMs',
     labelNames: ['provider', 'model', 'status'], // provider: openai, groq, mock
@@ -113,7 +144,7 @@ export const llmMetrics = {
   }),
 
   // Latência por provider
-  latency: new Histogram({
+  latency: getOrCreateHistogram({
     name: 'carinsight_llm_latency_seconds',
     help: 'Latência das chamadas a LLMs',
     labelNames: ['provider', 'model'],
@@ -122,7 +153,7 @@ export const llmMetrics = {
   }),
 
   // Tokens usados
-  tokensUsed: new Counter({
+  tokensUsed: getOrCreateCounter({
     name: 'carinsight_llm_tokens_used_total',
     help: 'Total de tokens usados',
     labelNames: ['provider', 'model', 'type'], // type: prompt, completion
@@ -130,7 +161,7 @@ export const llmMetrics = {
   }),
 
   // Custo estimado
-  cost: new Counter({
+  cost: getOrCreateCounter({
     name: 'carinsight_llm_cost_usd_total',
     help: 'Custo estimado em USD',
     labelNames: ['provider', 'model'],
@@ -138,7 +169,7 @@ export const llmMetrics = {
   }),
 
   // Circuit breaker state
-  circuitBreakerState: new Gauge({
+  circuitBreakerState: getOrCreateGauge({
     name: 'carinsight_llm_circuit_breaker_state',
     help: 'Estado do circuit breaker (0=closed, 1=open)',
     labelNames: ['provider'],
@@ -151,7 +182,7 @@ export const llmMetrics = {
  */
 export const databaseMetrics = {
   // Queries executadas
-  queriesTotal: new Counter({
+  queriesTotal: getOrCreateCounter({
     name: 'carinsight_db_queries_total',
     help: 'Total de queries executadas',
     labelNames: ['operation', 'table'], // operation: select, insert, update, delete
@@ -159,7 +190,7 @@ export const databaseMetrics = {
   }),
 
   // Latência de queries
-  queryDuration: new Histogram({
+  queryDuration: getOrCreateHistogram({
     name: 'carinsight_db_query_duration_seconds',
     help: 'Duração das queries',
     labelNames: ['operation', 'table'],
@@ -168,7 +199,7 @@ export const databaseMetrics = {
   }),
 
   // Conexões ativas
-  connections: new Gauge({
+  connections: getOrCreateGauge({
     name: 'carinsight_db_connections',
     help: 'Número de conexões ativas com o banco',
     registers: [register],
@@ -180,7 +211,7 @@ export const databaseMetrics = {
  */
 export const redisMetrics = {
   // Operações
-  operationsTotal: new Counter({
+  operationsTotal: getOrCreateCounter({
     name: 'carinsight_redis_operations_total',
     help: 'Total de operações Redis',
     labelNames: ['operation', 'result'], // result: success, error
@@ -188,7 +219,7 @@ export const redisMetrics = {
   }),
 
   // Latência
-  latency: new Histogram({
+  latency: getOrCreateHistogram({
     name: 'carinsight_redis_latency_seconds',
     help: 'Latência das operações Redis',
     labelNames: ['operation'],
@@ -197,7 +228,7 @@ export const redisMetrics = {
   }),
 
   // Conectado
-  connected: new Gauge({
+  connected: getOrCreateGauge({
     name: 'carinsight_redis_connected',
     help: 'Status da conexão Redis (1=conectado, 0=desconectado)',
     registers: [register],
@@ -209,7 +240,7 @@ export const redisMetrics = {
  */
 export const guardrailsMetrics = {
   // Mensagens validadas
-  messagesValidated: new Counter({
+  messagesValidated: getOrCreateCounter({
     name: 'carinsight_guardrails_messages_validated_total',
     help: 'Total de mensagens validadas',
     labelNames: ['result'], // result: allowed, blocked
@@ -217,7 +248,7 @@ export const guardrailsMetrics = {
   }),
 
   // Bloqueios por tipo
-  blocksByType: new Counter({
+  blocksByType: getOrCreateCounter({
     name: 'carinsight_guardrails_blocks_total',
     help: 'Total de bloqueios por tipo',
     labelNames: ['reason'], // rate_limit, injection, length, etc
@@ -225,7 +256,7 @@ export const guardrailsMetrics = {
   }),
 
   // Prompt injection detectados
-  injectionDetected: new Counter({
+  injectionDetected: getOrCreateCounter({
     name: 'carinsight_guardrails_injection_detected_total',
     help: 'Total de tentativas de prompt injection',
     labelNames: ['pattern_type'],
@@ -238,7 +269,7 @@ export const guardrailsMetrics = {
  */
 export const businessMetrics = {
   // Leads gerados
-  leadsGenerated: new Counter({
+  leadsGenerated: getOrCreateCounter({
     name: 'carinsight_business_leads_generated_total',
     help: 'Total de leads gerados',
     labelNames: ['source'],
@@ -246,7 +277,7 @@ export const businessMetrics = {
   }),
 
   // Recomendações feitas
-  recommendationsMade: new Counter({
+  recommendationsMade: getOrCreateCounter({
     name: 'carinsight_business_recommendations_total',
     help: 'Total de recomendações de veículos',
     labelNames: ['result'], // clicked, ignored, converted
@@ -254,7 +285,7 @@ export const businessMetrics = {
   }),
 
   // Conversas por status
-  conversationsByStatus: new Gauge({
+  conversationsByStatus: getOrCreateGauge({
     name: 'carinsight_business_conversations_by_status',
     help: 'Conversas por status',
     labelNames: ['status'], // active, qualified, converted, abandoned
