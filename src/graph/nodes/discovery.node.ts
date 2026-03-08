@@ -10,6 +10,10 @@ import {
   isInformationProvision,
 } from '../../agents/vehicle-expert/intent-detector';
 import { logger } from '../../lib/logger';
+import { detectHandoffRequest } from '../../utils/handoff-detector';
+import { mapMessagesToContext, countUserMessages } from '../../utils/message-mapper';
+import { computeLoopCount } from '../../utils/circuit-breaker';
+import { addFlagIf } from '../../utils/state-flags';
 
 function resolveConversationId(state: IGraphState, config?: RunnableConfig): string {
   const threadId = (config?.configurable as Record<string, unknown> | undefined)?.thread_id;
@@ -70,11 +74,8 @@ export async function discoveryNode(
   }
 
   // 2. Detect handoff request (vendedor, humano, atendente)
-  const lowerMessage = messageContent.toLowerCase();
-  const isHandoffRequest =
-    lowerMessage.includes('vendedor') ||
-    lowerMessage.includes('humano') ||
-    lowerMessage.includes('atendente');
+  const handoffResult = detectHandoffRequest(messageContent);
+  const isHandoffRequest = handoffResult.isHandoffRequest;
 
   // 3. Check if this is pure information provision (not a recommendation request)
   // Requirements: 2.1, 2.2, 4.2
@@ -85,37 +86,18 @@ export async function discoveryNode(
   const isExplicitRequest = detectExplicitRecommendationRequest(messageContent);
 
   // 5. Build Context for Vehicle Expert
-  // We need to map LangChain messages to the format expected by VehicleExpert (Role/Content)
-  // or update VehicleExpert to accept BaseMessage[]. For now, mapping is safer.
-  const mappedMessages = state.messages.map(m => {
-    let role = 'assistant';
-
-    // Robust type checking handling both class instances and serialized JSON objects
-    if (typeof m._getType === 'function') {
-      role = m._getType() === 'human' ? 'user' : 'assistant';
-    } else if ((m as any).type === 'human' || (m as any).id?.includes('HumanMessage')) {
-      role = 'user';
-    }
-
-    return {
-      role,
-      content: m.content ? m.content.toString() : '',
-    };
-  });
+  const mappedMessages = mapMessagesToContext(state.messages);
 
   const context: ConversationContext = {
     conversationId: resolveConversationId(state, config),
     phoneNumber: state.phoneNumber || 'unknown',
     mode: 'discovery',
     profile: state.profile || {},
-    messages: mappedMessages as any, // Cast to satisfy interface if needed
+    messages: mappedMessages as any,
     metadata: {
       startedAt: new Date(state.metadata.startedAt),
       lastMessageAt: new Date(state.metadata.lastMessageAt),
-      messageCount: state.messages.filter(m => {
-        if (typeof m._getType === 'function') return m._getType() === 'human';
-        return (m as any).type === 'human' || (m as any).id?.includes('HumanMessage');
-      }).length,
+      messageCount: countUserMessages(state.messages),
       extractionCount: 0,
       questionsAsked: 0,
       userQuestions: 0,
@@ -179,25 +161,17 @@ export async function discoveryNode(
   };
 
   // Propagate handoff_requested flag if detected
-  // Propagate handoff_requested flag if detected
   const tokenUsage = response.metadata?.tokenUsage;
   const llmUsed = response.metadata?.llmUsed;
   const isTechnicalLoop = next === 'discovery' && !hasAssistantMessage;
-  const loopCount = isTechnicalLoop
-    ? state.metadata.lastLoopNode === 'discovery'
-      ? (state.metadata.loopCount || 0) + 1
-      : 1
-    : 0;
+  const { loopCount, lastLoopNode } = computeLoopCount(state, 'discovery', isTechnicalLoop);
 
   result.metadata = {
     ...state.metadata,
     lastMessageAt: Date.now(),
     loopCount,
-    lastLoopNode: isTechnicalLoop ? 'discovery' : undefined,
-    flags:
-      isHandoffRequest && !state.metadata.flags.includes('handoff_requested')
-        ? [...state.metadata.flags, 'handoff_requested']
-        : state.metadata.flags,
+    lastLoopNode,
+    flags: addFlagIf(state.metadata.flags, 'handoff_requested', isHandoffRequest),
     tokenUsage,
     llmUsed,
   };

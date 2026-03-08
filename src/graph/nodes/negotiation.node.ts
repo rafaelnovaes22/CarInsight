@@ -5,6 +5,8 @@ import { AIMessage } from '@langchain/core/messages';
 import { createNodeTimer } from '../../lib/node-metrics';
 import { getTimeSlot, getEmotionalMode } from '../../config/time-context';
 import { featureFlags } from '../../lib/feature-flags';
+import { detectHandoffRequest, addHandoffFlag } from '../../utils/handoff-detector';
+import { mapMessagesToContext } from '../../utils/message-mapper';
 
 /**
  * Negotiation Node
@@ -24,25 +26,11 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
   const messageContent = lastMessage.content;
 
   // 1. Detect handoff request (vendedor, humano, atendente)
-  const lowerMessage = messageContent.toLowerCase();
-  const isHandoffRequest =
-    lowerMessage.includes('vendedor') ||
-    lowerMessage.includes('humano') ||
-    lowerMessage.includes('atendente');
+  const handoffResult = detectHandoffRequest(messageContent);
+  const isHandoffRequest = handoffResult.isHandoffRequest;
 
   // 2. Map messages
-  const mappedMessages = state.messages.map(m => {
-    let role = 'assistant';
-    if (typeof m._getType === 'function') {
-      role = m._getType() === 'human' ? 'user' : 'assistant';
-    } else if ((m as any).type === 'human' || (m as any).id?.includes('HumanMessage')) {
-      role = 'user';
-    }
-    return {
-      role,
-      content: m.content ? m.content.toString() : '',
-    };
-  });
+  const mappedMessages = mapMessagesToContext(state.messages);
 
   // 3. Context with mode='negotiation'
   const emotionalEnabled = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
@@ -99,9 +87,7 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
     result.metadata = {
       ...state.metadata,
       lastMessageAt: Date.now(),
-      flags: state.metadata.flags.includes('handoff_requested')
-        ? state.metadata.flags
-        : [...state.metadata.flags, 'handoff_requested'],
+      flags: addHandoffFlag(state.metadata.flags),
     };
   }
 

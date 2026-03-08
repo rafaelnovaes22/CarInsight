@@ -12,6 +12,7 @@ import { getTimeSlot, isLateNight } from '../../config/time-context';
 import { getTimeAwareVariation } from '../../config/conversation-style';
 import { getEmotionalCopy } from '../../config/emotional-copy';
 import { featureFlags } from '../../lib/feature-flags';
+import { hasFlag, addFlag } from '../../utils/state-flags';
 
 /**
  * Greeting Node
@@ -228,7 +229,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
 
   // SCENARIO D: Only Vehicle (No name)
   if (earlyProfileUpdate.model) {
-    const alreadyAsked = state.metadata.flags.includes('asked_name_once');
+    const alreadyAsked = hasFlag(state.metadata.flags, 'asked_name_once');
     const carText = earlyProfileUpdate.minYear
       ? `${earlyProfileUpdate.model} ${earlyProfileUpdate.minYear}`
       : earlyProfileUpdate.model;
@@ -257,7 +258,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),
-        flags: [...state.metadata.flags, 'asked_name_once'],
+        flags: addFlag(state.metadata.flags, 'asked_name_once'),
         loopCount: 0,
         lastLoopNode: undefined,
       },

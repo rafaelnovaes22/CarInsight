@@ -13,6 +13,8 @@ import {
 import { getTimeSlot } from '../../config/time-context';
 import { getRecommendationFraming, getEmotionalClosing } from '../../config/emotional-copy';
 import { featureFlags } from '../../lib/feature-flags';
+import { detectHandoffRequest, addHandoffFlag } from '../../utils/handoff-detector';
+import { addFlag } from '../../utils/state-flags';
 
 /**
  * Formata número de telefone para exibição
@@ -363,20 +365,14 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),
-        // Check if flag already exists to avoid duplicates
-        flags: state.metadata.flags.includes('visit_requested')
-          ? state.metadata.flags
-          : [...state.metadata.flags, 'visit_requested'],
+        flags: addFlag(state.metadata.flags, 'visit_requested'),
       },
     };
   }
 
   // Handle "vendedor" / talk to human
-  if (
-    lowerMessage.includes('vendedor') ||
-    lowerMessage.includes('humano') ||
-    lowerMessage.includes('atendente')
-  ) {
+  const handoffResult = detectHandoffRequest(lastMessage.content);
+  if (handoffResult.isHandoffRequest) {
     logger.info('RecommendationNode: Human handoff requested');
     const waInfo = generateWhatsAppLink(state.profile ?? undefined);
     const linkMessage = waInfo
@@ -392,9 +388,7 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
       metadata: {
         ...state.metadata,
         lastMessageAt: Date.now(),
-        flags: state.metadata.flags.includes('handoff_requested')
-          ? state.metadata.flags
-          : [...state.metadata.flags, 'handoff_requested'],
+        flags: addHandoffFlag(state.metadata.flags),
       },
     };
   }
@@ -586,9 +580,7 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
         metadata: {
           ...state.metadata,
           lastMessageAt: Date.now(),
-          flags: state.metadata.flags.includes(`viewed_vehicle_${rec.vehicleId}`)
-            ? state.metadata.flags
-            : [...state.metadata.flags, `viewed_vehicle_${rec.vehicleId}`],
+          flags: addFlag(state.metadata.flags, `viewed_vehicle_${rec.vehicleId}`),
         },
       };
     }
