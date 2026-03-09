@@ -183,7 +183,7 @@ Gere APENAS a pergunta, sem prefácio ou explicação:`;
         { role: 'user', content: 'Qual a próxima melhor pergunta?' },
       ],
       {
-        temperature: 0.8,
+        temperature: 0.4,
         maxTokens: 150,
       }
     );

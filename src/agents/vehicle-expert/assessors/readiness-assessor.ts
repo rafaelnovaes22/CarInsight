@@ -81,8 +81,10 @@ export function assessReadiness(
   }
 
   // Required fields for general searches (budget is already checked above)
+  // Check both 'usage' and 'usoPrincipal' — extraction may set either depending on phrasing
+  const hasUsage = !!(profile.usage || profile.usoPrincipal);
   const required = ['usage'];
-  const missingRequired = required.filter(field => !(profile as any)[field]);
+  const missingRequired = hasUsage ? [] : required;
 
   // Optional but helpful fields
   const optional = ['bodyType', 'minYear', 'transmission'];
@@ -129,7 +131,10 @@ export function assessReadiness(
  */
 export function identifyMissingInfo(profile: Partial<CustomerProfile>): string[] {
   const important = ['budget', 'usage', 'bodyType'];
-  return important.filter(field => !(profile as any)[field]);
+  return important.filter(field => {
+    if (field === 'usage') return !(profile.usage || profile.usoPrincipal);
+    return !(profile as any)[field];
+  });
 }
 
 /**

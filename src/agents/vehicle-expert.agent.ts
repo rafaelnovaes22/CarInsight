@@ -2068,10 +2068,13 @@ Quer que eu mostre opções de SUVs ou sedans espaçosos de 5 lugares como alter
         response: nextQuestion,
         extractedPreferences: {
           ...extracted.extracted,
-          // Persist context switch changes
-          bodyType: updatedProfile.bodyType,
+          // Persist context switch changes and accumulated profile fields
+          usage: updatedProfile.usage,
           usoPrincipal: updatedProfile.usoPrincipal,
+          bodyType: updatedProfile.bodyType,
           priorities: updatedProfile.priorities,
+          budget: updatedProfile.budget,
+          transmission: updatedProfile.transmission,
           _showedRecommendation: updatedProfile._showedRecommendation,
           _lastShownVehicles: updatedProfile._lastShownVehicles,
           _lastSearchType: updatedProfile._lastSearchType,
