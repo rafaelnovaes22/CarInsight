@@ -87,9 +87,13 @@ export const selectionHandler: IntentHandler = {
     }
 
     detailsMessage += `\n━━━━━━━━━━━━━━━━━━━━━\n\n`;
-    detailsMessage += `${getRandomVariation(['Curtiu o carro? Você pode:', 'Se gostou, me diz:'])}`;
-    detailsMessage += `\n• "Agendar visita" pra ver de perto`;
-    detailsMessage += `\n• "Falar com vendedor" pra negociar`;
+    detailsMessage += `${getRandomVariation(['Curtiu? Como prefere pagar?', 'Gostou? Como quer seguir?'])}`;
+    detailsMessage += `\n💳 *"À vista"* — consulte condições especiais`;
+    detailsMessage += `\n🏦 *"Financiamento"* — simulo as parcelas pra você`;
+    detailsMessage += `\n🔄 *"Troca"* — avaliamos seu carro na negociação`;
+    detailsMessage += `\n\nOu se preferir:`;
+    detailsMessage += `\n📅 *"Agendar visita"* — veja de perto`;
+    detailsMessage += `\n👤 *"Vendedor"* — fale com a equipe`;
 
     return {
       handled: true,

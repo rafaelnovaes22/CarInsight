@@ -1,6 +1,7 @@
 import { IntentHandler } from './base-handler';
 import { scheduleHandler } from './schedule-handler';
 import { handoffHandler } from './handoff-handler';
+import { cashHandler } from './cash-handler';
 import { financingHandler } from './financing-handler';
 import { tradeInHandler } from './trade-in-handler';
 import { rejectionHandler } from './rejection-handler';
@@ -10,11 +11,12 @@ import { criteriaHandler } from './criteria-handler';
 
 /**
  * All handlers sorted by priority (highest first).
- * Order matters: schedule > handoff > financing > trade-in > rejection > interest > selection > criteria
+ * Order: schedule > handoff > financing > cash > trade-in > rejection > interest > selection > criteria
  */
 export const handlers: IntentHandler[] = [
   scheduleHandler,
   handoffHandler,
+  cashHandler,
   financingHandler,
   tradeInHandler,
   rejectionHandler,
