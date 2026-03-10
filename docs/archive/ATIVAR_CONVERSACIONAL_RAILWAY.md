@@ -195,9 +195,9 @@ CONVERSATIONAL_ROLLOUT_PERCENTAGE=100
 curl "https://seu-app.railway.app/debug/config?phone=5511910165356"
 ```
 
-**3. Forçar redeploy:**
+**3. Disparar novo deploy:**
 ```bash
-railway up
+git push origin main
 ```
 
 **4. Resetar cache + conversa:**

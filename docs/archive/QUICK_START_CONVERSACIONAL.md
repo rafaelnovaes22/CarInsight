@@ -57,7 +57,7 @@ CONVERSATIONAL_ROLLOUT_PERCENTAGE="100"
 npm run dev
 
 # Railway (reinicia automaticamente)
-railway up
+git push origin main
 ```
 
 ---

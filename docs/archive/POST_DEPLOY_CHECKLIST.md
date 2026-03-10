@@ -51,7 +51,7 @@ CONVERSATIONAL_ROLLOUT_PERCENTAGE=0
 ```bash
 # O código já está no main, Railway deve fazer deploy automático
 # OU fazer deploy manual:
-railway up
+git push origin main
 ```
 
 **Verificar logs:**

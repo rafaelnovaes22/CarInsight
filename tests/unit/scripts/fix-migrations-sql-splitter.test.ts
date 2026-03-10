@@ -2,7 +2,7 @@ import { createRequire } from 'module';
 import { describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const { splitSqlStatements } = require('../../../scripts/fix-migrations.cjs') as {
+const { splitSqlStatements } = require('../../../tools/scripts/db/fix-migrations.cjs') as {
   splitSqlStatements: (sql: string) => string[];
 };
 

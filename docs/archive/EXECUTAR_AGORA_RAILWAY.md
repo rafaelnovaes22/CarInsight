@@ -133,9 +133,9 @@ Deve ter:
 - `ENABLE_CONVERSATIONAL_MODE=true`
 - `CONVERSATIONAL_ROLLOUT_PERCENTAGE=100`
 
-**2. Forçar redeploy:**
+**2. Disparar novo deploy:**
 ```bash
-railway up --detach
+git push origin main
 ```
 
 **3. Ver logs:**
@@ -176,8 +176,8 @@ railway logs
 # Ver variáveis
 railway variables
 
-# Forçar redeploy
-railway up --detach
+# Ver deploy no dashboard
+# Railway Dashboard -> Deployments
 
 # Abrir no navegador
 railway open

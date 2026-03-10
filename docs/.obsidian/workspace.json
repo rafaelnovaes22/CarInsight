@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "03a28cecabf8a938",
+        "id": "f8b694298b910a09",
         "type": "tabs",
         "children": [
           {
-            "id": "194cf31d9740a39f",
+            "id": "f029d49f7fcc286a",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "jornada-do-cliente.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "jornada-do-cliente"
+              "title": "Nova aba"
             }
           }
         ]
@@ -183,10 +179,11 @@
       "bases:Criar nova base": false
     }
   },
-  "active": "194cf31d9740a39f",
+  "active": "f029d49f7fcc286a",
   "lastOpenFiles": [
-    "jornada-do-cliente 1.md",
+    "MINIMO_NEGOCIO_VIAVEL_V2.md",
     "jornada-do-cliente.md",
+    "jornada-do-cliente 1.md",
     "development/ESTOQUE_RENATINHU.md"
   ]
 }

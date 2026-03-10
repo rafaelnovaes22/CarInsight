@@ -450,7 +450,7 @@ src/agents/vehicle-expert/
    - `npm ci` → `prisma generate` → `db push` → unit → integration → e2e → coverage → Codecov
 2. **Lint** — ESLint + Prettier + secret scanning (`gsk_*`, `sk-*`, `EAA*`)
 3. **Build** (depende de test + lint) — `npm run build`, verifica dist/
-4. **Deploy** (apenas main) — Railway CLI `railway up --detach --service faciliauto-mvp-v2`
+4. **Deploy** (apenas main) — push em `main` com Railway GitHub integration
 
 ---
 
@@ -507,7 +507,7 @@ LANGCHAIN_PROJECT=carinsight
 1. Rodar `npm run verify:strict` — deve passar 100%
 2. Push para `main` → CI/CD roda automaticamente
 3. Jobs: test → lint → build → deploy
-4. Deploy via Railway CLI: `railway up --detach --service faciliauto-mvp-v2`
+4. Deploy via push em `main` ou redeploy pelo Railway Dashboard
 5. Rollback: `git revert HEAD && git push`
 
 **Validação**: `src/config/env.ts` (schema Zod)

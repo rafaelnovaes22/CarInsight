@@ -186,9 +186,9 @@ Deve aparecer:
 "useConversational": true
 ```
 
-### 3. Forçar redeploy
+### 3. Disparar novo deploy
 ```bash
-railway up --detach
+git push origin main
 ```
 
 ### 4. Limpar cache novamente

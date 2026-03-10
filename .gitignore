@@ -101,7 +101,14 @@ RECOMENDACOES_*.md
 # Core dumps
 core
 
+# CLAUDE CODE (local only)
+CLAUDE.local.md
+.claude/settings.local.json
+
 # Local debug/scrape artifacts
+diff.txt
+diff2.txt
+diff3.txt
 debug-output.json
 last_scrape.txt
 scraped_content.txt
