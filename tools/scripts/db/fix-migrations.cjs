@@ -261,7 +261,7 @@ async function cleanupMigrationRecords(prisma) {
  */
 async function createTablesWithoutVector(prisma) {
   // Read the original migration SQL files
-  const migrationsDir = path.join(__dirname, '..', 'prisma', 'migrations');
+  const migrationsDir = path.join(__dirname, '..', '..', '..', 'prisma', 'migrations');
 
   const initSqlOriginal = fs.readFileSync(
     path.join(migrationsDir, INIT_MIGRATION, 'migration.sql'),
