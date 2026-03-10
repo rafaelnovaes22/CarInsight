@@ -100,34 +100,29 @@ class InMemoryVectorStore {
     const embedding = await generateEmbedding(description);
 
     // Salvar no banco para próxima inicialização
+    // Nota: vectorString é gerado internamente (não é input do usuário), seguro para interpolação
     const vectorString = `[${embedding.join(',')}]`;
-    await prisma
-      .$executeRawUnsafe(
-        `
-      UPDATE "Vehicle" 
-      SET "embedding" = $1::vector, 
-          "embeddingModel" = 'text-embedding-3-small', 
-          "embeddingGeneratedAt" = $2 
-      WHERE id = $3
-    `,
-        vectorString,
+    try {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Vehicle"
+         SET "embedding" = '${vectorString}'::vector,
+             "embeddingModel" = 'text-embedding-3-small',
+             "embeddingGeneratedAt" = $1
+         WHERE id = $2`,
         new Date(),
         vehicleId
-      )
-      .catch(error => {
-        logger.warn(
-          {
-            vehicleId,
-            embeddingDimensions: embedding.length,
-            embeddingModel: 'text-embedding-3-small',
-            err: error,
-            errorMessage: error?.message,
-            errorCode: error?.code,
-            errorMeta: error?.meta,
-          },
-          'Erro ao salvar embedding do veículo'
-        );
-      });
+      );
+    } catch (error: any) {
+      logger.error(
+        {
+          vehicleId,
+          embeddingDimensions: embedding.length,
+          errorMessage: error?.message,
+          errorCode: error?.code,
+        },
+        'Erro ao salvar embedding do veículo'
+      );
+    }
 
     return embedding;
   }
