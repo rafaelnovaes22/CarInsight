@@ -104,6 +104,11 @@ core
 # CLAUDE CODE (local only)
 CLAUDE.local.md
 .claude/settings.local.json
+.agent/
+skills.md
+
+# OBSIDIAN (local only)
+docs/.obsidian/
 
 # Local debug/scrape artifacts
 diff.txt
