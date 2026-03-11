@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { vehicleExpert } from '../src/agents/vehicle-expert.agent';
-import { vehicleSearchAdapter } from '../src/services/vehicle-search-adapter.service';
+import { vehicleExpert } from '../../src/agents/vehicle-expert.agent';
+import { vehicleSearchAdapter } from '../../src/services/vehicle-search-adapter.service';
 
 // Mock the dependencies
 // Updated for latency-optimization: now uses searchByUseCase for use-case-based queries
-vi.mock('../src/services/vehicle-search-adapter.service', () => ({
+vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
   vehicleSearchAdapter: {
     search: vi.fn().mockResolvedValue([]),
     searchByUseCase: vi.fn().mockResolvedValue([]),
@@ -12,7 +12,7 @@ vi.mock('../src/services/vehicle-search-adapter.service', () => ({
 }));
 
 // Mock preference extractor to avoid complex logic
-vi.mock('../src/agents/preference-extractor.agent', () => ({
+vi.mock('../../src/agents/preference-extractor.agent', () => ({
   preferenceExtractor: {
     extract: vi.fn().mockResolvedValue({ extracted: {}, confidence: 1 }),
     mergeWithProfile: vi.fn().mockImplementation((p, e) => ({ ...p, ...e })),
@@ -20,8 +20,8 @@ vi.mock('../src/agents/preference-extractor.agent', () => ({
 }));
 
 // Mock internal assessors to ensure we hit recommendation flow
-vi.mock('../src/agents/vehicle-expert/assessors', async () => {
-  const actual = await vi.importActual('../src/agents/vehicle-expert/assessors');
+vi.mock('../../src/agents/vehicle-expert/assessors', async () => {
+  const actual = await vi.importActual('../../src/agents/vehicle-expert/assessors');
   return {
     ...actual,
     assessReadiness: vi
@@ -31,8 +31,8 @@ vi.mock('../src/agents/vehicle-expert/assessors', async () => {
 });
 
 // Mock intent detector
-vi.mock('../src/agents/vehicle-expert/intent-detector', async () => {
-  const actual = await vi.importActual('../src/agents/vehicle-expert/intent-detector');
+vi.mock('../../src/agents/vehicle-expert/intent-detector', async () => {
+  const actual = await vi.importActual('../../src/agents/vehicle-expert/intent-detector');
   return {
     ...actual,
     detectUserQuestion: vi.fn().mockReturnValue(false), // Ensure we don't go to QA

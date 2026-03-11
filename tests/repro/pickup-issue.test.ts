@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { preferenceExtractor } from '../src/agents/preference-extractor.agent';
+import { preferenceExtractor } from '../../src/agents/preference-extractor.agent';
 
 describe('Preference Extractor - Pickup Issue Repro', () => {
   it('should NOT identify pickup for versatile/economical request', async () => {

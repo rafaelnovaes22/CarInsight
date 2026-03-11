@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractName } from '../src/graph/langgraph/extractors/name-extractor';
+import { extractName } from '../../src/graph/langgraph/extractors/name-extractor';
 
 describe('Name Extractor Reproduction', () => {
   it('should extract simple compound names', () => {
