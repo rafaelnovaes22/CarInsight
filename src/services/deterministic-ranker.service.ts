@@ -199,7 +199,7 @@ export class DeterministicRankerService {
 
       // Calcular score total e gerar reasoning
       const rankedVehicles = vehicles
-        .map(v => this.calculateVehicleScore(v, useCase))
+        .map(v => this.calculateVehicleScore(v, useCase, context.budget))
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
 
@@ -290,9 +290,12 @@ export class DeterministicRankerService {
       [aptitudeField]: true,
     };
 
-    // Filtro de orçamento
+    // Filtro de orçamento: teto no budget, piso em 50% para não mostrar veículos muito baratos
     if (context.budget) {
-      where.preco = { lte: context.budget };
+      where.preco = {
+        gte: Math.round(context.budget * 0.5),
+        lte: context.budget,
+      };
     }
 
     // Filtro de ano mínimo
@@ -325,7 +328,7 @@ export class DeterministicRankerService {
   /**
    * Calcula score total do veículo baseado nos pesos do caso de uso
    */
-  private calculateVehicleScore(vehicle: any, useCase: UseCase): RankedVehicle {
+  private calculateVehicleScore(vehicle: any, useCase: UseCase, budget?: number): RankedVehicle {
     const weights = USE_CASE_WEIGHTS[useCase];
 
     // Calcular score ponderado
@@ -345,6 +348,15 @@ export class DeterministicRankerService {
     }
 
     let score = Math.round(weightedScore / totalWeight);
+
+    // Bônus por proximidade ao orçamento: veículos mais próximos do budget ganham mais pontos
+    // Ratio 0.9-1.0 → +8pts, 0.8-0.9 → +5pts, 0.7-0.8 → +3pts, <0.7 → 0pts
+    if (budget && vehicle.preco) {
+      const priceRatio = vehicle.preco / budget;
+      if (priceRatio >= 0.9) score = Math.min(100, score + 8);
+      else if (priceRatio >= 0.8) score = Math.min(100, score + 5);
+      else if (priceRatio >= 0.7) score = Math.min(100, score + 3);
+    }
 
     // Bônus por ano recente
     const currentYear = new Date().getFullYear();

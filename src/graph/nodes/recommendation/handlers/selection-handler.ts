@@ -2,7 +2,7 @@ import { IntentHandler, HandlerContext, HandlerResult } from './base-handler';
 import { AIMessage } from '@langchain/core/messages';
 import { getRandomVariation } from '../../../../config/conversation-style';
 import { addFlag } from '../../../../utils/state-flags';
-import { getVehicleLink } from '../utils/vehicle-helpers';
+import { getVehicleLink, toShownVehicles } from '../utils/vehicle-helpers';
 import { formatPrice } from '../utils/formatters';
 
 function findVehicleByName(
@@ -99,6 +99,13 @@ export const selectionHandler: IntentHandler = {
       handled: true,
       result: {
         messages: [new AIMessage(detailsMessage)],
+        profile: {
+          ...state.profile,
+          _lastShownVehicles: toShownVehicles([rec]),
+          _selectedVehicleId: rec.vehicleId,
+          _showedRecommendation: true,
+          _lastSearchType: 'recommendation',
+        },
         metadata: {
           ...state.metadata,
           lastMessageAt: Date.now(),

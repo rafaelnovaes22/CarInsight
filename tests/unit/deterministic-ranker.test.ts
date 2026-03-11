@@ -134,7 +134,7 @@ describe('DeterministicRankerService', () => {
       expect(mockedFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
-            preco: { lte: 80000 },
+            preco: { gte: 40000, lte: 80000 },
           }),
         })
       );

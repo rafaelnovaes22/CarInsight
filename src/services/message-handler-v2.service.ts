@@ -605,6 +605,12 @@ Para começar, qual é o seu nome?`;
           if (profile?.customerName) details.push(`👤 *Nome:* ${profile.customerName}`);
           if (conversation.phoneNumber) details.push(`📱 *Fone:* ${conversation.phoneNumber}`);
 
+          // Budget
+          const budget = profile?.budget || answers.budget;
+          if (budget) {
+            details.push(`💰 *Orçamento:* R$ ${Number(budget).toLocaleString('pt-BR')}`);
+          }
+
           // Trade-in details with brand and km (capitalize brand/model)
           let tradeInText = '';
           if (profile?.hasTradeIn) {
@@ -644,6 +650,10 @@ Para começar, qual é o seu nome?`;
           } else if (profile?._searchedItem) {
             details.push(`🔍 *Busca:* ${profile._searchedItem}`);
           }
+
+          // Link direto para o WhatsApp do cliente
+          const customerLink = `https://wa.me/${conversation.phoneNumber.replace(/\D/g, '')}`;
+          details.push(`💬 *Chat direto:* ${customerLink}`);
 
           const message = `🚨 *NOVO LEAD QUENTE!* 🔥\n\n${details.join('\n')}\n\n👉 *Ação:* Entrar em contato IMEDIATAMENTE!`;
 

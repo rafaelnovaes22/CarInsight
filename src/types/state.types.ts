@@ -134,6 +134,7 @@ export interface CustomerProfile {
   }>; // Veículos mostrados na última recomendação
   _lastSearchType?: 'specific' | 'similar' | 'recommendation'; // Tipo da última busca realizada
   _showedRecommendation?: boolean; // Indica que acabou de mostrar uma recomendação
+  _selectedVehicleId?: string; // ID do veículo selecionado pelo cliente
   _excludeVehicleIds?: string[]; // IDs de veículos a excluir das próximas buscas
   _waitingForSimilarApproval?: boolean; // Se estamos aguardando o usuário aceitar ver similares
   _pendingSimilarResults?: VehicleRecommendation[]; // Resultados similares aguardando aprovação
