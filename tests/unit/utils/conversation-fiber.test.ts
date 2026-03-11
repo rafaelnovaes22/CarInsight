@@ -4,6 +4,8 @@ import {
   ConversationFiber,
   isRegression,
   suggestedNodeForFiber,
+  fiberForNode,
+  checkFiberGuard,
 } from '../../../src/utils/conversation-fiber';
 import { createInitialState, IGraphState } from '../../../src/types/graph.types';
 
@@ -228,6 +230,156 @@ describe('conversation-fiber', () => {
 
     it('should map CLOSING to end', () => {
       expect(suggestedNodeForFiber(ConversationFiber.CLOSING)).toBe('end');
+    });
+  });
+
+  describe('fiberForNode', () => {
+    it('should map greeting to INITIAL_CONTACT', () => {
+      expect(fiberForNode('greeting')).toBe(ConversationFiber.INITIAL_CONTACT);
+    });
+
+    it('should map discovery to DISCOVERY', () => {
+      expect(fiberForNode('discovery')).toBe(ConversationFiber.DISCOVERY);
+    });
+
+    it('should map search to RECOMMENDATION_READY', () => {
+      expect(fiberForNode('search')).toBe(ConversationFiber.RECOMMENDATION_READY);
+    });
+
+    it('should map recommendation to EVALUATION', () => {
+      expect(fiberForNode('recommendation')).toBe(ConversationFiber.EVALUATION);
+    });
+
+    it('should map financing to ENGAGEMENT', () => {
+      expect(fiberForNode('financing')).toBe(ConversationFiber.ENGAGEMENT);
+    });
+
+    it('should map trade_in to ENGAGEMENT', () => {
+      expect(fiberForNode('trade_in')).toBe(ConversationFiber.ENGAGEMENT);
+    });
+
+    it('should map negotiation to ENGAGEMENT', () => {
+      expect(fiberForNode('negotiation')).toBe(ConversationFiber.ENGAGEMENT);
+    });
+
+    it('should map end to CLOSING', () => {
+      expect(fiberForNode('end')).toBe(ConversationFiber.CLOSING);
+    });
+
+    it('should default to INITIAL_CONTACT for unknown nodes', () => {
+      expect(fiberForNode('unknown_node')).toBe(ConversationFiber.INITIAL_CONTACT);
+    });
+  });
+
+  describe('checkFiberGuard', () => {
+    it('should allow forward transitions', () => {
+      // State at DISCOVERY (has name), target = search (RECOMMENDATION_READY)
+      const state = stateWith({ profile: { customerName: 'João' } });
+      expect(checkFiberGuard(state, 'search')).toBeNull();
+    });
+
+    it('should allow same-fiber transitions', () => {
+      // State at DISCOVERY, target = discovery
+      const state = stateWith({ profile: { customerName: 'João' } });
+      expect(checkFiberGuard(state, 'discovery')).toBeNull();
+    });
+
+    it('should block regression from EVALUATION to greeting', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'João',
+          budget: 80000,
+          bodyType: 'suv',
+          _showedRecommendation: true,
+        },
+      });
+      // Fiber is EVALUATION (4), greeting is INITIAL_CONTACT (0)
+      const corrected = checkFiberGuard(state, 'greeting');
+      expect(corrected).toBe('recommendation'); // suggestedNodeForFiber(EVALUATION)
+    });
+
+    it('should block regression from ENGAGEMENT to greeting', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'João',
+          budget: 80000,
+          bodyType: 'suv',
+          _showedRecommendation: true,
+          wantsFinancing: true,
+        },
+      });
+      const corrected = checkFiberGuard(state, 'greeting');
+      expect(corrected).toBe('negotiation'); // suggestedNodeForFiber(ENGAGEMENT)
+    });
+
+    it('should allow regression from recommendation to discovery (allowlisted)', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'João',
+          budget: 80000,
+          bodyType: 'suv',
+          _showedRecommendation: true,
+        },
+      });
+      // recommendation → discovery is in ALLOWED_REGRESSIONS
+      const corrected = checkFiberGuard(state, 'discovery', 'recommendation');
+      expect(corrected).toBeNull();
+    });
+
+    it('should allow regression from negotiation to discovery (allowlisted)', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'João',
+          budget: 80000,
+          bodyType: 'suv',
+          _showedRecommendation: true,
+          wantsFinancing: true,
+        },
+      });
+      const corrected = checkFiberGuard(state, 'discovery', 'negotiation');
+      expect(corrected).toBeNull();
+    });
+
+    it('should allow regression from recommendation to search (allowlisted)', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'João',
+          budget: 80000,
+          bodyType: 'suv',
+          _showedRecommendation: true,
+        },
+      });
+      const corrected = checkFiberGuard(state, 'search', 'recommendation');
+      expect(corrected).toBeNull();
+    });
+
+    it('should allow regression from financing to recommendation (allowlisted)', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'João',
+          budget: 80000,
+          bodyType: 'suv',
+          _showedRecommendation: true,
+          wantsFinancing: true,
+        },
+      });
+      const corrected = checkFiberGuard(state, 'recommendation', 'financing');
+      expect(corrected).toBeNull();
+    });
+
+    it('should block non-allowlisted regression even with sourceNode', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'João',
+          budget: 80000,
+          bodyType: 'suv',
+          _showedRecommendation: true,
+          wantsFinancing: true,
+        },
+      });
+      // financing → greeting is NOT in the allowlist
+      const corrected = checkFiberGuard(state, 'greeting', 'financing');
+      expect(corrected).toBe('negotiation');
     });
   });
 

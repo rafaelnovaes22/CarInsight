@@ -29,6 +29,7 @@ export interface IGraphState {
     flags: string[];
     tokenUsage?: TokenUsage;
     llmUsed?: string;
+    currentFiber?: number;
   };
 
   // Legacy Quiz State (for backward compatibility during migration)

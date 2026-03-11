@@ -197,3 +197,73 @@ export function suggestedNodeForFiber(fiber: ConversationFiber): string {
   };
   return mapping[fiber];
 }
+
+/**
+ * Maps a graph node name to its minimum fiber level.
+ * Inverse of suggestedNodeForFiber — used by the fiber guard
+ * to determine if a proposed transition would regress.
+ */
+export function fiberForNode(nodeName: string): ConversationFiber {
+  const mapping: Record<string, ConversationFiber> = {
+    greeting: ConversationFiber.INITIAL_CONTACT,
+    discovery: ConversationFiber.DISCOVERY,
+    search: ConversationFiber.RECOMMENDATION_READY,
+    recommendation: ConversationFiber.EVALUATION,
+    financing: ConversationFiber.ENGAGEMENT,
+    trade_in: ConversationFiber.ENGAGEMENT,
+    negotiation: ConversationFiber.ENGAGEMENT,
+    end: ConversationFiber.CLOSING,
+  };
+  return mapping[nodeName] ?? ConversationFiber.INITIAL_CONTACT;
+}
+
+/**
+ * Allowed fiber regressions — specific transitions where going backward
+ * is a legitimate user intent (e.g., "quero ver outros carros" after recommendation).
+ *
+ * Format: [fromNode, toNode] — the transition is allowed even if it regresses fiber.
+ */
+const ALLOWED_REGRESSIONS: ReadonlyArray<[string, string]> = [
+  // From recommendation/negotiation back to discovery for new search
+  ['recommendation', 'discovery'],
+  ['negotiation', 'discovery'],
+  // From recommendation back to search for refined criteria
+  ['recommendation', 'search'],
+  // From financing/trade_in back to recommendation to see other vehicles
+  ['financing', 'recommendation'],
+  ['trade_in', 'recommendation'],
+];
+
+/**
+ * Checks if a proposed node transition would regress the conversation fiber,
+ * considering the current state and allowed exceptions.
+ *
+ * Returns the corrected node name if regression is blocked, or null if the
+ * transition is allowed (either no regression, or it's in the allowlist).
+ */
+export function checkFiberGuard(
+  state: IGraphState,
+  targetNode: string,
+  sourceNode?: string
+): string | null {
+  const currentFiber = computeFiber(state).fiber;
+  const targetFiber = fiberForNode(targetNode);
+
+  // No regression — transition is fine
+  if (targetFiber >= currentFiber) {
+    return null;
+  }
+
+  // Check if this specific regression is allowed
+  if (sourceNode) {
+    const isAllowed = ALLOWED_REGRESSIONS.some(
+      ([from, to]) => from === sourceNode && to === targetNode
+    );
+    if (isAllowed) {
+      return null;
+    }
+  }
+
+  // Regression blocked — return the suggested node for the current fiber
+  return suggestedNodeForFiber(currentFiber);
+}

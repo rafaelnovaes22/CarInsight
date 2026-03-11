@@ -11,6 +11,7 @@ import {
 } from './nodes';
 import { PrismaCheckpointer } from './persistence/prisma-saver';
 import { logger } from '../lib/logger';
+import { computeFiber, checkFiberGuard } from '../utils/conversation-fiber';
 
 /**
  * Route function that determines the next node based on the 'next' state property
@@ -97,6 +98,21 @@ const routeNode = (state: IGraphState) => {
       'Router: Error circuit breaker triggered'
     );
     return END;
+  }
+
+  // Fiber guard: prevent unintentional regression in conversation phase
+  if (typeof nextNode === 'string') {
+    const currentFiber = computeFiber(state).fiber;
+    const sourceNode = state.metadata.lastLoopNode;
+    const correctedNode = checkFiberGuard(state, nextNode, sourceNode);
+
+    if (correctedNode) {
+      logger.warn(
+        { nextNode, correctedNode, currentFiber, sourceNode },
+        'Router: Fiber regression prevented'
+      );
+      return correctedNode;
+    }
   }
 
   return nextNode;
