@@ -17,10 +17,19 @@ interface VehicleEmbedding {
   };
 }
 
+export interface VectorStoreHealth {
+  status: 'ok' | 'warming_up' | 'degraded' | 'idle';
+  initialized: boolean;
+  initializing: boolean;
+  embeddings: number;
+  error?: string;
+}
+
 class InMemoryVectorStore {
   private embeddings: VehicleEmbedding[] = [];
   private initialized = false;
   private initializing = false;
+  private lastError: string | null = null;
 
   async initialize(): Promise<void> {
     if (this.initialized || this.initializing) {
@@ -28,10 +37,12 @@ class InMemoryVectorStore {
     }
 
     this.initializing = true;
+    this.lastError = null;
 
     // Inicializa em background sem bloquear o servidor
     this.initializeInBackground().catch(error => {
       logger.error({ err: error }, 'Erro ao inicializar vector store');
+      this.lastError = error instanceof Error ? error.message : 'Unknown vector store error';
       this.initializing = false;
     });
   }
@@ -87,6 +98,7 @@ class InMemoryVectorStore {
 
     this.initialized = true;
     this.initializing = false;
+    this.lastError = null;
     logger.info({ loadedFromDb, generatedNew }, 'Vector store pronto');
   }
 
@@ -182,9 +194,29 @@ class InMemoryVectorStore {
     return this.initialized;
   }
 
+  getHealth(): VectorStoreHealth {
+    const status = this.initialized
+      ? 'ok'
+      : this.initializing
+        ? 'warming_up'
+        : this.lastError
+          ? 'degraded'
+          : 'idle';
+
+    return {
+      status,
+      initialized: this.initialized,
+      initializing: this.initializing,
+      embeddings: this.embeddings.length,
+      ...(this.lastError ? { error: this.lastError } : {}),
+    };
+  }
+
   async clear(): Promise<void> {
     this.embeddings = [];
     this.initialized = false;
+    this.initializing = false;
+    this.lastError = null;
     logger.info('Vector store limpo');
   }
 

@@ -9,8 +9,9 @@ import webhookRoutes from './routes/webhook.routes';
 import evolutionWebhookRoutes from './routes/webhook-evolution.routes';
 import adminRoutes from './routes/admin.routes';
 import debugRoutes from './routes/debug.routes';
-import { initializeRedis, isRedisConnected, closeRedis } from './lib/redis';
+import { initializeRedis, closeRedis } from './lib/redis';
 import { getRateLimitService } from './services/rate-limit.service';
+import { getPublicHealthSnapshot } from './services/public-health.service';
 
 const app = express();
 
@@ -62,16 +63,14 @@ app.get('/', (_req, res) => {
 
 // Health check with dependency monitoring
 app.get('/health', async (_req, res) => {
-  const dbOk = await prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
-  const vectorOk = inMemoryVectorStore.getCount() > 0;
-  const redisOk = isRedisConnected();
-  const status = dbOk ? 'ok' : 'degraded';
-  res.status(dbOk ? 200 : 503).json({
-    status,
+  const health = await getPublicHealthSnapshot();
+
+  res.status(health.httpStatus).json({
+    status: health.status,
     timestamp: new Date().toISOString(),
     version: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) || 'local',
     uptime: Math.floor(process.uptime()),
-    checks: { database: dbOk, vectorStore: vectorOk, redis: redisOk },
+    checks: health.checks,
   });
 });
 

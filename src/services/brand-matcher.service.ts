@@ -11,7 +11,7 @@
  */
 
 import { findBestMatch } from 'string-similarity';
-import { prisma } from '../lib/prisma';
+import { hasConfiguredDatabaseUrl, prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 
 const SIMILARITY_THRESHOLD = 0.6; // 60% similarity minimum
@@ -45,6 +45,10 @@ class BrandMatcherService {
 
     // Return cached data if still valid
     if (this.cache.lastUpdated && now - this.cache.lastUpdated < CACHE_TTL) {
+      return;
+    }
+
+    if (!hasConfiguredDatabaseUrl()) {
       return;
     }
 

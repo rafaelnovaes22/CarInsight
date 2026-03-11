@@ -58,6 +58,7 @@ vi.mock('../../src/services/vehicle-search-adapter.service', () => ({
 
 // Mock prisma for category listing
 vi.mock('../../src/lib/prisma', () => ({
+  hasConfiguredDatabaseUrl: vi.fn(() => false),
   prisma: {
     vehicle: {
       groupBy: vi.fn(async () => [

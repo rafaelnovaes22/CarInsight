@@ -5,6 +5,7 @@ import { logger } from './lib/logger';
 import { maskPhoneNumber } from './lib/privacy';
 import { MessageHandlerV2 } from './services/message-handler-v2.service';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
+import { getPublicHealthSnapshot } from './services/public-health.service';
 
 const app = express();
 const messageHandler = new MessageHandlerV2();
@@ -37,8 +38,14 @@ app.get('/', (req, res) => {
 });
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', async (_req, res) => {
+  const health = await getPublicHealthSnapshot();
+
+  res.status(health.httpStatus).json({
+    status: health.status,
+    timestamp: new Date().toISOString(),
+    checks: health.checks,
+  });
 });
 
 // Stats endpoint

@@ -1,24 +1,26 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-dotenv.config();
+if (process.env.NODE_ENV !== 'test') {
+  dotenv.config();
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
-  // DATABASE_URL is required in dev/prod, but unit tests run without a database.
+  // DATABASE_URL is required in dev/prod, but tests can run without a database.
   DATABASE_URL: z.string().optional(),
 
-  // LLM Providers (com fallback automático)
-  OPENAI_API_KEY: z.string().default('sk-mock-key-for-development'), // Primário para LLM e Embeddings
-  GROQ_API_KEY: z.string().optional().default('gsk-mock-key-for-development'), // Fallback para LLM
-  GEMINI_API_KEY: z.string().optional().default('gemini-mock-key'), // Fallback para LLM (Gemini 2.5 Flash)
-  COHERE_API_KEY: z.string().optional(), // Fallback para Embeddings
+  // LLM Providers (com fallback automatico)
+  OPENAI_API_KEY: z.string().default('sk-mock-key-for-development'),
+  GROQ_API_KEY: z.string().optional().default('gsk-mock-key-for-development'),
+  GEMINI_API_KEY: z.string().optional().default('gemini-mock-key'),
+  COHERE_API_KEY: z.string().optional(),
 
   WHATSAPP_NAME: z.string().default('CarInsight'),
   CRM_WEBHOOK_URL: z.string().optional(),
 
-  // Meta Cloud API (WhatsApp Business API Oficial)
+  // Meta Cloud API (WhatsApp Business API oficial)
   META_WHATSAPP_TOKEN: z.string().optional(),
   META_WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   META_WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().optional(),
@@ -30,32 +32,32 @@ const envSchema = z.object({
     .default('false')
     .transform(val => val === 'true'),
 
-  // Evolution API (Alternative WhatsApp Gateway)
+  // Evolution API
   EVOLUTION_API_URL: z.string().optional(),
   EVOLUTION_API_KEY: z.string().optional(),
   EVOLUTION_INSTANCE_NAME: z.string().default('carinsight'),
 
-  // Redis Configuration (para rate limiting distribuído e cache)
-  REDIS_URL: z.string().optional(), // ex: redis://localhost:6379
-  REDIS_RATE_LIMIT_TTL: z.coerce.number().default(60), // TTL em segundos
+  // Redis configuration
+  REDIS_URL: z.string().optional(),
+  REDIS_RATE_LIMIT_TTL: z.coerce.number().default(60),
 
-  // Rate Limiting Configuration
-  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(10), // msgs por janela
-  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000), // janela em ms (1 min)
+  // Rate limiting
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(10),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
 
-  // Feature Flags
+  // Feature flags
   ENABLE_CONVERSATIONAL_MODE: z
     .string()
-    .default('true') // Enabled by default after migration
+    .default('true')
     .transform(val => val === 'true'),
-  CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.coerce.number().default(100), // 100% rollout
+  CONVERSATIONAL_ROLLOUT_PERCENTAGE: z.coerce.number().default(100),
   USE_SLM_EXPLANATIONS: z
     .string()
     .default('false')
     .transform(val => val === 'true'),
   SLM_EXPLANATIONS_ROLLOUT_PERCENTAGE: z.coerce.number().default(0),
 
-  // Emotional Selling & Conversion
+  // Emotional selling & conversion
   ENABLE_EMOTIONAL_SELLING: z
     .string()
     .default('false')
@@ -69,12 +71,12 @@ const envSchema = z.object({
     .default('false')
     .transform(val => val === 'true'),
 
-  // Audio Transcription
+  // Audio transcription
   ENABLE_AUDIO_TRANSCRIPTION: z
     .string()
     .default('true')
     .transform(val => val === 'true'),
-  AUDIO_MAX_DURATION_SECONDS: z.coerce.number().default(120), // 2 minutes max
+  AUDIO_MAX_DURATION_SECONDS: z.coerce.number().default(120),
 
   // Observability (LangSmith)
   LANGCHAIN_TRACING_V2: z.string().optional().default('false'),
@@ -85,19 +87,21 @@ const envSchema = z.object({
 
 const parsed = envSchema.parse(process.env);
 
-// Ensure DATABASE_URL exists outside of tests
-if (!parsed.DATABASE_URL) {
-  if (parsed.NODE_ENV === 'test') {
-    parsed.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
-  } else {
-    throw new Error('DATABASE_URL is required');
-  }
+if (parsed.DATABASE_URL) {
+  parsed.DATABASE_URL = parsed.DATABASE_URL.trim();
 }
 
-// Keep process.env consistent for libraries (e.g., Prisma) that read from it
-process.env.DATABASE_URL = parsed.DATABASE_URL;
+if (!parsed.DATABASE_URL && parsed.NODE_ENV !== 'test') {
+  throw new Error('DATABASE_URL is required');
+}
 
-export const env = parsed as z.infer<typeof envSchema> & { DATABASE_URL: string };
+if (parsed.DATABASE_URL) {
+  process.env.DATABASE_URL = parsed.DATABASE_URL;
+} else {
+  delete process.env.DATABASE_URL;
+}
+
+export const env = parsed;
 
 export const isDev = env.NODE_ENV === 'development';
 export const isProd = env.NODE_ENV === 'production';

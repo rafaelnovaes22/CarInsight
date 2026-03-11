@@ -1,22 +1,56 @@
+import { existsSync, readFileSync } from 'fs';
+import { resolve } from 'path';
 import { beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import * as dotenv from 'dotenv';
 
-// Carregar variáveis de ambiente - .env principal tem prioridade
-// override: true garante que as variáveis do .env sejam usadas
-dotenv.config({ path: '.env', override: true });
+process.env.NODE_ENV = 'test';
 
-// Flag para indicar se o banco está disponível
+const protectedTestKeys = new Set([
+  'DATABASE_URL',
+  'REDIS_URL',
+  'OPENAI_API_KEY',
+  'GROQ_API_KEY',
+  'GEMINI_API_KEY',
+  'COHERE_API_KEY',
+  'META_WHATSAPP_TOKEN',
+  'META_WHATSAPP_PHONE_NUMBER_ID',
+  'META_WHATSAPP_BUSINESS_ACCOUNT_ID',
+  'META_APP_SECRET',
+]);
+
+function loadEnvFile(fileName: string): Record<string, string> {
+  const filePath = resolve(process.cwd(), fileName);
+
+  if (!existsSync(filePath)) {
+    return {};
+  }
+
+  return dotenv.parse(readFileSync(filePath));
+}
+
+const baseEnv = loadEnvFile('.env');
+const testEnv = loadEnvFile('.env.test');
+const mergedEnv: Record<string, string> = { ...baseEnv, ...testEnv };
+
+for (const key of protectedTestKeys) {
+  if (testEnv[key] === undefined) {
+    delete mergedEnv[key];
+  }
+}
+
+for (const [key, value] of Object.entries(mergedEnv)) {
+  if (process.env[key] === undefined) {
+    process.env[key] = value;
+  }
+}
+
+// Flag para indicar se o banco esta disponivel
 let databaseAvailable = false;
 let prismaInstance: any = null;
 
 // Setup global antes de todos os testes
 beforeAll(async () => {
-  console.log('🚀 Iniciando setup de testes...');
-
-  // Garantir que estamos em ambiente de teste
-  if (process.env.NODE_ENV !== 'test') {
-    process.env.NODE_ENV = 'test';
-  }
+  console.log('Iniciando setup de testes...');
 
   // Tentar conectar ao banco de teste (opcional)
   const databaseUrl = process.env.DATABASE_URL;
@@ -34,49 +68,49 @@ beforeAll(async () => {
       });
       await prismaInstance.$connect();
       databaseAvailable = true;
-      console.log('✅ Conectado ao banco de teste');
-    } catch (error) {
-      console.warn('⚠️  Banco de dados não disponível - testes que precisam de DB serão pulados');
+      console.log('Conectado ao banco de teste');
+    } catch {
+      console.warn('Banco de dados nao disponivel - testes que precisam de DB serao pulados');
       databaseAvailable = false;
     }
   } else {
-    console.log('ℹ️  DATABASE_URL não configurada - executando testes sem banco de dados');
+    console.log('DATABASE_URL nao configurada - executando testes sem banco de dados');
     databaseAvailable = false;
   }
 });
 
-// Cleanup após todos os testes
+// Cleanup apos todos os testes
 afterAll(async () => {
-  console.log('🧹 Limpando ambiente de teste...');
+  console.log('Limpando ambiente de teste...');
 
   if (prismaInstance) {
     try {
       await prismaInstance.$disconnect();
-      console.log('✅ Desconectado do banco de teste');
-    } catch (error) {
-      // Ignorar erro de desconexão
+      console.log('Desconectado do banco de teste');
+    } catch {
+      // Ignorar erro de desconexao
     }
   }
 });
 
 // Limpar dados antes de cada teste (opcional)
 beforeEach(async () => {
-  // Limpeza opcional se banco disponível
+  // Limpeza opcional se banco disponivel
 });
 
 afterEach(async () => {
-  // Cleanup adicional se necessário
+  // Cleanup adicional se necessario
 });
 
-// Helper para verificar se banco está disponível
+// Helper para verificar se banco esta disponivel
 export function isDatabaseAvailable(): boolean {
   return databaseAvailable;
 }
 
-// Helper para obter instância do Prisma (se disponível)
+// Helper para obter instancia do Prisma (se disponivel)
 export function getPrisma() {
   if (!prismaInstance) {
-    throw new Error('Banco de dados não está disponível para este teste');
+    throw new Error('Banco de dados nao esta disponivel para este teste');
   }
   return prismaInstance;
 }
@@ -84,7 +118,7 @@ export function getPrisma() {
 // Helper para resetar banco entre testes
 export async function resetDatabase() {
   if (!databaseAvailable || !prismaInstance) {
-    console.warn('⚠️  Banco não disponível para reset');
+    console.warn('Banco nao disponivel para reset');
     return;
   }
 
@@ -93,8 +127,8 @@ export async function resetDatabase() {
   for (const table of tables) {
     try {
       await prismaInstance.$executeRawUnsafe(`DELETE FROM "${table}";`);
-    } catch (error) {
-      // Tabela pode não existir
+    } catch {
+      // Tabela pode nao existir
     }
   }
 }
@@ -102,10 +136,11 @@ export async function resetDatabase() {
 // Helper para criar dados de teste
 export async function seedTestData() {
   if (!databaseAvailable) {
-    console.warn('⚠️  Banco não disponível para seed');
+    console.warn('Banco nao disponivel para seed');
     return;
   }
-  console.log('🌱 Seed de dados de teste');
+
+  console.log('Seed de dados de teste');
 }
 
 // Export prisma para compatibilidade (pode ser null)

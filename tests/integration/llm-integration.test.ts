@@ -8,7 +8,7 @@
  * - Resultados podem variar ligeiramente
  *
  * Para rodar apenas estes testes:
- * npm run test:integration
+ * npm run test:integration:llm
  *
  * Requer variáveis de ambiente:
  * - OPENAI_API_KEY ou GROQ_API_KEY
@@ -30,8 +30,17 @@ const isValidGroqKey =
   !env.GROQ_API_KEY.includes('mock') &&
   !env.GROQ_API_KEY.includes('test') &&
   env.GROQ_API_KEY.length > 20;
+const runRealLlmTests = process.env.RUN_LLM_INTEGRATION_TESTS === 'true';
 const hasValidApiKeys = isValidOpenAIKey || isValidGroqKey;
-const describeIfApiKeys = hasValidApiKeys ? describe : describe.skip;
+const describeIfApiKeys = runRealLlmTests && hasValidApiKeys ? describe : describe.skip;
+
+if (!runRealLlmTests) {
+  console.warn(
+    'Skipping real LLM integration tests: set RUN_LLM_INTEGRATION_TESTS=true to enable them'
+  );
+} else if (!hasValidApiKeys) {
+  console.warn('Skipping real LLM integration tests: valid provider API keys were not found');
+}
 
 describeIfApiKeys('LLM Integration Tests (Real API)', () => {
   beforeAll(() => {

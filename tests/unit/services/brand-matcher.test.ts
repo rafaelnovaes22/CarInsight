@@ -6,10 +6,11 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { brandMatcher } from '../../../src/services/brand-matcher.service';
-import { prisma } from '../../../src/lib/prisma';
+import { hasConfiguredDatabaseUrl, prisma } from '../../../src/lib/prisma';
 
 // Mock Prisma
 vi.mock('../../../src/lib/prisma', () => ({
+  hasConfiguredDatabaseUrl: vi.fn(() => true),
   prisma: {
     $queryRaw: vi.fn(),
   },
@@ -20,6 +21,7 @@ describe('BrandMatcherService', () => {
     // Clear cache before each test
     brandMatcher.clearCache();
     vi.clearAllMocks();
+    (hasConfiguredDatabaseUrl as any).mockReturnValue(true);
 
     // Setup default mock responses
     (prisma.$queryRaw as any).mockImplementation((query: any) => {
@@ -106,6 +108,15 @@ describe('BrandMatcherService', () => {
 
       // Should handle error and return no match
       const result = await brandMatcher.matchBrand('Toyota');
+      expect(result.matched).toBe(false);
+    });
+
+    it('should skip database access when no database is configured', async () => {
+      (hasConfiguredDatabaseUrl as any).mockReturnValue(false);
+
+      const result = await brandMatcher.matchBrand('Toyota');
+
+      expect(prisma.$queryRaw).not.toHaveBeenCalled();
       expect(result.matched).toBe(false);
     });
   });

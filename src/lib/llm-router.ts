@@ -40,19 +40,31 @@ export interface LLMProviderConfig {
   costPer1MTokens: { input: number; output: number };
 }
 
+function isConfiguredOpenAIKey(apiKey?: string): boolean {
+  return !!apiKey && apiKey.startsWith('sk-') && !apiKey.startsWith('sk-mock');
+}
+
+function isConfiguredGroqKey(apiKey?: string): boolean {
+  return !!apiKey && apiKey.startsWith('gsk_');
+}
+
+function isConfiguredGeminiKey(apiKey?: string): boolean {
+  return !!apiKey && apiKey.startsWith('AIza');
+}
+
 // Configuração dos modelos disponíveis
 const LLM_PROVIDERS: LLMProviderConfig[] = [
   {
     name: 'openai',
     model: 'gpt-4.1-mini',
-    enabled: !!env.OPENAI_API_KEY && env.OPENAI_API_KEY !== 'mock-key',
+    enabled: isConfiguredOpenAIKey(env.OPENAI_API_KEY),
     priority: 1, // Primário
     costPer1MTokens: { input: 0.4, output: 1.6 },
   },
   {
     name: 'gemini',
     model: 'gemini-2.5-flash',
-    enabled: !!env.GEMINI_API_KEY && env.GEMINI_API_KEY !== 'gemini-mock-key',
+    enabled: isConfiguredGeminiKey(env.GEMINI_API_KEY),
     priority: 2, // Fallback rápido e econômico
     costPer1MTokens: { input: 0.15, output: 0.6 },
   },
@@ -60,7 +72,7 @@ const LLM_PROVIDERS: LLMProviderConfig[] = [
     name: 'groq',
     // Modelo Llama 3.1 8B Instant (Fallback de emergência)
     model: 'llama-3.1-8b-instant',
-    enabled: !!env.GROQ_API_KEY && env.GROQ_API_KEY !== 'mock-key',
+    enabled: isConfiguredGroqKey(env.GROQ_API_KEY),
     priority: 3, // Fallback de emergência
     costPer1MTokens: { input: 0.05, output: 0.08 },
   },

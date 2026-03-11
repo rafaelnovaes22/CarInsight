@@ -11,10 +11,13 @@ import { cache } from '../../src/lib/redis';
 import { MessageHandlerV2 } from '../../src/services/message-handler-v2.service';
 import { ConversationState } from '../../src/types/state.types';
 
-// Skip integration tests if no valid DATABASE_URL (CI environment without DB service)
+// Skip DB integration tests unless explicitly enabled by the dedicated script.
+const runDbIntegrationTests = process.env.RUN_DB_INTEGRATION_TESTS === 'true';
 const databaseUrl = process.env.DATABASE_URL;
 const hasDatabase =
-  databaseUrl && (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'));
+  runDbIntegrationTests &&
+  !!databaseUrl &&
+  (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://'));
 const describeIfDatabase = hasDatabase ? describe : describe.skip;
 
 if (!hasDatabase) {
