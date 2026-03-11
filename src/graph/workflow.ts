@@ -100,6 +100,16 @@ const routeNode = (state: IGraphState) => {
     return END;
   }
 
+  // Fiber stagnation circuit breaker: no progress after N routing decisions
+  const fiberStagnation = state.metadata.fiberStagnationCount ?? 0;
+  if (fiberStagnation >= 6) {
+    logger.warn(
+      { fiberStagnationCount: fiberStagnation, currentFiber: state.metadata.lastFiberValue },
+      'Router: Fiber stagnation circuit breaker triggered'
+    );
+    return END;
+  }
+
   // Fiber guard: prevent unintentional regression in conversation phase
   if (typeof nextNode === 'string') {
     const currentFiber = computeFiber(state).fiber;

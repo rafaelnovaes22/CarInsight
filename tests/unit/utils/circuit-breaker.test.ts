@@ -69,6 +69,41 @@ describe('circuit-breaker', () => {
       expect(result.message).not.toContain('undefined');
       expect(result.message).toContain('consultores');
     });
+
+    it('should break when fiberStagnationCount exceeds maxFiberStagnation', () => {
+      const state = createMockState({ fiberStagnationCount: 6 });
+      const result = checkCircuitBreaker(state);
+      expect(result.shouldBreak).toBe(true);
+      expect(result.reason).toBe('fiber_stagnation');
+      expect(result.message).toContain('consultor especializado');
+    });
+
+    it('should not break when fiberStagnationCount is below threshold', () => {
+      const state = createMockState({ fiberStagnationCount: 3 });
+      const result = checkCircuitBreaker(state);
+      expect(result.shouldBreak).toBe(false);
+    });
+
+    it('should personalize fiber stagnation message with customer name', () => {
+      const state = createMockState({ fiberStagnationCount: 6 });
+      state.profile = { customerName: 'Maria' };
+      const result = checkCircuitBreaker(state);
+      expect(result.reason).toBe('fiber_stagnation');
+      expect(result.message).toContain('Maria');
+    });
+
+    it('should use custom maxFiberStagnation config', () => {
+      const state = createMockState({ fiberStagnationCount: 3 });
+      const result = checkCircuitBreaker(state, { maxFiberStagnation: 3 });
+      expect(result.shouldBreak).toBe(true);
+      expect(result.reason).toBe('fiber_stagnation');
+    });
+
+    it('should prioritize max_loops over fiber_stagnation', () => {
+      const state = createMockState({ loopCount: 5, fiberStagnationCount: 6 });
+      const result = checkCircuitBreaker(state);
+      expect(result.reason).toBe('max_loops');
+    });
   });
 
   describe('computeLoopCount', () => {

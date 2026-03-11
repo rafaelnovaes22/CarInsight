@@ -8,16 +8,18 @@ import { IGraphState } from '../types/graph.types';
 export interface CircuitBreakerConfig {
   maxLoops: number;
   maxErrors: number;
+  maxFiberStagnation: number;
 }
 
 const DEFAULT_CONFIG: CircuitBreakerConfig = {
   maxLoops: 5,
   maxErrors: 3,
+  maxFiberStagnation: 6,
 };
 
 export interface CircuitBreakerResult {
   shouldBreak: boolean;
-  reason?: 'max_loops' | 'max_errors';
+  reason?: 'max_loops' | 'max_errors' | 'fiber_stagnation';
   message?: string;
 }
 
@@ -28,7 +30,7 @@ export function checkCircuitBreaker(
   state: IGraphState,
   config: Partial<CircuitBreakerConfig> = {}
 ): CircuitBreakerResult {
-  const { maxLoops, maxErrors } = { ...DEFAULT_CONFIG, ...config };
+  const { maxLoops, maxErrors, maxFiberStagnation } = { ...DEFAULT_CONFIG, ...config };
 
   const loopCount = state.metadata?.loopCount || 0;
   const errorCount = state.metadata?.errorCount || 0;
@@ -50,6 +52,18 @@ export function checkCircuitBreaker(
       reason: 'max_errors',
       message:
         'Desculpe, estou com problemas técnicos. Vou transferir você para um consultor humano.',
+    };
+  }
+
+  const fiberStagnation = state.metadata?.fiberStagnationCount || 0;
+  if (fiberStagnation >= maxFiberStagnation) {
+    const name = state.profile?.customerName;
+    return {
+      shouldBreak: true,
+      reason: 'fiber_stagnation',
+      message: name
+        ? `${name}, parece que não estou conseguindo avançar no seu atendimento. Vou transferir você para um consultor especializado.`
+        : 'Parece que não estou conseguindo avançar no seu atendimento. Vou transferir você para um consultor especializado.',
     };
   }
 

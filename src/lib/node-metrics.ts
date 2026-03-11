@@ -68,6 +68,19 @@ export class NodeTimer {
     } as IGraphState;
     const fiberResult = computeFiber(postState);
 
+    // Track fiber stagnation: if fiber hasn't advanced, increment counter
+    const lastFiber = state.metadata?.lastFiberValue ?? -1;
+    const currentFiber = fiberResult.fiber;
+    const fiberStagnationCount =
+      currentFiber <= lastFiber ? (state.metadata?.fiberStagnationCount ?? 0) + 1 : 0;
+
+    // Inject fiber tracking into result metadata so it persists in state
+    if (result.metadata) {
+      result.metadata.currentFiber = currentFiber;
+      result.metadata.lastFiberValue = currentFiber;
+      result.metadata.fiberStagnationCount = fiberStagnationCount;
+    }
+
     const metrics: NodeMetrics = {
       node: this.nodeName,
       latencyMs,
