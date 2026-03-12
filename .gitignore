@@ -134,3 +134,6 @@ temp_*
 # One-off scripts (should not be committed)
 fix-*.js
 patch*.js
+
+# Claude Code temp files
+tmpclaude-*
