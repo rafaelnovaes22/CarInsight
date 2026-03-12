@@ -156,3 +156,68 @@ describe('handleWantOthers — handleListCategories (empty lastShownVehicles)', 
     expect(result.response!.response).toContain('🏍️');
   });
 });
+
+describe('handleWantOthers — no similar vehicles with bodyType + budget', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function buildCtxWithVehicle(overrides?: Partial<WantOthersContext>): WantOthersContext {
+    return {
+      userMessage: 'tem mais opções até 70000?',
+      lastShownVehicles: [
+        {
+          vehicleId: 682,
+          brand: 'HONDA',
+          model: 'CIVIC',
+          year: 2010,
+          price: 56990,
+          bodyType: 'sedan',
+        },
+      ],
+      extracted: { extracted: { budget: 70000 } },
+      updatedProfile: { budget: 70000 },
+      startTime: Date.now(),
+      ...overrides,
+    };
+  }
+
+  it('should mention body type and budget when no similar vehicles found', async () => {
+    const result = await handleWantOthers(buildCtxWithVehicle());
+
+    expect(result.handled).toBe(true);
+    expect(result.response!.response).toContain('sedan');
+    expect(result.response!.response).toMatch(/70\.000|70000/);
+  });
+
+  it('should offer to broaden search to other vehicle types', async () => {
+    const result = await handleWantOthers(buildCtxWithVehicle());
+
+    expect(result.response!.response).toContain('outros tipos de veículo');
+  });
+
+  it('should set _waitingForBroaderSearch flag', async () => {
+    const result = await handleWantOthers(buildCtxWithVehicle());
+
+    expect(result.response!.extractedPreferences._waitingForBroaderSearch).toBe(true);
+  });
+
+  it('should fall back to generic message when no bodyType available', async () => {
+    const result = await handleWantOthers(
+      buildCtxWithVehicle({
+        lastShownVehicles: [
+          {
+            vehicleId: 682,
+            brand: 'HONDA',
+            model: 'CIVIC',
+            year: 2010,
+            price: 56990,
+          },
+        ],
+      })
+    );
+
+    expect(result.response!.response).toContain('HONDA CIVIC');
+    expect(result.response!.response).not.toContain('outros tipos de veículo');
+  });
+});

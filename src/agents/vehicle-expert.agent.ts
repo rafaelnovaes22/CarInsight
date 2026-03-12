@@ -814,9 +814,6 @@ export class VehicleExpertAgent {
 
             // GUARDRAIL: Must have budget before recommending, even for exact model+year
             if (!updatedProfile.budget) {
-              const firstMatch = exactResults[0];
-              const price = firstMatch.vehicle.price;
-              const priceFormatted = price.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
               const vehicleName = capitalize(targetModel);
 
               logger.info(
@@ -825,7 +822,7 @@ export class VehicleExpertAgent {
               );
 
               return {
-                response: `Encontrei ${exactResults.length} ${exactResults.length > 1 ? 'opções' : 'opção'} de ${vehicleName} ${targetYear}! ${exactResults.length > 1 ? 'Os preços começam' : 'O preço começa'} em R$ ${priceFormatted}.\n\nQual é o seu orçamento? Assim eu mostro só as opções que cabem no seu bolso. 😊`,
+                response: `Ótima escolha, o ${vehicleName} ${targetYear}! 🚗\n\nAntes de te mostrar o que temos, me conta: qual é o seu orçamento? Assim consigo te indicar as melhores opções. 😊`,
                 extractedPreferences: {
                   ...updatedProfile,
                   minYear: targetYear,

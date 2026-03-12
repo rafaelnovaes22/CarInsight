@@ -20,6 +20,7 @@ import {
   detectAffirmativeResponse,
   detectNegativeResponse,
 } from '../intent-detector';
+import { capitalize } from '../constants';
 import { buildResponse } from '../utils/response-builder';
 
 /**
@@ -124,14 +125,12 @@ async function handleUberXAlternatives(
 
   if (uberXVehicles.length > 0) {
     // GUARDRAIL: Must have budget before recommending
+    // Don't reveal price — ask budget first for better negotiation flow
     if (!ctx.updatedProfile.budget) {
-      const firstPrice = uberXVehicles[0].vehicle.price.toLocaleString('pt-BR', {
-        minimumFractionDigits: 0,
-      });
       return {
         handled: true,
         response: buildResponse(
-          `Encontrei ${uberXVehicles.length} veículos aptos para ${appCategory}! Os preços começam em R$ ${firstPrice}.\n\nQual é o seu orçamento? Assim mostro só as opções que cabem no seu bolso. 😊`,
+          `Temos veículos aptos para ${appCategory}! 🚗\n\nAntes de te mostrar, me conta: qual é o seu orçamento? Assim consigo te indicar as melhores opções. 😊`,
           {
             ...ctx.extracted.extracted,
             _waitingForUberXAlternatives: false,
@@ -237,14 +236,12 @@ async function handleAlternativeYears(
 
   if (matchingResults.length > 0) {
     // GUARDRAIL: Must have budget before recommending
+    // Don't reveal price — ask budget first for better negotiation flow
     if (!ctx.updatedProfile.budget) {
-      const firstPrice = matchingResults[0].vehicle.price.toLocaleString('pt-BR', {
-        minimumFractionDigits: 0,
-      });
       return {
         handled: true,
         response: buildResponse(
-          `Encontrei ${matchingResults.length} ${matchingResults.length > 1 ? 'opções' : 'opção'} de ${ctx.searchedItem} ${firstAvailableYear}! ${matchingResults.length > 1 ? 'Os preços' : 'O preço'} começa em R$ ${firstPrice}.\n\nQual é o seu orçamento? Assim mostro só as opções que cabem no seu bolso. 😊`,
+          `Ótima escolha, o ${capitalize(ctx.searchedItem)} ${firstAvailableYear}! 🚗\n\nAntes de te mostrar o que temos, me conta: qual é o seu orçamento? Assim consigo te indicar as melhores opções. 😊`,
           {
             ...ctx.updatedProfile,
             minYear: firstAvailableYear,

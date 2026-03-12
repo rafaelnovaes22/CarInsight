@@ -311,24 +311,42 @@ export async function handleWantOthers(ctx: WantOthersContext): Promise<HandlerR
     };
   }
 
-  // No similar vehicles found
+  // No similar vehicles found — explain why and offer to broaden search
   const hasBudget = !!(updatedProfile.budget || updatedProfile.budgetMax);
-  const nextQuestion = hasBudget
-    ? 'Prefere algum tipo específico (SUV, sedan, hatch) ou tem outra marca em mente?'
-    : 'Qual seu orçamento máximo?';
+  const budgetValue = updatedProfile.budget || updatedProfile.budgetMax || priceRange.max;
+  const budgetFormatted = budgetValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
 
-  const missingInfo = hasBudget ? ['bodyType', 'brand'] : ['budget', 'bodyType'];
+  let noResultsMessage: string;
+  let missingInfo: string[];
+
+  if (bodyType && hasBudget) {
+    // Specific: mention body type + price range, ask to broaden
+    const bodyTypeLabel = CATEGORY_LABELS[bodyType.toLowerCase()]?.name || bodyType;
+    noResultsMessage =
+      `No momento, o ${firstVehicle.brand} ${firstVehicle.model} é o único ${bodyTypeLabel.toLowerCase().replace(/s$/, '')} disponível até R$ ${budgetFormatted}. 🤔\n\n` +
+      `Quer que eu busque *outros tipos de veículo* nessa faixa de valor? Posso mostrar SUVs, hatches, pickups e mais! 😊`;
+    missingInfo = ['bodyType'];
+  } else if (!hasBudget) {
+    noResultsMessage = `Não encontrei mais opções similares ao ${firstVehicle.brand} ${firstVehicle.model}. 🤔\n\nQual seu orçamento máximo? Assim consigo ampliar a busca.`;
+    missingInfo = ['budget', 'bodyType'];
+  } else {
+    noResultsMessage =
+      `Não encontrei mais opções similares ao ${firstVehicle.brand} ${firstVehicle.model} até R$ ${budgetFormatted}. 🤔\n\n` +
+      `Prefere algum tipo específico (SUV, sedan, hatch) ou tem outra marca em mente?`;
+    missingInfo = ['bodyType', 'brand'];
+  }
 
   return {
     handled: true,
     response: buildResponse(
-      `Não encontrei mais opções similares ao ${firstVehicle.brand} ${firstVehicle.model} com esses critérios. 🤔\n\n📋 Me conta: ${nextQuestion}`,
+      noResultsMessage,
       {
         ...extracted.extracted,
         _showedRecommendation: false,
         _lastShownVehicles: lastShownVehicles,
         _lastSearchType: undefined,
         _waitingForSuggestionResponse: true,
+        _waitingForBroaderSearch: true,
         _excludeVehicleIds: lastShownVehicles.map(v => v.vehicleId),
       },
       {

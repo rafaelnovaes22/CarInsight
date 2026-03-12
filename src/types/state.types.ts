@@ -119,6 +119,7 @@ export interface CustomerProfile {
 
   // Internal state flags (used for conversation flow)
   _waitingForSuggestionResponse?: boolean; // Indicates we offered suggestions and waiting for user response
+  _waitingForBroaderSearch?: boolean; // Offered to broaden search beyond current body type
   _searchedItem?: string; // The item (model/brand/category) that was not found
   _skipOnboarding?: boolean; // Skip remaining onboarding steps (user asked for specific brand/model)
   _availableYears?: number[]; // Anos disponíveis quando modelo não encontrado no ano pedido
