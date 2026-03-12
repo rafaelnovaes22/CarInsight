@@ -111,28 +111,26 @@ skills.md
 docs/.obsidian/
 
 # Local debug/scrape artifacts
-diff.txt
-diff2.txt
-diff3.txt
+*.log
+diff*.txt
+err*.txt
+results.txt
 debug-output.json
 last_scrape.txt
 scraped_content.txt
 uber_api_response.json
 net_logs.txt
 lint_output.txt
-test-results.json
-test_output.txt
+test-results*
+test-output*
+test_output*
 verify_output.txt
 url_audit.txt
-temp_site.html
-temp_instance_controller.js
-temp_monitor_service.js
-test-output.txt
-results.txt
-err.txt
-err2.txt
-tsc-errors.txt
-tsc-errors.log
-vitest-err.txt
-vitest-err2.txt
-vitest-err3.txt
+vitest-*.txt
+vitest-*.log
+tsc-errors.*
+temp_*
+
+# One-off scripts (should not be committed)
+fix-*.js
+patch*.js
