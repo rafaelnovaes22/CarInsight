@@ -177,7 +177,9 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       },
       recommendations: searchResult.recommendations || [],
       metadata: buildNonLoopMetadata(),
-      messages: [new AIMessage(`${buildNamedDisclosurePrefix(possibleName)}\n\n${searchResult.response}`)],
+      messages: [
+        new AIMessage(`${buildNamedDisclosurePrefix(possibleName)}\n\n${searchResult.response}`),
+      ],
     };
   }
 
@@ -186,6 +188,8 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
     const tradeInText = earlyProfileUpdate.tradeInYear
       ? `${earlyProfileUpdate.tradeInModel.toUpperCase()} ${earlyProfileUpdate.tradeInYear}`
       : earlyProfileUpdate.tradeInModel.toUpperCase();
+
+    const tradeInResponse = `Entendi! Você tem um *${tradeInText}* para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`;
 
     return {
       next: 'discovery',
@@ -196,9 +200,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       },
       metadata: buildNonLoopMetadata(),
       messages: [
-        new AIMessage(
-          `Prazer, ${possibleName}! 😊\n\nEntendi! Você tem um *${tradeInText}* para dar na troca. 🚗🔄\n\nPra te ajudar a encontrar o carro ideal, me conta:\n\n• Qual tipo de carro você está procurando? (SUV, sedan, hatch...)\n• Tem um orçamento em mente?\n\n_Ou me fala um modelo específico se já sabe o que quer!_`
-        ),
+        new AIMessage(`${buildNamedDisclosurePrefix(possibleName)}\n\n${tradeInResponse}`),
       ],
     };
   }
@@ -209,13 +211,15 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
     const emotionalEnabled = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
     const timeSlot = getTimeSlot();
 
+    const questionText = `Me conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
+
     let responseText = '';
     if (emotionalEnabled && isLateNight()) {
-      const opener = getTimeAwareVariation('LATE_NIGHT_OPENERS', timeSlot);
+      const _opener = getTimeAwareVariation('LATE_NIGHT_OPENERS', timeSlot);
       const empathy = getEmotionalCopy('CONEXAO', timeSlot);
-      responseText = `${opener}\n\n${firstName}, ${empathy.charAt(0).toLowerCase() + empathy.slice(1)}\n\nMe conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
+      responseText = `${buildNamedDisclosurePrefix(firstName)}\n\n${empathy.charAt(0).toLowerCase() + empathy.slice(1)}\n\n${questionText}`;
     } else {
-      responseText = `👋 Olá, ${firstName}! Me conta, o que você está procurando? 🚗\n\nPode ser:\n• Um tipo de carro (SUV, sedan, pickup...)\n• Para que vai usar (família, trabalho, app de transporte...)\n• Ou um modelo específico`;
+      responseText = `${buildNamedDisclosurePrefix(firstName)}\n\n${questionText}`;
     }
 
     return {
