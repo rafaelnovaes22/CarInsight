@@ -1,5 +1,4 @@
 import express from 'express';
-import path from 'path';
 import { env } from './config/env';
 import { logger } from './lib/logger';
 import { maskPhoneNumber } from './lib/privacy';
@@ -12,8 +11,10 @@ import debugRoutes from './routes/debug.routes';
 import { initializeRedis, closeRedis } from './lib/redis';
 import { getRateLimitService } from './services/rate-limit.service';
 import { getPublicHealthSnapshot } from './services/public-health.service';
+import { getPublicDir, getPublicFilePath } from './lib/static-assets';
 
 const app = express();
+const publicDir = getPublicDir();
 
 app.use(
   express.json({
@@ -22,7 +23,7 @@ app.use(
     },
   })
 );
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(publicDir));
 
 function requireAdminSecret(req: any, res: any, next: () => void) {
   const configuredSecret = env.SEED_SECRET;
@@ -56,9 +57,14 @@ app.use('/admin', requireAdminSecret, adminRoutes);
 // Debug routes (feature flags, config)
 app.use('/debug', requireAdminSecret, debugRoutes);
 
-// Dashboard
+// Landing page
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+  res.sendFile(getPublicFilePath('landing.html'));
+});
+
+// Dashboard
+app.get('/dashboard', (_req, res) => {
+  res.sendFile(getPublicFilePath('dashboard.html'));
 });
 
 // Health check with dependency monitoring
@@ -76,7 +82,7 @@ app.get('/health', async (_req, res) => {
 
 // Privacy Policy (required by Meta)
 app.get('/privacy-policy', (_req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'privacy-policy.html'));
+  res.sendFile(getPublicFilePath('privacy-policy.html'));
 });
 
 // Reset conversation endpoint (for testing)
@@ -165,7 +171,8 @@ async function start() {
     // Start Express server
     const server = app.listen(PORT, () => {
       logger.info({ port: PORT }, 'Server running');
-      logger.info({ dashboard: `http://localhost:${PORT}` }, 'Dashboard');
+      logger.info({ landing: `http://localhost:${PORT}` }, 'Landing page');
+      logger.info({ dashboard: `http://localhost:${PORT}/dashboard` }, 'Dashboard');
       logger.info({ health: `http://localhost:${PORT}/health` }, 'Health endpoint');
       logger.info({ webhook: `http://localhost:${PORT}/webhooks/whatsapp` }, 'Webhook endpoint');
 

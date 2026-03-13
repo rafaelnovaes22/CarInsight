@@ -55,7 +55,7 @@ Como posso ajudar você hoje?`,
 
     DATA_EXPORT: 'Para exportar suas conversas, digite *"exportar meus dados"*.',
 
-    POLICY_LINK: 'Nossa política de privacidade: [URL_DO_SISTEMA]/privacy-policy.html',
+    POLICY_LINK: 'Nossa política de privacidade: https://www.carinsight.com.br/privacy-policy',
   },
 
   /**

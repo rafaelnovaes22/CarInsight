@@ -1,14 +1,15 @@
 import express from 'express';
-import path from 'path';
 import { env } from './config/env';
 import { logger } from './lib/logger';
 import { maskPhoneNumber } from './lib/privacy';
 import { MessageHandlerV2 } from './services/message-handler-v2.service';
 import { inMemoryVectorStore } from './services/in-memory-vector.service';
 import { getPublicHealthSnapshot } from './services/public-health.service';
+import { getPublicDir, getPublicFilePath } from './lib/static-assets';
 
 const app = express();
 const messageHandler = new MessageHandlerV2();
+const publicDir = getPublicDir();
 
 let _vectorStoreReady = false;
 
@@ -30,11 +31,16 @@ initializeVectorStore().catch(err => {
 });
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(publicDir));
+
+// Landing page
+app.get('/', (_req, res) => {
+  res.sendFile(getPublicFilePath('landing.html'));
+});
 
 // Dashboard
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+app.get('/dashboard', (_req, res) => {
+  res.sendFile(getPublicFilePath('dashboard.html'));
 });
 
 // Health check
@@ -113,7 +119,8 @@ async function start() {
     // Start Express server
     app.listen(PORT, () => {
       logger.info(`🚀 API Test Server running on port ${PORT}`);
-      logger.info(`📊 Dashboard: http://localhost:${PORT}/`);
+      logger.info(`🏠 Landing: http://localhost:${PORT}/`);
+      logger.info(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
       logger.info(`📊 Stats: http://localhost:${PORT}/stats`);
       logger.info(`💬 Send message: POST http://localhost:${PORT}/message`);
       logger.info('');

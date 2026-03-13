@@ -3,185 +3,118 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CarInsight - Dashboard</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        padding: 20px;
-      }
-
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-
-      h1 {
-        color: white;
-        text-align: center;
-        margin-bottom: 30px;
-        font-size: 2.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-      }
-
-      .logo {
-        width: 50px;
-        height: 50px;
-        vertical-align: middle;
-      }
-
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-
-      .stat-card {
-        background: white;
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        text-align: center;
-        transition: transform 0.3s;
-      }
-
-      .stat-card:hover {
-        transform: translateY(-5px);
-      }
-
-      .stat-number {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #667eea;
-        margin-bottom: 10px;
-      }
-
-      .stat-label {
-        font-size: 1.1rem;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      .info-box {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      }
-
-      .status-indicator {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 8px;
-      }
-
-      .status-ok {
-        background: #10b981;
-      }
-
-      .status-warning {
-        background: #f59e0b;
-      }
-
-      .status-error {
-        background: #ef4444;
-      }
-
-      .footer {
-        text-align: center;
-        color: white;
-        margin-top: 40px;
-        opacity: 0.8;
-      }
-
-      .refresh-btn {
-        background: white;
-        color: #667eea;
-        border: none;
-        padding: 12px 30px;
-        border-radius: 25px;
-        font-size: 1rem;
-        font-weight: bold;
-        cursor: pointer;
-        margin: 20px auto;
-        display: block;
-        transition: all 0.3s;
-      }
-
-      .refresh-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-      }
-    </style>
+    <title>CarInsight | Dashboard técnico</title>
+    <meta
+      name="description"
+      content="Painel técnico do CarInsight com visão rápida de conversas, leads, recomendações e status operacional."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/dashboard.css" />
   </head>
 
   <body>
-    <div class="container">
-      <h1><img src="logo.svg" alt="CarInsight Logo" class="logo" />CarInsight Dashboard</h1>
-
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-number" id="conversations">-</div>
-          <div class="stat-label">Conversas</div>
+    <main class="dashboard-shell">
+      <header class="dashboard-hero">
+        <div class="hero-copy">
+          <a class="back-link" href="/">Voltar para a landing</a>
+          <p class="eyebrow">Painel técnico</p>
+          <div class="hero-title">
+            <img src="/logo.png" alt="Logo CarInsight" class="hero-logo" />
+            <div>
+              <h1>Dashboard técnico</h1>
+              <p class="hero-subtitle">Operação, métricas e status do motor de atendimento.</p>
+            </div>
+          </div>
+          <p>
+            Visão rápida do volume operacional e do status do sistema. No servidor principal, use o
+            secret administrativo para acessar métricas protegidas.
+          </p>
         </div>
-        <div class="stat-card">
-          <div class="stat-number" id="leads">-</div>
-          <div class="stat-label">Leads Gerados</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="recommendations">-</div>
-          <div class="stat-label">Recomendações</div>
-        </div>
-      </div>
 
-      <button class="refresh-btn" onclick="loadStats()">🔄 Atualizar</button>
+        <section class="auth-card">
+          <label for="admin-secret">Admin secret</label>
+          <input
+            id="admin-secret"
+            type="password"
+            autocomplete="off"
+            placeholder="Cole o x-admin-secret aqui"
+          />
+          <div class="auth-actions">
+            <button id="save-secret" class="button button-primary" type="button">Salvar</button>
+            <button id="clear-secret" class="button button-secondary" type="button">Limpar</button>
+          </div>
+          <p class="hint">
+            Dica: você também pode abrir esta página com <code>?secret=SEU_SEGREDO</code>.
+          </p>
+        </section>
+      </header>
 
-      <div class="info-box">
-        <h3><span class="status-indicator status-ok"></span>Sistema Ativo</h3>
-        <p>Última atualização: <span id="timestamp">-</span></p>
-      </div>
+      <section class="stats-grid">
+        <article class="stat-card">
+          <p>Conversas</p>
+          <strong id="conversations">-</strong>
+          <span>Threads abertas e persistidas</span>
+        </article>
+        <article class="stat-card">
+          <p>Leads</p>
+          <strong id="leads">-</strong>
+          <span>Leads criados e encaminhados</span>
+        </article>
+        <article class="stat-card">
+          <p>Recomendações</p>
+          <strong id="recommendations">-</strong>
+          <span>Sugestões geradas para clientes</span>
+        </article>
+      </section>
 
-      <div class="footer">
-        <p>CarInsight MVP - Assistente de Vendas com IA</p>
-      </div>
-    </div>
+      <section class="panel-grid">
+        <article class="panel">
+          <div class="panel-top">
+            <h2>Saúde da aplicação</h2>
+            <button id="refresh-all" class="button button-secondary" type="button">Atualizar</button>
+          </div>
+          <div class="status-line">
+            <span id="health-dot" class="status-dot status-idle"></span>
+            <strong id="health-status">Aguardando consulta</strong>
+          </div>
+          <p id="health-summary" class="panel-copy">
+            Execute uma atualização para carregar o snapshot público de saúde.
+          </p>
+          <dl class="health-grid">
+            <div>
+              <dt>Versão</dt>
+              <dd id="health-version">-</dd>
+            </div>
+            <div>
+              <dt>Uptime</dt>
+              <dd id="health-uptime">-</dd>
+            </div>
+            <div>
+              <dt>Timestamp</dt>
+              <dd id="health-timestamp">-</dd>
+            </div>
+          </dl>
+        </article>
 
-    <script>
-      async function loadStats() {
-        try {
-          const response = await fetch('/stats');
-          const data = await response.json();
+        <article class="panel">
+          <h2>Autenticação de métricas</h2>
+          <p id="stats-message" class="panel-copy">
+            Informe o secret administrativo se o endpoint <code>/stats</code> estiver protegido.
+          </p>
+          <ul class="info-list">
+            <li>Funciona sem secret no <code>api-test-server</code>.</li>
+            <li>No servidor principal, o secret é enviado no header <code>x-admin-secret</code>.</li>
+            <li>O valor salvo fica apenas no seu navegador via <code>localStorage</code>.</li>
+          </ul>
+        </article>
+      </section>
+    </main>
 
-          document.getElementById('conversations').textContent = data.conversations;
-          document.getElementById('leads').textContent = data.leads;
-          document.getElementById('recommendations').textContent = data.recommendations;
-          document.getElementById('timestamp').textContent = new Date(
-            data.timestamp
-          ).toLocaleString('pt-BR');
-        } catch (error) {
-          console.error('Error loading stats:', error);
-        }
-      }
-
-      // Load stats on page load
-      loadStats();
-
-      // Auto refresh every 30 seconds
-      setInterval(loadStats, 30000);
-    </script>
+    <script src="/dashboard.js" defer></script>
   </body>
 </html>
