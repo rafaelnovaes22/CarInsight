@@ -17,6 +17,8 @@ import { maskPhoneNumber } from '../lib/privacy';
 import { isQuietHours, getNextSendTime } from '../config/time-context';
 import { env } from '../config/env';
 
+const AI_FOLLOW_UP_NOTICE = '🤖 _Mensagem automática da assistente virtual CarInsight._';
+
 export type FollowUpType = 'abandoned_cart' | 'post_recommendation' | 'post_sale' | 'referral';
 
 interface ScheduleFollowUpOptions {
@@ -32,37 +34,39 @@ interface ScheduleFollowUpOptions {
 const MAX_SEQUENCE = 3;
 
 // Follow-up message templates
+const OPT_OUT_HINT = '_Digite PARAR para não receber mais mensagens._';
+
 const FOLLOW_UP_TEMPLATES: Record<
   FollowUpType,
   Record<number, (ctx: { name?: string; vehicle?: string }) => string>
 > = {
   abandoned_cart: {
     1: ctx =>
-      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Vi que você se interessou pelo ${ctx.vehicle || 'nosso estoque'}. Ficou alguma dúvida? Tô aqui pra ajudar! 😊\n\n_Digite PARAR para não receber mais mensagens._`,
+      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Vi que você se interessou pelo ${ctx.vehicle || 'nosso estoque'}. Ficou alguma dúvida? Tô aqui pra ajudar! 😊\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
     2: ctx =>
-      `${ctx.name ? `${ctx.name}, a` : 'A'}chei uma informação legal sobre o ${ctx.vehicle || 'carro que você viu'}: ele tem ótima avaliação de quem já comprou! Quer saber mais?\n\n_Digite PARAR para não receber mais mensagens._`,
+      `${ctx.name ? `${ctx.name}, a` : 'A'}chei uma informação legal sobre o ${ctx.vehicle || 'carro que você viu'}: ele tem ótima avaliação de quem já comprou! Quer saber mais?\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
     3: ctx =>
-      `O ${ctx.vehicle || 'carro que você viu'} ainda está disponível, mas já tiveram mais pessoas perguntando! Se quiser, é só chamar 😉\n\n_Digite PARAR para não receber mais mensagens._`,
+      `O ${ctx.vehicle || 'carro que você viu'} ainda está disponível, mas já tiveram mais pessoas perguntando! Se quiser, é só chamar 😉\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
   },
   post_recommendation: {
     1: ctx =>
-      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Você viu algumas opções com a gente. Gostou de alguma? Posso te ajudar com mais detalhes! 🚗\n\n_Digite PARAR para não receber mais mensagens._`,
+      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Você viu algumas opções com a gente. Gostou de alguma? Posso te ajudar com mais detalhes! 🚗\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
     2: ctx =>
-      `${ctx.name ? `${ctx.name}, s` : 'S'}e quiser agendar uma visita pra ver de perto, é só falar! Nosso time tá esperando pra te atender.\n\n_Digite PARAR para não receber mais mensagens._`,
+      `${ctx.name ? `${ctx.name}, s` : 'S'}e quiser agendar uma visita pra ver de perto, é só falar! Nosso time tá esperando pra te atender.\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
     3: _ctx =>
-      `Última mensagem! Se precisar de ajuda pra encontrar o carro ideal, estamos aqui. É só mandar um "oi" 😊\n\n_Digite PARAR para não receber mais mensagens._`,
+      `Última mensagem! Se precisar de ajuda pra encontrar o carro ideal, estamos aqui. É só mandar um "oi" 😊\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
   },
   post_sale: {
     1: ctx =>
-      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Como está o ${ctx.vehicle || 'carro novo'}? Curtindo? 🚗✨\n\n_Digite PARAR para não receber mais mensagens._`,
+      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Como está o ${ctx.vehicle || 'carro novo'}? Curtindo? 🚗✨\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
     2: ctx =>
-      `${ctx.name ? `${ctx.name}, q` : 'Q'}ueria saber: de 1 a 5, como foi sua experiência de compra com a gente? Seu feedback é muito importante!\n\n_Digite PARAR para não receber mais mensagens._`,
+      `${ctx.name ? `${ctx.name}, q` : 'Q'}ueria saber: de 1 a 5, como foi sua experiência de compra com a gente? Seu feedback é muito importante!\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
     3: _ctx =>
-      `Que bom ter você como cliente! Se tiver algum amigo procurando carro, pode mandar pra gente — adoramos indicações! 😊\n\n_Digite PARAR para não receber mais mensagens._`,
+      `Que bom ter você como cliente! Se tiver algum amigo procurando carro, pode mandar pra gente — adoramos indicações! 😊\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
   },
   referral: {
     1: ctx =>
-      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Temos novidades no estoque que combinam com seu perfil. Quer dar uma olhada? 🚗\n\n_Digite PARAR para não receber mais mensagens._`,
+      `Oi${ctx.name ? `, ${ctx.name}` : ''}! Temos novidades no estoque que combinam com seu perfil. Quer dar uma olhada? 🚗\n\n${AI_FOLLOW_UP_NOTICE}\n${OPT_OUT_HINT}`,
     2: _ctx => '',
     3: _ctx => '',
   },

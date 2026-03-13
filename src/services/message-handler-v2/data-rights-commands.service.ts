@@ -3,6 +3,8 @@ import { logger } from '../../lib/logger';
 import { maskPhoneNumber } from '../../lib/privacy';
 import { dataRightsService } from '../data-rights.service';
 
+const AI_NOTICE = '🤖 _Resposta automática da assistente virtual CarInsight._';
+
 export class MessageHandlerDataRightsCommandsService {
   async handle(phoneNumber: string, message: string): Promise<string | null> {
     const lowerMessage = message.toLowerCase().trim();
@@ -21,7 +23,7 @@ export class MessageHandlerDataRightsCommandsService {
           const success = await dataRightsService.deleteUserData(phoneNumber);
 
           if (success) {
-            return '\u2705 Seus dados foram excluidos com sucesso!\n\nObrigado por usar o CarInsight. Se precisar de algo no futuro, estaremos aqui! \uD83D\uDC4B';
+            return `\u2705 Seus dados foram excluidos com sucesso!\n\nObrigado por usar o CarInsight. Se precisar de algo no futuro, estaremos aqui! \uD83D\uDC4B\n\n${AI_NOTICE}`;
           }
 
           return '\u274C Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: suporte@faciliauto.com.br';
@@ -32,7 +34,7 @@ export class MessageHandlerDataRightsCommandsService {
         lowerMessage === 'cancelar'
       ) {
         await cache.del(confirmationKey);
-        return '\u2705 Operacao cancelada. Como posso ajudar voce?';
+        return `\u2705 Operacao cancelada. Como posso ajudar voce?\n\n${AI_NOTICE}`;
       } else {
         return '\u26A0\uFE0F Por favor, responda *SIM* para confirmar ou *NAO* para cancelar.';
       }
@@ -51,7 +53,7 @@ export class MessageHandlerDataRightsCommandsService {
 
       const hasData = await dataRightsService.hasUserData(phoneNumber);
       if (!hasData) {
-        return '\u2705 Nao encontramos dados associados ao seu numero.';
+        return `\u2705 Nao encontramos dados associados ao seu numero.\n\n${AI_NOTICE}`;
       }
 
       await cache.set(confirmationKey, 'DELETE_DATA', 300);
@@ -66,7 +68,8 @@ export class MessageHandlerDataRightsCommandsService {
         'Esta acao e *irreversivel*.\n\n' +
         'Tem certeza que deseja continuar?\n\n' +
         'Digite *SIM* para confirmar ou *NAO* para cancelar.\n\n' +
-        '_Esta confirmacao expira em 5 minutos._'
+        '_Esta confirmacao expira em 5 minutos._\n\n' +
+        AI_NOTICE
       );
     }
 
@@ -93,7 +96,8 @@ export class MessageHandlerDataRightsCommandsService {
           '\uD83D\uDCE7 Para receber seus dados completos em formato JSON, por favor entre em contato:\n' +
           '\u2022 Email: privacidade@faciliauto.com.br\n' +
           `\u2022 Assunto: "Exportacao de Dados - ${phoneNumber}"\n\n` +
-          'Responderemos em ate 15 dias uteis, conforme LGPD.'
+          'Responderemos em ate 15 dias uteis, conforme LGPD.\n\n' +
+          AI_NOTICE
         );
       } catch (error) {
         logger.error(

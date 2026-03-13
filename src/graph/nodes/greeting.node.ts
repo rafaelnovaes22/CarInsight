@@ -13,6 +13,7 @@ import { getTimeAwareVariation } from '../../config/conversation-style';
 import { getEmotionalCopy } from '../../config/emotional-copy';
 import {
   buildAskNameGreeting,
+  buildDisclosurePrefix,
   buildNamedDisclosurePrefix,
   buildVehicleInquiryGreeting,
 } from '../../config/disclosure.messages';
@@ -248,7 +249,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         metadata: buildNonLoopMetadata(),
         messages: [
           new AIMessage(
-            `Tudo bem! Vamos encontrar seu *${carText}*. 😊\n\nMe conta mais sobre o que você precisa? (Orçamento, ano, uso...)`
+            `${buildDisclosurePrefix()}\n\nTudo bem! Vamos encontrar seu *${carText}*. 😊\n\nMe conta mais sobre o que você precisa? (Orçamento, ano, uso...)`
           ),
         ],
       };

@@ -32,7 +32,9 @@ Foi um prazer ajudar você.
 
 Se precisar de algo, é só enviar uma mensagem novamente! 😊
 
-Até logo! 🚗`;
+Até logo! 🚗
+
+🤖 _Você foi atendido pela assistente virtual com IA do CarInsight._`;
 
 const WELCOME_RESPONSE = buildAskNameGreeting();
 
