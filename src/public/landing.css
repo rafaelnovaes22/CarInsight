@@ -565,14 +565,12 @@ h1 {
 
 .comparison-card-strong {
   background:
-    linear-gradient(180deg, rgba(12, 99, 214, 0.1), rgba(255, 255, 255, 0.96)),
-    var(--surface);
+    linear-gradient(180deg, rgba(12, 99, 214, 0.1), rgba(255, 255, 255, 0.96)), var(--surface);
 }
 
 .comparison-card-muted {
   background:
-    linear-gradient(180deg, rgba(244, 249, 255, 0.96), rgba(255, 255, 255, 0.94)),
-    var(--surface);
+    linear-gradient(180deg, rgba(244, 249, 255, 0.96), rgba(255, 255, 255, 0.94)), var(--surface);
 }
 
 .comparison-card ul {
