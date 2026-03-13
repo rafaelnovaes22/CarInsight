@@ -12,6 +12,38 @@ import {
 import { PrismaCheckpointer } from './persistence/prisma-saver';
 import { logger } from '../lib/logger';
 import { computeFiber, checkFiberGuard } from '../utils/conversation-fiber';
+import { AIMessage } from '@langchain/core/messages';
+import { getHandoffMessage } from '../config/conversation-style';
+import { generateWhatsAppLink } from './nodes/recommendation/utils/vehicle-helpers';
+import { addHandoffFlag } from '../utils/handoff-detector';
+
+/**
+ * Auto-handoff node: triggered by circuit breakers to escalate to a human
+ * instead of silently ending the conversation.
+ */
+async function autoHandoffNode(state: IGraphState): Promise<Partial<IGraphState>> {
+  const waInfo = generateWhatsAppLink(state.profile ?? undefined);
+  const linkMessage = waInfo
+    ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
+    : '';
+
+  const reason = state.metadata.autoHandoffReason || 'circuit_breaker';
+  logger.warn({ reason }, 'Auto-handoff: escalating to human');
+
+  return {
+    next: 'handoff',
+    messages: [
+      new AIMessage(
+        `Percebi que estou com dificuldade em te ajudar da melhor forma. ${getHandoffMessage()}${linkMessage}\n\n🤖 _Sou a assistente virtual do CarInsight e, neste caso, um atendente humano pode te ajudar melhor!_`
+      ),
+    ],
+    metadata: {
+      ...state.metadata,
+      lastMessageAt: Date.now(),
+      flags: addHandoffFlag(state.metadata.flags),
+    },
+  };
+}
 
 /**
  * Route function that determines the next node based on the 'next' state property
@@ -86,18 +118,20 @@ const routeNode = (state: IGraphState) => {
   if (isTechnicalLoop && state.metadata.loopCount >= 8) {
     logger.warn(
       { loopCount: state.metadata.loopCount, lastLoopNode: state.metadata.lastLoopNode },
-      'Router: Technical loop circuit breaker triggered'
+      'Router: Technical loop circuit breaker → auto handoff'
     );
-    return END;
+    state.metadata.autoHandoffReason = 'technical_loop';
+    return 'auto_handoff';
   }
 
   // Error circuit breaker remains global
   if (state.metadata.errorCount >= 5) {
     logger.warn(
       { errorCount: state.metadata.errorCount, nextNode },
-      'Router: Error circuit breaker triggered'
+      'Router: Error circuit breaker → auto handoff'
     );
-    return END;
+    state.metadata.autoHandoffReason = 'error_threshold';
+    return 'auto_handoff';
   }
 
   // Fiber stagnation circuit breaker: no progress after N routing decisions
@@ -105,9 +139,10 @@ const routeNode = (state: IGraphState) => {
   if (fiberStagnation >= 6) {
     logger.warn(
       { fiberStagnationCount: fiberStagnation, currentFiber: state.metadata.lastFiberValue },
-      'Router: Fiber stagnation circuit breaker triggered'
+      'Router: Fiber stagnation circuit breaker → auto handoff'
     );
-    return END;
+    state.metadata.autoHandoffReason = 'fiber_stagnation';
+    return 'auto_handoff';
   }
 
   // Fiber guard: prevent unintentional regression in conversation phase
@@ -192,6 +227,7 @@ export const createConversationGraph = (config?: { checkpointer?: any }) => {
   workflow.addNode('financing', financingNode);
   workflow.addNode('trade_in', tradeInNode);
   workflow.addNode('negotiation', negotiationNode);
+  workflow.addNode('auto_handoff', autoHandoffNode);
 
   // Set Entry Point - Cast to any if strict typing fails inappropriately due to version mismatch
   workflow.setEntryPoint('greeting' as any);
@@ -205,6 +241,7 @@ export const createConversationGraph = (config?: { checkpointer?: any }) => {
   workflow.addConditionalEdges('financing' as any, routeNode);
   workflow.addConditionalEdges('trade_in' as any, routeNode);
   workflow.addConditionalEdges('negotiation' as any, routeNode);
+  workflow.addConditionalEdges('auto_handoff' as any, routeNode);
 
   // Compile with Checkpointer
   // Use provided checkpointer or default to PrismaCheckpointer

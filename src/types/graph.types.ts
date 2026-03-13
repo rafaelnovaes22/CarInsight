@@ -32,6 +32,7 @@ export interface IGraphState {
     currentFiber?: number;
     lastFiberValue?: number;
     fiberStagnationCount?: number;
+    autoHandoffReason?: string;
   };
 
   // Legacy Quiz State (for backward compatibility during migration)

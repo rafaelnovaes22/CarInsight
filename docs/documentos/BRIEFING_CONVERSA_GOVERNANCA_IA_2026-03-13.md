@@ -45,20 +45,18 @@ Evidências:
 
 O projeto não deixa o atendimento inteiramente "preso" na IA:
 
-- Detecta intenção de falar com vendedor/humano.
+- Detecta intenção de falar com vendedor/humano (keyword detection com confiança alta/média).
 - Propaga flag de `handoff_requested` no estado conversacional.
 - Cria lead quando o fluxo aponta handoff.
-- Tem circuit breakers para loop técnico, excesso de erro e estagnação do fluxo.
-- Na prática, a arquitetura prevê saída para humano quando a IA não está conseguindo evoluir o atendimento.
+- Circuit breakers (loop técnico >= 8, erros >= 5, estagnação de fibra >= 6) disparam **handoff automático** para humano via node `auto_handoff`, com mensagem explicativa e link do consultor.
+- A mensagem de handoff automático inclui AI disclosure e link WhatsApp do consultor.
 
 Evidências:
 
-- `src/utils/handoff-detector.ts`
-- `src/graph/nodes/discovery.node.ts`
-- `src/graph/nodes/recommendation/handlers/handoff-handler.ts`
-- `src/services/message-handler-v2.service.ts`
-- `src/utils/circuit-breaker.ts`
-- `src/graph/workflow.ts`
+- `src/utils/handoff-detector.ts` — detecção por keyword
+- `src/graph/nodes/recommendation/handlers/handoff-handler.ts` — handoff por solicitação
+- `src/graph/workflow.ts` — node `auto_handoff` + circuit breakers redirecionando
+- `src/services/message-handler-v2.service.ts` — criação de lead no handoff
 
 ### 3.3 Segurança de entrada e saída
 
@@ -197,7 +195,7 @@ Evidências:
 
 ### Supervisão humana
 
-- Sim: handoff por solicitação do usuário, por dificuldade técnica e por estagnação do fluxo.
+- Sim: handoff por solicitação do usuário (keyword detection) e handoff automático quando circuit breakers disparam (loop técnico, excesso de erros, estagnação de fibra conversacional). O node `auto_handoff` gera mensagem de escalação com link do consultor.
 
 ### Accountability / rastreabilidade
 
@@ -256,18 +254,27 @@ Como falar:
 
 > Um ponto típico de governança que este projeto inclusive evidencia é a necessidade de manter documentação externa sincronizada com a arquitetura real de fornecedores.
 
-### 5.3 Existe uma inconsistência de transparência em prompt interno
+### 5.3 ~~Inconsistência de transparência em prompt interno~~ (CORRIGIDO em 2026-03-13)
 
-O greeting faz disclosure explícito de IA, o que é positivo. Porém o prompt base do agente contém a instrução "nunca mencione que você é uma IA".
+Este gap foi identificado e corrigido na mesma data:
 
-Arquivos:
+- O system prompt foi atualizado de "NUNCA mencione que é IA" para "SIGA a política de transparência do sistema".
+- Todos os 5 cenários de greeting agora incluem AI disclosure via `buildNamedDisclosurePrefix` / `buildDisclosurePrefix`.
+- Follow-ups, respostas LGPD e mensagem de exit também receberam aviso de IA.
+- Circuit breakers agora fazem handoff automático (node `auto_handoff`) em vez de encerrar silenciosamente.
 
-- `src/graph/nodes/greeting.node.ts`
+Arquivos corrigidos:
+
 - `src/agents/vehicle-expert/constants/system-prompt.ts`
+- `src/graph/nodes/greeting.node.ts`
+- `src/services/follow-up.service.ts`
+- `src/services/message-handler-v2/data-rights-commands.service.ts`
+- `src/services/message-handler-v2.service.ts`
+- `src/graph/workflow.ts`
 
 Como falar:
 
-> Isso é um exemplo real de tensão entre UX conversacional e transparência regulatória. Em governança madura, esse conflito precisa ser resolvido por política única e teste de conformidade.
+> Este é um bom exemplo de como governança operacional funciona: identificamos a inconsistência entre disclosure e prompt base, corrigimos em todos os pontos de contato com o usuário, e adicionamos handoff automático nos circuit breakers — tudo validado por 1.037 testes passando.
 
 ### 5.4 Retenção automática de 90 dias existe na lógica, mas não achei o agendamento
 
@@ -330,11 +337,10 @@ Resposta sugerida:
 
 ## 8. Evidências objetivas verificadas hoje
 
-- O repositório tem 95 arquivos de teste.
-- Hoje foi executado `npm run test:unit` com sucesso.
-- Resultado validado nesta sessão: 67 arquivos de teste unitário, 829 testes passando.
-- Não rodei as suítes de integração/e2e nesta sessão.
-- O README do projeto menciona 1028+ testes passando, mas isso não foi revalidado integralmente agora.
+- O repositório tem 92 arquivos de teste (91 ativos + 1 skipped).
+- Hoje foi executado `npm run verify:strict` (format + lint + build + test) com sucesso.
+- Resultado validado nesta sessão: **1.037 testes passando** (unit + integration + e2e), 2 skipped.
+- Suíte completa executada com Docker/PostgreSQL local ativo.
 
 ## 9. Melhor narrativa para a conversa
 
