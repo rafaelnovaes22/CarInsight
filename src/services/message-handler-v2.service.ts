@@ -9,6 +9,7 @@ import { MessageHandlerFollowUpService } from './message-handler-v2/follow-up.se
 import { MessageHandlerLeadService } from './message-handler-v2/lead.service';
 import { MessageHandlerPersistenceService } from './message-handler-v2/persistence.service';
 import { MessageHandlerSessionService } from './message-handler-v2/session.service';
+import { buildAskNameGreeting, buildRestartGreeting } from '../config/disclosure.messages';
 
 const EXIT_COMMANDS = ['sair', 'encerrar', 'tchau', 'bye', 'adeus'];
 const RESTART_COMMANDS = ['reiniciar', 'recomeçar', 'voltar', 'cancelar', 'reset', 'nova busca'];
@@ -33,23 +34,9 @@ Se precisar de algo, é só enviar uma mensagem novamente! 😊
 
 Até logo! 🚗`;
 
-const WELCOME_RESPONSE = `👋 Olá! Sou a assistente virtual do *CarInsight*.
+const WELCOME_RESPONSE = buildAskNameGreeting();
 
-🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
-
-💡 _A qualquer momento, digite *sair* para encerrar a conversa._
-
-Para começar, qual é o seu nome?`;
-
-const RESTART_RESPONSE = `🔄 Conversa reiniciada!
-
-👋 Olá! Sou a assistente virtual do *CarInsight*.
-
-🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.
-
-💡 _A qualquer momento, digite *sair* para encerrar a conversa._
-
-Para começar, qual é o seu nome?`;
+const RESTART_RESPONSE = buildRestartGreeting();
 
 /**
  * Options for audio message handling

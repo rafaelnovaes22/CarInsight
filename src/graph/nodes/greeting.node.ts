@@ -11,6 +11,11 @@ import { AIMessage } from '@langchain/core/messages';
 import { getTimeSlot, isLateNight } from '../../config/time-context';
 import { getTimeAwareVariation } from '../../config/conversation-style';
 import { getEmotionalCopy } from '../../config/emotional-copy';
+import {
+  buildAskNameGreeting,
+  buildNamedDisclosurePrefix,
+  buildVehicleInquiryGreeting,
+} from '../../config/disclosure.messages';
 import { featureFlags } from '../../lib/feature-flags';
 import { hasFlag, addFlag } from '../../utils/state-flags';
 
@@ -163,9 +168,6 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
 
     const searchResult = await vehicleExpert.chat(message, searchContext);
 
-    // Greeting + AI Disclosure
-    const greetingPart = `👋 Olá, ${possibleName}! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n`;
-
     return {
       next: searchResult.canRecommend ? 'recommendation' : 'discovery', // Route based on result
       profile: {
@@ -175,7 +177,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
       },
       recommendations: searchResult.recommendations || [],
       metadata: buildNonLoopMetadata(),
-      messages: [new AIMessage(greetingPart + searchResult.response)],
+      messages: [new AIMessage(`${buildNamedDisclosurePrefix(possibleName)}\n\n${searchResult.response}`)],
     };
   }
 
@@ -262,22 +264,18 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
         loopCount: 0,
         lastLoopNode: undefined,
       },
-      messages: [
-        new AIMessage(
-          `👋 Olá! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\nVi que você busca um *${carText}*. Ótima escolha! 🚗\n\nQual é o seu nome?`
-        ),
-      ],
+      messages: [new AIMessage(buildVehicleInquiryGreeting(carText))],
     };
   }
 
   // SCENARIO E: Confused / No info
   const emotionalEnabledE = featureFlags.isEnabled('ENABLE_EMOTIONAL_SELLING');
   const timeSlotE = getTimeSlot();
-  let greetingTextE = `👋 Olá! Sou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`;
+  let greetingTextE = buildAskNameGreeting();
 
   if (emotionalEnabledE && isLateNight()) {
     const opener = getTimeAwareVariation('LATE_NIGHT_OPENERS', timeSlotE);
-    greetingTextE = `${opener}\n\nSou a assistente virtual do *CarInsight*.\n\n🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas, posso transferir você para nossa equipe humana.\n\n💡 _A qualquer momento, digite *sair* para encerrar a conversa._\n\nPara começar, qual é o seu nome?`;
+    greetingTextE = buildAskNameGreeting({ opener });
   }
 
   return {

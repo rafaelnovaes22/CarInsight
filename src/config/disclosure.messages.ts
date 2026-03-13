@@ -3,19 +3,53 @@
  * Mensagens de transparência sobre uso de IA
  */
 
+const ASSISTANT_INTRO = 'Sou a assistente virtual do *CarInsight*.';
+const AI_DISCLOSURE_NOTICE =
+  '🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas ou dúvidas complexas, posso transferir você para nossa equipe humana.';
+const DATA_NOTICE =
+  '📋 *Seus dados:* Usamos suas mensagens apenas para atendê-lo melhor. Você pode solicitar a exclusão dos seus dados a qualquer momento.';
+const EXIT_HINT = '💡 _A qualquer momento, digite *sair* para encerrar a conversa._';
+
+function joinSections(sections: Array<string | undefined | null | false>): string {
+  return sections
+    .filter((section): section is string => Boolean(section && section.trim()))
+    .join('\n\n');
+}
+
+function getGreetingSections(opener?: string): string[] {
+  if (opener?.trim()) {
+    return [opener.trim(), ASSISTANT_INTRO];
+  }
+
+  return [`👋 Olá! ${ASSISTANT_INTRO}`];
+}
+
+interface GreetingBuilderOptions {
+  opener?: string;
+  includeDataNotice?: boolean;
+  includeExitHint?: boolean;
+  question: string;
+}
+
+function buildGreetingMessage(options: GreetingBuilderOptions): string {
+  return joinSections([
+    ...getGreetingSections(options.opener),
+    AI_DISCLOSURE_NOTICE,
+    options.includeDataNotice ? DATA_NOTICE : '',
+    options.includeExitHint ? EXIT_HINT : '',
+    options.question,
+  ]);
+}
+
 export const DISCLOSURE_MESSAGES = {
   /**
    * Primeira mensagem - Aviso obrigatório de IA
    */
-  INITIAL_GREETING: `👋 Olá! Sou a assistente virtual do *CarInsight*.
-
-🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas ou dúvidas complexas, posso transferir você para nossa equipe humana.
-
-📋 *Seus dados:* Usamos suas mensagens apenas para atendê-lo melhor. Você pode solicitar a exclusão dos seus dados a qualquer momento.
-
-💡 _A qualquer momento, digite *sair* para encerrar a conversa._
-
-Como posso ajudar você hoje?`,
+  INITIAL_GREETING: buildGreetingMessage({
+    includeDataNotice: true,
+    includeExitHint: true,
+    question: 'Como posso ajudar você hoje?',
+  }),
 
   /**
    * Rodapé para respostas com informações críticas
@@ -79,7 +113,60 @@ Como posso ajudar você hoje?`,
     HUMAN_INTERACTION: 'Interação com humano',
     AI_CONFIDENCE_LOW: 'IA com baixa confiança - handoff recomendado',
   },
+
+  BASE: {
+    ASSISTANT_INTRO,
+    AI_DISCLOSURE_NOTICE,
+    DATA_NOTICE,
+    EXIT_HINT,
+  },
 } as const;
+
+export function buildDisclosurePrefix(opener?: string): string {
+  return joinSections([...getGreetingSections(opener), AI_DISCLOSURE_NOTICE]);
+}
+
+export function buildNamedDisclosurePrefix(name: string): string {
+  return joinSections([`👋 Olá, ${name}! ${ASSISTANT_INTRO}`, AI_DISCLOSURE_NOTICE]);
+}
+
+export function buildInitialGreeting(options?: {
+  opener?: string;
+  includeDataNotice?: boolean;
+  includeExitHint?: boolean;
+}): string {
+  return buildGreetingMessage({
+    opener: options?.opener,
+    includeDataNotice: options?.includeDataNotice ?? true,
+    includeExitHint: options?.includeExitHint ?? true,
+    question: 'Como posso ajudar você hoje?',
+  });
+}
+
+export function buildAskNameGreeting(options?: {
+  opener?: string;
+  includeDataNotice?: boolean;
+  includeExitHint?: boolean;
+}): string {
+  return buildGreetingMessage({
+    opener: options?.opener,
+    includeDataNotice: options?.includeDataNotice ?? false,
+    includeExitHint: options?.includeExitHint ?? true,
+    question: 'Para começar, qual é o seu nome?',
+  });
+}
+
+export function buildRestartGreeting(): string {
+  return joinSections(['🔄 Conversa reiniciada!', buildAskNameGreeting()]);
+}
+
+export function buildVehicleInquiryGreeting(vehicleText: string): string {
+  return joinSections([
+    buildDisclosurePrefix(),
+    `Vi que você busca um *${vehicleText}*. Ótima escolha! 🚗`,
+    'Qual é o seu nome?',
+  ]);
+}
 
 /**
  * Helper para adicionar disclaimer baseado no tipo de resposta
