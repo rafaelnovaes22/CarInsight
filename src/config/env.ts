@@ -45,6 +45,9 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(10),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
 
+  // Domain system
+  DOMAIN_ID: z.string().default('automotive'),
+
   // Feature flags
   ENABLE_CONVERSATIONAL_MODE: z
     .string()

@@ -98,8 +98,8 @@ server.log
 RECOMENDACOES_*.md
 .env.save*
 
-# Core dumps
-core
+# Core dumps (root only, not src/core/)
+/core
 
 # CLAUDE CODE (local only)
 CLAUDE.local.md
