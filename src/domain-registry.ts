@@ -2,9 +2,8 @@
  * Domain Registry
  *
  * Central registry that resolves the active domain plugin based on DOMAIN_ID.
- *
- * Phase 0: returns only 'automotive' (hardcoded).
- * Future phases will dynamically load domain plugins from src/domains/.
+ * Automotive plugin is registered by default. Additional domains can be
+ * registered at startup via registerDomain().
  */
 
 import type { DomainPlugin } from './core/types';
@@ -23,6 +22,13 @@ export function registerDomain(domainId: string, loader: () => Promise<DomainPlu
   }
   registry.set(domainId, loader);
 }
+
+// ── Built-in domains ──
+
+registerDomain('automotive', async () => {
+  const { automotiveDomainPlugin } = await import('./domains/automotive');
+  return automotiveDomainPlugin;
+});
 
 /**
  * Get the active domain plugin based on DOMAIN_ID env var.
