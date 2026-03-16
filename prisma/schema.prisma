@@ -11,6 +11,7 @@ datasource db {
 
 model Vehicle {
   id                   String           @id @default(uuid())
+  domainId             String           @default("automotive")
   externalId           String?          @unique
   marca                String
   modelo               String
@@ -88,11 +89,13 @@ model Vehicle {
   @@index([scoreEconomia])
   @@index([scoreEspaco])
   @@index([categoriaVeiculo])
+  @@index([domainId])
   @@index([segmentoPreco])
 }
 
 model Conversation {
   id              String           @id @default(uuid())
+  domainId        String           @default("automotive")
   phoneNumber     String
   customerName    String?
   status          String           @default("active")
@@ -113,6 +116,8 @@ model Conversation {
   messages        Message[]
   recommendations Recommendation[]
   followUps       FollowUp[]
+
+  @@index([domainId])
 }
 
 model FollowUp {
@@ -183,6 +188,7 @@ model Recommendation {
 
 model Lead {
   id                 String       @id @default(uuid())
+  domainId           String       @default("automotive")
   conversationId     String       @unique
   name               String
   phone              String
@@ -210,6 +216,7 @@ model Lead {
   followUpOptIn      Boolean      @default(true)
   conversation       Conversation @relation(fields: [conversationId], references: [id])
 
+  @@index([domainId])
   @@index([phone])
   @@index([status])
   @@index([createdAt])

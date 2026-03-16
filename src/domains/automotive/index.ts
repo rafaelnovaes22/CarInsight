@@ -78,20 +78,26 @@ const automotiveFiberDefinition: FiberDefinition = {
   },
 };
 
-// ── Search Adapter (placeholder — real implementation in Phase 3) ──
+// ── Search Adapter (wraps VehicleSearchAdapter → ISearchAdapter) ──
 
 const automotiveSearchAdapter: ISearchAdapter = {
-  async search(
-    _query: string,
-    _filters: Record<string, unknown>
-  ): Promise<GenericRecommendation[]> {
-    // Phase 3: wire up VehicleSearchAdapterService here
-    return [];
+  async search(query: string, filters: Record<string, unknown>): Promise<GenericRecommendation[]> {
+    const { vehicleSearchAdapter } = await import('../../services/vehicle-search-adapter.service');
+    const results = await vehicleSearchAdapter.search(query, filters);
+    return results.map(r => ({
+      itemId: r.vehicleId,
+      matchScore: r.matchScore,
+      reasoning: r.reasoning,
+      highlights: r.highlights || [],
+      concerns: r.concerns || [],
+      item: r.vehicle as unknown as Record<string, unknown>,
+    }));
   },
 
-  async getById(_id: string): Promise<Record<string, unknown> | null> {
-    // Phase 3: wire up prisma.vehicle.findUnique here
-    return null;
+  async getById(id: string): Promise<Record<string, unknown> | null> {
+    const { prisma } = await import('../../lib/prisma');
+    const vehicle = await prisma.vehicle.findUnique({ where: { id } });
+    return vehicle as unknown as Record<string, unknown> | null;
   },
 };
 
