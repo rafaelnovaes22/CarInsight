@@ -30,6 +30,11 @@ registerDomain('automotive', async () => {
   return automotiveDomainPlugin;
 });
 
+registerDomain('healthcare', async () => {
+  const { healthcareDomainPlugin } = await import('./domains/healthcare');
+  return healthcareDomainPlugin;
+});
+
 /**
  * Get the active domain plugin based on DOMAIN_ID env var.
  * Throws if the domain is not registered.

@@ -11,3 +11,10 @@ export {
   AUTOMOTIVE_DOMAIN_VERSION,
   automotiveDomainPlugin,
 } from './automotive';
+
+export {
+  HEALTHCARE_DOMAIN_ID,
+  HEALTHCARE_DOMAIN_NAME,
+  HEALTHCARE_DOMAIN_VERSION,
+  healthcareDomainPlugin,
+} from './healthcare';
