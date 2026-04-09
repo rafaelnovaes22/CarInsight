@@ -111,16 +111,17 @@ class InMemoryVectorStore {
   ): Promise<number[]> {
     const embedding = await generateEmbedding(description);
 
-    // Salvar no banco para próxima inicialização
-    // Nota: vectorString é gerado internamente (não é input do usuário), seguro para interpolação
+    // Salvar no banco para próxima inicialização (todos os valores como bind parameters)
     const vectorString = `[${embedding.join(',')}]`;
     try {
       await prisma.$executeRawUnsafe(
         `UPDATE "Vehicle"
-         SET "embedding" = '${vectorString}'::vector,
-             "embeddingModel" = 'text-embedding-3-small',
-             "embeddingGeneratedAt" = $1
-         WHERE id = $2`,
+         SET "embedding" = $1::vector,
+             "embeddingModel" = $2,
+             "embeddingGeneratedAt" = $3
+         WHERE id = $4`,
+        vectorString,
+        'text-embedding-3-small',
         new Date(),
         vehicleId
       );

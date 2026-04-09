@@ -79,8 +79,11 @@ export async function negotiationNode(state: IGraphState): Promise<Partial<IGrap
     profile: updatedProfile,
     // Update recommendations if changed? Usually they persist unless filtered
     recommendations: response.recommendations || state.recommendations,
-    messages: [new AIMessage(response.response)],
   };
+
+  if (response.response?.trim()) {
+    result.messages = [new AIMessage(response.response)];
+  }
 
   // Propagate handoff_requested flag if detected
   if (isHandoffRequest) {

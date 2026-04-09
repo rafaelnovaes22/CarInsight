@@ -3,6 +3,7 @@ import { greetingNode } from '../../../src/graph/nodes/greeting.node';
 import { discoveryNode } from '../../../src/graph/nodes/discovery.node';
 import { searchNode } from '../../../src/graph/nodes/search.node';
 import { recommendationNode } from '../../../src/graph/nodes/recommendation';
+import { negotiationNode } from '../../../src/graph/nodes/negotiation.node';
 import { createInitialState } from '../../../src/types/graph.types';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 
@@ -518,6 +519,46 @@ describe('LangGraph Nodes Logic', () => {
 
       expect(result.next).toBe('negotiation');
       expect(result.messages).toBeUndefined();
+    });
+  });
+
+  describe('negotiationNode', () => {
+    it('should delegate trade-in follow-up without emitting an empty AI message', async () => {
+      const state = createInitialState();
+      state.phoneNumber = '5511999999999';
+      state.profile = {
+        _showedRecommendation: true,
+        _lastShownVehicles: [{ vehicleId: 'v1', brand: 'BMW', model: 'X1', year: 2022 }],
+      } as any;
+      state.recommendations = [
+        {
+          vehicleId: 'v1',
+          matchScore: 96,
+          reasoning: 'Boa opcao',
+          highlights: ['Espaco'],
+          concerns: [],
+          vehicle: { id: 'v1', brand: 'BMW', model: 'X1' } as any,
+        },
+      ];
+      state.messages = [new HumanMessage('Tenho um carro na troca')];
+
+      mockChat.mockResolvedValue({
+        response: '',
+        extractedPreferences: {
+          hasTradeIn: true,
+          _awaitingTradeInDetails: true,
+          _showedRecommendation: true,
+          _lastShownVehicles: state.profile._lastShownVehicles,
+        },
+        recommendations: state.recommendations,
+        nextMode: 'trade_in',
+      });
+
+      const result = await negotiationNode(state);
+
+      expect(result.next).toBe('trade_in');
+      expect(result.messages).toBeUndefined();
+      expect(result.profile?.hasTradeIn).toBe(true);
     });
   });
 });

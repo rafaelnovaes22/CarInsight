@@ -52,7 +52,14 @@ export class LangGraphConversation {
 
       const finalState = result as IGraphState;
       const lastMessage = finalState.messages[finalState.messages.length - 1];
-      const responseContent = lastMessage?.content?.toString() || '';
+      let responseContent = lastMessage?.content?.toString() || '';
+
+      // Guard: se não há resposta de IA (node retornou sem messages), usar fallback
+      if (!responseContent.trim()) {
+        logger.warn({ conversationId, nextNode: finalState.next }, 'LangGraph: Empty response');
+        responseContent =
+          'Como posso ajudar você? Se preferir, digite "vendedor" para falar com nossa equipe. 😊';
+      }
 
       logger.info(
         {

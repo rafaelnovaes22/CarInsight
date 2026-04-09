@@ -344,6 +344,14 @@ export class WhatsAppMetaService implements IWhatsAppService {
    * Send text message (Implementation of IWhatsAppService)
    */
   async sendMessage(to: string, text: string, options?: SendMessageOptions): Promise<void> {
+    if (!text || !text.trim()) {
+      logger.warn(
+        { to: this.maskPhoneNumber(to) },
+        '⚠️ Attempted to send empty message — skipping Meta API call'
+      );
+      return;
+    }
+
     const MAX_WHATSAPP_LENGTH = 4096;
     let body = text;
     if (body.length > MAX_WHATSAPP_LENGTH) {
