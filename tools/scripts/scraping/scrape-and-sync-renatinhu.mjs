@@ -556,7 +556,21 @@ async function fetchVehicleDetails(discovered) {
 
     // Priorizar dados da pagina de detalhes, fallback para dados do estoque
     const preco = detailData.preco || priceMap[vehicle.id] || null;
-    const km = detailData.km || kmMap[vehicle.id] || 0;
+
+    // KM: usar detail page; só aceitar fallback do estoque se for plausível
+    // (evitar contaminação de blocos HTML de veículos vizinhos)
+    let km = detailData.km;
+    if (!km) {
+      const fallbackKm = kmMap[vehicle.id] || 0;
+      const currentYear = new Date().getFullYear();
+      const vehicleAge = currentYear - parsed.ano;
+      // Rejeitar km < 500 para veículos com mais de 1 ano (dado claramente errado)
+      if (fallbackKm >= 500 || vehicleAge <= 1) {
+        km = fallbackKm;
+      } else {
+        km = 0;
+      }
+    }
     const opcionais = detailData.opcionais;
 
     const cambio = detectCambio(vehicle.nome, opcionais, cambioMap[vehicle.id]);

@@ -88,7 +88,7 @@ export class VectorSearchService {
       const similarVehiclesData = await prisma.$queryRaw<any[]>`
         SELECT v.*, 1 - (v.embedding <=> ${vectorString}::vector) as "semanticScore"
         FROM "Vehicle" v
-        WHERE v.disponivel = true AND v.embedding IS NOT NULL
+        WHERE v.disponivel = true AND v.embedding IS NOT NULL AND v.preco > 0 AND v."fotoUrl" IS NOT NULL
         ORDER BY v.embedding <=> ${vectorString}::vector
         LIMIT ${limit * 2}
       `;
@@ -157,7 +157,7 @@ export class VectorSearchService {
     limit: number
   ): Promise<ScoredVehicle[]> {
     try {
-      const where: any = { disponivel: true };
+      const where: any = { disponivel: true, preco: { gt: 0 }, fotoUrl: { not: null } };
 
       if (criteria.budget) {
         where.preco = { lte: criteria.budget * 1.1 };

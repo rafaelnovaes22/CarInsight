@@ -321,6 +321,8 @@ export class VehicleSearchAdapter {
             notIn: filters.excludeIds || [],
           },
           disponivel: true,
+          preco: { gt: 0 },
+          fotoUrl: { not: null },
           // CRITICAL: Exclude motorcycles when searching for cars
           ...(filters.excludeMotorcycles && {
             carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
@@ -477,6 +479,8 @@ export class VehicleSearchAdapter {
       const dbVehicles = await prisma.vehicle.findMany({
         where: {
           disponivel: true,
+          preco: { gt: 0 },
+          fotoUrl: { not: null },
           // CRITICAL: Exclude motorcycles when searching for cars
           ...(searchFilters.excludeMotorcycles && {
             carroceria: { notIn: ['Moto', 'moto', 'MOTO', 'Motocicleta', 'motocicleta'] },
@@ -711,6 +715,8 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
+        preco: { gt: 0 },
+        fotoUrl: { not: null },
         id: { notIn: filters.excludeIds || [] },
         // CRITICAL: Exclude motorcycles when searching for cars
         ...(filters.excludeMotorcycles && {
@@ -824,6 +830,8 @@ export class VehicleSearchAdapter {
     const vehicles = await prisma.vehicle.findMany({
       where: {
         disponivel: true,
+        preco: { gt: 0 },
+        fotoUrl: { not: null },
         id: { notIn: filters.excludeIds || [] },
         // CRITICAL: Exclude motorcycles when searching for cars
         ...(filters.excludeMotorcycles && {
