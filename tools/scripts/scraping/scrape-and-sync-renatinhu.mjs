@@ -282,61 +282,62 @@ async function discoverVehicles() {
     }
   }
 
-  // Extrair precos: procurar padroes R$ proximos a cada veiculo
-  // O HTML tipicamente tem cards com id, nome, preco, km, etc.
+  // Dividir HTML por cards de veículo — cada card começa com a classe listing-list-loop
+  // Isso evita contaminação de dados entre veículos adjacentes
   const priceMap = {};
   const kmMap = {};
   const combustivelMap = {};
   const cambioMap = {};
   const fotoMap = {};
 
-  // Tentar extrair informacoes por blocos de veiculo
-  // Cada card geralmente tem Det(ID, 'nome') seguido de info
-  for (const vehicle of vehicles) {
-    // Buscar o bloco ao redor do veículo no HTML
-    const detPattern = `Det\\(${vehicle.id},`;
-    const detIndex = html.search(new RegExp(detPattern));
-    if (detIndex === -1) continue;
+  // Separar cada card pelo seu delimitador CSS
+  const cardDelimiter = "<div class='listing-list-loop'>";
+  const cardChunks = html.split(cardDelimiter);
 
-    // Pegar um trecho de HTML antes e depois para buscar dados contextuais
-    const start = Math.max(0, detIndex - 2000);
-    const end = Math.min(html.length, detIndex + 2000);
-    const block = html.substring(start, end);
+  for (const chunk of cardChunks) {
+    // Encontrar o ID do veículo neste card (qualquer Det(ID, ...))
+    const idMatch = chunk.match(/Det\((\d+),/);
+    if (!idMatch) continue;
+    const vehicleId = parseInt(idMatch[1]);
 
-    // Preco
-    const precoMatch = block.match(/R\$\s*([\d.,]+)/);
+    // Preco — usar apenas este card
+    const precoMatch = chunk.match(/R\$\s*([\d.,]+)/);
     if (precoMatch) {
-      priceMap[vehicle.id] = parsePrice(`R$ ${precoMatch[1]}`);
+      priceMap[vehicleId] = parsePrice(`R$ ${precoMatch[1]}`);
     }
 
-    // KM
-    const kmMatch =
-      block.match(/Quilometragem[:\s]*([\d.]+)\s*Km/i) ||
-      block.match(/([\d.]+)\s*Km/i) ||
-      block.match(/KM[:\s]*([\d.]+)/i);
-    if (kmMatch) {
-      kmMap[vehicle.id] = parseKm(kmMatch[1]);
+    // KM — priorizar o campo "Quilometragem" explícito dentro do card
+    const kmExplicit =
+      chunk.match(/Quilometragem<\/div><\/div><div class='value[^']*'>([\d.,\s]+)\s*Km/i) ||
+      chunk.match(/class='value[^']*'>([\d.,]+)\s*Km/i) ||
+      chunk.match(/Quilometragem[\s\S]{0,200}?>([\d.,]+)\s*Km/i);
+    if (kmExplicit) {
+      kmMap[vehicleId] = parseKm(kmExplicit[1]);
     }
 
-    // Combustivel
-    const combMatch = block.match(/Combust[ií]vel[:\s]*([A-Za-zÀ-ú]+)/i);
+    // Combustivel — campo explícito no card
+    const combMatch =
+      chunk.match(/Combust[ií]vel[\s\S]{0,200}?class='value[^']*'>([^<]+)</i) ||
+      chunk.match(/Combust[ií]vel[:\s]*([A-Za-zÀ-ú]+)/i);
     if (combMatch) {
-      combustivelMap[vehicle.id] = combMatch[1].trim();
+      combustivelMap[vehicleId] = combMatch[1].trim();
     }
 
-    // Cambio
-    const cambioMatch = block.match(/C[aâ]mbio[:\s]*([A-Za-zÀ-ú]+)/i);
+    // Cambio — campo explícito no card
+    const cambioMatch =
+      chunk.match(/C[aâ]mbio[\s\S]{0,200}?class='value[^']*'>([^<]+)</i) ||
+      chunk.match(/C[aâ]mbio[:\s]*([A-Za-zÀ-ú]+)/i);
     if (cambioMatch) {
-      cambioMap[vehicle.id] = cambioMatch[1].trim();
+      cambioMap[vehicleId] = cambioMatch[1].trim();
     }
 
-    // Foto
-    const fotoMatch = block.match(/<img[^>]+src=["']([^"']*394_\d+[^"']*\.jpg)["']/i);
+    // Foto — apenas a foto deste card
+    const fotoMatch = chunk.match(/<img[^>]+src=["']([^"']*394_\d+[^"']*\.jpg)["']/i);
     if (fotoMatch) {
       let fotoUrl = fotoMatch[1];
       if (fotoUrl.startsWith('//')) fotoUrl = 'https:' + fotoUrl;
       else if (!fotoUrl.startsWith('http')) fotoUrl = CONFIG.baseUrl + '/' + fotoUrl;
-      fotoMap[vehicle.id] = fotoUrl;
+      fotoMap[vehicleId] = fotoUrl;
     }
   }
 
@@ -557,20 +558,8 @@ async function fetchVehicleDetails(discovered) {
     // Priorizar dados da pagina de detalhes, fallback para dados do estoque
     const preco = detailData.preco || priceMap[vehicle.id] || null;
 
-    // KM: usar detail page; só aceitar fallback do estoque se for plausível
-    // (evitar contaminação de blocos HTML de veículos vizinhos)
-    let km = detailData.km;
-    if (!km) {
-      const fallbackKm = kmMap[vehicle.id] || 0;
-      const currentYear = new Date().getFullYear();
-      const vehicleAge = currentYear - parsed.ano;
-      // Rejeitar km < 500 para veículos com mais de 1 ano (dado claramente errado)
-      if (fallbackKm >= 500 || vehicleAge <= 1) {
-        km = fallbackKm;
-      } else {
-        km = 0;
-      }
-    }
+    // KM: usar detail page; fallback para dados do estoque (parsing por card isolado)
+    let km = detailData.km || kmMap[vehicle.id] || 0;
     const opcionais = detailData.opcionais;
 
     const cambio = detectCambio(vehicle.nome, opcionais, cambioMap[vehicle.id]);
