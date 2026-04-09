@@ -121,9 +121,10 @@ describe('Post-Recommendation Handlers', () => {
       expect(result.response?.response).toContain("Renatinhu's Cars");
     });
 
-    it('should ask for user name', () => {
+    it('should say seller will contact from another number', () => {
       const result = handleSchedule(mockContext);
-      expect(result.response?.response).toContain('nome completo');
+      expect(result.response?.response).toContain('outro número');
+      expect(result.response?.response).toContain('Já encaminhei seu atendimento');
     });
   });
 
