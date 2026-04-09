@@ -29,8 +29,8 @@ describe('AI transparency compliance', () => {
     const prefix = buildNamedDisclosurePrefix('Rafael');
 
     expect(prefix).toContain('Rafael');
-    expect(prefix).toContain('assistente virtual');
-    // Aviso de IA não é repetido após já ter sido exibido na saudação inicial
+    // Apresentação e aviso de IA não são repetidos após já exibidos na saudação inicial
+    expect(prefix).not.toContain('assistente virtual');
     expect(prefix).not.toContain('inteligência artificial');
   });
 

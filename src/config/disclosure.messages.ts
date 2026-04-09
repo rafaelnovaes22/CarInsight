@@ -127,7 +127,7 @@ export function buildDisclosurePrefix(opener?: string): string {
 }
 
 export function buildNamedDisclosurePrefix(name: string): string {
-  return `👋 Olá, ${name}! ${ASSISTANT_INTRO}`;
+  return `👋 Olá, ${name}!`;
 }
 
 export function buildInitialGreeting(options?: {
