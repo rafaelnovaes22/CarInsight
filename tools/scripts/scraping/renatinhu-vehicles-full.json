@@ -47,7 +47,7 @@
     "cambio": "Automático",
     "portas": 4,
     "carroceria": "Sedan",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_796_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_796_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_796_2-1.jpg",
@@ -82,7 +82,7 @@
     "cambio": "Manual",
     "portas": 4,
     "carroceria": "Sedan",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_748_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_748_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_748_2-1.jpg",
@@ -117,7 +117,7 @@
     "cambio": "Automático",
     "portas": 4,
     "carroceria": "Sedan",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_820_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_820_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_820_2-1.jpg",
@@ -257,7 +257,7 @@
     "cambio": "Manual",
     "portas": 4,
     "carroceria": "Picape",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_822_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_822_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_822_2-1.jpg",
@@ -327,7 +327,7 @@
     "cambio": "Automático",
     "portas": 4,
     "carroceria": "Minivan",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_826_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_826_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_826_2-1.jpg",
@@ -432,7 +432,7 @@
     "cambio": "Manual",
     "portas": 4,
     "carroceria": "Hatch",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_824_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_824_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_824_2-1.jpg",
@@ -817,7 +817,7 @@
     "cambio": "Automático",
     "portas": 4,
     "carroceria": "Hatch",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_808_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_808_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_808_2-1.jpg",
@@ -922,7 +922,7 @@
     "cambio": "Manual",
     "portas": 4,
     "carroceria": "Hatch",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_825_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_825_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_825_2-1.jpg",
@@ -992,7 +992,7 @@
     "cambio": "Manual",
     "portas": 2,
     "carroceria": "Hatch",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_823_1-1.jpg",
+    "fotoUrl": null,
     "fotosUrls": [
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_823_1-1.jpg",
       "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_823_2-1.jpg",
@@ -1262,8 +1262,8 @@
   {
     "id": 788,
     "marca": "TOYOTA",
-    "modelo": "COROLLA",
-    "versao": "CROSS 1.8 VVT-I HYBRID XRV CVT 4P",
+    "modelo": "COROLLA CROSS",
+    "versao": "1.8 VVT-I HYBRID XRV CVT 4P",
     "ano": 2022,
     "km": 48497,
     "preco": 149990,

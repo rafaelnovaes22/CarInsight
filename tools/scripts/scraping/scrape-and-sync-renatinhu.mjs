@@ -220,6 +220,19 @@ function parseVehicleName(nome) {
     versaoStart = 2;
   }
 
+  // Modelos compostos: COROLLA CROSS, COROLLA VERSO, etc.
+  const COMPOUND_MODELS = [
+    ['corolla', 'cross'],
+    ['corolla', 'verso'],
+  ];
+  for (const [m1, m2] of COMPOUND_MODELS) {
+    if (modelo.toLowerCase() === m1 && parts[versaoStart]?.toLowerCase() === m2) {
+      modelo = `${m1.toUpperCase()} ${m2.toUpperCase()}`;
+      versaoStart++;
+      break;
+    }
+  }
+
   const versao = parts.slice(versaoStart, -1).join(' ').toUpperCase();
   return { marca, modelo, versao, ano: isNaN(year) ? 0 : year };
 }
@@ -569,7 +582,8 @@ async function fetchVehicleDetails(discovered) {
     let portas = 4;
     if (vehicle.nome.includes('2p')) portas = 2;
 
-    const fotoUrl = fotoMap[vehicle.id] || `${CONFIG.photoBaseUrl}/394_${vehicle.id}_1-1.jpg`;
+    // Usar apenas foto encontrada no HTML do card; se ausente, null (excluído nas buscas)
+    const fotoUrl = fotoMap[vehicle.id] || null;
 
     results.push({
       id: vehicle.id,
