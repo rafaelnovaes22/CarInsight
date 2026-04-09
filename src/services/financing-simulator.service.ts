@@ -8,15 +8,29 @@
 import { logger } from '../lib/logger';
 
 /**
- * Taxas médias de juros para financiamento de veículos usados (ao mês)
- * Fonte: Média de mercado 2024
+ * Referência oficial de mercado usada na simulação.
+ * Fonte: Banco Central do Brasil, série SGS 25471
+ * "Taxa média mensal de juros das operações de crédito com recursos livres -
+ * Pessoas físicas - Aquisição de veículos"
+ *
+ * Último valor consultado para calibragem: fevereiro/2026 = 2,03% a.m.
+ */
+const MARKET_REFERENCE = {
+  source: 'Banco Central do Brasil (SGS 25471)',
+  referenceMonth: 'fevereiro/2026',
+  averageMonthlyRate: 0.0203, // 2,03% a.m.
+};
+
+/**
+ * Taxas de referência para estimativa por faixa de entrada.
+ * Partem da média oficial de mercado e aplicam um ajuste heurístico simples
+ * para refletir que perfil, entrada e risco alteram a taxa final.
  */
 const INTEREST_RATES = {
-  // Taxas variam conforme perfil e entrada
-  LOW: 0.0159, // 1.59% a.m. - Entrada >= 40%
-  MEDIUM: 0.0189, // 1.89% a.m. - Entrada 20-40%
-  HIGH: 0.0219, // 2.19% a.m. - Entrada < 20%
-  ZERO_ENTRY: 0.0249, // 2.49% a.m. - Sem entrada
+  LOW: 0.0183, // 1,83% a.m. - perfil forte / entrada >= 40%
+  MEDIUM: MARKET_REFERENCE.averageMonthlyRate, // 2,03% a.m. - faixa média de mercado
+  HIGH: 0.0228, // 2,28% a.m. - entrada < 20% ou perfil mais arriscado
+  ZERO_ENTRY: 0.0248, // 2,48% a.m. - sem entrada
 };
 
 /**
@@ -31,6 +45,9 @@ export interface FinancingSimulation {
   totalEntry: number; // entrada + troca
   financeAmount: number;
   interestRate: number;
+  marketAverageRate: number;
+  marketReferenceSource: string;
+  marketReferenceMonth: string;
   installments: {
     months: number;
     monthlyPayment: number;
@@ -108,9 +125,11 @@ export function simulateFinancing(
     totalEntry,
     financeAmount,
     interestRate,
+    marketAverageRate: MARKET_REFERENCE.averageMonthlyRate,
+    marketReferenceSource: MARKET_REFERENCE.source,
+    marketReferenceMonth: MARKET_REFERENCE.referenceMonth,
     installments,
-    disclaimer:
-      '⚠️ Valores estimados para referência. Condições reais dependem de análise de crédito.',
+    disclaimer: `⚠️ Simulação com taxa de referência inspirada na média de mercado do ${MARKET_REFERENCE.source} (${MARKET_REFERENCE.referenceMonth}: ${(MARKET_REFERENCE.averageMonthlyRate * 100).toFixed(2)}% a.m.). A taxa efetiva pode variar conforme entrada, prazo, score e análise de crédito.`,
   };
 }
 
@@ -121,7 +140,15 @@ export function formatFinancingSimulation(
   simulation: FinancingSimulation,
   vehicleName: string
 ): string {
-  const { vehiclePrice, totalEntry, financeAmount, installments, interestRate } = simulation;
+  const {
+    vehiclePrice,
+    totalEntry,
+    financeAmount,
+    installments,
+    interestRate,
+    marketAverageRate,
+    marketReferenceMonth,
+  } = simulation;
 
   // Selecionar 3 opções mais comuns: 36, 48, 60 meses
   const options = installments.filter(i => [36, 48, 60].includes(i.months));
@@ -135,7 +162,8 @@ export function formatFinancingSimulation(
   }
 
   message += `🏦 Financiar: R$ ${financeAmount.toLocaleString('pt-BR')}\n`;
-  message += `📈 Taxa: ${(interestRate * 100).toFixed(2)}% a.m.\n\n`;
+  message += `📈 Taxa de referência nesta simulação: ${(interestRate * 100).toFixed(2)}% a.m.\n`;
+  message += `ℹ️ Média de mercado Bacen (${marketReferenceMonth}): ${(marketAverageRate * 100).toFixed(2)}% a.m.\n\n`;
 
   message += `*Parcelas estimadas:*\n`;
   options.forEach(opt => {

@@ -47,14 +47,13 @@ export class FinancingAgent {
     );
     const onlyTradeIn =
       /s[óo]\s*(a\s*)?troca|apenas\s*(a\s*)?troca|dar\s*s[óo]\s*(na\s*)?troca/i.test(normalized);
+    const extractedValue = noEntry || onlyTradeIn ? null : extractMoneyValue(normalized);
+    const hasDownPaymentInfo = noEntry || onlyTradeIn || extractedValue !== null;
 
     if (noEntry || onlyTradeIn) {
       downPayment = 0;
-    } else {
-      const extractedValue = extractMoneyValue(normalized);
-      if (extractedValue !== null) {
-        downPayment = extractedValue;
-      }
+    } else if (extractedValue !== null) {
+      downPayment = extractedValue;
     }
 
     // 3. Check for Trade-In mention in the same message
@@ -62,12 +61,61 @@ export class FinancingAgent {
     const tradeInInfo = extractTradeInInfo(userMessage);
     const hasTradeIn =
       onlyTradeIn || tradeInInfo.model || /troca|meu\s*carro|tenho\s*um/i.test(normalized);
+    const hasTradeInDetails = Boolean(tradeInInfo.model || tradeInInfo.year || tradeInInfo.brand);
+
+    if (!hasDownPaymentInfo && !hasTradeIn) {
+      return {
+        response: `Ótimo! Financiamento do ${vehicleName}! 🏦
+
+💰 *Valor:* R$ ${vehiclePrice.toLocaleString('pt-BR')}
+
+Pra eu simular certinho, me conta:
+• Tem algum valor de *entrada*?
+• Ou tem algum *carro pra dar na troca*?
+
+_Exemplo: "10 mil de entrada", "sem entrada" ou "tenho um Gol 2018 pra trocar"_`,
+        extractedPreferences: {
+          wantsFinancing: true,
+          _awaitingFinancingDetails: true,
+          _showedRecommendation: true,
+          _lastShownVehicles: lastShownVehicles,
+        },
+        needsMoreInfo: ['financingDownPayment', 'tradeIn'],
+        canRecommend: false,
+        nextMode: 'negotiation',
+      };
+    }
+
+    if (hasTradeIn && !hasTradeInDetails) {
+      return {
+        response: `Ótimo! Financiamento do ${vehicleName}! 🏦
+
+Como você tem um carro na troca, ele entra como entrada! 🚗🔄
+
+Me conta:
+• *Qual é o modelo e ano do seu carro?*
+• *Qual a quilometragem aproximada?*`,
+        extractedPreferences: {
+          wantsFinancing: true,
+          hasTradeIn: true,
+          _awaitingTradeInDetails: true,
+          _awaitingFinancingDetails: false,
+          _showedRecommendation: true,
+          _lastShownVehicles: lastShownVehicles,
+        },
+        needsMoreInfo: ['tradeInModel', 'tradeInYear'],
+        canRecommend: false,
+        nextMode: 'negotiation',
+      };
+    }
 
     // Update Profile
     const updatedPrefs: any = {
       wantsFinancing: true,
       financingDownPayment: downPayment,
       _awaitingFinancingDetails: false,
+      _showedRecommendation: true,
+      _lastShownVehicles: lastShownVehicles,
     };
 
     if (hasTradeIn) {

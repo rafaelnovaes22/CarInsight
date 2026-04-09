@@ -35,6 +35,9 @@ describe('FinancingAgent', () => {
       totalEntry: 27000,
       financeAmount: 63000,
       interestRate: 0.015,
+      marketAverageRate: 0.0203,
+      marketReferenceSource: 'Banco Central do Brasil (SGS 25471)',
+      marketReferenceMonth: 'fevereiro/2026',
       installments: [
         {
           months: 48,
@@ -103,9 +106,32 @@ describe('FinancingAgent', () => {
     expect(result?.response).toContain('Anotei');
   });
 
-  it('should simulate financing when requested', async () => {
-    await financingAgent.processReference('simula pra mim', mockContext);
+  it('should ask for down payment when user only asks about financing', async () => {
+    const result = await financingAgent.processReference('quero financiar', mockContext);
+
+    expect(simulateFinancing).not.toHaveBeenCalled();
+    expect(result?.response).toContain('entrada');
+    expect(result?.response).toContain('troca');
+    expect(result?.extractedPreferences._awaitingFinancingDetails).toBe(true);
+  });
+
+  it('should ask trade-in details when user mentions trade-in without vehicle info', async () => {
+    const result = await financingAgent.processReference('vou dar meu carro na troca', mockContext);
+
+    expect(simulateFinancing).not.toHaveBeenCalled();
+    expect(result?.response).toContain('modelo e ano');
+    expect(result?.extractedPreferences.hasTradeIn).toBe(true);
+    expect(result?.extractedPreferences._awaitingTradeInDetails).toBe(true);
+  });
+
+  it('should simulate financing when user explicitly says no down payment', async () => {
+    const result = await financingAgent.processReference(
+      'quero financiar sem entrada',
+      mockContext
+    );
+
     expect(simulateFinancing).toHaveBeenCalled();
+    expect(result?.response).toContain('Simulação');
   });
 
   it('should handle cash payment intent', async () => {
