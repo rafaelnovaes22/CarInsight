@@ -30,7 +30,8 @@ describe('AI transparency compliance', () => {
 
     expect(prefix).toContain('Rafael');
     expect(prefix).toContain('assistente virtual');
-    expect(prefix).toContain('inteligência artificial');
+    // Aviso de IA não é repetido após já ter sido exibido na saudação inicial
+    expect(prefix).not.toContain('inteligência artificial');
   });
 
   it('builds a vehicle inquiry greeting with AI disclosure', () => {

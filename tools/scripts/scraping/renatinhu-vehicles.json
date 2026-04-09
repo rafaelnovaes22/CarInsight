@@ -26,32 +26,6 @@
     "nomeCompleto": "Bmw 125i 2.0 M Sport 16v 4p 2014"
   },
   {
-    "id": 772,
-    "marca": "BMW",
-    "modelo": "528",
-    "versao": "2.0 16V 4P",
-    "ano": 2014,
-    "km": 0,
-    "preco": null,
-    "cor": "N/I",
-    "combustivel": "Flex",
-    "cambio": "Manual",
-    "portas": 4,
-    "carroceria": "Sedan",
-    "fotoUrl": "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_772_1-1.jpg",
-    "fotosUrls": [
-      "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_772_1-1.jpg",
-      "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_772_2-1.jpg",
-      "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_772_3-1.jpg",
-      "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_772_4-1.jpg",
-      "https://ssl9212.websiteseguro.com/armazena1/site_externo/emp_394/fotos/394_772_5-1.jpg"
-    ],
-    "detailUrl": "https://www.renatinhuscars.com.br/?veiculo=BMW%2B528%2B2.0%2B16V%2B4P&id=772",
-    "opcionais": [],
-    "descricao": "BMW 528 2.0 16V 4P 2014",
-    "nomeCompleto": "Bmw 528 2.0 16v 4p 2014"
-  },
-  {
     "id": 760,
     "marca": "CHEVROLET",
     "modelo": "COBALT",

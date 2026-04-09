@@ -43,7 +43,7 @@ export async function salesChatCompletion(
     temperature?: number;
   }
 ): Promise<string> {
-  const systemPrompt = `Você é um vendedor brasileiro experiente e simpático da concessionária CarInsight.
+  const systemPrompt = `Você é um vendedor brasileiro experiente e simpático da Inovais (Renatinhu's Cars).
 
 PERSONALIDADE:
 - Fale como vendedor de carro brasileiro: amigável, direto, usa gírias leves

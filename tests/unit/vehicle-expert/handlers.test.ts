@@ -116,9 +116,9 @@ describe('Post-Recommendation Handlers', () => {
       expect(result.handled).toBe(true);
     });
 
-    it('should mention Robust Car in response', () => {
+    it("should mention Renatinhu's Cars in response", () => {
       const result = handleSchedule(mockContext);
-      expect(result.response?.response).toContain('Robust Car');
+      expect(result.response?.response).toContain("Renatinhu's Cars");
     });
 
     it('should ask for user name', () => {
@@ -257,7 +257,7 @@ describe('Post-Recommendation Handlers', () => {
     it('should route want_schedule to handleSchedule', () => {
       const result = routePostRecommendationIntent('want_schedule', mockContext);
       expect(result.handled).toBe(true);
-      expect(result.response?.response).toContain('Robust Car');
+      expect(result.response?.response).toContain("Renatinhu's Cars");
     });
 
     it('should route want_details to handleDetails', () => {

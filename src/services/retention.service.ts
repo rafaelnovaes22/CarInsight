@@ -1,14 +1,17 @@
 /**
  * Retention Service
  *
- * Handles post-sale engagement, NPS collection, and referral program.
+ * Handles post-sale 100-day customer journey, NPS collection, and referral program.
  * All messages include opt-out instructions for LGPD compliance.
  *
- * Post-sale sequence:
- * 1. +3 days: Check satisfaction
- * 2. +7 days: NPS score (1-5)
- * 3. +14 days: Referral request (if score >= 4)
- * 4. +90 days: Re-engagement with new inventory
+ * 100-day post-sale journey (7 touchpoints):
+ * 1. Day 0:  Congratulations + next steps (docs, insurance, first service)
+ * 2. Day 3:  Satisfaction check ("How's the new car?")
+ * 3. Day 7:  NPS score (1-5)
+ * 4. Day 14: Care tips + referral with benefit
+ * 5. Day 30: Brand content + VIP group invite
+ * 6. Day 60: Testimonial/UGC request + service reminder
+ * 7. Day 90: Re-engagement with new inventory
  */
 
 import { prisma } from '../lib/prisma';
@@ -44,20 +47,19 @@ export class RetentionService {
         return;
       }
 
-      // Schedule first post-sale follow-up (3 days)
+      // Schedule first post-sale follow-up (immediate — day 0 congratulations)
       await followUpService.scheduleFollowUp({
         conversationId: lead.conversationId,
         phoneNumber,
         type: 'post_sale',
         customerName,
         vehicleName,
-        delayMinutes: 3 * 24 * 60, // 3 days
         sequence: 1,
       });
 
       logger.info(
         { leadId, phoneNumber: maskPhoneNumber(phoneNumber) },
-        'Retention: post-sale sequence started'
+        'Retention: 100-day post-sale journey started'
       );
     } catch (error) {
       logger.error(

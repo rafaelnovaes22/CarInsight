@@ -23,6 +23,7 @@ prisma/dev.db
 .env.test.local
 .env.production.local
 .env.*.local
+.env.railway
 
 # SECRETS
 *.key

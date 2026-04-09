@@ -125,10 +125,10 @@ export function generateWhatsAppLink(
   const salesPhone = process.env.SALES_PHONE_NUMBER;
   if (!salesPhone) return null;
 
-  let prefilledText = 'Olá! Vim do bot do CarInsight';
+  let prefilledText = 'Olá! Vim do bot da Inovais';
 
   if (profile?.customerName) {
-    prefilledText = `Olá! Sou ${profile.customerName}, vim do bot do CarInsight`;
+    prefilledText = `Olá! Sou ${profile.customerName}, vim do bot da Inovais`;
   }
 
   prefilledText += '!';

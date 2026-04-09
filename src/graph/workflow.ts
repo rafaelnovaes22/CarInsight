@@ -34,7 +34,7 @@ async function autoHandoffNode(state: IGraphState): Promise<Partial<IGraphState>
     next: 'handoff',
     messages: [
       new AIMessage(
-        `Percebi que estou com dificuldade em te ajudar da melhor forma. ${getHandoffMessage()}${linkMessage}\n\n🤖 _Sou a assistente virtual do CarInsight e, neste caso, um atendente humano pode te ajudar melhor!_`
+        `Percebi que estou com dificuldade em te ajudar da melhor forma. ${getHandoffMessage()}${linkMessage}\n\n🤖 _Sou a assistente virtual da Inovais e, neste caso, um atendente humano pode te ajudar melhor!_`
       ),
     ],
     metadata: {

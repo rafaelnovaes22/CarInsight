@@ -8,7 +8,7 @@
 export const GREETING_VARIATIONS = {
   // Initial greetings with AI disclosure
   WITH_DISCLOSURE: [
-    `👋 E aí! Sou do CarInsight e vou te ajudar a encontrar o carro perfeito!
+    `👋 E aí! Sou da Inovais e vou te ajudar a encontrar o carro perfeito!
 
 🤖 *Só um aviso:* Sou assistente virtual e posso errar de vez em quando. Se preferir falar com nossa equipe, é só pedir!
 
@@ -16,7 +16,7 @@ export const GREETING_VARIATIONS = {
 
 Pra começar, qual é o seu nome?`,
 
-    `Olá! 👋 Tudo bem? Aqui é do *CarInsight* e tô aqui pra te ajudar a achar o carro ideal!
+    `Olá! 👋 Tudo bem? Aqui é da *Inovais* e tô aqui pra te ajudar a achar o carro ideal!
 
 🤖 *Importante:* Sou uma IA e às vezes posso errar. Se quiser mais precisão, posso te passar pra nossa equipe humana.
 
@@ -24,7 +24,7 @@ Pra começar, qual é o seu nome?`,
 
 Me conta, qual seu nome?`,
 
-    `👋 Opa! Bem-vindo(a) ao CarInsight!
+    `👋 Opa! Bem-vindo(a) à Inovais!
 
 🤖 *Aviso amigável:* Sou assistente virtual e posso cometer erros. Precisa de algo muito específico? Posso conectar você com nossa equipe!
 

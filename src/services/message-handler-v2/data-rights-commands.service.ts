@@ -3,7 +3,7 @@ import { logger } from '../../lib/logger';
 import { maskPhoneNumber } from '../../lib/privacy';
 import { dataRightsService } from '../data-rights.service';
 
-const AI_NOTICE = '🤖 _Resposta automática da assistente virtual CarInsight._';
+const AI_NOTICE = '🤖 _Resposta automática da assistente virtual Inovais._';
 
 export class MessageHandlerDataRightsCommandsService {
   async handle(phoneNumber: string, message: string): Promise<string | null> {
@@ -23,7 +23,7 @@ export class MessageHandlerDataRightsCommandsService {
           const success = await dataRightsService.deleteUserData(phoneNumber);
 
           if (success) {
-            return `\u2705 Seus dados foram excluidos com sucesso!\n\nObrigado por usar o CarInsight. Se precisar de algo no futuro, estaremos aqui! \uD83D\uDC4B\n\n${AI_NOTICE}`;
+            return `\u2705 Seus dados foram excluidos com sucesso!\n\nObrigado por usar a Inovais. Se precisar de algo no futuro, estaremos aqui! \uD83D\uDC4B\n\n${AI_NOTICE}`;
           }
 
           return '\u274C Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: suporte@faciliauto.com.br';

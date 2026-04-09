@@ -37,7 +37,7 @@ import type { IGraphState } from '../../types/graph.types';
 // ── Constants ──
 
 export const AUTOMOTIVE_DOMAIN_ID = 'automotive';
-export const AUTOMOTIVE_DOMAIN_NAME = 'CarInsight — Assistente Automotivo';
+export const AUTOMOTIVE_DOMAIN_NAME = 'Inovais — Assistente Automotivo';
 export const AUTOMOTIVE_DOMAIN_VERSION = '1.0.0';
 
 // ── Adapter: IGraphState ↔ IGenericGraphState ──
@@ -131,7 +131,7 @@ const automotiveDisclosure: DisclosureMessages = {
     '🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas ou dúvidas complexas, posso transferir você para nossa equipe humana.',
   handoff: 'Vou te transferir para um de nossos consultores que pode te ajudar melhor!',
   aiDisclaimer:
-    '🤖 _Sou a assistente virtual do CarInsight e, neste caso, um atendente humano pode te ajudar melhor!_',
+    '🤖 _Sou a assistente virtual da Inovais e, neste caso, um atendente humano pode te ajudar melhor!_',
 };
 
 // ── Plugin Implementation ──
@@ -188,7 +188,7 @@ export const automotiveDomainPlugin: DomainPlugin = {
   disclosureMessages: automotiveDisclosure,
   exitResponse: 'Obrigado por conversar conosco! Se precisar, é só voltar. Até mais! 👋',
   welcomeResponse:
-    '👋 Olá! Sou a assistente virtual do *CarInsight*. Vou te ajudar a encontrar o carro perfeito!',
+    '👋 Olá! Sou a assistente virtual da *Inovais*. Vou te ajudar a encontrar o carro perfeito!',
 
   // Search
   searchAdapter: automotiveSearchAdapter,

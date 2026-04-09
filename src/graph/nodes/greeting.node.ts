@@ -218,7 +218,7 @@ export async function greetingNode(state: IGraphState): Promise<Partial<IGraphSt
     if (emotionalEnabled && isLateNight()) {
       const _opener = getTimeAwareVariation('LATE_NIGHT_OPENERS', timeSlot);
       const empathy = getEmotionalCopy('CONEXAO', timeSlot);
-      responseText = `${buildNamedDisclosurePrefix(firstName)}\n\n${empathy.charAt(0).toLowerCase() + empathy.slice(1)}\n\n${questionText}`;
+      responseText = `${buildNamedDisclosurePrefix(firstName)}\n\n${empathy}\n\n${questionText}`;
     } else {
       responseText = `${buildNamedDisclosurePrefix(firstName)}\n\n${questionText}`;
     }

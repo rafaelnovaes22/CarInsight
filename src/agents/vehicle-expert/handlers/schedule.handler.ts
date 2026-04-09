@@ -14,7 +14,7 @@ import { PostRecommendationContext, HandlerResult } from './types';
 export const handleSchedule = (ctx: PostRecommendationContext): HandlerResult => {
   const { lastShownVehicles, extracted, startTime } = ctx;
 
-  const scheduleResponse = `Perfeito! 🙌\n\nPara agendar uma visita ou falar diretamente com nosso vendedor, me envia seu nome completo que já passo para a equipe te atender!\n\n📍 Estamos na Robust Car\n📞 Ou se preferir, digite "vendedor" para iniciar o atendimento.`;
+  const scheduleResponse = `Perfeito! 🙌\n\nPara agendar uma visita ou falar diretamente com nosso vendedor, me envia seu nome completo que já passo para a equipe te atender!\n\n📍 Estamos na Renatinhu's Cars\n📞 Ou se preferir, digite "vendedor" para iniciar o atendimento.`;
 
   return {
     handled: true,

@@ -146,7 +146,7 @@ router.get('/seed-renatinhu', requireSecret, async (req, res) => {
  */
 router.get('/seed-robustcar', requireSecret, async (req, res) => {
   try {
-    logger.info('🚀 Seed Robust Car iniciado via HTTP endpoint');
+    logger.info("🚀 Seed Renatinhu's Cars iniciado via HTTP endpoint");
 
     // Verificar se arquivo existe
     const { existsSync } = await import('fs');

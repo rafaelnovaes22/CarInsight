@@ -21,14 +21,15 @@ describe('time-context', () => {
       expect(getTimeSlot(new Date('2026-03-01T17:59:00'))).toBe('afternoon');
     });
 
-    it('should return evening for 18:00-21:59', () => {
+    it('should return evening for 18:00-23:59', () => {
       expect(getTimeSlot(new Date('2026-03-01T18:00:00'))).toBe('evening');
       expect(getTimeSlot(new Date('2026-03-01T20:00:00'))).toBe('evening');
       expect(getTimeSlot(new Date('2026-03-01T21:59:00'))).toBe('evening');
+      expect(getTimeSlot(new Date('2026-03-01T22:00:00'))).toBe('evening');
+      expect(getTimeSlot(new Date('2026-03-01T23:59:00'))).toBe('evening');
     });
 
-    it('should return late_night for 22:00-05:59', () => {
-      expect(getTimeSlot(new Date('2026-03-01T22:00:00'))).toBe('late_night');
+    it('should return late_night for 00:00-05:59', () => {
       expect(getTimeSlot(new Date('2026-03-01T00:00:00'))).toBe('late_night');
       expect(getTimeSlot(new Date('2026-03-01T03:30:00'))).toBe('late_night');
       expect(getTimeSlot(new Date('2026-03-01T05:59:00'))).toBe('late_night');
@@ -43,9 +44,9 @@ describe('time-context', () => {
       expect(getTimeSlot(new Date('2026-03-01T11:59:00'))).toBe('morning');
       expect(getTimeSlot(new Date('2026-03-01T12:00:00'))).toBe('afternoon');
 
-      // 21:59 → evening, 22:00 → late_night
-      expect(getTimeSlot(new Date('2026-03-01T21:00:00'))).toBe('evening');
-      expect(getTimeSlot(new Date('2026-03-01T22:00:00'))).toBe('late_night');
+      // 23:59 → evening, 00:00 → late_night
+      expect(getTimeSlot(new Date('2026-03-01T23:59:00'))).toBe('evening');
+      expect(getTimeSlot(new Date('2026-03-01T00:00:00'))).toBe('late_night');
     });
   });
 
@@ -63,13 +64,13 @@ describe('time-context', () => {
     });
 
     it('should return emotional for late_night', () => {
-      expect(getEmotionalMode(new Date('2026-03-01T23:00:00'))).toBe('emotional');
+      expect(getEmotionalMode(new Date('2026-03-01T02:00:00'))).toBe('emotional');
     });
   });
 
   describe('isLateNight', () => {
     it('should return true during late_night hours', () => {
-      expect(isLateNight(new Date('2026-03-01T23:00:00'))).toBe(true);
+      expect(isLateNight(new Date('2026-03-01T00:30:00'))).toBe(true);
       expect(isLateNight(new Date('2026-03-01T02:00:00'))).toBe(true);
     });
 

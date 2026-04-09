@@ -17,7 +17,7 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional().default('gemini-mock-key'),
   COHERE_API_KEY: z.string().optional(),
 
-  WHATSAPP_NAME: z.string().default('CarInsight'),
+  WHATSAPP_NAME: z.string().default('Inovais'),
   CRM_WEBHOOK_URL: z.string().optional(),
 
   // Meta Cloud API (WhatsApp Business API oficial)

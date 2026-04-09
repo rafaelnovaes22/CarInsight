@@ -24,7 +24,7 @@ export const cashHandler: IntentHandler = {
       result: {
         messages: [
           new AIMessage(
-            `Ótima escolha! 💰 Pagamento à vista tem condições especiais de desconto.\n\nVou direcionar você para nosso consultor que pode passar o melhor valor.${linkMessage}\n\nObrigado por escolher o CarInsight! 🚗`
+            `Ótima escolha! 💰 Pagamento à vista tem condições especiais de desconto.\n\nVou direcionar você para nosso consultor que pode passar o melhor valor.${linkMessage}\n\nObrigado por escolher a Inovais! 🚗`
           ),
         ],
         metadata: {

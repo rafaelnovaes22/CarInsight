@@ -26,7 +26,7 @@ const GREETING_COMMANDS = [
 ];
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
 
-const EXIT_RESPONSE = `Obrigado por usar o CarInsight! 👋
+const EXIT_RESPONSE = `Obrigado por usar a Inovais! 👋
 
 Foi um prazer ajudar você.
 
@@ -34,7 +34,7 @@ Se precisar de algo, é só enviar uma mensagem novamente! 😊
 
 Até logo! 🚗
 
-🤖 _Você foi atendido pela assistente virtual com IA do CarInsight._`;
+🤖 _Você foi atendido pela assistente virtual com IA da Inovais._`;
 
 const WELCOME_RESPONSE = buildAskNameGreeting();
 

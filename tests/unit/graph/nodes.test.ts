@@ -65,7 +65,7 @@ describe('LangGraph Nodes Logic', () => {
 
       expect(result.next).toBe('greeting');
       expect(result.messages?.[0].content).toContain('nome');
-      expect(result.messages?.[0].content).toContain('inteligência artificial');
+      expect(result.messages?.[0].content).toContain('assistente virtual');
     });
 
     it('should extract name when provided', async () => {
@@ -110,7 +110,7 @@ describe('LangGraph Nodes Logic', () => {
       expect(result.profile?.minYear).toBe(2020);
       expect(result.next).toBe('recommendation'); // Jump straight to recommendation
       expect(mockChat).toHaveBeenCalled();
-      expect(result.messages?.[0].content).toContain('inteligência artificial');
+      expect(result.messages?.[0].content).toContain('assistente virtual');
     });
 
     it('should preserve negotiation stage when name already exists', async () => {

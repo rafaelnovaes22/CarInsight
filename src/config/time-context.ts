@@ -15,8 +15,8 @@ const TIME_SLOT_CONFIG: Record<
 > = {
   morning: { startHour: 6, endHour: 11, mode: 'rational' },
   afternoon: { startHour: 12, endHour: 17, mode: 'balanced' },
-  evening: { startHour: 18, endHour: 21, mode: 'aspirational' },
-  late_night: { startHour: 22, endHour: 5, mode: 'emotional' },
+  evening: { startHour: 18, endHour: 23, mode: 'aspirational' },
+  late_night: { startHour: 0, endHour: 5, mode: 'emotional' },
 };
 
 /**
@@ -28,8 +28,8 @@ export function getTimeSlot(date?: Date): TimeSlot {
 
   if (hour >= 6 && hour <= 11) return 'morning';
   if (hour >= 12 && hour <= 17) return 'afternoon';
-  if (hour >= 18 && hour <= 21) return 'evening';
-  return 'late_night'; // 22-5
+  if (hour >= 18 && hour <= 23) return 'evening';
+  return 'late_night'; // 0-5
 }
 
 /**
@@ -41,7 +41,7 @@ export function getEmotionalMode(date?: Date): EmotionalMode {
 }
 
 /**
- * Check if it's late night (22h-05h) — peak emotional selling window.
+ * Check if it's late night (00h-05h) — peak emotional selling window.
  */
 export function isLateNight(date?: Date): boolean {
   return getTimeSlot(date) === 'late_night';

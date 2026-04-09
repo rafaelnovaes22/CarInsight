@@ -3,7 +3,7 @@
  * Mensagens de transparência sobre uso de IA
  */
 
-const ASSISTANT_INTRO = 'Sou a assistente virtual do *CarInsight*.';
+const ASSISTANT_INTRO = 'Sou a assistente virtual da *Inovais*.';
 const AI_DISCLOSURE_NOTICE =
   '🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas ou dúvidas complexas, posso transferir você para nossa equipe humana.';
 const DATA_NOTICE =
@@ -127,7 +127,7 @@ export function buildDisclosurePrefix(opener?: string): string {
 }
 
 export function buildNamedDisclosurePrefix(name: string): string {
-  return joinSections([`👋 Olá, ${name}! ${ASSISTANT_INTRO}`, AI_DISCLOSURE_NOTICE]);
+  return `👋 Olá, ${name}! ${ASSISTANT_INTRO}`;
 }
 
 export function buildInitialGreeting(options?: {

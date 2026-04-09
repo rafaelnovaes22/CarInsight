@@ -29,7 +29,7 @@ export const scheduleHandler: IntentHandler = {
       result: {
         messages: [
           new AIMessage(
-            `${getRandomVariation(['Ótimo!', 'Maravilha!', 'Excelente!'])} 🎉\n\nVou pedir pro nosso consultor agendar sua visita rapidinho.${linkMessage}\n\n_Ele confirma o horário com você, tá bom?_\n\nObrigado por escolher o CarInsight! 🚗`
+            `${getRandomVariation(['Ótimo!', 'Maravilha!', 'Excelente!'])} 🎉\n\nVou pedir pro nosso consultor agendar sua visita rapidinho.${linkMessage}\n\n_Ele confirma o horário com você, tá bom?_\n\nObrigado por escolher a Inovais! 🚗`
           ),
         ],
         metadata: {

@@ -27,7 +27,7 @@ const CONFIG = {
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 };
 
-const OUTPUT_PATH = './scripts/renatinhu-vehicles-full.json';
+const OUTPUT_PATH = './tools/scripts/scraping/renatinhu-vehicles-full.json';
 
 // ───────────────────────────────────────────────────────────
 // Utilitarios
@@ -117,7 +117,6 @@ const BODY_TYPE_MAP = {
     'yaris sedan',
     'onix plus',
     'santana',
-    'etios',
   ],
   Hatch: [
     '125i',
@@ -159,13 +158,41 @@ const CATEGORY_FLAGS = {
 // Funcoes de parsing
 // ───────────────────────────────────────────────────────────
 
+// Modelos que existem tanto na versao Hatch quanto Sedan —
+// a classificacao depende do nome completo do veiculo.
+const AMBIGUOUS_MODELS = ['etios', 'yaris', 'corsa', 'onix'];
+
 function detectBodyType(nome) {
   const nomeLower = nome.toLowerCase();
+
+  // 1. Indicadores explícitos no nome completo têm prioridade absoluta
+  if (/\bsedan\b/.test(nomeLower)) return 'Sedan';
+  if (/\bhatch\b/.test(nomeLower)) return 'Hatch';
+  if (/\bsuv\b/.test(nomeLower)) return 'SUV';
+  if (/\bpicape\b|\bpick[- ]?up\b/.test(nomeLower)) return 'Picape';
+  if (/\bminivan\b/.test(nomeLower)) return 'Minivan';
+
+  // 2. Para modelos ambíguos, checar se a versão indica a variante
+  const isAmbiguous = AMBIGUOUS_MODELS.some(m => nomeLower.includes(m));
+  if (isAmbiguous) {
+    // Etios Sedan tem "sedan" no nome — se não tiver, é hatch
+    // Yaris Sedan idem
+    // Onix Plus = Sedan; Onix sem "plus" = Hatch
+    if (nomeLower.includes('onix') && nomeLower.includes('plus')) return 'Sedan';
+    if (nomeLower.includes('yaris') && !nomeLower.includes('sedan')) return 'Hatch';
+    if (nomeLower.includes('corsa') && nomeLower.includes('1.0')) return 'Hatch';
+    // Etios: sem "sedan" no nome = Hatch
+    if (nomeLower.includes('etios') && !nomeLower.includes('sedan')) return 'Hatch';
+    if (nomeLower.includes('etios') && nomeLower.includes('sedan')) return 'Sedan';
+  }
+
+  // 3. Lookup pela tabela de modelos conhecidos
   for (const [bodyType, keywords] of Object.entries(BODY_TYPE_MAP)) {
     if (keywords.some(kw => nomeLower.includes(kw))) {
       return bodyType;
     }
   }
+
   return 'Hatch';
 }
 
