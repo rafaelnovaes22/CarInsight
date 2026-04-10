@@ -16,6 +16,11 @@ import { preferenceExtractor } from './preference-extractor.agent';
 import { exactSearchParser } from '../services/exact-search-parser.service';
 import { CustomerProfile, VehicleRecommendation } from '../types/state.types';
 import { ConversationContext, ConversationResponse } from '../types/conversation.types';
+import {
+  buildCommercialClarificationResponse,
+  detectAmbiguousCommercialIntent,
+  shouldClarifyCommercialReply,
+} from '../utils/commercial-intent-clarifier';
 
 // Import constants from refactored module
 import {
@@ -1355,6 +1360,39 @@ export class VehicleExpertAgent {
             // Continue to the main search logic below (don't return here, let it fall through)
             // The search logic will handle this as a new model search
           }
+        }
+
+        const ambiguousCommercialIntent = detectAmbiguousCommercialIntent(userMessage);
+        const selectedVehicleLabel =
+          lastShownVehicles.length === 1
+            ? `${lastShownVehicles[0].brand} ${lastShownVehicles[0].model} ${lastShownVehicles[0].year}`
+            : undefined;
+
+        if (
+          postRecommendationIntent === 'none' &&
+          !specificModelMatch.model &&
+          (ambiguousCommercialIntent || shouldClarifyCommercialReply(userMessage))
+        ) {
+          return {
+            response: buildCommercialClarificationResponse(
+              ambiguousCommercialIntent?.action,
+              selectedVehicleLabel
+            ),
+            extractedPreferences: {
+              ...extracted.extracted,
+              _showedRecommendation: true,
+              _lastShownVehicles: lastShownVehicles,
+              _lastSearchType: lastSearchType,
+            },
+            needsMoreInfo: [],
+            canRecommend: false,
+            nextMode: context.mode,
+            metadata: {
+              processingTime: Date.now() - startTime,
+              confidence: ambiguousCommercialIntent ? 0.72 : 0.6,
+              llmUsed: 'rule-based',
+            },
+          };
         }
 
         if (

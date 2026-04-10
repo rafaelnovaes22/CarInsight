@@ -4,6 +4,10 @@ import { AIMessage } from '@langchain/core/messages';
 import { getRandomVariation } from '../../../config/conversation-style';
 import { handlers } from './handlers';
 import { formatRecommendations } from './utils/formatters';
+import {
+  buildCommercialClarificationResponse,
+  detectAmbiguousCommercialIntent,
+} from '../../../utils/commercial-intent-clarifier';
 
 /**
  * RecommendationNode - Present recommendations to customer
@@ -39,6 +43,31 @@ export async function recommendationNode(state: IGraphState): Promise<Partial<IG
         return result.result;
       }
     }
+  }
+
+  const ambiguousCommercialIntent = detectAmbiguousCommercialIntent(message);
+  if (ambiguousCommercialIntent && state.recommendations.length > 0) {
+    const selectedVehicleLabel =
+      state.profile?._lastShownVehicles?.length === 1
+        ? `${state.profile._lastShownVehicles[0].brand} ${state.profile._lastShownVehicles[0].model} ${state.profile._lastShownVehicles[0].year}`
+        : undefined;
+
+    const result = {
+      messages: [
+        new AIMessage(
+          buildCommercialClarificationResponse(
+            ambiguousCommercialIntent.action,
+            selectedVehicleLabel
+          )
+        ),
+      ],
+      metadata: {
+        ...state.metadata,
+        lastMessageAt: Date.now(),
+      },
+    };
+    timer.logSuccess(state, result);
+    return result;
   }
 
   // Show recommendations if available

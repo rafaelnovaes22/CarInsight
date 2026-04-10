@@ -3,11 +3,89 @@ import { maskPhoneNumber } from '../../lib/privacy';
 import { prisma } from '../../lib/prisma';
 import type { ConversationState } from '../../types/state.types';
 
+type LeadVehicle = NonNullable<NonNullable<ConversationState['profile']>['_lastShownVehicles']>[number];
+
 function capitalize(text: string): string {
   return text
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
+}
+
+function formatVehicleSummary(vehicle: LeadVehicle): string {
+  const priceFormatted = vehicle.price?.toLocaleString('pt-BR') || 'Preco n/d';
+  return `${vehicle.brand} ${vehicle.model} ${vehicle.year} (R$ ${priceFormatted})`;
+}
+
+function mapRecommendationToVehicle(
+  recommendation: ConversationState['recommendations'][number]
+): LeadVehicle | null {
+  const vehicle = recommendation?.vehicle;
+  if (!vehicle) return null;
+
+  const brand = vehicle.marca || vehicle.brand || '';
+  const model = vehicle.modelo || vehicle.model || '';
+  const year = Number(vehicle.ano || vehicle.year || 0);
+  const price = Number(vehicle.preco ?? vehicle.price ?? 0);
+
+  if (!brand || !model || !year) {
+    return null;
+  }
+
+  return {
+    vehicleId: recommendation.vehicleId,
+    brand,
+    model,
+    year,
+    price,
+    bodyType: vehicle.carroceria || vehicle.bodyType,
+  };
+}
+
+function dedupeVehicles(vehicles: Array<LeadVehicle | null | undefined>): LeadVehicle[] {
+  const seen = new Set<string>();
+  const deduped: LeadVehicle[] = [];
+
+  for (const vehicle of vehicles) {
+    if (!vehicle) continue;
+    if (seen.has(vehicle.vehicleId)) continue;
+    seen.add(vehicle.vehicleId);
+    deduped.push(vehicle);
+  }
+
+  return deduped;
+}
+
+function resolveSelectedVehicle(state: ConversationState): LeadVehicle | null {
+  const profile = state.profile;
+  if (!profile) return null;
+
+  if (profile._selectedVehicleSnapshot) {
+    return profile._selectedVehicleSnapshot;
+  }
+
+  if (profile._selectedVehicleId) {
+    const selectedFromShown = profile._lastShownVehicles?.find(
+      vehicle => vehicle.vehicleId === profile._selectedVehicleId
+    );
+    if (selectedFromShown) {
+      return selectedFromShown;
+    }
+
+    const selectedFromRecommendations = state.recommendations
+      .map(mapRecommendationToVehicle)
+      .find(vehicle => vehicle?.vehicleId === profile._selectedVehicleId);
+
+    if (selectedFromRecommendations) {
+      return selectedFromRecommendations;
+    }
+  }
+
+  if ((profile._lastShownVehicles?.length || 0) === 1) {
+    return profile._lastShownVehicles?.[0] || null;
+  }
+
+  return null;
 }
 
 export class MessageHandlerLeadService {
@@ -93,14 +171,31 @@ export class MessageHandlerLeadService {
           details.push(`\uD83C\uDFE6 *Financiamento:* Sim (${entry})`);
         }
 
-        const interest = profile?._lastShownVehicles?.[0];
-        if (interest) {
-          const priceFormatted = interest.price?.toLocaleString('pt-BR') || 'Preco n/d';
-          details.push(
-            `\uD83D\uDE97 *Interesse:* ${interest.brand} ${interest.model} ${interest.year} (R$ ${priceFormatted})`
-          );
+        const selectedVehicle = resolveSelectedVehicle(state);
+        const latestOptions = dedupeVehicles([
+          ...(profile?._lastShownVehicles || []),
+          ...state.recommendations.map(mapRecommendationToVehicle),
+        ]).slice(0, 5);
+
+        if (selectedVehicle) {
+          details.push(`\uD83D\uDE97 *Interesse principal:* ${formatVehicleSummary(selectedVehicle)}`);
         } else if (profile?._searchedItem) {
           details.push(`\uD83D\uDD0D *Busca:* ${profile._searchedItem}`);
+        }
+
+        const shouldIncludeOptionList =
+          latestOptions.length > 1 ||
+          (!selectedVehicle && latestOptions.length > 0) ||
+          (selectedVehicle &&
+            latestOptions.length > 0 &&
+            !latestOptions.some(vehicle => vehicle.vehicleId === selectedVehicle.vehicleId));
+
+        if (shouldIncludeOptionList) {
+          details.push(
+            `\uD83D\uDCCB *Ultimas opcoes apresentadas:*\n${latestOptions
+              .map((vehicle, index) => `${index + 1}. ${formatVehicleSummary(vehicle)}`)
+              .join('\n')}`
+          );
         }
 
         const customerLink = `https://wa.me/${conversation.phoneNumber.replace(/\D/g, '')}`;

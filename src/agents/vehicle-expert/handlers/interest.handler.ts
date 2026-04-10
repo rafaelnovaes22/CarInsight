@@ -82,6 +82,15 @@ Me conta como pretende pagar:
       extractedPreferences: {
         ...extracted.extracted,
         _showedRecommendation: true,
+        _selectedVehicleId: selectedVehicle.vehicleId,
+        _selectedVehicleSnapshot: {
+          vehicleId: selectedVehicle.vehicleId,
+          brand: selectedVehicle.brand,
+          model: selectedVehicle.model,
+          year: selectedVehicle.year,
+          price: selectedVehicle.price,
+          bodyType: selectedVehicle.bodyType,
+        },
         _lastShownVehicles: [selectedVehicle], // Focus on selected vehicle only
       },
       needsMoreInfo: ['paymentMethod'],

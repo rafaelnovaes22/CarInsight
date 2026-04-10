@@ -98,4 +98,30 @@ describe('RecommendationNode routing (golden)', () => {
     const content = String(result.messages![0].content);
     expect(content).toContain('Onix');
   });
+
+  it('asks for confirmation instead of replaying recommendations on ambiguous seller typo', async () => {
+    const state = createInitialState();
+    state.profile = {
+      _lastShownVehicles: [
+        { vehicleId: 'v1', brand: 'RENAULT', model: 'CAPTUR', year: 2019, price: 76990 },
+      ],
+    } as never;
+    state.recommendations = [
+      {
+        vehicleId: 'v1',
+        vehicle: { modelo: 'Captur', marca: 'Renault', ano: 2019, preco: 76990 } as never,
+        score: 0.8,
+        rank: 1,
+        reasons: [],
+      },
+    ];
+    state.messages = [new HumanMessage('Vendedoe')];
+
+    const result = await recommendationNode(state);
+
+    const content = String(result.messages?.[0].content || '');
+    expect(content).toContain('quis dizer');
+    expect(content).toContain('vendedor');
+    expect(content).not.toContain('Encontrei');
+  });
 });
