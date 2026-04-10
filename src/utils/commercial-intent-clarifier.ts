@@ -1,10 +1,6 @@
 import { findBestMatch } from 'string-similarity';
 
-export type CommercialActionSuggestion =
-  | 'vendedor'
-  | 'financiamento'
-  | 'troca'
-  | 'agendar visita';
+export type CommercialActionSuggestion = 'vendedor' | 'financiamento' | 'troca' | 'agendar visita';
 
 interface CommercialAlias {
   action: CommercialActionSuggestion;

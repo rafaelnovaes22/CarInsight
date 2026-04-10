@@ -3,7 +3,9 @@ import { maskPhoneNumber } from '../../lib/privacy';
 import { prisma } from '../../lib/prisma';
 import type { ConversationState } from '../../types/state.types';
 
-type LeadVehicle = NonNullable<NonNullable<ConversationState['profile']>['_lastShownVehicles']>[number];
+type LeadVehicle = NonNullable<
+  NonNullable<ConversationState['profile']>['_lastShownVehicles']
+>[number];
 
 function capitalize(text: string): string {
   return text
@@ -178,7 +180,9 @@ export class MessageHandlerLeadService {
         ]).slice(0, 5);
 
         if (selectedVehicle) {
-          details.push(`\uD83D\uDE97 *Interesse principal:* ${formatVehicleSummary(selectedVehicle)}`);
+          details.push(
+            `\uD83D\uDE97 *Interesse principal:* ${formatVehicleSummary(selectedVehicle)}`
+          );
         } else if (profile?._searchedItem) {
           details.push(`\uD83D\uDD0D *Busca:* ${profile._searchedItem}`);
         }
