@@ -3,12 +3,25 @@
  * Uses LangGraph StateGraph for conversation flow management
  */
 
+import { HumanMessage } from '@langchain/core/messages';
+import { Runnable } from '@langchain/core/runnables';
 import { logger } from '../lib/logger';
 import { ConversationState, BotMessage, GraphContext } from '../types/state.types';
 import { IGraphState } from '../types/graph.types';
 import { createConversationGraph } from './workflow';
-import { HumanMessage } from '@langchain/core/messages';
-import { Runnable } from '@langchain/core/runnables';
+
+const FALLBACK_RESPONSE =
+  'Como posso ajudar voce? Se preferir, digite "vendedor" para falar com nossa equipe.';
+
+const isAiMessage = (message: any): boolean => {
+  if (!message) return false;
+
+  if (typeof message._getType === 'function') {
+    return message._getType() === 'ai';
+  }
+
+  return message.type === 'ai' || message.id?.includes('AIMessage');
+};
 
 /**
  * LangGraph Conversation Manager
@@ -34,31 +47,36 @@ export class LangGraphConversation {
     try {
       logger.info({ conversationId, message }, 'LangGraph: Processing message via Graph');
 
-      // Invoke the graph
-      // The graph handles persistence via PrismaCheckpointer using thread_id
       const config = { configurable: { thread_id: conversationId } };
 
-      // We pass the new user message. The graph loads history from persistence.
-      // Note: If this is the VERY first message and nothing is in persistence,
-      // the graph will initialize with default state + this message.
       const result = await this.app.invoke(
         {
           messages: [new HumanMessage(message)],
-          // Merge relevant existing state functionality if needed, e.g. persistence of legacy fields not yet in graph
-          // But ideally graph persistence is the source of truth now.
         },
         config
       );
 
       const finalState = result as IGraphState;
       const lastMessage = finalState.messages[finalState.messages.length - 1];
-      let responseContent = lastMessage?.content?.toString() || '';
+      const responseContent =
+        isAiMessage(lastMessage) && lastMessage?.content ? lastMessage.content.toString() : '';
+      const newState = this.mapToLegacyState(finalState, state);
 
-      // Guard: se não há resposta de IA (node retornou sem messages), usar fallback
       if (!responseContent.trim()) {
-        logger.warn({ conversationId, nextNode: finalState.next }, 'LangGraph: Empty response');
-        responseContent =
-          'Como posso ajudar você? Se preferir, digite "vendedor" para falar com nossa equipe. 😊';
+        const lastMessageType =
+          typeof lastMessage?._getType === 'function'
+            ? lastMessage._getType()
+            : ((lastMessage as any)?.type ?? 'unknown');
+
+        logger.warn(
+          { conversationId, nextNode: finalState.next, lastMessageType },
+          'LangGraph: Missing AI response'
+        );
+
+        return {
+          response: FALLBACK_RESPONSE,
+          newState,
+        };
       }
 
       logger.info(
@@ -69,9 +87,6 @@ export class LangGraphConversation {
         },
         'LangGraph: Execution completed'
       );
-
-      // Map back to legacy state for compatibility with external caller
-      const newState = this.mapToLegacyState(finalState, state);
 
       return {
         response: responseContent,
@@ -87,8 +102,8 @@ export class LangGraphConversation {
         'LangGraph: Error processing message'
       );
       return {
-        response: 'Desculpe, tive um problema ao processar sua mensagem. Pode reformular? 🤔',
-        newState: state, // Return original state on error
+        response: 'Desculpe, tive um problema ao processar sua mensagem. Pode reformular?',
+        newState: state,
       };
     }
   }
@@ -100,11 +115,9 @@ export class LangGraphConversation {
     graphState: IGraphState,
     originalState: ConversationState
   ): ConversationState {
-    // Convert BaseMessage[] to BotMessage[]
     const mappedMessages: BotMessage[] = graphState.messages.map(msg => {
       let role: 'user' | 'assistant' = 'assistant';
 
-      // Robust check for human message (handles instances and serialized objects)
       if (msg instanceof HumanMessage) {
         role = 'user';
       } else if (typeof msg._getType === 'function' && msg._getType() === 'human') {
@@ -116,13 +129,13 @@ export class LangGraphConversation {
       return {
         role,
         content: msg.content ? msg.content.toString() : '',
-        timestamp: new Date(), // We might lose exact timestamp in BaseMessage unless stored in additional_kwargs
+        timestamp: new Date(),
       };
     });
 
     const graphContext: GraphContext = {
       currentNode: graphState.next,
-      nodeHistory: originalState.graph.nodeHistory, // We might lose purely graph-internal history logic unless we track it
+      nodeHistory: originalState.graph.nodeHistory,
       errorCount: graphState.metadata.errorCount,
       loopCount: graphState.metadata.loopCount,
     };
@@ -132,7 +145,7 @@ export class LangGraphConversation {
       phoneNumber: originalState.phoneNumber,
       messages: mappedMessages,
       quiz: graphState.quiz,
-      profile: graphState.profile as any, // Type partial compatibility
+      profile: graphState.profile as any,
       recommendations: graphState.recommendations,
       graph: graphContext,
       metadata: {

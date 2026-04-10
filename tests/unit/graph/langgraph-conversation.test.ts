@@ -84,4 +84,33 @@ describe('LangGraphConversation Integration', () => {
     // Should return original state or safe fallback
     expect(result.newState).toBe(currentState);
   });
+
+  it('should not echo the user message when the graph ends without an AI response', async () => {
+    const currentState = createMockState();
+    const userMessage = '20 mil de entrada';
+
+    mockInvoke.mockResolvedValue({
+      messages: [new HumanMessage(userMessage)],
+      next: 'financing',
+      profile: {
+        customerName: 'Rafael',
+        wantsFinancing: true,
+      },
+      recommendations: [],
+      metadata: {
+        startedAt: Date.now(),
+        lastMessageAt: Date.now(),
+        flags: ['visit_requested'],
+        loopCount: 0,
+        errorCount: 0,
+      },
+      quiz: {},
+    });
+
+    const result = await langGraph.processMessage(userMessage, currentState);
+
+    expect(result.response).not.toBe(userMessage);
+    expect(result.response).toContain('vendedor');
+    expect(result.newState.graph.currentNode).toBe('financing');
+  });
 });

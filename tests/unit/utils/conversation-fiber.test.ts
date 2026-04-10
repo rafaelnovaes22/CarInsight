@@ -367,6 +367,22 @@ describe('conversation-fiber', () => {
       expect(corrected).toBeNull();
     });
 
+    it('should allow financing after visit_requested without forcing the conversation to end', () => {
+      const state = stateWith({
+        profile: {
+          customerName: 'Rafael',
+          budget: 150000,
+          usage: 'familia',
+          _showedRecommendation: true,
+          wantsFinancing: true,
+        },
+        flags: ['visit_requested'],
+      });
+
+      const corrected = checkFiberGuard(state, 'financing', 'negotiation');
+      expect(corrected).toBeNull();
+    });
+
     it('should block non-allowlisted regression even with sourceNode', () => {
       const state = stateWith({
         profile: {

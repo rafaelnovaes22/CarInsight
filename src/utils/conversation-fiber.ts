@@ -234,6 +234,15 @@ const ALLOWED_REGRESSIONS: ReadonlyArray<[string, string]> = [
   ['trade_in', 'recommendation'],
 ];
 
+const ALLOWED_POST_VISIT_TARGETS = new Set([
+  'discovery',
+  'search',
+  'recommendation',
+  'negotiation',
+  'financing',
+  'trade_in',
+]);
+
 /**
  * Checks if a proposed node transition would regress the conversation fiber,
  * considering the current state and allowed exceptions.
@@ -248,9 +257,20 @@ export function checkFiberGuard(
 ): string | null {
   const currentFiber = computeFiber(state).fiber;
   const targetFiber = fiberForNode(targetNode);
+  const hasVisitRequested = hasFlag(state.metadata.flags, 'visit_requested');
+  const hasHandoffRequested = hasFlag(state.metadata.flags, 'handoff_requested');
 
   // No regression — transition is fine
   if (targetFiber >= currentFiber) {
+    return null;
+  }
+
+  if (
+    currentFiber === ConversationFiber.CLOSING &&
+    hasVisitRequested &&
+    !hasHandoffRequested &&
+    ALLOWED_POST_VISIT_TARGETS.has(targetNode)
+  ) {
     return null;
   }
 
