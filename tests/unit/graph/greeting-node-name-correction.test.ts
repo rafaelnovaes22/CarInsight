@@ -69,6 +69,12 @@ const brazilianNameGenerator = fc.constantFrom(...RELIABLE_NAMES).map(name => {
   return name.charAt(0).toUpperCase() + name.slice(1);
 });
 
+function areEquivalentNames(left: string, right: string): boolean {
+  const normalizedLeft = extractName(left) ?? left;
+  const normalizedRight = extractName(right) ?? right;
+  return normalizedLeft.toLowerCase() === normalizedRight.toLowerCase();
+}
+
 /**
  * Generator for name correction patterns
  */
@@ -132,7 +138,7 @@ describe('Greeting Node Name Correction Property Tests', () => {
           correctionPatternGenerator,
           async (correctedName, existingName, pattern) => {
             // Skip if names are the same (case-insensitive)
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             // Get what extractName would return for this name
             const expectedExtracted = extractName(correctedName);
@@ -163,7 +169,7 @@ describe('Greeting Node Name Correction Property Tests', () => {
           brazilianNameGenerator,
           async (correctedName, existingName) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -209,7 +215,7 @@ describe('Greeting Node Name Correction Property Tests', () => {
           correctionPatternGenerator,
           async (correctedName, existingName, pattern) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -243,7 +249,7 @@ describe('Greeting Node Name Correction Property Tests', () => {
           brazilianNameGenerator,
           async (correctedName, existingName) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -283,7 +289,7 @@ describe('Greeting Node Name Correction Property Tests', () => {
           correctionPatternGenerator,
           async (correctedName, existingName, pattern) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -309,7 +315,7 @@ describe('Greeting Node Name Correction Property Tests', () => {
           brazilianNameGenerator,
           async (correctedName, existingName) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -337,7 +343,7 @@ describe('Greeting Node Name Correction Property Tests', () => {
           brazilianNameGenerator,
           async (correctedName, existingName) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
