@@ -81,39 +81,43 @@ describe('time-context', () => {
   });
 
   describe('isQuietHours', () => {
-    it('should return true between 22h and 08h', () => {
-      expect(isQuietHours(new Date('2026-03-01T22:00:00'))).toBe(true);
-      expect(isQuietHours(new Date('2026-03-01T03:00:00'))).toBe(true);
-      expect(isQuietHours(new Date('2026-03-01T07:59:00'))).toBe(true);
+    // Dates use explicit UTC (Z suffix) so tests pass in any server timezone.
+    // Brazil (America/Sao_Paulo) is UTC-3 in March 2026.
+    it('should return true during quiet hours (22h-09h BRT)', () => {
+      expect(isQuietHours(new Date('2026-03-02T01:00:00Z'))).toBe(true); // 22:00 BRT
+      expect(isQuietHours(new Date('2026-03-01T06:00:00Z'))).toBe(true); // 03:00 BRT
+      expect(isQuietHours(new Date('2026-03-01T11:59:00Z'))).toBe(true); // 08:59 BRT (< 09h)
     });
 
-    it('should return false between 08h and 22h', () => {
-      expect(isQuietHours(new Date('2026-03-01T08:00:00'))).toBe(false);
-      expect(isQuietHours(new Date('2026-03-01T14:00:00'))).toBe(false);
-      expect(isQuietHours(new Date('2026-03-01T21:59:00'))).toBe(false);
+    it('should return false during allowed hours (09h-22h BRT)', () => {
+      expect(isQuietHours(new Date('2026-03-01T12:00:00Z'))).toBe(false); // 09:00 BRT
+      expect(isQuietHours(new Date('2026-03-01T17:00:00Z'))).toBe(false); // 14:00 BRT
+      expect(isQuietHours(new Date('2026-03-02T00:59:00Z'))).toBe(false); // 21:59 BRT
     });
   });
 
   describe('getNextSendTime', () => {
+    // Assertions use toISOString() so they are timezone-agnostic.
+    // Brazil is UTC-3 in March 2026, so 09:00 BRT = 12:00 UTC.
     it('should return same time if not in quiet hours', () => {
-      const date = new Date('2026-03-01T14:30:00');
+      const date = new Date('2026-03-01T17:30:00Z'); // 14:30 BRT — allowed
       expect(getNextSendTime(date)).toEqual(date);
     });
 
-    it('should return 08:00 next day if past 22h', () => {
-      const date = new Date('2026-03-01T23:30:00');
+    it('should return 09:00 BRT next day if past 22h BRT', () => {
+      // 23:30 BRT March 1 = 02:30 UTC March 2
+      const date = new Date('2026-03-02T02:30:00Z');
       const next = getNextSendTime(date);
-      expect(next.getHours()).toBe(8);
-      expect(next.getMinutes()).toBe(0);
-      expect(next.getDate()).toBe(2); // next day
+      // Expected: 09:00 BRT March 2 = 12:00 UTC March 2
+      expect(next.toISOString()).toBe('2026-03-02T12:00:00.000Z');
     });
 
-    it('should return 08:00 same day if early morning', () => {
-      const date = new Date('2026-03-01T03:00:00');
+    it('should return 09:00 BRT same day if early morning BRT', () => {
+      // 03:00 BRT March 1 = 06:00 UTC March 1
+      const date = new Date('2026-03-01T06:00:00Z');
       const next = getNextSendTime(date);
-      expect(next.getHours()).toBe(8);
-      expect(next.getMinutes()).toBe(0);
-      expect(next.getDate()).toBe(1); // same day
+      // Expected: 09:00 BRT March 1 = 12:00 UTC March 1
+      expect(next.toISOString()).toBe('2026-03-01T12:00:00.000Z');
     });
   });
 });

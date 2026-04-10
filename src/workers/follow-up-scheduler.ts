@@ -26,9 +26,9 @@ async function processSingleFollowUp(followUp: any): Promise<void> {
   const { id, phoneNumber, content, conversationId } = followUp;
 
   try {
-    // Skip during quiet hours — will be picked up in the next cycle after 08h
+    // Skip during quiet hours (22h-09h BRT) — will be picked up in the next cycle after 09h
     if (isQuietHours()) {
-      logger.debug({ followUpId: id }, 'Follow-up: quiet hours, skipping until next cycle');
+      logger.debug({ followUpId: id }, 'Follow-up: quiet hours (BRT), skipping until next cycle');
       return;
     }
 

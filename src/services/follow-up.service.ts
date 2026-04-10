@@ -14,7 +14,7 @@
  *   Seq 7 — Dia 90: Re-engagement com novidades do estoque
  *
  * Compliance:
- * - Quiet hours: Never sends between 22h-08h (schedules for 08:00 next day)
+ * - Quiet hours: Never sends between 22h-09h Brazil time (schedules for 09:00 next day)
  * - Opt-out: Every message includes "Digite PARAR para não receber mais"
  * - Cancellation: If customer re-engages, pending follow-ups are cancelled
  */

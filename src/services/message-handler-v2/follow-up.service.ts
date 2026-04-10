@@ -73,7 +73,9 @@ export class MessageHandlerFollowUpService {
     if (
       !featureFlags.isEnabled('ENABLE_FOLLOW_UP') ||
       state.recommendations.length === 0 ||
-      state.metadata.flags.includes('follow_up_scheduled')
+      state.metadata.flags.includes('follow_up_scheduled') ||
+      state.metadata.flags.includes('handoff_requested') ||
+      state.metadata.flags.includes('lead_sent')
     ) {
       return false;
     }
