@@ -268,7 +268,10 @@ export class GuardrailsService {
     // Common prompt injection patterns
     const injectionPatterns = [
       // System prompt manipulation (English)
-      /ignore\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
+      // "all previous instructions" is a compound qualifier — the original
+      // single-word pattern let "ignore all previous instructions" through
+      // (found by the adversarial golden dataset, 2026-07)
+      /ignore\s+(all\s+|the\s+)?(previous|above|all|prior|the)\s+(instructions|prompts|rules)/i,
       /forget\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
       /disregard\s+(previous|above|all|the)\s+(instructions|prompts|rules)/i,
 
@@ -314,8 +317,11 @@ export class GuardrailsService {
       /(tell|give)\s+me\s+(your|the)\s+(prompt|instructions)/i,
 
       // Prompt extraction (Portuguese)
-      /me\s+(diga|mostre|revele)\s+(seu|sua|o|a)\s+(prompt|instru[çc][ãa]o|sistema)/i,
-      /qual\s+([ée]|s[ãa]o)\s+(seu|sua|suas|tuas?)\s+(instru[çc][õo]es?|prompt|regras?)/i,
+      // Plural possessives ("suas instruções") and articles ("o seu prompt")
+      // broke the original patterns — both found by the adversarial golden
+      // dataset probe (2026-07)
+      /me\s+(diga|mostre|revele)\s+(seus?|suas?|o|a|os|as)\s+(prompts?|instru[çc]([ãa]o|[õo]es)|sistema)/i,
+      /qual\s+([ée]|s[ãa]o)\s+(o\s+|a\s+|os\s+|as\s+)?(seus?|suas?|tuas?)\s+(instru[çc][õo]es?|prompts?|regras?)/i,
       /sua\s+instru[çc][ãa]o/i,
 
       // SQL injection patterns (extra safety)

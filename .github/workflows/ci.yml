@@ -70,6 +70,26 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
+      - name: Seed eval database
+        run: npm run db:seed
+
+      # Eval spine: adversarial golden set (deterministic), recommendation
+      # golden set (against seeded DB) and LLM-as-judge role adherence.
+      # The judge layer self-skips when no real API key is configured —
+      # mock verdicts are worse than an explicit skip.
+      - name: Run eval spine (promotion gate)
+        run: npm run eval
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: evals/eval-report.json
+
       - name: Generate coverage report
         run: npm run test:coverage
         env:

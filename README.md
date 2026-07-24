@@ -7,6 +7,7 @@
 
 [![CI/CD](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/Tests-1028%20passing-brightgreen)]()
+[![Evals](https://img.shields.io/badge/Eval%20Spine-adversarial%20%2B%20golden%20set%20%2B%20LLM%20judge-blueviolet)](#eval-spine-promotion-gate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
@@ -113,6 +114,26 @@ docs/
 - **Output validation** — 4096 char limit, hallucination checks against inventory
 - **PII masking** — Phone numbers masked in all logs (LGPD/GDPR)
 - **ISO 42001 alignment** — AI transparency disclaimers, audit logging
+
+## Eval Spine (promotion gate)
+
+Quality is gated, not hoped for. `npm run eval` runs three layers, cheapest first,
+and CI blocks the merge on the verdict (`evals/eval-report.json`):
+
+| Layer | What it checks | Gate |
+|---|---|---|
+| `adversarial-input` | Adversarial golden set ([`adversarial-golden-dataset.ts`](src/evaluation/adversarial-golden-dataset.ts)): jailbreaks, prompt extraction, injection payloads and benign tripwires against the deterministic guardrail layer. No LLM, no DB. | 100% |
+| `recommendation` | Recommendation golden set ([`golden-dataset.ts`](src/evaluation/golden-dataset.ts)): curated buyer profiles with ideal/anti-patterns and precision@3 against the live ranker. | ≥ 70% |
+| `role-adherence` | Prompt-level attacks (the ones the input filter deliberately lets through) are answered with the production system prompt and judged by an LLM with a [versioned rubric](src/evaluation/llm-judge.ts). Self-skips rather than judging on mock providers. | every defense holds |
+
+Two design rules, learned in production:
+
+- **A skipped layer is reported loudly, never counted as passed.** A scorecard
+  that hides what it did not measure is fiction.
+- **Every failure becomes a case.** The dataset documents three real regex gaps
+  found by its own probe (compound English qualifiers, plural possessives,
+  articles) and the role-play attacks that revealed the system prompt failed
+  on the fallback model — fixed and now permanently gated.
 
 ## Testing
 
