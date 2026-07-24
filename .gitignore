@@ -138,3 +138,13 @@ patch*.js
 
 # Claude Code temp files
 tmpclaude-*
+.reflex/
+
+# Debug/scratch output — nunca commitar
+*.log
+diff*.txt
+err*.txt
+results.txt
+test-output.txt
+tsc-errors.*
+vitest-*.txt
