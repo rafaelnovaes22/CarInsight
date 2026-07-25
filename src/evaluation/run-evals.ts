@@ -86,6 +86,16 @@ function classifyInputResult(goldenCase: AdversarialGoldenCase, allowed: boolean
 // ============================================================================
 
 async function runRecommendationLayer(): Promise<LayerReport> {
+  // Same rule as the judge layer: without a real LLM provider the ranker
+  // degrades to mock responses and the score measures the mock, not the
+  // system. A loud SKIP beats a fake 4/10 (seen on the first CI run).
+  if (!judgeAvailable()) {
+    return skippedLayer(
+      'recommendation',
+      '>= 70% pass rate on golden dataset',
+      'no real LLM provider configured — ranker would be scored against mock responses'
+    );
+  }
   try {
     // Lazy import: pulls in prisma, which needs DATABASE_URL to be reachable
     const { benchmarkRunner } = await import('./benchmark-runner');
