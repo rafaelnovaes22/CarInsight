@@ -1773,8 +1773,16 @@ async function main() {
 
   // Create vehicles
   for (const vehicle of vehiclesData) {
-    // Remove ID and creation dates to allow clean insertion
-    const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...data } = vehicle as any;
+    // Remove ID and creation dates to allow clean insertion.
+    // embedding is Unsupported("vector") in the Prisma schema, so it cannot go
+    // through prisma.create() — it is backfilled by the embedding pipeline.
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      embedding: _embedding,
+      ...data
+    } = vehicle as any;
 
     await prisma.vehicle.create({
       data: {

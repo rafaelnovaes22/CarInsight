@@ -177,7 +177,10 @@ function printScorecard(report: EvalReport): void {
   console.log('═'.repeat(64));
   for (const layer of report.layers) {
     const icon = layer.status === 'passed' ? '✅' : layer.status === 'failed' ? '❌' : '⏭️';
-    const counts = layer.status === 'skipped' ? `SKIPPED: ${layer.skipReason}` : `${layer.passed}/${layer.total}`;
+    const counts =
+      layer.status === 'skipped'
+        ? `SKIPPED: ${layer.skipReason}`
+        : `${layer.passed}/${layer.total}`;
     console.log(`  ${icon} ${layer.layer.padEnd(20)} ${counts}`);
     console.log(`     gate: ${layer.gate}`);
     for (const failure of layer.failures) console.log(`     ✗ ${failure}`);
