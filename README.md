@@ -57,7 +57,7 @@ Each provider is wrapped in a circuit breaker (3 failures → 1 min cooldown). E
 |----------|-----------|
 | LangGraph over LangChain agents | Deterministic state graph with checkpointing; no hallucinated tool calls |
 | Fiber-based routing | Formal forward-progress guarantee; prevents conversation loops |
-| Multi-LLM router | FinOps: route by complexity, not by default. 10x cost reduction on simple tasks |
+| Multi-LLM router | FinOps: route by task complexity instead of defaulting to the strongest model; cheaper providers handle simple turns, with quality guarded by the eval spine |
 | In-memory vector store | Sub-50ms search for inventory < 500 vehicles; pgvector for persistence |
 | Pino structured logging | LGPD/GDPR: phone masking built into serializer, JSON for audit trails |
 
