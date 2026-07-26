@@ -473,10 +473,10 @@ Veja [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md) para termos de uso.
 
 ## 👨‍💻 Autor
 
-**Rafael Novaes**
+**Rafael de Novaes**
 
 - GitHub: [@rafaelnovaes22](https://github.com/rafaelnovaes22)
-- LinkedIn: [Rafael Novaes](https://linkedin.com/in/rafaeldenovaes)
+- LinkedIn: [Rafael de Novaes](https://linkedin.com/in/rafaeldenovaes)
 
 ## 🙏 Agradecimentos
 
