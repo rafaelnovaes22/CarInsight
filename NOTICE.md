@@ -37,5 +37,5 @@ evaluation by recruiters and potential employers.
 ## 📞 Contact
 
 **Author:** Rafael Novaes  
-**LinkedIn:** [linkedin.com/in/rafaelnovaes22](https://linkedin.com/in/rafaelnovaes22)  
+**LinkedIn:** [linkedin.com/in/rafaeldenovaes](https://linkedin.com/in/rafaeldenovaes)  
 **GitHub:** [@rafaelnovaes22](https://github.com/rafaelnovaes22)

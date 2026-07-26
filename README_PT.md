@@ -476,7 +476,7 @@ Veja [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md) para termos de uso.
 **Rafael Novaes**
 
 - GitHub: [@rafaelnovaes22](https://github.com/rafaelnovaes22)
-- LinkedIn: [Rafael Novaes](https://linkedin.com/in/rafaelnovaes22)
+- LinkedIn: [Rafael Novaes](https://linkedin.com/in/rafaeldenovaes)
 
 ## 🙏 Agradecimentos
 
