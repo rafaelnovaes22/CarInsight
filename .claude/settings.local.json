@@ -8,7 +8,8 @@
       "Bash(npm run typecheck:*)",
       "Bash(npx tsc:*)",
       "Bash(npm test:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebSearch"
     ]
   }
 }

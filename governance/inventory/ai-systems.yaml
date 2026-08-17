@@ -1,0 +1,101 @@
+# Inventário de sistemas de IA — ISO/IEC 42001 cláusula 4.3 e Anexo A.4
+# Validado em CI por scripts/governance/validate-inventory.ts:
+# todo modelo presente em src/lib/llm-router.ts e src/lib/embedding-router.ts
+# precisa estar aqui E ter model card em governance/models/.
+version: 1.0
+updated: 2026-07-29
+next_review: 2027-01-29
+
+scope:
+  in_scope:
+    - Agente conversacional de vendas no WhatsApp (recomendação de veículos)
+    - Pipeline de recomendação e ranqueamento de veículos
+    - Geração de embeddings para busca semântica de estoque
+    - Follow-up automatizado de conversa
+  out_of_scope:
+    - Ferramentas internas de desenvolvimento assistido por IA (não tocam dado de usuário final)
+    - Scripts de benchmark e avaliação offline (não servem tráfego)
+
+systems:
+  - id: SYS-001
+    name: Agente conversacional de vendas (WhatsApp)
+    purpose: >
+      Qualificar interessado, entender necessidade e recomendar veículos do estoque
+      real do cliente, com handoff para vendedor humano quando sai do escopo.
+    entrypoint: src/graph/workflow.ts
+    criticality: high
+    rationale_criticality: >
+      Fala direto com consumidor final, influencia decisão de compra de valor alto
+      e trata dado pessoal (telefone, nome, e-mail).
+    affected_parties: [consumidor final, vendedor da concessionária, cliente B2B]
+    autonomy_stage: assisted   # shadow | assisted | autonomous
+    human_oversight:
+      - Handoff por solicitação (src/utils/handoff-detector.ts)
+      - Handoff automático por circuit breaker de loop, erro e estagnação (src/graph/workflow.ts)
+      - Decisão comercial sempre validada por pessoa antes de fechamento
+    models: [gpt-4.1-mini, gemini-2.5-flash, llama-3.1-8b-instant, mock]
+    personal_data: [phoneNumber, name, email, conteúdo da conversa]
+    guardrails:
+      - src/services/guardrails.service.ts
+      - src/services/rate-limit.service.ts
+    evals: [src/evaluation/golden-dataset.ts, src/evaluation/benchmark-runner.ts]
+    aiia: governance/impact/AIIA-carinsight.md
+    kill_switch: Desligar webhook e redirecionar para atendimento humano (ver incident-response.md)
+
+  - id: SYS-002
+    name: Pipeline de recomendação e ranqueamento
+    purpose: >
+      Filtrar e ordenar veículos por aptidão ao perfil informado, usando campos
+      pré-calculados na escrita e ordenação em SQL, com explicação da escolha.
+    entrypoint: src/agents/vehicle-expert.agent.ts
+    criticality: high
+    rationale_criticality: >
+      É a saída que o usuário recebe como recomendação de compra. Erro aqui é
+      recomendação inadequada, não apenas texto ruim.
+    affected_parties: [consumidor final, cliente B2B]
+    autonomy_stage: assisted
+    human_oversight:
+      - Explicação determinística por recomendação (recommendation-explainer.service.ts)
+      - Métricas de qualidade com alerta em degradação (recommendation-health-monitor.service.ts)
+    models: []   # ranqueamento é determinístico: SQL + campos pré-calculados
+    determinism_note: >
+      O LLM foi deliberadamente retirado do caminho crítico de ranqueamento
+      (latência ~60s para <5s). Ele atua só na compreensão da necessidade e na redação.
+    personal_data: [preferências informadas na conversa]
+    evals: [precision@1, precision@3, precision@5, MRR, taxa de rejeição]
+    aiia: governance/impact/AIIA-carinsight.md
+
+  - id: SYS-003
+    name: Busca semântica de estoque (embeddings)
+    purpose: Indexar e recuperar veículos por similaridade semântica sobre pgvector.
+    entrypoint: src/lib/embedding-router.ts
+    criticality: medium
+    affected_parties: [consumidor final]
+    autonomy_stage: autonomous
+    human_oversight:
+      - Filtro SQL sobre estoque real limita o resultado ao que existe
+      - Avaliação de retrieval contra ground truth
+    models: [text-embedding-3-small, embed-multilingual-v3.0]
+    personal_data: []
+    note: >
+      Cohere entra como FALLBACK DE EMBEDDINGS, não como re-ranker.
+      O re-ranqueamento é determinístico sobre os scores semânticos.
+    aiia: governance/impact/AIIA-carinsight.md
+
+  - id: SYS-004
+    name: Follow-up automatizado
+    purpose: Retomar conversa abandonada, pós-recomendação, pós-venda e indicação.
+    entrypoint: src/services/follow-up.service.ts
+    criticality: medium
+    rationale_criticality: >
+      Envia mensagem não solicitada a consumidor; risco de percepção de spam e
+      de violação de preferência de contato.
+    affected_parties: [consumidor final]
+    autonomy_stage: autonomous
+    human_oversight:
+      - Opt-out conversacional ("Digite PARAR")
+      - Disclosure de IA em todos os 10 templates
+      - Rate limiting por telefone
+    models: [gpt-4.1-mini, gemini-2.5-flash, llama-3.1-8b-instant]
+    personal_data: [phoneNumber, nome, histórico de conversa]
+    aiia: governance/impact/AIIA-carinsight.md

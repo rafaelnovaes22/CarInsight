@@ -148,3 +148,8 @@ results.txt
 test-output.txt
 tsc-errors.*
 vitest-*.txt
+
+# Material comercial e de captacao: fica fora do repo (CarInsight_negocio/)
+docs/marketing/
+PITCH_*.md
+VALUATION*.md

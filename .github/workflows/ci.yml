@@ -55,6 +55,12 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      # AIMS gate (ISO/IEC 42001). Roda antes dos testes porque e barato e
+      # pega classe de erro que teste nao pega: documento de governanca que
+      # divergiu do codigo. Ver governance/README.md.
+      - name: Validate AI governance artefacts
+        run: npm run governance
+
       - name: Setup test database
         run: npx prisma db push --accept-data-loss
 

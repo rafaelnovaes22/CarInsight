@@ -1,0 +1,276 @@
+# Registro de riscos de IA — ISO/IEC 42001 cláusula 6.1
+# Escalas e critério de aceitação: governance/risk/risk-methodology.md
+# Validado em CI: todo caminho em `controls` precisa existir no repositório.
+version: 1.0
+updated: 2026-07-29
+next_review: 2028-01-29
+
+risks:
+  - id: RSK-001
+    title: Alucinação com consequência comercial
+    description: >
+      O agente afirma disponibilidade, preço, condição ou característica de veículo
+      que não corresponde ao estoque real, e o usuário decide com base nisso.
+    systems: [SYS-001, SYS-002]
+    probability: 3
+    impact: 4
+    level: 12
+    classification: alto
+    controls:
+      - src/services/guardrails.service.ts        # disclaimers automáticos de preço e recomendação
+      - src/agents/vehicle-expert.agent.ts        # filtro e ordenação em SQL sobre estoque real
+      - src/services/recommendation-evidence.service.ts  # evidência por recomendação
+      - src/evaluation/golden-dataset.ts          # cenários curados com resultado esperado
+    residual_probability: 2
+    residual_impact: 3
+    residual_level: 6
+    residual_classification: medio
+    accepted_by: AI Owner
+    accepted_at: 2026-07-29
+    justification: >
+      O caminho de dado é SQL sobre estoque, então o agente não pode inventar registro.
+      O risco residual é de redação imprecisa sobre um registro existente, coberto por
+      disclaimer automático e medido no golden dataset.
+
+  - id: RSK-002
+    title: Prompt injection e sequestro de papel
+    description: >
+      Usuário instrui o agente a ignorar suas regras, revelar o system prompt,
+      assumir outra persona ou conceder condição comercial inexistente.
+    systems: [SYS-001]
+    probability: 4
+    impact: 3
+    level: 12
+    classification: alto
+    controls:
+      - src/services/guardrails.service.ts        # 25+ padrões PT-BR e EN, ofuscação base64/hex
+      - tests/e2e/security/guardrails.test.ts     # testes dedicados de segurança
+      - src/agents/vehicle-expert/constants/system-prompt.ts
+    incident_history:
+      - governance/incidents/log/2026-03-13-fallback-prompt-leak.md
+      - governance/incidents/log/2026-05-jailbreak-persona-galinha.md
+    residual_probability: 3
+    residual_impact: 2
+    residual_level: 6
+    residual_classification: medio
+    accepted_by: AI Owner
+    accepted_at: 2026-07-29
+    justification: >
+      Tentativa é frequente e continuará. O que mudou foi a resposta: bloqueio no
+      guardrail, prompt reestruturado e o ataque virou caso fixo na eval suite,
+      validado no modelo mais fraco da cadeia.
+
+  - id: RSK-003
+    title: Vazamento de dado pessoal em log ou resposta
+    description: >
+      Telefone, nome, e-mail ou trecho de conversa aparece em log, em trace de
+      terceiro ou na resposta enviada a outro usuário.
+    systems: [SYS-001, SYS-004]
+    probability: 2
+    impact: 5
+    level: 10
+    classification: alto
+    controls:
+      - src/lib/privacy.ts                        # masking de PII em log
+      - src/lib/logger.ts                         # Pino com masking aplicado
+      - src/services/guardrails.service.ts        # bloqueio de PII e erro técnico na saída
+    open_gaps:
+      - id: GAP-001
+        description: >
+          O masking cobria apenas telefone e preservava 6 dígitos. Estendido em
+          2026-07-29 para e-mail e nome, com prefixo reduzido.
+        status: fechado
+        closed_at: 2026-07-29
+    residual_probability: 2
+    residual_impact: 4
+    residual_level: 8
+    residual_classification: medio
+    accepted_by: AI Owner
+    accepted_at: 2026-07-29
+    justification: >
+      Impacto permanece alto por natureza (dado pessoal), e a mitigação é
+      probabilística: masking na saída de log e bloqueio na saída de conversa.
+
+  - id: RSK-004
+    title: Retenção de dado pessoal além do prazo declarado
+    description: >
+      A política declara retenção de 90 dias de inatividade, mas a limpeza depende
+      de execução. Se não rodar, o dado permanece e a declaração deixa de ser verdadeira.
+    systems: [SYS-001]
+    probability: 4
+    impact: 4
+    level: 16
+    classification: critico
+    controls:
+      - src/services/data-rights.service.ts       # cleanupInactiveData()
+      - src/jobs/data-retention.job.ts            # agendamento efetivo (criado em 2026-07-29)
+      - tests/unit/jobs/data-retention.job.test.ts
+    residual_probability: 2
+    residual_impact: 3
+    residual_level: 6
+    residual_classification: medio
+    accepted_by: AI Owner
+    accepted_at: 2026-07-29
+    justification: >
+      Era crítico justamente porque o método existia sem scheduler: a promessa
+      pública não era cumprida por omissão. Com job agendado, log de execução e
+      teste, o residual é falha de execução silenciosa, coberta por log estruturado.
+
+  - id: RSK-005
+    title: Indisponibilidade por falha de fornecedor de modelo
+    description: Um ou todos os provedores de LLM ficam indisponíveis ou com latência inviável.
+    systems: [SYS-001, SYS-003, SYS-004]
+    probability: 4
+    impact: 3
+    level: 12
+    classification: alto
+    controls:
+      - src/lib/llm-router.ts                     # cadeia OpenAI → Gemini → Groq → mock, circuit breaker
+      - src/lib/embedding-router.ts               # OpenAI → Cohere → mock
+      - src/services/public-health.service.ts     # health checks
+      - src/services/rate-limit.service.ts        # Redis com fallback in-memory
+    residual_probability: 2
+    residual_impact: 2
+    residual_level: 4
+    residual_classification: baixo
+    accepted_by: Engenheiro de IA
+    accepted_at: 2026-07-29
+    justification: Três provedores independentes mais modo mock e handoff humano.
+
+  - id: RSK-006
+    title: Viés na recomendação
+    description: >
+      O ranqueamento favorece sistematicamente certos veículos por artefato do
+      cálculo de aptidão, e não pela necessidade declarada do usuário.
+    systems: [SYS-002]
+    probability: 3
+    impact: 3
+    level: 9
+    classification: medio
+    controls:
+      - src/services/recommendation-metrics.service.ts  # precision@k, MRR, taxa de rejeição, correlação de score
+      - src/services/recommendation-health-monitor.service.ts  # detecção de drift
+      - src/services/recommendation-explainer.service.ts       # por que este veículo
+    open_gaps:
+      - id: GAP-002
+        description: >
+          Não há teste de paridade por faixa de preço ou por segmento: o viés hoje
+          seria detectado por queda de métrica agregada, não por análise de subgrupo.
+        status: aberto
+        owner: Engenheiro de IA
+        due: 2026-10-31
+    residual_probability: 3
+    residual_impact: 2
+    residual_level: 6
+    residual_classification: medio
+    accepted_by: AI Owner
+    accepted_at: 2026-07-29
+    justification: >
+      Ranqueamento é determinístico e auditável (SQL + campos pré-calculados), o que
+      torna o viés inspecionável por código, não opaco. Falta a análise por subgrupo.
+
+  - id: RSK-007
+    title: Custo descontrolado de inferência
+    description: Aumento de volume ou mudança de roteamento eleva o custo por conversa sem alerta.
+    systems: [SYS-001, SYS-004]
+    probability: 3
+    impact: 3
+    level: 9
+    classification: medio
+    controls:
+      - src/lib/llm-router.ts                     # roteamento por etapa ao modelo mais barato capaz
+      - src/services/message-handler-v2/persistence.service.ts  # tokens e custo por mensagem no banco
+      - monitoring/prometheus/prometheus.yml      # métricas de custo e uso
+      - governance/metrics/objectives.yaml        # objetivo de custo por conversa
+    residual_probability: 2
+    residual_impact: 2
+    residual_level: 4
+    residual_classification: baixo
+    accepted_by: Engenheiro de IA
+    accepted_at: 2026-07-29
+    justification: Custo é persistido por mensagem, então desvio é detectável por consulta.
+
+  - id: RSK-008
+    title: Mensagem não solicitada percebida como spam
+    description: >
+      Follow-up automatizado incomoda o usuário, gera denúncia na plataforma e
+      risco de bloqueio do número de WhatsApp Business.
+    systems: [SYS-004]
+    probability: 3
+    impact: 4
+    level: 12
+    classification: alto
+    controls:
+      - src/services/follow-up.service.ts         # 10 templates com disclosure de IA
+      - src/services/rate-limit.service.ts        # 10 mensagens por 60s por telefone
+      - src/services/data-rights.service.ts       # opt-out "PARAR"
+    residual_probability: 2
+    residual_impact: 3
+    residual_level: 6
+    residual_classification: medio
+    accepted_by: AI Owner
+    accepted_at: 2026-07-29
+    justification: Opt-out em um comando, disclosure em todo template e limite de frequência.
+
+  - id: RSK-009
+    title: Dependência de fornecedor e uso de dado para treinamento
+    description: >
+      Provedor de LLM altera termos e passa a usar conteúdo de conversa para treinar
+      modelo, ou encerra o serviço com aviso curto.
+    systems: [SYS-001, SYS-003, SYS-004]
+    probability: 2
+    impact: 4
+    level: 8
+    classification: medio
+    controls:
+      - governance/suppliers/supplier-register.yaml
+      - src/lib/llm-router.ts                     # troca de provedor é configuração, não redesenho
+    open_gaps:
+      - id: GAP-003
+        description: >
+          Não há verificação periódica automatizada de mudança de termos dos
+          fornecedores; hoje depende de leitura manual na revisão semestral.
+        status: aberto
+        owner: AI Owner
+        due: 2026-12-31
+    residual_probability: 2
+    residual_impact: 3
+    residual_level: 6
+    residual_classification: medio
+    accepted_by: AI Owner
+    accepted_at: 2026-07-29
+    justification: >
+      Arquitetura provider-agnostic reduz o custo de saída a configuração mais
+      regressão. O risco remanescente é de descobrir a mudança de termos tarde.
+
+  - id: RSK-010
+    title: Mudança de prompt ou modelo degradando qualidade sem detecção
+    description: >
+      Alteração aparentemente inofensiva quebra comportamento em cenário não coberto,
+      e a degradação só aparece em produção.
+    systems: [SYS-001, SYS-002]
+    probability: 3
+    impact: 3
+    level: 9
+    classification: medio
+    controls:
+      - src/evaluation/benchmark-runner.ts        # comparação contra baseline
+      - src/evaluation/golden-dataset.ts
+      - governance/CHANGE-MANAGEMENT.md           # gate de mudança
+      - .github/workflows/ci.yml                  # eval e testes como gate de merge
+    residual_probability: 2
+    residual_impact: 2
+    residual_level: 4
+    residual_classification: baixo
+    accepted_by: Engenheiro de IA
+    accepted_at: 2026-07-29
+    justification: >
+      Aconteceu de verdade (RSK-002, vazamento no fallback) e a resposta foi validar
+      no modelo mais fraco da cadeia, não só no primário.
+
+history:
+  - date: 2026-07-29
+    change: >
+      Registro inicial com 10 riscos. RSK-004 (retenção) entrou como crítico e foi
+      mitigado no mesmo dia com job agendado. GAP-001 (masking) fechado. GAP-002 e
+      GAP-003 permanecem abertos com prazo.

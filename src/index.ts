@@ -190,6 +190,12 @@ async function start() {
           .then(({ startFollowUpScheduler }) => startFollowUpScheduler())
           .catch(err => logger.error({ err }, 'Failed to start follow-up scheduler'));
       }
+
+      // LGPD: expurgo de dados inativos (90 dias). Sem isto a retencao declarada
+      // na politica publica nao e cumprida. Ver RSK-004 no risk-register.
+      import('./jobs/data-retention.job')
+        .then(({ startDataRetentionSchedule }) => startDataRetentionSchedule())
+        .catch(err => logger.error({ err }, 'Failed to start data retention schedule'));
     });
 
     server.on('error', error => {
@@ -208,6 +214,13 @@ async function shutdown(signal: string) {
   try {
     const { stopFollowUpScheduler } = await import('./workers/follow-up-scheduler');
     stopFollowUpScheduler();
+  } catch {
+    // Module may not have been loaded
+  }
+  // Stop data retention schedule
+  try {
+    const { stopDataRetentionSchedule } = await import('./jobs/data-retention.job');
+    stopDataRetentionSchedule();
   } catch {
     // Module may not have been loaded
   }

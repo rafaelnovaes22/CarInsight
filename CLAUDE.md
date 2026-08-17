@@ -6,6 +6,23 @@
 
 Node.js 20 · TypeScript 5.3 · LangGraph · PostgreSQL + pgvector · Prisma ORM · OpenAI/Groq · Meta WhatsApp API · Vitest · Railway
 
+## Comandos
+
+```bash
+npm run dev              # tsx watch src/index.ts
+npm run build            # tsc
+npm run test:run         # suíte completa (exclui testes que exigem PostgreSQL/LLM)
+npm run test:unit        # só unitários
+npm run lint             # eslint --max-warnings 0
+npm run verify:strict    # format:check + lint + tsc --noEmit + test:run — gate de commit
+npm run push:safe        # verify:strict + push para origin e novais
+npm run db:migrate       # prisma migrate deploy
+npm run db:studio        # prisma studio
+```
+
+Testes que precisam de banco: `npm run test:integration:db` (sobe
+`docker-compose.db.yml`). Testes de LLM real: `npm run test:integration:llm`.
+
 ## Referência Detalhada
 
 - **Arquitetura completa, agentes, serviços, comandos**: ver `skills.md`
