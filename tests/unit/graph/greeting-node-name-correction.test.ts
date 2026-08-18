@@ -13,6 +13,7 @@ import { createInitialState, IGraphState } from '../../../src/types/graph.types'
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { COMMON_BRAZILIAN_NAMES } from '../../../src/graph/langgraph/constants';
 import { extractName } from '../../../src/graph/langgraph/extractors/name-extractor';
+import { areEquivalentNames } from '../../helpers/name-equivalence';
 
 // ============================================================================
 // Mocks
@@ -68,12 +69,6 @@ const RELIABLE_NAMES = Array.from(COMMON_BRAZILIAN_NAMES).filter(name => {
 const brazilianNameGenerator = fc.constantFrom(...RELIABLE_NAMES).map(name => {
   return name.charAt(0).toUpperCase() + name.slice(1);
 });
-
-function areEquivalentNames(left: string, right: string): boolean {
-  const normalizedLeft = extractName(left) ?? left;
-  const normalizedRight = extractName(right) ?? right;
-  return normalizedLeft.toLowerCase() === normalizedRight.toLowerCase();
-}
 
 /**
  * Generator for name correction patterns
