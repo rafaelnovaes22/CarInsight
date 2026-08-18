@@ -24,7 +24,10 @@ function criarFormulario() {
   form.addTextItem().setTitle('Responsável técnico (nome + CREFITO)').setRequired(true);
   form.addTextItem().setTitle('Cidade/região de atuação').setRequired(true);
   form.addTextItem().setTitle('Site, Instagram e redes sociais');
-  form.addParagraphTextItem().setTitle('Contato do projeto (nome / e-mail / telefone)').setRequired(true);
+  form
+    .addParagraphTextItem()
+    .setTitle('Contato do projeto (nome / e-mail / telefone)')
+    .setRequired(true);
   form
     .addCheckboxItem()
     .setTitle('Atende em')
@@ -45,7 +48,9 @@ function criarFormulario() {
   form
     .addParagraphTextItem()
     .setTitle('Principais serviços oferecidos (liste até 5)')
-    .setHelpText('Ex: avaliação respiratória, sessões de reabilitação, fisioterapia hospitalar, home care, aluguel de equipamento');
+    .setHelpText(
+      'Ex: avaliação respiratória, sessões de reabilitação, fisioterapia hospitalar, home care, aluguel de equipamento'
+    );
   form.addTextItem().setTitle('Valor da avaliação (R$)');
   form.addTextItem().setTitle('Valor da sessão avulsa (R$)');
   form.addTextItem().setTitle('Pacotes / pacotes promocionais');
@@ -61,7 +66,10 @@ function criarFormulario() {
 
   // ---------------------------------------------------------------- Seção 3
   form.addPageBreakItem().setTitle('3. Atendimento hoje');
-  form.addTextItem().setTitle('Número de WhatsApp que será usado pelo assistente').setRequired(true);
+  form
+    .addTextItem()
+    .setTitle('Número de WhatsApp que será usado pelo assistente')
+    .setRequired(true);
   form
     .addParagraphTextItem()
     .setTitle('Horário de atendimento')
@@ -99,7 +107,9 @@ function criarFormulario() {
   form
     .addParagraphTextItem()
     .setTitle('O assistente NUNCA deve...')
-    .setHelpText('Ex: dar diagnóstico, prescrever exercício sem avaliação, prometer cura, opinar sobre conduta médica');
+    .setHelpText(
+      'Ex: dar diagnóstico, prescrever exercício sem avaliação, prometer cura, opinar sobre conduta médica'
+    );
 
   // ---------------------------------------------------------------- Seção 5
   form.addPageBreakItem().setTitle('5. O que o assistente deve fazer');
@@ -128,16 +138,17 @@ function criarFormulario() {
   form.addTextItem().setTitle('Para quem transferir (nome / WhatsApp)');
 
   // ---------------------------------------------------------------- Seção 6
-  form.addPageBreakItem().setTitle('6. Perguntas frequentes').setHelpText(
-    'As dúvidas que seus pacientes mais mandam — e como o assistente deve responder.'
-  );
+  form
+    .addPageBreakItem()
+    .setTitle('6. Perguntas frequentes')
+    .setHelpText('As dúvidas que seus pacientes mais mandam — e como o assistente deve responder.');
   [
     'Vocês atendem meu convênio?',
     'Quanto custa a avaliação/sessão?',
     'Precisa de pedido médico?',
     'Atendem em casa?',
     'Como funciona o tratamento?',
-  ].forEach((pergunta) => {
+  ].forEach(pergunta => {
     form.addParagraphTextItem().setTitle('Resposta ideal — "' + pergunta + '"');
   });
 

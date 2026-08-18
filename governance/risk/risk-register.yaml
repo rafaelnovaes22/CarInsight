@@ -17,10 +17,10 @@ risks:
     level: 12
     classification: alto
     controls:
-      - src/services/guardrails.service.ts        # disclaimers automáticos de preço e recomendação
-      - src/agents/vehicle-expert.agent.ts        # filtro e ordenação em SQL sobre estoque real
-      - src/services/recommendation-evidence.service.ts  # evidência por recomendação
-      - src/evaluation/golden-dataset.ts          # cenários curados com resultado esperado
+      - src/services/guardrails.service.ts # disclaimers automáticos de preço e recomendação
+      - src/agents/vehicle-expert.agent.ts # filtro e ordenação em SQL sobre estoque real
+      - src/services/recommendation-evidence.service.ts # evidência por recomendação
+      - src/evaluation/golden-dataset.ts # cenários curados com resultado esperado
     residual_probability: 2
     residual_impact: 3
     residual_level: 6
@@ -43,8 +43,8 @@ risks:
     level: 12
     classification: alto
     controls:
-      - src/services/guardrails.service.ts        # 25+ padrões PT-BR e EN, ofuscação base64/hex
-      - tests/e2e/security/guardrails.test.ts     # testes dedicados de segurança
+      - src/services/guardrails.service.ts # 25+ padrões PT-BR e EN, ofuscação base64/hex
+      - tests/e2e/security/guardrails.test.ts # testes dedicados de segurança
       - src/agents/vehicle-expert/constants/system-prompt.ts
     incident_history:
       - governance/incidents/log/2026-03-13-fallback-prompt-leak.md
@@ -71,9 +71,9 @@ risks:
     level: 10
     classification: alto
     controls:
-      - src/lib/privacy.ts                        # masking de PII em log
-      - src/lib/logger.ts                         # Pino com masking aplicado
-      - src/services/guardrails.service.ts        # bloqueio de PII e erro técnico na saída
+      - src/lib/privacy.ts # masking de PII em log
+      - src/lib/logger.ts # Pino com masking aplicado
+      - src/services/guardrails.service.ts # bloqueio de PII e erro técnico na saída
     open_gaps:
       - id: GAP-001
         description: >
@@ -102,8 +102,8 @@ risks:
     level: 16
     classification: critico
     controls:
-      - src/services/data-rights.service.ts       # cleanupInactiveData()
-      - src/jobs/data-retention.job.ts            # agendamento efetivo (criado em 2026-07-29)
+      - src/services/data-rights.service.ts # cleanupInactiveData()
+      - src/jobs/data-retention.job.ts # agendamento efetivo (criado em 2026-07-29)
       - tests/unit/jobs/data-retention.job.test.ts
     residual_probability: 2
     residual_impact: 3
@@ -125,10 +125,10 @@ risks:
     level: 12
     classification: alto
     controls:
-      - src/lib/llm-router.ts                     # cadeia OpenAI → Gemini → Groq → mock, circuit breaker
-      - src/lib/embedding-router.ts               # OpenAI → Cohere → mock
-      - src/services/public-health.service.ts     # health checks
-      - src/services/rate-limit.service.ts        # Redis com fallback in-memory
+      - src/lib/llm-router.ts # cadeia OpenAI → Gemini → Groq → mock, circuit breaker
+      - src/lib/embedding-router.ts # OpenAI → Cohere → mock
+      - src/services/public-health.service.ts # health checks
+      - src/services/rate-limit.service.ts # Redis com fallback in-memory
     residual_probability: 2
     residual_impact: 2
     residual_level: 4
@@ -148,9 +148,9 @@ risks:
     level: 9
     classification: medio
     controls:
-      - src/services/recommendation-metrics.service.ts  # precision@k, MRR, taxa de rejeição, correlação de score
-      - src/services/recommendation-health-monitor.service.ts  # detecção de drift
-      - src/services/recommendation-explainer.service.ts       # por que este veículo
+      - src/services/recommendation-metrics.service.ts # precision@k, MRR, taxa de rejeição, correlação de score
+      - src/services/recommendation-health-monitor.service.ts # detecção de drift
+      - src/services/recommendation-explainer.service.ts # por que este veículo
     open_gaps:
       - id: GAP-002
         description: >
@@ -178,10 +178,10 @@ risks:
     level: 9
     classification: medio
     controls:
-      - src/lib/llm-router.ts                     # roteamento por etapa ao modelo mais barato capaz
-      - src/services/message-handler-v2/persistence.service.ts  # tokens e custo por mensagem no banco
-      - monitoring/prometheus/prometheus.yml      # métricas de custo e uso
-      - governance/metrics/objectives.yaml        # objetivo de custo por conversa
+      - src/lib/llm-router.ts # roteamento por etapa ao modelo mais barato capaz
+      - src/services/message-handler-v2/persistence.service.ts # tokens e custo por mensagem no banco
+      - monitoring/prometheus/prometheus.yml # métricas de custo e uso
+      - governance/metrics/objectives.yaml # objetivo de custo por conversa
     residual_probability: 2
     residual_impact: 2
     residual_level: 4
@@ -201,9 +201,9 @@ risks:
     level: 12
     classification: alto
     controls:
-      - src/services/follow-up.service.ts         # 10 templates com disclosure de IA
-      - src/services/rate-limit.service.ts        # 10 mensagens por 60s por telefone
-      - src/services/data-rights.service.ts       # opt-out "PARAR"
+      - src/services/follow-up.service.ts # 10 templates com disclosure de IA
+      - src/services/rate-limit.service.ts # 10 mensagens por 60s por telefone
+      - src/services/data-rights.service.ts # opt-out "PARAR"
     residual_probability: 2
     residual_impact: 3
     residual_level: 6
@@ -224,7 +224,7 @@ risks:
     classification: medio
     controls:
       - governance/suppliers/supplier-register.yaml
-      - src/lib/llm-router.ts                     # troca de provedor é configuração, não redesenho
+      - src/lib/llm-router.ts # troca de provedor é configuração, não redesenho
     open_gaps:
       - id: GAP-003
         description: >
@@ -254,10 +254,10 @@ risks:
     level: 9
     classification: medio
     controls:
-      - src/evaluation/benchmark-runner.ts        # comparação contra baseline
+      - src/evaluation/benchmark-runner.ts # comparação contra baseline
       - src/evaluation/golden-dataset.ts
-      - governance/CHANGE-MANAGEMENT.md           # gate de mudança
-      - .github/workflows/ci.yml                  # eval e testes como gate de merge
+      - governance/CHANGE-MANAGEMENT.md # gate de mudança
+      - .github/workflows/ci.yml # eval e testes como gate de merge
     residual_probability: 2
     residual_impact: 2
     residual_level: 4
