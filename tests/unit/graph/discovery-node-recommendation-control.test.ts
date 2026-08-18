@@ -14,6 +14,7 @@ import { createInitialState, IGraphState } from '../../../src/types/graph.types'
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import { COMMON_BRAZILIAN_NAMES } from '../../../src/graph/langgraph/constants';
 import { extractName } from '../../../src/graph/langgraph/extractors/name-extractor';
+import { areEquivalentNames } from '../../helpers/name-equivalence';
 
 // ============================================================================
 // Mocks
@@ -566,7 +567,7 @@ describe('Discovery Node Name Correction Property Tests', () => {
           correctionPatternGenerator,
           async (correctedName, existingName, pattern) => {
             // Skip if names are the same (case-insensitive)
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             // Get what extractName would return for this name
             const expectedExtracted = extractName(correctedName);
@@ -607,7 +608,7 @@ describe('Discovery Node Name Correction Property Tests', () => {
           correctionPatternGenerator,
           async (correctedName, existingName, pattern) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -641,7 +642,7 @@ describe('Discovery Node Name Correction Property Tests', () => {
           brazilianNameGenerator,
           async (correctedName, existingName) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -681,7 +682,7 @@ describe('Discovery Node Name Correction Property Tests', () => {
           correctionPatternGenerator,
           async (correctedName, existingName, pattern) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;
@@ -707,7 +708,7 @@ describe('Discovery Node Name Correction Property Tests', () => {
           brazilianNameGenerator,
           async (correctedName, existingName) => {
             // Skip if names are the same
-            if (correctedName.toLowerCase() === existingName.toLowerCase()) return;
+            if (areEquivalentNames(correctedName, existingName)) return;
 
             const expectedExtracted = extractName(correctedName);
             if (!expectedExtracted) return;

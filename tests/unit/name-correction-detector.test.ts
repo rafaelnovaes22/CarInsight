@@ -13,6 +13,7 @@ import {
 } from '../../src/graph/langgraph/extractors/name-correction-detector';
 import { COMMON_BRAZILIAN_NAMES } from '../../src/graph/langgraph/constants';
 import { extractName } from '../../src/graph/langgraph/extractors/name-extractor';
+import { areEquivalentNames } from '../helpers/name-equivalence';
 
 // ============================================================================
 // Generators for property-based testing
@@ -35,12 +36,6 @@ const brazilianNameGenerator = fc.constantFrom(...RELIABLE_NAMES).map(name => {
   // Capitalize first letter
   return name.charAt(0).toUpperCase() + name.slice(1);
 });
-
-function areEquivalentNames(left: string, right: string): boolean {
-  const normalizedLeft = extractName(left) ?? left;
-  const normalizedRight = extractName(right) ?? right;
-  return normalizedLeft.toLowerCase() === normalizedRight.toLowerCase();
-}
 
 // ============================================================================
 // Property Tests

@@ -3,13 +3,13 @@
 # Objetivo sem fonte de medição é intenção, não objetivo.
 version: 1.0
 updated: 2026-07-29
-next_review: 2026-10-29   # revisado a cada análise crítica trimestral
+next_review: 2026-10-29 # revisado a cada análise crítica trimestral
 
 objectives:
   - id: OBJ-001
     objective: Manter a qualidade da recomendação acima do limiar aceitável
     indicator: precision@3 no golden dataset
-    target: ">= 0.70"
+    target: '>= 0.70'
     source: src/services/recommendation-metrics.service.ts
     measured_by: src/evaluation/benchmark-runner.ts
     frequency: a cada PR que toque prompt, ranqueamento ou modelo
@@ -18,7 +18,7 @@ objectives:
   - id: OBJ-002
     objective: Não regredir em cenário adversarial de aderência de papel
     indicator: aprovação no golden set adversarial, medida no modelo mais fraco da cadeia
-    target: "100% dos casos de papel e identidade"
+    target: '100% dos casos de papel e identidade'
     source: src/evaluation/golden-dataset.ts
     measured_by: .github/workflows/ci.yml
     frequency: todo PR
@@ -30,8 +30,8 @@ objectives:
   - id: OBJ-003
     objective: Manter o custo por conversa dentro do previsto
     indicator: custo médio em USD por conversa encerrada
-    target: "<= US$ 0,02"
-    source: src/services/message-handler-v2/persistence.service.ts   # tokenUsage e cost por mensagem
+    target: '<= US$ 0,02'
+    source: src/services/message-handler-v2/persistence.service.ts # tokenUsage e cost por mensagem
     measured_by: consulta ao banco + métricas Prometheus
     frequency: mensal
     linked_risks: [RSK-007]
@@ -39,7 +39,7 @@ objectives:
   - id: OBJ-004
     objective: Manter a latência de resposta abaixo do limite de experiência
     indicator: latência p95 da resposta ao usuário
-    target: "< 5 s"
+    target: '< 5 s'
     source: monitoring/prometheus/prometheus.yml
     measured_by: Grafana (monitoring/grafana/dashboards/carinsight-dashboard.json)
     frequency: contínua
@@ -49,7 +49,7 @@ objectives:
   - id: OBJ-005
     objective: Garantir que tentativa de manipulação seja bloqueada antes do modelo
     indicator: taxa de bloqueio nos casos de injection da suíte de segurança
-    target: "100% dos padrões cobertos"
+    target: '100% dos padrões cobertos'
     source: src/services/guardrails.service.ts
     measured_by: tests/e2e/security/guardrails.test.ts
     frequency: todo PR
@@ -58,7 +58,7 @@ objectives:
   - id: OBJ-006
     objective: Cumprir o prazo de retenção declarado publicamente
     indicator: execução do job de retenção e volume de registros expurgados
-    target: "execução diária, sem falha por mais de 48 h"
+    target: 'execução diária, sem falha por mais de 48 h'
     source: src/jobs/data-retention.job.ts
     measured_by: log estruturado do job (evento data_retention_run)
     frequency: diária
@@ -67,8 +67,8 @@ objectives:
   - id: OBJ-007
     objective: Manter supervisão humana disponível e efetiva
     indicator: taxa de escalada para humano e tempo até o handoff
-    target: "handoff sempre disponível; 0 encerramento sem oferta de humano"
-    source: src/graph/workflow.ts        # nós de handoff e circuit breakers
+    target: 'handoff sempre disponível; 0 encerramento sem oferta de humano'
+    source: src/graph/workflow.ts # nós de handoff e circuit breakers
     measured_by: eventos de conversa persistidos (Event)
     frequency: mensal
     linked_risks: [RSK-001, RSK-008]
@@ -76,7 +76,7 @@ objectives:
   - id: OBJ-008
     objective: Manter o inventário de IA fiel ao código
     indicator: divergência entre modelos no código e no inventário
-    target: "zero"
+    target: 'zero'
     source: governance/inventory/ai-systems.yaml
     measured_by: scripts/governance/validate-inventory.ts
     frequency: todo PR

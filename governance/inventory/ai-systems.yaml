@@ -28,7 +28,7 @@ systems:
       Fala direto com consumidor final, influencia decisão de compra de valor alto
       e trata dado pessoal (telefone, nome, e-mail).
     affected_parties: [consumidor final, vendedor da concessionária, cliente B2B]
-    autonomy_stage: assisted   # shadow | assisted | autonomous
+    autonomy_stage: assisted # shadow | assisted | autonomous
     human_oversight:
       - Handoff por solicitação (src/utils/handoff-detector.ts)
       - Handoff automático por circuit breaker de loop, erro e estagnação (src/graph/workflow.ts)
@@ -57,7 +57,7 @@ systems:
     human_oversight:
       - Explicação determinística por recomendação (recommendation-explainer.service.ts)
       - Métricas de qualidade com alerta em degradação (recommendation-health-monitor.service.ts)
-    models: []   # ranqueamento é determinístico: SQL + campos pré-calculados
+    models: [] # ranqueamento é determinístico: SQL + campos pré-calculados
     determinism_note: >
       O LLM foi deliberadamente retirado do caminho crítico de ranqueamento
       (latência ~60s para <5s). Ele atua só na compreensão da necessidade e na redação.
