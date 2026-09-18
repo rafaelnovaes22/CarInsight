@@ -161,7 +161,7 @@ npm run eval:contracts    # production ranker/output contracts, no DB or LLM
 ```bash
 git clone https://github.com/rafaelnovaes22/CarInsight.git
 cd CarInsight
-npm install
+npm ci
 cp .env.example .env      # Configure API keys
 npm run db:push            # Apply schema
 npm run db:seed:real       # Seed inventory
@@ -186,4 +186,5 @@ npm run dev
 
 ---
 
-**Status**: Production — deployed on Railway with 1028+ tests passing
+**Status**: Consult the current CI run for verification. Deployment health and connected
+commit require a separate Railway check; passing offline tests does not prove production readiness.

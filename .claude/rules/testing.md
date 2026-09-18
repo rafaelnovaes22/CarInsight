@@ -23,12 +23,15 @@ tests/
 | Comando | Uso |
 |---------|-----|
 | `npm test` | Vitest interativo (dev) |
-| `npm run test:run` | CI mode — todos os testes |
+| `npm run test:run` | Suíte local, exclui integrações opt-in de LLM e banco |
 | `npm run test:unit` | Apenas unit |
 | `npm run test:integration` | Apenas integration |
 | `npm run test:e2e` | End-to-end |
 | `npm run test:coverage` | Com relatório de cobertura |
 | `npm run test:guardrails` | Testes de segurança |
+| `npm run eval:offline` | Entrada determinística, resultado OFFLINE_PASS sem qualificação de produção |
+| `npm run eval:contracts` | Ranker e guardrails de produção com fronteira do banco substituída |
+| `npm run eval` | Três camadas medidas; ausência de evidência produz HOLD |
 
 ## Convenções
 
@@ -44,3 +47,4 @@ tests/
 - PostgreSQL 14 + pgvector no CI (via Docker service)
 - Secrets scanning automático no lint job
 - Deploy é via Railway Git integration (não há job de deploy no CI)
+- Os gates offline não medem qualidade de LLM, custo real nem inventário vivo. O gate de custo calcula somente um cenário fixo de tokens.

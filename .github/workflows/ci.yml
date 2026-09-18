@@ -174,7 +174,6 @@ jobs:
             exit 1
           fi
 
-  # All deploys (staging and production) are handled by Railway's Git integration.
-  # Staging: push to `develop` → Railway detects and deploys automatically.
-  # Production: push to `main` → Railway detects and deploys automatically.
-  # Do NOT use `railway up` or Railway CLI — it causes duplicate deploys.
+  # Deployment bindings live in Railway, outside this workflow.
+  # Verify the service, environment and connected branch before publishing.
+  # Do not duplicate an active Git-triggered deployment with a CLI deployment.
