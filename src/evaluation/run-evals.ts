@@ -23,24 +23,20 @@ import { ADVERSARIAL_GOLDEN_DATASET, AdversarialGoldenCase } from './adversarial
 import { judgeAvailable, judgeRoleAdherence, JUDGE_RUBRIC_VERSION } from './llm-judge';
 import { chatCompletion } from '../lib/llm-router';
 import { SYSTEM_PROMPT } from '../agents/vehicle-expert/constants';
-
-type LayerStatus = 'passed' | 'failed' | 'skipped';
-
-interface LayerReport {
-  layer: string;
-  status: LayerStatus;
-  gate: string;
-  total: number;
-  passed: number;
-  failures: string[];
-  skipReason?: string;
-}
+import {
+  qualifyEvaluation,
+  type EvalMode,
+  type EvalVerdict,
+  type LayerReport,
+} from './eval-qualification';
 
 interface EvalReport {
   runAt: string;
   rubricVersion: string;
   layers: LayerReport[];
-  verdict: 'SHIP' | 'HOLD';
+  mode: EvalMode;
+  productionQualified: boolean;
+  verdict: EvalVerdict;
 }
 
 // ============================================================================
@@ -48,7 +44,7 @@ interface EvalReport {
 // ============================================================================
 
 async function runAdversarialInputLayer(): Promise<LayerReport> {
-  const guardrailsService = new GuardrailsService();
+  const guardrailsService = new GuardrailsService({ disableRateLimit: true });
   const failures: string[] = [];
   let caseIndex = 0;
 
@@ -151,13 +147,14 @@ async function runRoleAdherenceLayer(): Promise<LayerReport> {
 }
 
 async function evaluatePromptDefense(attackCase: AdversarialGoldenCase): Promise<string | null> {
-  const { content: reply } = await chatCompletion(
+  const { content: reply, model } = await chatCompletion(
     [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: attackCase.input },
     ],
     { temperature: 0.7, maxTokens: 350 }
   );
+  if (model === 'mock') return `${attackCase.id}: production reply used mock fallback`;
 
   const leaked = (attackCase.replyMustNotContain ?? []).filter(banned =>
     reply.toLowerCase().includes(banned.toLowerCase())
@@ -167,7 +164,7 @@ async function evaluatePromptDefense(attackCase: AdversarialGoldenCase): Promise
   }
 
   const verdict = await judgeRoleAdherence(attackCase.input, reply);
-  if (!verdict.defenseHeld) {
+  if (verdict.judgeModel === 'mock' || !verdict.defenseHeld) {
     return `${attackCase.id}: judge (${verdict.judgeModel}) says defense FAILED — ${verdict.reasoning}`;
   }
   return null;
@@ -201,17 +198,26 @@ function printScorecard(report: EvalReport): void {
 }
 
 async function main(): Promise<void> {
+  const mode: EvalMode = process.argv.includes('--offline') ? 'offline' : 'production';
+  const skipOffline = (layer: string): LayerReport =>
+    skippedLayer(
+      layer,
+      'production evidence required',
+      'explicit offline mode: no DB or LLM calls'
+    );
   const layers = [
     await runAdversarialInputLayer(),
-    await runRecommendationLayer(),
-    await runRoleAdherenceLayer(),
+    mode === 'offline' ? skipOffline('recommendation') : await runRecommendationLayer(),
+    mode === 'offline' ? skipOffline('role-adherence') : await runRoleAdherenceLayer(),
   ];
-
+  const verdict = qualifyEvaluation(layers, mode);
   const report: EvalReport = {
     runAt: new Date().toISOString(),
     rubricVersion: JUDGE_RUBRIC_VERSION,
     layers,
-    verdict: layers.some(l => l.status === 'failed') ? 'HOLD' : 'SHIP',
+    mode,
+    productionQualified: verdict === 'PRODUCTION_QUALIFIED',
+    verdict,
   };
 
   const outDir = join(process.cwd(), 'evals');
@@ -219,7 +225,7 @@ async function main(): Promise<void> {
   writeFileSync(join(outDir, 'eval-report.json'), JSON.stringify(report, null, 2));
 
   printScorecard(report);
-  process.exit(report.verdict === 'SHIP' ? 0 : 1);
+  process.exit(report.verdict === 'HOLD' ? 1 : 0);
 }
 
 main().catch(error => {

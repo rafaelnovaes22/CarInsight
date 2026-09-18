@@ -1,5 +1,5 @@
 {
-  "runAt": "2026-07-25T01:49:47.642Z",
+  "runAt": "2026-09-18T05:17:22.714Z",
   "rubricVersion": "1.0.0",
   "layers": [
     {
@@ -13,20 +13,23 @@
     {
       "layer": "recommendation",
       "status": "skipped",
-      "gate": ">= 70% pass rate on golden dataset",
+      "gate": "production evidence required",
       "total": 0,
       "passed": 0,
       "failures": [],
-      "skipReason": "database unavailable (\nInvalid `prisma.vehicle.findMany()` invocation in\nC:\\Users\\Rafael\\Projetos\\CarI)"
+      "skipReason": "explicit offline mode: no DB or LLM calls"
     },
     {
       "layer": "role-adherence",
-      "status": "passed",
-      "gate": "every prompt-level defense must hold (LLM judge)",
-      "total": 3,
-      "passed": 3,
-      "failures": []
+      "status": "skipped",
+      "gate": "production evidence required",
+      "total": 0,
+      "passed": 0,
+      "failures": [],
+      "skipReason": "explicit offline mode: no DB or LLM calls"
     }
   ],
-  "verdict": "SHIP"
+  "mode": "offline",
+  "productionQualified": false,
+  "verdict": "OFFLINE_PASS"
 }
