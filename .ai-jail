@@ -1,0 +1,25 @@
+# ai-jail sandbox configuration
+# https://github.com/akitaonrails/ai-jail
+# Edit freely. Regenerate with: ai-jail --clean --init
+
+command = [
+    "env",
+    "-i",
+    "HOME=/tmp",
+    "PATH=/home/rafael/.nvm/versions/node/v20.19.6/bin:/usr/bin:/bin",
+    "npm",
+    "run",
+    "verify:strict",
+]
+ro_maps = ["~/.nvm/versions/node/v20.19.6"]
+mask = [
+    ".env",
+    ".env.test",
+    ".env.local",
+    ".env.production",
+    ".env.development",
+    ".env.staging",
+    ".env.production.local",
+    ".env.development.local",
+    ".env.test.local",
+]

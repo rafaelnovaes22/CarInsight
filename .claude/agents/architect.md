@@ -18,7 +18,7 @@ Agente especializado em decisões arquiteturais do CarInsight.
 
 ## Referências
 
-- Arquitetura atual: `skills.md` (seção Arquitetura)
+- Arquitetura atual: `docs/architecture.md`
 - Schema do banco: `prisma/schema.prisma`
 - Grafo LangGraph: `src/graph/`
 - Agentes: `src/agents/`

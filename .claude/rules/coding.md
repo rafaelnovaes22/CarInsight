@@ -17,7 +17,7 @@
 
 ## TypeScript
 
-- Strict mode habilitado
+- `strict: false`, com `noImplicitAny: true` e `strictNullChecks: true` (ver `tsconfig.json`). Não presumir cobertura integral do modo strict.
 - Zod para runtime validation (especialmente env vars e inputs externos)
 - Tipos explícitos em interfaces públicas
 - Evitar `any` — usar `unknown` quando necessário
@@ -48,4 +48,4 @@
 
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `style:`
 - SEMPRE rodar `npm run verify:strict` antes de commit
-- Push para ambos remotes: `origin` e `novais`
+- `npm run push:safe` envia apenas uma branch própria a `rafaelnovaes22/CarInsight`. Abrir PR, sem merge nem push na default.

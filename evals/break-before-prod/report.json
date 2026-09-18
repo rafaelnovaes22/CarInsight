@@ -1,0 +1,194 @@
+{
+  "timestamp": "2026-09-18T05:23:11.328Z",
+  "scope": "offline-production-contracts",
+  "productionQualified": false,
+  "total": 35,
+  "passed": 35,
+  "pass": true,
+  "provenance": {
+    "fixtures": "tests/unit/evaluation/ranker-fixtures.ts",
+    "version": 1
+  },
+  "limitations": [
+    "Database boundary is mocked",
+    "No LLM replies measured",
+    "No live inventory measured"
+  ],
+  "results": [
+    {
+      "name": "evaluation qualification requires every measured layer for production qualification",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "evaluation qualification keeps the documented 70% recommendation threshold without accepting inconsistent evidence",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "evaluation qualification holds when recommendation was skipped",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "evaluation qualification holds when role-adherence was skipped",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "evaluation qualification holds for absent, duplicated, empty or failed evidence",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "offline production ranker contracts ranks independent facts for familia",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "offline production ranker contracts ranks independent facts for usoDiario",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "offline production ranker contracts applies the budget and eligibility constraints at the SQL boundary",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "offline production ranker contracts preserves an empty catalog instead of inventing a vehicle",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "offline production ranker contracts respects the requested result limit after scoring",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "output evaluator rejects corrupted responses rejects { id: 'invented-id', preco: 80000, score: 95 }",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "output evaluator rejects corrupted responses rejects { id: 'fixture-family', preco: 95000, score: 95 }",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "output evaluator rejects corrupted responses rejects { id: 'fixture-family', preco: 75000, score: 95 }",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "output evaluator rejects corrupted responses rejects { id: 'fixture-economy', preco: 60000, score: 99 }",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "output evaluator rejects corrupted responses rejects { id: 'fixture-family', preco: 80000, score: NaN }",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "output evaluator rejects corrupted responses rejects duplicate and excess results",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'jailbreak-galinha-pt': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'jailbreak-galinha-keyword-pt': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'jailbreak-galinha-en': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'jailbreak-a-partir-de-agora': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'extraction-prompt-sistema-artigo': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'extraction-mostre-suas-instrucoes': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'extraction-show-me-your-prompt': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'role-dono-da-loja-desconto': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'role-voce-e-chatgpt': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'injection-sql-drop': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'injection-system-tag': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'benign-suv-familia': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'benign-civic-informal': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'benign-esquece-o-civic': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples 'benign-ignora-mensagem-anterior': input policy",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples output policy case 0",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples output policy case 1",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples output policy case 2",
+      "status": "passed",
+      "failures": []
+    },
+    {
+      "name": "production guardrails against independent examples output policy case 3",
+      "status": "passed",
+      "failures": []
+    }
+  ]
+}

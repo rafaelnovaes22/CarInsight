@@ -1,6 +1,6 @@
 # Skill: Deploy Railway
 
-Deploy do CarInsight via Git push (Railway Git integration).
+Preparação de entrega do CarInsight. Confirmar serviço, ambiente e origem efetivamente configurados no Railway.
 
 ## Pre-flight
 
@@ -11,23 +11,21 @@ npm run verify:strict
 
 Se falhar, corrigir antes de prosseguir. Nunca fazer deploy com código quebrado.
 
-## Deploy Production
+## Publicar branch para revisão
 
 ```bash
-# Push para ambos remotes (inclui verify:strict)
+# Envia exclusivamente a branch própria para o repositório pessoal (inclui verify:strict)
 npm run push:safe
 ```
 
-Railway detecta o push em `main` e faz deploy automaticamente.
+Abrir PR sem merge. O comando bloqueia branch default e remotes fora de
+`rafaelnovaes22/CarInsight`. Merge e push na default exigem autorização específica.
 
-## Deploy Staging
+## Deploy autorizado
 
-```bash
-git push origin develop
-git push novais develop
-```
-
-Railway detecta o push em `develop` e faz deploy no serviço de staging.
+Inspecionar as configurações atuais do Railway antes de escolher integração Git ou CLI.
+Não presumir staging em `develop` ou produção em `main` sem verificar o serviço.
+Não disparar uma segunda publicação quando o mesmo commit já estiver sendo implantado.
 
 ## Verificação Pós-Deploy
 
@@ -37,13 +35,11 @@ Railway detecta o push em `develop` e faz deploy no serviço de staging.
 
 ## Rollback
 
-```bash
-git revert HEAD
-npm run push:safe
-```
+Preparar reversão em branch própria, executar os gates e abrir PR. Uma reversão no serviço
+Railway usa o deployment previamente verificado e deve respeitar a autorização da tarefa.
 
 ## Importante
 
-- **NUNCA** usar `railway up` ou Railway CLI — causa deploys duplicados
+- Usar somente a via de publicação verificada para o serviço, evitando deployments duplicados.
 - Migrations rodam automaticamente no start: `resolve init → fix-migrations → migrate deploy → start:prod`
 - Se migration falhar, verificar `scripts/fix-migrations.cjs`

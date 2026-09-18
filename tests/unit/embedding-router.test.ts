@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// SDK mocks below need an enabled provider, independent of any local .env.test file.
+vi.mock('../../src/config/env', () => ({
+  env: { OPENAI_API_KEY: 'test-provider-key', COHERE_API_KEY: 'test-provider-key' },
+}));
+
 // Mock OpenAI SDK to prevent real API calls
 vi.mock('openai', () => {
   const mockCreate = vi.fn(async ({ input }: any) => {
