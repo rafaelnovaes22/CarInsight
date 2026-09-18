@@ -34,7 +34,7 @@ jobs:
       - run: npm run test:unit
 
   eval-suite:
-    name: Eval suite 3 camadas
+    name: Offline evaluation (not production qualification)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,10 +43,10 @@ jobs:
           node-version: 20.x
           cache: npm
       - run: npm ci
-      - name: Eval existente (golden + adversarial)
-        run: npm run test:unit -- tests/unit/evaluation/golden-dataset.test.ts
-      - name: Eval break-before-prod (20 casos SKU, judge simulado)
-        run: node evals/break-before-prod/run.mjs
+      - name: Explicit offline eval spine
+        run: npm run eval:offline
+      - name: Real ranker and guardrail contracts
+        run: npm run eval:contracts
 
   iso-42001:
     name: ISO 42001 validators via tsx
@@ -92,13 +92,13 @@ jobs:
         docker-build,
         guardrails,
         injection,
-        hallucination,
+        recommendations,
         cost,
       ]
     if: always()
     steps:
       - run: |
-          for r in "${{ needs.lint.result }}" "${{ needs.unit-test.result }}" "${{ needs.eval-suite.result }}" "${{ needs.iso-42001.result }}" "${{ needs.secret-scan.result }}" "${{ needs.docker-build.result }}" "${{ needs.guardrails.result }}" "${{ needs.injection.result }}" "${{ needs.hallucination.result }}" "${{ needs.cost.result }}"; do
+          for r in "${{ needs.lint.result }}" "${{ needs.unit-test.result }}" "${{ needs.eval-suite.result }}" "${{ needs.iso-42001.result }}" "${{ needs.secret-scan.result }}" "${{ needs.docker-build.result }}" "${{ needs.guardrails.result }}" "${{ needs.injection.result }}" "${{ needs.recommendations.result }}" "${{ needs.cost.result }}"; do
             if [ "$r" != "success" ]; then echo "::error::gate VERMELHO bloqueia merge e deploy"; exit 1; fi
           done
           echo "gate VERDE"
@@ -127,8 +127,8 @@ jobs:
       - run: npm ci
       - run: node scripts/guardrails-stop-gate.mjs injection
 
-  hallucination:
-    name: Hallucination eval golden (>94%)
+  recommendations:
+    name: Offline ranker and guardrail contracts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -137,10 +137,10 @@ jobs:
           node-version: 20.x
           cache: npm
       - run: npm ci
-      - run: node scripts/guardrails-stop-gate.mjs hallucination
+      - run: node scripts/guardrails-stop-gate.mjs recommendations
 
   cost:
-    name: Cost SLM (<25% preco)
+    name: Estimated token cost scenario (<25% price)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

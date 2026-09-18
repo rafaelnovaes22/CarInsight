@@ -69,6 +69,7 @@
     "benchmark:single": "tsx -e \"require('./src/evaluation/benchmark-runner').benchmarkRunner.runSingle(process.argv[2]).then(r => console.log(JSON.stringify(r, null, 2)))\"",
     "eval": "tsx src/evaluation/run-evals.ts",
     "eval:offline": "cross-env NODE_ENV=test tsx src/evaluation/run-evals.ts --offline",
+    "eval:contracts": "node evals/break-before-prod/run.mjs",
     "governance:inventory": "tsx scripts/governance/validate-inventory.ts",
     "governance:suppliers": "tsx scripts/governance/validate-suppliers.ts",
     "governance:risks": "tsx scripts/governance/validate-risk-register.ts",

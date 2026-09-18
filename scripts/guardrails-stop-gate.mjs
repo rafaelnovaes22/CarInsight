@@ -2,13 +2,13 @@
 // Gate guardrails-stop-94-25: 4 jobs que falham o workflow e bloqueiam merge e deploy.
 // 1. guardrails: 30+ padroes nomeados PT-BR/EN, 3 camadas, bloqueio antes do LLM e antes do envio, log JSON.
 // 2. injection: probes PT-BR/EN bloqueados pelo detectPromptInjection real (regex extraidos do fonte).
-// 3. hallucination: eval golden deterministico; acuracia <=94% => BLOQUEADO POR ALUCINACAO.
-// 4. cost: custo por conversa vs preco; ratio >=25% => BLOQUEADO POR CUSTO.
-// Uso: node scripts/guardrails-stop-gate.mjs [guardrails|injection|hallucination|cost|all]
+// 3. recommendations: contratos reais offline substituem a antiga taxa artificial de alucinacao.
+// 4. cost: cenario ESTIMADO de tokens vs preco; ratio >=25% reprova somente esse cenario.
+// Uso: node scripts/guardrails-stop-gate.mjs [guardrails|injection|recommendations|cost|all]
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const reportDir = join(root, 'evals', 'guardrails-stop');
@@ -133,14 +133,25 @@ function checkInjection() {
   return { job: 'injection', pass: true, patterns: pats.length, probes: PROBES.length };
 }
 
-function checkHallucination() {
-  const out = execSync('node evals/break-before-prod/run.mjs', { cwd: root, encoding: 'utf8' });
+function checkRecommendations() {
+  const out = execFileSync(process.execPath, ['evals/break-before-prod/run.mjs'], {
+    cwd: root,
+    encoding: 'utf8',
+  });
   const report = JSON.parse(read('evals/break-before-prod/report.json'));
-  const acc = report.passed / report.total;
   console.log(out.trim().split('\n').pop());
-  if (acc <= 0.94) fail(`BLOQUEADO POR ALUCINACAO: acuracia ${(acc * 100).toFixed(1)}% <= 94%`);
-  ok(`hallucination acuracia ${(acc * 100).toFixed(1)}% (${report.passed}/${report.total} golden)`);
-  return { job: 'hallucination', pass: true, accuracy: acc, total: report.total };
+  if (!report.pass || report.total <= 0 || report.passed !== report.total)
+    fail('contratos offline falharam');
+  if (report.scope !== 'offline-production-contracts' || report.productionQualified !== false)
+    fail('escopo do relatorio offline incorreto');
+  ok(`contratos offline ${report.passed}/${report.total}; qualidade LLM em producao nao medida`);
+  return {
+    job: 'recommendations',
+    pass: true,
+    scope: report.scope,
+    total: report.total,
+    productionQualified: false,
+  };
 }
 
 function checkCost() {
@@ -155,19 +166,31 @@ function checkCost() {
   const USD_BRL = 5.5;
   const costBrl = costUsd * USD_BRL;
   const priceBrl = Number(process.env.PRICE_PER_OUTCOME_BRL ?? 1);
+  if (!Number.isFinite(priceBrl) || priceBrl <= 0)
+    fail('preco do cenario deve ser finito e positivo');
   const ratio = costBrl / priceBrl;
   console.log(
-    `[guardrails-stop] custo/conversa R$${costBrl.toFixed(4)} vs preco piso R$${priceBrl.toFixed(2)} = ${(ratio * 100).toFixed(2)}%`
+    `[guardrails-stop] cenario estimado R$${costBrl.toFixed(4)} vs preco R$${priceBrl.toFixed(2)} = ${(ratio * 100).toFixed(2)}%`
   );
   if (ratio >= 0.25) fail(`BLOQUEADO POR CUSTO: ${(ratio * 100).toFixed(2)}% >= 25%`);
   ok(`cost ${(ratio * 100).toFixed(2)}% do preco (teto 25%)`);
-  return { job: 'cost', pass: true, costBrl, priceBrl, ratio };
+  return {
+    job: 'cost',
+    pass: true,
+    scope: 'estimated-token-scenario',
+    tokensIn,
+    tokensOut,
+    usdBrl: USD_BRL,
+    costBrl,
+    priceBrl,
+    ratio,
+  };
 }
 
 const runners = {
   guardrails: checkGuardrails,
   injection: checkInjection,
-  hallucination: checkHallucination,
+  recommendations: checkRecommendations,
   cost: checkCost,
 };
 const selected = job === 'all' ? Object.keys(runners) : [job];

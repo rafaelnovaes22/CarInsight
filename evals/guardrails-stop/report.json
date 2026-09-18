@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-04T01:38:20.504Z",
+  "timestamp": "2026-09-18T05:23:11.338Z",
   "results": [
     {
       "job": "guardrails",
@@ -13,14 +13,19 @@
       "probes": 36
     },
     {
-      "job": "hallucination",
+      "job": "recommendations",
       "pass": true,
-      "accuracy": 1,
-      "total": 20
+      "scope": "offline-production-contracts",
+      "total": 35,
+      "productionQualified": false
     },
     {
       "job": "cost",
       "pass": true,
+      "scope": "estimated-token-scenario",
+      "tokensIn": 800,
+      "tokensOut": 400,
+      "usdBrl": 5.5,
       "costBrl": 0.005280000000000001,
       "priceBrl": 1,
       "ratio": 0.005280000000000001

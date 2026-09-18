@@ -117,8 +117,9 @@ docs/
 
 ## Eval Spine (promotion gate)
 
-Quality is gated, not hoped for. `npm run eval` runs three layers, cheapest first,
-and CI blocks the merge on the verdict (`evals/eval-report.json`):
+`npm run eval` runs three layers, cheapest first, and returns `HOLD` when any required
+layer is skipped or below its threshold. `PRODUCTION_QUALIFIED` applies only to this
+suite and does not authorize deployment. Results are written to `evals/eval-report.json`:
 
 | Layer | What it checks | Gate |
 |---|---|---|
@@ -126,7 +127,14 @@ and CI blocks the merge on the verdict (`evals/eval-report.json`):
 | `recommendation` | Recommendation golden set ([`golden-dataset.ts`](src/evaluation/golden-dataset.ts)): curated buyer profiles with ideal/anti-patterns and precision@3 against the live ranker. | ≥ 70% |
 | `role-adherence` | Prompt-level attacks (the ones the input filter deliberately lets through) are answered with the production system prompt and judged by an LLM with a [versioned rubric](src/evaluation/llm-judge.ts). Self-skips rather than judging on mock providers. | every defense holds |
 
-Two design rules, learned in production:
+CI explicitly runs `npm run eval:offline` and `npm run eval:contracts`, without paid
+providers. `OFFLINE_PASS` always has `productionQualified: false`. The contracts execute
+production ranking and guardrail functions against independent fixtures, with only
+the database boundary and logging mocked. Corrupted outputs (unknown IDs, incorrect
+ranking, changed prices and budget violations) must fail the evaluator. This is not
+a measurement of general LLM hallucination rate. See [scope and limitations](evals/break-before-prod/README.md).
+
+Two evaluation rules:
 
 - **A skipped layer is reported loudly, never counted as passed.** A scorecard
   that hides what it did not measure is fiction.
@@ -144,6 +152,8 @@ npm run test:integration  # Integration tests
 npm run test:e2e          # End-to-end conversation flows
 npm run test:coverage     # With coverage report
 npm run verify:strict     # format + lint + build + tests (CI gate)
+npm run eval:offline      # deterministic input checks, explicitly unqualified for production
+npm run eval:contracts    # production ranker/output contracts, no DB or LLM
 ```
 
 ## Quick Start
