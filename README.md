@@ -6,7 +6,7 @@
 > **Portfolio Sample** — This repository is public for technical evaluation purposes. See [NOTICE.md](NOTICE.md) for terms.
 
 [![CI/CD](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml/badge.svg)](https://github.com/rafaelnovaes22/CarInsight/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-1028%20passing-brightgreen)]()
+[![Tests](https://img.shields.io/badge/Tests-1106%20passing-brightgreen)]()
 [![Evals](https://img.shields.io/badge/Eval%20Spine-adversarial%20%2B%20golden%20set%20%2B%20LLM%20judge-blueviolet)](#eval-spine-promotion-gate)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)](https://nodejs.org/)
@@ -93,7 +93,7 @@ src/
 ├── types/                     # TypeScript interfaces
 └── routes/                    # Express endpoints (webhooks, admin, debug)
 
-tests/                         # 1028+ tests (Vitest)
+tests/                         # 1106+ tests (Vitest)
 ├── unit/                      # Isolated service/util tests
 ├── integration/               # Component interaction tests
 ├── e2e/                       # Full conversation flow tests
@@ -138,7 +138,7 @@ Two design rules, learned in production:
 ## Testing
 
 ```bash
-npm run test:run          # All tests (1028+ passing)
+npm run test:run          # All tests (1106+ passing)
 npm run test:unit         # Unit tests only
 npm run test:integration  # Integration tests
 npm run test:e2e          # End-to-end conversation flows
@@ -164,7 +164,7 @@ npm run dev
 **Runtime**: Node.js 20, TypeScript 5.3, Express
 **AI/ML**: LangGraph, OpenAI (GPT-4o-mini + embeddings), Groq (Llama 3), Cohere (embeddings)
 **Data**: PostgreSQL 14 + pgvector, Prisma ORM
-**Quality**: Vitest (1028+ tests), ESLint strict, Prettier, Husky pre-commit
+**Quality**: Vitest (1106+ tests), ESLint strict, Prettier, Husky pre-commit
 **Deploy**: Railway (auto-deploy), GitHub Actions CI
 **Integrations**: Meta WhatsApp Business API
 
@@ -176,4 +176,4 @@ npm run dev
 
 ---
 
-**Status**: Production — deployed on Railway with 1028+ tests passing
+**Status**: Production — deployed on Railway with 1106+ tests passing
