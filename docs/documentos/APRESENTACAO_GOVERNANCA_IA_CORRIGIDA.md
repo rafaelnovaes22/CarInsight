@@ -1,6 +1,6 @@
 # GOVERNANCA DE IA NA PRATICA: Do Conceito ao Codigo
 
-**Estudo de Caso: Projeto CarInsight** (Atendimento Automotivo via WhatsApp)
+**Estudo de Caso: Projeto Inovais** (Atendimento Automotivo via WhatsApp)
 
 > **Escopo desta avaliacao.** Este documento cobre os **7 pilares tecnicos** implementados em codigo (Anexo A da norma). O **sistema de gestao (AIMS)** que envolve esses controles foi implantado em 2026-07-29 e vive em **`governance/`**: politica de IA, RACI, inventario, registro de riscos, AIIA, objetivos, model cards, fornecedores, procedimento de incidente, auditoria interna e analise critica. Parte dele e **verificada em CI** (`npm run governance`).
 >

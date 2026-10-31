@@ -1,6 +1,6 @@
 ---
 name: Reset Conversations
-description: Limpa conversas de teste do CarInsight
+description: Limpa conversas de teste do Inovais
 ---
 
 # Skill: Reset de Conversas

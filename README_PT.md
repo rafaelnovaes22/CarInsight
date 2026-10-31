@@ -1,4 +1,4 @@
-# 🚗 CarInsight WhatsApp AI Assistant
+# 🚗 Inovais WhatsApp AI Assistant
 
 > Assistente inteligente de vendas automotivas via WhatsApp com IA Generativa, RAG e Multi-LLM Routing
 

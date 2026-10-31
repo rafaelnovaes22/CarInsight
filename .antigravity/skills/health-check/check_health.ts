@@ -1,6 +1,6 @@
 /**
  * Health Check Script - Antigravity Skill
- * Verifica o status da API e serviços do CarInsight
+ * Verifica o status da API e serviços do Inovais
  */
 
 const BASE_URL = process.env.API_URL || 'http://localhost:3000';
@@ -16,7 +16,7 @@ interface HealthResponse {
 }
 
 async function checkHealth(): Promise<void> {
-  console.log('🩺 Verificando status do CarInsight...\n');
+  console.log('🩺 Verificando status do Inovais...\n');
 
   try {
     const response = await fetch(`${BASE_URL}/admin/health`);

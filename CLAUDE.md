@@ -1,4 +1,4 @@
-# CarInsight — Instruções para Claude Code
+# Inovais — Instruções para Claude Code
 
 > Assistente de vendas automotivas via WhatsApp com IA multi-agente.
 

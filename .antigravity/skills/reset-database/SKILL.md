@@ -1,6 +1,6 @@
 ---
 name: Reset Database
-description: Reset e seed do banco de dados do CarInsight
+description: Reset e seed do banco de dados do Inovais
 ---
 
 # Skill: Reset e Seed do Banco de Dados

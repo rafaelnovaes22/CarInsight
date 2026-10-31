@@ -28,7 +28,7 @@ scrape_configs:
     metrics_path: /metrics
 
   # ==========================================================================
-  # CarInsight Application
+  # Inovais Application
   # ==========================================================================
   - job_name: 'carinsight-app'
     static_configs:

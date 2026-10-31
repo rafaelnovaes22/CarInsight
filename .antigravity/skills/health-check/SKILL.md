@@ -1,6 +1,6 @@
 ---
 name: Health Check
-description: Verifica o status da API e serviços do CarInsight
+description: Verifica o status da API e serviços do Inovais
 ---
 
 # Skill: Verificar Status da API

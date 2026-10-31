@@ -1,6 +1,6 @@
 ---
 name: Run Tests
-description: Executa testes unitários, integração e E2E do CarInsight
+description: Executa testes unitários, integração e E2E do Inovais
 ---
 
 # Skill: Executar Testes
