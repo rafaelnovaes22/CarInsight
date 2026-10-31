@@ -37,6 +37,9 @@ const envSchema = z.object({
   EVOLUTION_API_KEY: z.string().optional(),
   EVOLUTION_INSTANCE_NAME: z.string().default('carinsight'),
 
+  // URL pública deste bot (ex.: https://bot.exemplo.com), usada em links como /privacy-policy
+  PUBLIC_BASE_URL: z.string().url().optional(),
+
   // Redis configuration
   REDIS_URL: z.string().optional(),
   REDIS_RATE_LIMIT_TTL: z.coerce.number().default(60),

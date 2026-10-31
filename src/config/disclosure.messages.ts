@@ -3,6 +3,8 @@
  * Mensagens de transparência sobre uso de IA
  */
 
+import { env } from './env';
+
 const ASSISTANT_INTRO = 'Sou a assistente virtual da *Inovais*.';
 const AI_DISCLOSURE_NOTICE =
   '🤖 *Importante:* Sou uma inteligência artificial e posso cometer erros. Para informações mais precisas ou dúvidas complexas, posso transferir você para nossa equipe humana.';
@@ -89,7 +91,10 @@ export const DISCLOSURE_MESSAGES = {
 
     DATA_EXPORT: 'Para exportar suas conversas, digite *"exportar meus dados"*.',
 
-    POLICY_LINK: 'Nossa política de privacidade: https://www.carinsight.com.br/privacy-policy',
+    // Só há link quando PUBLIC_BASE_URL aponta para o próprio bot, que serve /privacy-policy.
+    POLICY_LINK: env.PUBLIC_BASE_URL
+      ? `Nossa política de privacidade: ${env.PUBLIC_BASE_URL.replace(/\/$/, '')}/privacy-policy`
+      : 'Nossa política de privacidade está disponível mediante solicitação.',
   },
 
   /**
