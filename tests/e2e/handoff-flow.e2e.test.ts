@@ -9,13 +9,13 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { createInitialState } from '../../../src/types/graph.types';
-import { discoveryNode } from '../../../src/graph/nodes/discovery.node';
-import { negotiationNode } from '../../../src/graph/nodes/negotiation.node';
+import { createInitialState } from '../../src/types/graph.types';
+import { discoveryNode } from '../../src/graph/nodes/discovery.node';
+import { negotiationNode } from '../../src/graph/nodes/negotiation.node';
 import { HumanMessage } from '@langchain/core/messages';
 
 // Mock logger
-vi.mock('../../../src/lib/logger', () => ({
+vi.mock('../../src/lib/logger', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -26,7 +26,7 @@ vi.mock('../../../src/lib/logger', () => ({
 
 // Mock Vehicle Expert
 const mockChat = vi.fn();
-vi.mock('../../../src/agents/vehicle-expert.agent', () => ({
+vi.mock('../../src/agents/vehicle-expert.agent', () => ({
   vehicleExpert: {
     chat: (...args: any[]) => mockChat(...args),
   },
