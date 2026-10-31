@@ -1,4 +1,4 @@
-# Plano de implantação do AIMS (ISO/IEC 42001) — CarInsight
+# Plano de implantação do AIMS (ISO/IEC 42001) — Inovais
 
 > **STATUS: EXECUTADO em 2026-07-29.** As seis fases foram implementadas. Os artefatos vivem em `governance/`, os validadores em `scripts/governance/`, e o gate roda no CI. Ver `governance/README.md` para o índice e `governance/NONCONFORMITY.md` para as quatro não conformidades encontradas na execução (três fechadas, uma aberta com prazo).
 >

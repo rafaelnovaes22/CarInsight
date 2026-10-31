@@ -1,6 +1,6 @@
 ---
 name: Deploy Railway
-description: Deploy do CarInsight para Railway com verificações prévias
+description: Deploy do Inovais para Railway com verificações prévias
 ---
 
 # Skill: Deploy para Railway

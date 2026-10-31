@@ -7,7 +7,7 @@ Este guia contém o passo a passo completo para disponibilizar, configurar e ati
 1. Acesse o painel [Meta for Developers](https://developers.facebook.com/) e faça login.
 2. Clique em **Meus Aplicativos** (My Apps) no canto superior direito e depois no botão **Criar Aplicativo**.
 3. Selecione o tipo de aplicativo **Outro** e clique em Avançar. Em seguida, escolha **Empresa** (Business).
-4. Dê um nome ao aplicativo (ex: `CarInsight WhatsApp`) e adicione um e-mail de contato válido.
+4. Dê um nome ao aplicativo (ex: `Inovais WhatsApp`) e adicione um e-mail de contato válido.
 5. Em **Conta Empresarial (Business Portfolio)**, selecione a conta da **FaciliAuto**.
 6. Clique em **Criar Aplicativo** (pode ser exigida a senha do seu Facebook).
 
@@ -39,7 +39,7 @@ O token mostrado na página "Configuração da API" é temporário e expira em 2
 1. Acesse as [Configurações do Negócio da Meta](https://business.facebook.com/settings/).
 2. Certifique-se de estar na conta empresarial correspondente (**FaciliAuto**).
 3. No menu lateral esquerdo, vá em **Usuários** > **Usuários do sistema**.
-4. Clique no botão **Adicionar**. Dê um nome (ex: `Sistema CarInsight`) e selecione a função **Administrador do sistema**. Clique em *Criar usuário do sistema*.
+4. Clique no botão **Adicionar**. Dê um nome (ex: `Sistema Inovais`) e selecione a função **Administrador do sistema**. Clique em *Criar usuário do sistema*.
 5. Selecione o usuário recém-criado na lista e clique no botão **Adicionar ativos**.
 6. No modal, acesse **Tipos de ativos > Aplicativos**, selecione o aplicativo do WhatsApp criado no Passo 1 e habilite o **Controle total (Gerenciar aplicativo)**. Salve as alterações.
 7. Ainda no usuário do sistema, clique em **Gerar novo token**.
@@ -73,7 +73,7 @@ Para que o número não tenha os limites rígidos de teste iniciais e possa inic
 
 ## 7. Atualizando as Variáveis de Ambiente no Projeto
 
-Agora que você tem as três informações cruciais para a conta funcionar, abra o arquivo `.env` localizado na raiz do seu projeto `CarInsight` e assegure-se de preencher as variáveis abaixo:
+Agora que você tem as três informações cruciais para a conta funcionar, abra o arquivo `.env` localizado na raiz do seu projeto `Inovais` e assegure-se de preencher as variáveis abaixo:
 
 ```env
 # Exemplo de configuração final
@@ -82,4 +82,4 @@ META_WHATSAPP_PHONE_NUMBER_ID="seu_identificador_de_numero_copiado_no_passo_5"
 META_WHATSAPP_BUSINESS_ACCOUNT_ID="seu_business_id_copiado_no_passo_5"
 ```
 
-Feito isso, a conta está totalmente disponibilizada e integrada à Cloud API da Meta para uso pela aplicação CarInsight.
+Feito isso, a conta está totalmente disponibilizada e integrada à Cloud API da Meta para uso pela aplicação Inovais.

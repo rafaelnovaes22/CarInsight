@@ -1,6 +1,6 @@
 # Skill: Deploy Railway
 
-Deploy do CarInsight via Git push (Railway Git integration).
+Deploy do Inovais via Git push (Railway Git integration).
 
 ## Pre-flight
 

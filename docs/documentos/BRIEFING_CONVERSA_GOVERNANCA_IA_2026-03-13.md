@@ -1,6 +1,6 @@
 # Briefing para conversa sobre Governança de IA
 
-Baseado no projeto `CarInsight` e no que foi verificado no repositório em 2026-03-13.
+Baseado no projeto `Inovais` e no que foi verificado no repositório em 2026-03-13.
 
 ## 1. Como se posicionar em 30-45 segundos
 

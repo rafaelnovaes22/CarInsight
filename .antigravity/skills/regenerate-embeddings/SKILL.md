@@ -1,6 +1,6 @@
 ---
 name: Regenerate Embeddings
-description: Gerencia embeddings vetoriais do CarInsight para busca semântica
+description: Gerencia embeddings vetoriais do Inovais para busca semântica
 ---
 
 # Skill: Regenerar Embeddings Vetoriais

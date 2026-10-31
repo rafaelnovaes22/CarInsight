@@ -1,4 +1,4 @@
-# Regras de Código — CarInsight
+# Regras de Código — Inovais
 
 ## Formatação & Linting
 

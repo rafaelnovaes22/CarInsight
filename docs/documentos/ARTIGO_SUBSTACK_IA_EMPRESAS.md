@@ -11,7 +11,7 @@ Um cliente mandou mensagem perguntando sobre um Civic 2021 que estava no estoque
 
 Esse tipo de situação acontecia toda semana. Renato administra uma revenda de seminovos em Guarulhos com 30 a 40 carros em estoque. Tem MBA, entende de gestão, sabe que precisa de tecnologia. Mas quando pensava em "implementar IA no negócio", batia num muro: *por onde começar?*
 
-Construir o CarInsight — um assistente de vendas automotivas via WhatsApp com arquitetura multi-agente — nos ensinou que esse muro tem um nome. E que a maioria das empresas bate nele cedo, sem perceber por quê.
+Construir o Inovais — um assistente de vendas automotivas via WhatsApp com arquitetura multi-agente — nos ensinou que esse muro tem um nome. E que a maioria das empresas bate nele cedo, sem perceber por quê.
 
 ---
 
@@ -31,7 +31,7 @@ Resultado: projetos de IA que travam em meses de reuniões, documentos de proces
 
 ## O que aprendemos construindo agentes reais
 
-Quando começamos o CarInsight, tentamos a abordagem clássica. Perguntamos: como um vendedor de seminovos qualifica um lead? Como ele apresenta um veículo? Como ele conduz o cliente até o fechamento?
+Quando começamos o Inovais, tentamos a abordagem clássica. Perguntamos: como um vendedor de seminovos qualifica um lead? Como ele apresenta um veículo? Como ele conduz o cliente até o fechamento?
 
 As respostas eram vagas, incompletas, cheias de exceções. *"Às vezes eu mostro três carros, às vezes um só. Depende da conversa."*
 
@@ -68,7 +68,7 @@ Essa inversão simples mudou tudo.
 
 ## A arquitetura que emergiu dos entregáveis
 
-No CarInsight, cada agente foi definido por seu output, não por sua função:
+No Inovais, cada agente foi definido por seu output, não por sua função:
 
 | Agente | Entregável |
 |--------|-----------|
@@ -90,7 +90,7 @@ Existe uma tentação enorme de passar meses refinando especificações antes de
 
 Nossa experiência com clientes como Renato mostrou o contrário: **a maior fonte de aprendizado é o uso real.**
 
-Na fase de testes do CarInsight, fizemos um roteiro com 14 cenários que o cliente precisava executar: saudação, busca específica, FAQ, pagamento, transferência para humano, fora do horário, guardrails, concorrente. O cliente testava, dava feedback no WhatsApp, e refinávamos.
+Na fase de testes do Inovais, fizemos um roteiro com 14 cenários que o cliente precisava executar: saudação, busca específica, FAQ, pagamento, transferência para humano, fora do horário, guardrails, concorrente. O cliente testava, dava feedback no WhatsApp, e refinávamos.
 
 O que descobrimos nesses ciclos de teste foi impossível de prever em qualquer reunião de alinhamento:
 
@@ -119,7 +119,7 @@ Um dos erros mais comuns em projetos de IA é usar o "humano no loop" como válv
 
 A configuração certa é diferente: **o humano entra em cena em situações estratégicas, não como fallback de falha.**
 
-No CarInsight, o handoff para vendedor humano acontece quando:
+No Inovais, o handoff para vendedor humano acontece quando:
 
 - O cliente demonstra intenção de fechar e quer negociar presencialmente
 - A conversa envolve condições especiais fora do escopo do assistente (ex: consórcio contemplado)
@@ -182,7 +182,7 @@ Essa distinção pode parecer sutil. Na prática, ela é a diferença entre um p
 
 ---
 
-*Rafael Novaes é cofundador da NovAIs Digital, onde desenvolve soluções de IA conversacional para negócios. O CarInsight é o assistente de vendas automotivas da NovAIs, construído com LangGraph, RAG e integração WhatsApp. Disponível para empresas de qualquer vertical via o programa de domain plugins.*
+*Rafael Novaes é cofundador da NovAIs Digital, onde desenvolve soluções de IA conversacional para negócios. O Inovais é o assistente de vendas automotivas da NovAIs, construído com LangGraph, RAG e integração WhatsApp. Disponível para empresas de qualquer vertical via o programa de domain plugins.*
 
 *Quer conversar sobre implementar IA no seu negócio? [Entre em contato via WhatsApp ou LinkedIn]*
 

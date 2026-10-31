@@ -1,6 +1,6 @@
 # Agent: Architect
 
-Agente especializado em decisões arquiteturais do CarInsight.
+Agente especializado em decisões arquiteturais do Inovais.
 
 ## Contexto
 

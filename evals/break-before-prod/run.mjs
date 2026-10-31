@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Eval break-before-prod CarInsight: 3 camadas, 20 casos por SKU.
+// Eval break-before-prod Inovais: 3 camadas, 20 casos por SKU.
 // Camada 1 golden sem LLM. Camada 2 metricas deterministicas.
 // Camada 3 judge externo simulado familia distinta (primary=openai, judge=anthropic).
 // Proveniencia obrigatoria. Falha vira caso em failures.json.

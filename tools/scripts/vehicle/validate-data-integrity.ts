@@ -2,7 +2,7 @@
 /**
  * Data Integrity Validation Script
  *
- * Validates the integrity of data in the CarInsight database.
+ * Validates the integrity of data in the Inovais database.
  * Run with: npx tsx scripts/validate-data-integrity.ts
  *
  * Checks:
@@ -43,7 +43,7 @@ function addResult(
 
 async function main() {
   console.log('\n════════════════════════════════════════════════════════════');
-  console.log('               CarInsight Data Integrity Validator');
+  console.log('               Inovais Data Integrity Validator');
   console.log('════════════════════════════════════════════════════════════\n');
 
   try {

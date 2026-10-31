@@ -1,7 +1,7 @@
 apiVersion: 1
 
 providers:
-  - name: 'CarInsight Dashboards'
+  - name: 'Inovais Dashboards'
     orgId: 1
     folder: 'CarInsight'
     type: file

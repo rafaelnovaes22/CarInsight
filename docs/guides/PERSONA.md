@@ -46,7 +46,7 @@ Renato administra sozinho (ou com equipe enxuta) uma revenda de seminovos com ~3
 - **Relacional** — vende na base da confiança e do papo, atendimento pessoal é diferencial
 - **Receoso com tecnologia** — quer inovação, mas tem medo de parecer "robótico" e perder a essência do atendimento humanizado
 
-## O que o CarInsight resolve
+## O que o Inovais resolve
 
 | Dor | Solução |
 |---|---|

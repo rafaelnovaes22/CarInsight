@@ -1,6 +1,6 @@
-# CarInsight - Runbook de Troubleshooting
+# Inovais - Runbook de Troubleshooting
 
-Este documento contém procedimentos para diagnosticar e resolver problemas comuns no CarInsight.
+Este documento contém procedimentos para diagnosticar e resolver problemas comuns no Inovais.
 
 ## Índice
 

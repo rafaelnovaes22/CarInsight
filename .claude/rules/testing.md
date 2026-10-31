@@ -1,4 +1,4 @@
-# Regras de Teste — CarInsight
+# Regras de Teste — Inovais
 
 ## Framework
 

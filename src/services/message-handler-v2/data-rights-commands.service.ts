@@ -26,7 +26,7 @@ export class MessageHandlerDataRightsCommandsService {
             return `\u2705 Seus dados foram excluidos com sucesso!\n\nObrigado por usar a Inovais. Se precisar de algo no futuro, estaremos aqui! \uD83D\uDC4B\n\n${AI_NOTICE}`;
           }
 
-          return '\u274C Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: suporte@faciliauto.com.br';
+          return '\u274C Desculpe, houve um erro ao excluir seus dados. Por favor, entre em contato com nosso suporte: contato@inovais.tech';
         }
       } else if (
         lowerMessage === 'nao' ||
@@ -94,7 +94,7 @@ export class MessageHandlerDataRightsCommandsService {
           `\u2022 Recomendacoes: ${data.recomendacoes.length}\n` +
           `\u2022 Status: ${data.conversa?.status || 'N/A'}\n\n` +
           '\uD83D\uDCE7 Para receber seus dados completos em formato JSON, por favor entre em contato:\n' +
-          '\u2022 Email: privacidade@faciliauto.com.br\n' +
+          '\u2022 Email: contato@inovais.tech\n' +
           `\u2022 Assunto: "Exportacao de Dados - ${phoneNumber}"\n\n` +
           'Responderemos em ate 15 dias uteis, conforme LGPD.\n\n' +
           AI_NOTICE
@@ -104,7 +104,7 @@ export class MessageHandlerDataRightsCommandsService {
           { error, phoneNumber: maskPhoneNumber(phoneNumber) },
           'LGPD: Error exporting data'
         );
-        return '\u274C Desculpe, houve um erro ao exportar seus dados. Por favor, tente novamente ou contate suporte@faciliauto.com.br';
+        return '\u274C Desculpe, houve um erro ao exportar seus dados. Por favor, tente novamente ou contate contato@inovais.tech';
       }
     }
 
