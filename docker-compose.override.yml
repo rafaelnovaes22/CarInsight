@@ -1,0 +1,115 @@
+# docker-compose.override.yml — Overrides globais para Windows Server 2025 (baixa RAM, sem elevação)
+# Uso: docker compose -f docker-compose.yml -f docker-compose.override.yml up -d
+# Coloque este arquivo na raiz de cada projeto ou use como template
+
+version: '3.8'
+
+# Redes compartilhadas (bridge mode, sem privileges)
+networks:
+  default:
+    driver: bridge
+    name: ${COMPOSE_PROJECT_NAME:-mvp}-net
+
+# Volumes nomeados para persistência
+volumes:
+  postgres_data:
+  redis_data:
+
+# Configurações globais aplicadas a todos os serviços
+x-common-deploy: &common-deploy
+  resources:
+    limits:
+      cpus: '0.5'
+      memory: 256M
+    reservations:
+      cpus: '0.1'
+      memory: 64M
+  restart_policy:
+    condition: on-failure
+    delay: 5s
+    max_attempts: 3
+    window: 120s
+
+x-common-healthcheck: &common-healthcheck
+  interval: 30s
+  timeout: 5s
+  start_period: 15s
+  retries: 3
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Serviços de infraestrutura compartilhados (opcional - descomente se necessário)
+services:
+  # PostgreSQL com pgvector (para projetos que precisam)
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ${COMPOSE_PROJECT_NAME:-mvp}-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - default
+    deploy:
+      <<: *common-deploy
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB:-app}"]
+      <<: *common-healthcheck
+    logging: *logging
+
+  # Redis para cache/filas
+  redis:
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-mvp}-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - default
+    deploy:
+      <<: *common-deploy
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      <<: *common-healthcheck
+    logging: *logging
+
+  # Exemplo de serviço de aplicação (customize por projeto)
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: ${COMPOSE_PROJECT_NAME:-mvp}-app
+  #   environment:
+  #     - NODE_ENV=production
+  #     - PORT=3000
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - default
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   deploy: *common-deploy
+  #   healthcheck: *common-healthcheck
+  #   logging: *logging

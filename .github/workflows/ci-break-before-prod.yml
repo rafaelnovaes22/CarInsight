@@ -1,0 +1,152 @@
+name: CI Break Before Prod
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop, chore/ci-cd-break-before-prod, chore/guardrails-stop-94-25]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+
+  unit-test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run test:unit
+
+  eval-suite:
+    name: Eval suite 3 camadas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - name: Eval existente (golden + adversarial)
+        run: npm run test:unit -- tests/unit/evaluation/golden-dataset.test.ts
+      - name: Eval break-before-prod (20 casos SKU, judge simulado)
+        run: node evals/break-before-prod/run.mjs
+
+  iso-42001:
+    name: ISO 42001 validators via tsx
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - name: Validators ai-governance-kit (clausulas 4.3, 6.1, 8.1, 9.1)
+        run: npm run governance
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          if grep -rE "(gsk_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})" --include='*.ts' --include='*.js' --include='*.json' --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=coverage .; then
+            echo "::error::segredo exposto"; exit 1
+          fi
+          echo "secret-scan PASS"
+
+  docker-build:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t carinsight:ci .
+
+  break-before-prod-gate:
+    name: Break before prod gate
+    runs-on: ubuntu-latest
+    needs:
+      [
+        lint,
+        unit-test,
+        eval-suite,
+        iso-42001,
+        secret-scan,
+        docker-build,
+        guardrails,
+        injection,
+        hallucination,
+        cost,
+      ]
+    if: always()
+    steps:
+      - run: |
+          for r in "${{ needs.lint.result }}" "${{ needs.unit-test.result }}" "${{ needs.eval-suite.result }}" "${{ needs.iso-42001.result }}" "${{ needs.secret-scan.result }}" "${{ needs.docker-build.result }}" "${{ needs.guardrails.result }}" "${{ needs.injection.result }}" "${{ needs.hallucination.result }}" "${{ needs.cost.result }}"; do
+            if [ "$r" != "success" ]; then echo "::error::gate VERMELHO bloqueia merge e deploy"; exit 1; fi
+          done
+          echo "gate VERDE"
+
+  guardrails:
+    name: Guardrails 3 camadas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - run: node scripts/guardrails-stop-gate.mjs guardrails
+
+  injection:
+    name: Prompt injection 30+ PT-BR/EN
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - run: node scripts/guardrails-stop-gate.mjs injection
+
+  hallucination:
+    name: Hallucination eval golden (>94%)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - run: node scripts/guardrails-stop-gate.mjs hallucination
+
+  cost:
+    name: Cost SLM (<25% preco)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: npm
+      - run: npm ci
+      - run: node scripts/guardrails-stop-gate.mjs cost

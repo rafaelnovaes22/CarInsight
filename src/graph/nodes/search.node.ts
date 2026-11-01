@@ -1,0 +1,116 @@
+import { IGraphState } from '../../types/graph.types';
+import { AIMessage } from '@langchain/core/messages';
+import { createNodeTimer } from '../../lib/node-metrics';
+import { logger } from '../../lib/logger';
+import { VectorSearchService, VehicleSearchCriteria } from '../../services/vector-search.service';
+
+const vectorSearchService = new VectorSearchService();
+
+/**
+ * SearchNode - Find vehicles matching customer profile using vector search
+ */
+export async function searchNode(state: IGraphState): Promise<Partial<IGraphState>> {
+  const timer = createNodeTimer('search');
+
+  if (!state.profile) {
+    const result = {
+      messages: [new AIMessage('Ops! Algo deu errado. Vamos recomeçar?')],
+      metadata: {
+        ...state.metadata,
+        errorCount: state.metadata.errorCount + 1,
+        lastMessageAt: Date.now(),
+      },
+      next: 'greeting',
+    };
+    timer.logError(state, 'No profile available');
+    return result;
+  }
+
+  const profile = state.profile;
+
+  try {
+    const criteria: VehicleSearchCriteria = {
+      budget: profile.budget ?? profile.orcamento,
+      usage: profile.usage ?? profile.usagePattern ?? profile.usoPrincipal,
+      persons: profile.people ?? profile.familySize,
+      bodyType:
+        (profile.bodyType as any) ??
+        (profile.vehicleType !== 'qualquer' ? (profile.vehicleType as any) : undefined),
+      year: profile.minYear,
+      mileage: profile.maxKm,
+    };
+
+    const scoredVehicles = await vectorSearchService.searchVehicles(criteria, 3);
+
+    logger.info(
+      {
+        vehiclesFound: scoredVehicles.length,
+        topScores: scoredVehicles.map(v => v.matchScore),
+      },
+      'SearchNode: Vehicles found'
+    );
+
+    if (scoredVehicles.length === 0) {
+      return {
+        messages: [
+          new AIMessage(
+            `Desculpe, não encontrei veículos que atendam exatamente suas necessidades no momento. 😔\n\nMas nossa equipe pode ajudar!\n\nDigite "vendedor" para falar com um especialista que pode buscar opções especiais para você.`
+          ),
+        ],
+        recommendations: [],
+        next: 'recommendation', // State transition
+        metadata: {
+          ...state.metadata,
+          lastMessageAt: Date.now(),
+        },
+      };
+    }
+
+    const topRecommendations = scoredVehicles.map(sv => {
+      return {
+        vehicleId: sv.id,
+        matchScore: sv.matchScore,
+        reasoning: sv.matchReasons.join(', '),
+        highlights: sv.matchReasons,
+        concerns: [],
+        vehicle: {
+          id: sv.id,
+          marca: sv.brand,
+          modelo: sv.model,
+          versao: sv.version,
+          ano: sv.year,
+          km: sv.mileage,
+          preco: (sv.price ?? 0).toString(),
+          combustivel: sv.fuelType,
+          cambio: sv.transmission,
+          cor: sv.color,
+          opcionais: sv.features,
+          fotos: sv.photos || [],
+        },
+      };
+    });
+
+    return {
+      recommendations: topRecommendations,
+      next: 'recommendation',
+      metadata: {
+        ...state.metadata,
+        lastMessageAt: Date.now(),
+      },
+    };
+  } catch (error) {
+    logger.error({ error }, 'SearchNode: Error searching vehicles');
+
+    return {
+      messages: [
+        new AIMessage('Desculpe, houve um erro ao buscar veículos. Por favor, tente novamente.'),
+      ],
+      metadata: {
+        ...state.metadata,
+        errorCount: state.metadata.errorCount + 1,
+        lastMessageAt: Date.now(),
+      },
+      next: 'greeting', // Reset on error
+    };
+  }
+}

@@ -1,0 +1,242 @@
+import express from 'express';
+import { env } from './config/env';
+import { logger } from './lib/logger';
+import { maskPhoneNumber } from './lib/privacy';
+import { prisma } from './lib/prisma';
+import { inMemoryVectorStore } from './services/in-memory-vector.service';
+import webhookRoutes from './routes/webhook.routes';
+import evolutionWebhookRoutes from './routes/webhook-evolution.routes';
+import adminRoutes from './routes/admin.routes';
+import debugRoutes from './routes/debug.routes';
+import { initializeRedis, closeRedis } from './lib/redis';
+import { getRateLimitService } from './services/rate-limit.service';
+import { getPublicHealthSnapshot } from './services/public-health.service';
+import { getPublicDir, getPublicFilePath } from './lib/static-assets';
+
+const app = express();
+const publicDir = getPublicDir();
+
+app.use(
+  express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf.toString('utf8');
+    },
+  })
+);
+app.use(express.static(publicDir));
+
+function requireAdminSecret(req: any, res: any, next: () => void) {
+  const configuredSecret = env.SEED_SECRET;
+  const headerSecret = req.headers['x-admin-secret'];
+  const authHeader = req.headers.authorization as string | undefined;
+  const bearerSecret = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  const providedSecret = headerSecret || bearerSecret;
+
+  if (!configuredSecret) {
+    logger.error('SEED_SECRET is not configured; admin/debug endpoints are disabled');
+    return res.status(503).json({ error: 'Admin endpoints are disabled' });
+  }
+
+  if (providedSecret !== configuredSecret) {
+    logger.warn('Unauthorized admin access attempt');
+    return res.status(403).json({ error: 'Unauthorized - Invalid secret' });
+  }
+
+  next();
+}
+
+// Webhook routes for Meta Cloud API
+app.use('/webhooks', webhookRoutes);
+
+// Webhook routes for Evolution API
+app.use('/webhooks', evolutionWebhookRoutes);
+
+// Admin routes (seed, management)
+app.use('/admin', requireAdminSecret, adminRoutes);
+
+// Debug routes (feature flags, config)
+app.use('/debug', requireAdminSecret, debugRoutes);
+
+// Landing page
+app.get('/', (_req, res) => {
+  res.sendFile(getPublicFilePath('landing.html'));
+});
+
+// Dashboard
+app.get('/dashboard', (_req, res) => {
+  res.sendFile(getPublicFilePath('dashboard.html'));
+});
+
+// Health check with dependency monitoring
+app.get('/health', async (_req, res) => {
+  const health = await getPublicHealthSnapshot();
+
+  res.status(health.httpStatus).json({
+    status: health.status,
+    timestamp: new Date().toISOString(),
+    version: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) || 'local',
+    uptime: Math.floor(process.uptime()),
+    checks: health.checks,
+  });
+});
+
+// Privacy Policy (required by Meta)
+app.get('/privacy-policy', (_req, res) => {
+  res.sendFile(getPublicFilePath('privacy-policy.html'));
+});
+
+// Reset conversation endpoint (for testing)
+app.post('/api/reset-conversation', requireAdminSecret, async (req, res) => {
+  try {
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ error: 'phoneNumber required' });
+    }
+
+    const result = await prisma.conversation.deleteMany({
+      where: { phoneNumber },
+    });
+
+    logger.info(
+      { phoneNumber: maskPhoneNumber(phoneNumber), count: result.count },
+      'Conversation reset'
+    );
+
+    res.json({
+      success: true,
+      message: `${result.count} conversation(s) deleted`,
+      phoneNumber,
+    });
+  } catch (error: any) {
+    logger.error({ error }, 'Error resetting conversation');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Basic stats endpoint
+app.get('/stats', requireAdminSecret, async (_req, res) => {
+  try {
+    const [conversations, leads, recommendations] = await Promise.all([
+      prisma.conversation.count(),
+      prisma.lead.count(),
+      prisma.recommendation.count(),
+    ]);
+
+    res.json({
+      conversations,
+      leads,
+      recommendations,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error({ error }, 'Error fetching stats');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Start server
+const PORT = env.PORT || 3000;
+
+async function start() {
+  try {
+    logger.info('Checking database connectivity...');
+    const vehicleCount = await prisma.vehicle.count();
+
+    if (vehicleCount === 0) {
+      logger.warn(
+        'Database has no vehicles. Run migrations/seeds explicitly via CI/CD or admin scripts.'
+      );
+    } else {
+      logger.info({ vehicleCount }, 'Database ready');
+    }
+
+    // Initialize Redis cache (non-blocking)
+    await initializeRedis();
+
+    // Initialize rate limit service (uses Redis if available)
+    await getRateLimitService();
+
+    // Initialize vector store in background (non-blocking)
+    logger.info('Starting vector store initialization in background...');
+    inMemoryVectorStore
+      .initialize()
+      .then(() => {
+        logger.info('Vector store background initialization started');
+      })
+      .catch(error => {
+        logger.error({ error }, 'Vector store failed, SQL fallback will be used');
+      });
+
+    // Start Express server
+    const server = app.listen(PORT, () => {
+      logger.info({ port: PORT }, 'Server running');
+      logger.info({ landing: `http://localhost:${PORT}` }, 'Landing page');
+      logger.info({ dashboard: `http://localhost:${PORT}/dashboard` }, 'Dashboard');
+      logger.info({ health: `http://localhost:${PORT}/health` }, 'Health endpoint');
+      logger.info({ webhook: `http://localhost:${PORT}/webhooks/whatsapp` }, 'Webhook endpoint');
+
+      if (env.META_WHATSAPP_TOKEN && env.META_WHATSAPP_PHONE_NUMBER_ID) {
+        logger.info('Meta Cloud API configured');
+      } else {
+        logger.warn(
+          'Meta Cloud API not fully configured. Set META_WHATSAPP_TOKEN and META_WHATSAPP_PHONE_NUMBER_ID.'
+        );
+      }
+
+      // Start follow-up scheduler if enabled
+      if (env.ENABLE_FOLLOW_UP) {
+        import('./workers/follow-up-scheduler')
+          .then(({ startFollowUpScheduler }) => startFollowUpScheduler())
+          .catch(err => logger.error({ err }, 'Failed to start follow-up scheduler'));
+      }
+
+      // LGPD: expurgo de dados inativos (90 dias). Sem isto a retencao declarada
+      // na politica publica nao e cumprida. Ver RSK-004 no risk-register.
+      import('./jobs/data-retention.job')
+        .then(({ startDataRetentionSchedule }) => startDataRetentionSchedule())
+        .catch(err => logger.error({ err }, 'Failed to start data retention schedule'));
+    });
+
+    server.on('error', error => {
+      logger.error({ err: error, port: PORT }, 'HTTP server failed to start');
+      process.exit(1);
+    });
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to start application');
+    process.exit(1);
+  }
+}
+
+async function shutdown(signal: string) {
+  logger.info({ signal }, 'Shutdown signal received, closing gracefully');
+  // Stop follow-up scheduler
+  try {
+    const { stopFollowUpScheduler } = await import('./workers/follow-up-scheduler');
+    stopFollowUpScheduler();
+  } catch {
+    // Module may not have been loaded
+  }
+  // Stop data retention schedule
+  try {
+    const { stopDataRetentionSchedule } = await import('./jobs/data-retention.job');
+    stopDataRetentionSchedule();
+  } catch {
+    // Module may not have been loaded
+  }
+  // Close Redis connection
+  await closeRedis().catch(() => {});
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('unhandledRejection', reason => {
+  logger.error({ err: reason }, 'Unhandled promise rejection');
+});
+process.on('uncaughtException', error => {
+  logger.fatal({ err: error }, 'Uncaught exception');
+  process.exit(1);
+});
+
+start();

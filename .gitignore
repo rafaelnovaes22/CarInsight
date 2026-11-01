@@ -1,0 +1,156 @@
+# DEPENDENCIES
+node_modules/
+.pnp
+.pnp.js
+
+# TESTING
+coverage/
+
+# PRODUCTION BUILDS
+build/
+dist/
+out/
+
+# DATABASE
+dev.db
+prisma/dev.db
+*.db-journal
+
+# ENVIRONMENT VARIABLES - NUNCA COMMITAR!
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+.env.railway
+
+# SECRETS
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# LOGS
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# OS FILES
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# TEMP
+temp/
+tmp/
+.cache/
+.parcel-cache/
+
+# RAILWAY
+.railway/
+
+# HEROKU
+.nyc_output/
+
+# TYPESCRIPT
+*.tsbuildinfo
+
+# PRISMA (generated)
+prisma/generated/
+
+# CHROMADB (data)
+chroma_data/
+
+# UPLOADS (if any)
+uploads/
+
+# CAREER DOCUMENTS (private)
+career-docs/
+ANALISE_VAGA*.md
+CV_*.md
+RESUMO_LINKEDIN*.md
+*_VAGA_*.md
+
+# TEST SCRIPTS (not for production)
+test-scripts/
+test-*.ts
+test-*.js
+server.log
+*.log
+
+# DEVELOPMENT DOCS (already in docs/)
+*_STATUS.md
+*_PASSOS_*.md
+RECOMENDACOES_*.md
+.env.save*
+
+# Core dumps (root only, not src/core/)
+/core
+
+# CLAUDE CODE (local only)
+CLAUDE.local.md
+.claude/settings.local.json
+.agent/
+skills.md
+
+# OBSIDIAN (local only)
+docs/.obsidian/
+
+# Local debug/scrape artifacts
+*.log
+diff*.txt
+err*.txt
+results.txt
+debug-output.json
+last_scrape.txt
+scraped_content.txt
+uber_api_response.json
+net_logs.txt
+lint_output.txt
+test-results*
+test-output*
+test_output*
+verify_output.txt
+url_audit.txt
+vitest-*.txt
+vitest-*.log
+tsc-errors.*
+temp_*
+
+# One-off scripts (should not be committed)
+fix-*.js
+patch*.js
+
+# Claude Code temp files
+tmpclaude-*
+.reflex/
+
+# Debug/scratch output — nunca commitar
+*.log
+diff*.txt
+err*.txt
+results.txt
+test-output.txt
+tsc-errors.*
+vitest-*.txt
+
+# Material comercial e de captacao: fica fora do repo (CarInsight_negocio/)
+docs/marketing/
+PITCH_*.md
+VALUATION*.md
+/c/Users/GAMER/Projetos/CarInsight/CarInsight/

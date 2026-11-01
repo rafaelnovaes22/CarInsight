@@ -1,0 +1,149 @@
+import express from 'express';
+import { env } from './config/env';
+import { logger } from './lib/logger';
+import { maskPhoneNumber } from './lib/privacy';
+import { MessageHandlerV2 } from './services/message-handler-v2.service';
+import { inMemoryVectorStore } from './services/in-memory-vector.service';
+import { getPublicHealthSnapshot } from './services/public-health.service';
+import { getPublicDir, getPublicFilePath } from './lib/static-assets';
+
+const app = express();
+const messageHandler = new MessageHandlerV2();
+const publicDir = getPublicDir();
+
+let _vectorStoreReady = false;
+
+async function initializeVectorStore() {
+  try {
+    logger.info('🧠 Inicializando vector store...');
+    await inMemoryVectorStore.initialize();
+    _vectorStoreReady = true;
+    logger.info('✅ Vector store pronto!');
+  } catch (error) {
+    logger.error({ error }, '❌ Erro ao inicializar vector store');
+    logger.warn('⚠️  Continuando sem vector search (usará SQL fallback)');
+    _vectorStoreReady = false;
+  }
+}
+
+initializeVectorStore().catch(err => {
+  logger.error({ error: err }, 'Fatal error initializing vector store');
+});
+
+app.use(express.json());
+app.use(express.static(publicDir));
+
+// Landing page
+app.get('/', (_req, res) => {
+  res.sendFile(getPublicFilePath('landing.html'));
+});
+
+// Dashboard
+app.get('/dashboard', (_req, res) => {
+  res.sendFile(getPublicFilePath('dashboard.html'));
+});
+
+// Health check
+app.get('/health', async (_req, res) => {
+  const health = await getPublicHealthSnapshot();
+
+  res.status(health.httpStatus).json({
+    status: health.status,
+    timestamp: new Date().toISOString(),
+    checks: health.checks,
+  });
+});
+
+// Stats endpoint
+app.get('/stats', async (req, res) => {
+  try {
+    const { prisma } = await import('./lib/prisma');
+
+    const [conversations, leads, recommendations] = await Promise.all([
+      prisma.conversation.count(),
+      prisma.lead.count(),
+      prisma.recommendation.count(),
+    ]);
+
+    res.json({
+      conversations,
+      leads,
+      recommendations,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error({ error }, 'Error fetching stats');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Simulate WhatsApp message
+app.post('/message', async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+
+    if (!phone || !message) {
+      return res.status(400).json({ error: 'phone and message are required' });
+    }
+
+    logger.info({ phone: maskPhoneNumber(phone), message }, '📱 Incoming message via API');
+
+    // Process message
+    const response = await messageHandler.handleMessage(phone, message);
+
+    logger.info({ phone: maskPhoneNumber(phone), response }, '🤖 Bot response');
+
+    res.json({
+      success: true,
+      phone,
+      userMessage: message,
+      botResponse: response,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error({ error }, 'Error processing message');
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Start server
+const PORT = env.PORT || 3000;
+
+async function start() {
+  try {
+    // Test database connection
+    const { prisma } = await import('./lib/prisma');
+    await prisma.$connect();
+    logger.info('✅ Database connected');
+
+    // Start Express server
+    app.listen(PORT, () => {
+      logger.info(`🚀 API Test Server running on port ${PORT}`);
+      logger.info(`🏠 Landing: http://localhost:${PORT}/`);
+      logger.info(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
+      logger.info(`📊 Stats: http://localhost:${PORT}/stats`);
+      logger.info(`💬 Send message: POST http://localhost:${PORT}/message`);
+      logger.info('');
+      logger.info('📱 Example curl command:');
+      logger.info(
+        `curl -X POST http://localhost:${PORT}/message -H "Content-Type: application/json" -d '{"phone":"5511999999999","message":"Olá, quero comprar um carro"}'`
+      );
+    });
+  } catch (error) {
+    logger.error({ error }, '❌ Failed to start server');
+    process.exit(1);
+  }
+}
+
+// Handle shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, shutting down gracefully');
+  process.exit(0);
+});
+
+start();

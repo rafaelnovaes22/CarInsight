@@ -1,0 +1,451 @@
+{
+  "timestamp": "2026-09-04T01:38:20.496Z",
+  "total": 20,
+  "passed": 20,
+  "pass_rate": 1,
+  "threshold": 1,
+  "primary_family": "openai",
+  "judge_family": "anthropic",
+  "results": [
+    {
+      "id": "ci-familia-01",
+      "category": "familia",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.495Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#familia-2-cadeirinhas",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-familia-02",
+      "category": "familia",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#familia-viagem-longa",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-familia-03",
+      "category": "familia",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden familia",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-familia-04",
+      "category": "familia",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden familia",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-uber-01",
+      "category": "uber",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#uber-iniciante-2026",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-uber-02",
+      "category": "uber",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#uber-comfort-2026",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-uber-03",
+      "category": "uber",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden uber",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-uber-04",
+      "category": "uber",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden uber",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-viagem-01",
+      "category": "viagem",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#viagem-estrada-economia",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-viagem-02",
+      "category": "viagem",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden viagem",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-viagem-03",
+      "category": "viagem",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden viagem",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-viagem-04",
+      "category": "viagem",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden viagem",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-trabalho-01",
+      "category": "trabalho",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#trabalho-carga",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-trabalho-02",
+      "category": "trabalho",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#trabalho-representante",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-trabalho-03",
+      "category": "trabalho",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden trabalho",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-trabalho-04",
+      "category": "trabalho",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden trabalho",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-geral-01",
+      "category": "geral",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#primeiro-carro-economico",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-geral-02",
+      "category": "geral",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#carro-esportivo",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-geral-03",
+      "category": "geral",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "src/evaluation/golden-dataset.ts#modelo-especifico-civic",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    },
+    {
+      "id": "ci-geral-04",
+      "category": "geral",
+      "pass": true,
+      "golden": {
+        "pass": true
+      },
+      "judge": {
+        "judge_model": "claude-simulated-heuristic-v1",
+        "judge_family": "anthropic",
+        "primary_family": "openai",
+        "verdict": "PASSA",
+        "simulated": true,
+        "judged_at": "2026-09-04T01:38:20.496Z"
+      },
+      "provenance": {
+        "source": "golden geral",
+        "author": "carinsight-team",
+        "created_at": "2026-09-03",
+        "dataset_version": "1.0.0"
+      }
+    }
+  ]
+}

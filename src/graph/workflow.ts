@@ -1,0 +1,253 @@
+import { StateGraph, END } from '@langchain/langgraph';
+import { IGraphState } from '../types/graph.types';
+import {
+  greetingNode,
+  discoveryNode,
+  searchNode,
+  recommendationNode,
+  financingNode,
+  tradeInNode,
+  negotiationNode,
+} from './nodes';
+import { PrismaCheckpointer } from './persistence/prisma-saver';
+import { logger } from '../lib/logger';
+import { computeFiber, checkFiberGuard } from '../utils/conversation-fiber';
+import { AIMessage } from '@langchain/core/messages';
+import { getHandoffMessage } from '../config/conversation-style';
+import { generateWhatsAppLink } from './nodes/recommendation/utils/vehicle-helpers';
+import { addHandoffFlag } from '../utils/handoff-detector';
+
+/**
+ * Auto-handoff node: triggered by circuit breakers to escalate to a human
+ * instead of silently ending the conversation.
+ */
+async function autoHandoffNode(state: IGraphState): Promise<Partial<IGraphState>> {
+  const waInfo = generateWhatsAppLink(state.profile ?? undefined);
+  const linkMessage = waInfo
+    ? `\n\n📱 *Fale com nosso consultor:*\n👉 ${waInfo.link}\n_ou salve o número: ${waInfo.formattedPhone}_`
+    : '';
+
+  const reason = state.metadata.autoHandoffReason || 'circuit_breaker';
+  logger.warn({ reason }, 'Auto-handoff: escalating to human');
+
+  return {
+    next: 'handoff',
+    messages: [
+      new AIMessage(
+        `Percebi que estou com dificuldade em te ajudar da melhor forma. ${getHandoffMessage()}${linkMessage}\n\n🤖 _Sou a assistente virtual da Inovais e, neste caso, um atendente humano pode te ajudar melhor!_`
+      ),
+    ],
+    metadata: {
+      ...state.metadata,
+      lastMessageAt: Date.now(),
+      flags: addHandoffFlag(state.metadata.flags),
+    },
+  };
+}
+
+/**
+ * Route function that determines the next node based on the 'next' state property
+ */
+const resolveNextNode = (state: IGraphState): string | typeof END => {
+  const nextNode = state.next;
+
+  // Map state 'next' values to actual graph nodes
+  switch (nextNode) {
+    case 'greeting':
+      return 'greeting';
+    case 'discovery':
+      return 'discovery';
+    case 'clarification':
+      // Clarification is handled by discovery in the LangGraph workflow.
+      return 'discovery';
+    case 'ready_to_recommend':
+      return 'search';
+    case 'search':
+      return 'search';
+    case 'recommendation':
+      return 'recommendation';
+    case 'refinement':
+      return 'recommendation';
+    case 'financing':
+      return 'financing';
+    case 'trade_in':
+      return 'trade_in';
+    case 'negotiation':
+      return 'negotiation';
+    case 'end':
+    case 'handoff':
+      return END;
+    default: {
+      // Keep the user in discovery if profile already exists to avoid name-collection loops.
+      const fallbackNode = state.profile?.customerName ? 'discovery' : 'greeting';
+      logger.warn({ nextNode, fallbackNode }, 'Router: Unknown next state, using safe fallback');
+      return fallbackNode;
+    }
+  }
+};
+
+const routeNode = (state: IGraphState) => {
+  // Stop execution if the last message was from the AI (waiting for user input)
+  const lastMessage = state.messages[state.messages.length - 1];
+
+  // Robust check for AI message (handles serialized objects)
+  let isAi = false;
+  if (lastMessage) {
+    if (typeof lastMessage._getType === 'function') {
+      isAi = lastMessage._getType() === 'ai';
+    } else {
+      // Serialized check
+      const msg = lastMessage as any;
+      isAi = msg.type === 'ai' || msg.id?.includes('AIMessage');
+    }
+  }
+
+  if (isAi) {
+    return END;
+  }
+
+  const nextNode = resolveNextNode(state);
+  logger.info({ nextNode }, 'Router: Validating transition');
+
+  // Circuit breaker for repeated TECHNICAL loops (same node re-entering without progress)
+  const isTechnicalLoop =
+    typeof nextNode === 'string' &&
+    !!state.metadata.lastLoopNode &&
+    state.metadata.lastLoopNode === nextNode;
+
+  if (isTechnicalLoop && state.metadata.loopCount >= 8) {
+    logger.warn(
+      { loopCount: state.metadata.loopCount, lastLoopNode: state.metadata.lastLoopNode },
+      'Router: Technical loop circuit breaker → auto handoff'
+    );
+    state.metadata.autoHandoffReason = 'technical_loop';
+    return 'auto_handoff';
+  }
+
+  // Error circuit breaker remains global
+  if (state.metadata.errorCount >= 5) {
+    logger.warn(
+      { errorCount: state.metadata.errorCount, nextNode },
+      'Router: Error circuit breaker → auto handoff'
+    );
+    state.metadata.autoHandoffReason = 'error_threshold';
+    return 'auto_handoff';
+  }
+
+  // Fiber stagnation circuit breaker: no progress after N routing decisions
+  const fiberStagnation = state.metadata.fiberStagnationCount ?? 0;
+  if (fiberStagnation >= 6) {
+    logger.warn(
+      { fiberStagnationCount: fiberStagnation, currentFiber: state.metadata.lastFiberValue },
+      'Router: Fiber stagnation circuit breaker → auto handoff'
+    );
+    state.metadata.autoHandoffReason = 'fiber_stagnation';
+    return 'auto_handoff';
+  }
+
+  // Fiber guard: prevent unintentional regression in conversation phase
+  if (typeof nextNode === 'string') {
+    const currentFiber = computeFiber(state).fiber;
+    const sourceNode = state.metadata.lastLoopNode;
+    const correctedNode = checkFiberGuard(state, nextNode, sourceNode);
+
+    if (correctedNode) {
+      logger.warn(
+        { nextNode, correctedNode, currentFiber, sourceNode },
+        'Router: Fiber regression prevented'
+      );
+      return correctedNode;
+    }
+  }
+
+  return nextNode;
+};
+
+/**
+ * Create the persistent conversation graph
+ */
+export const createConversationGraph = (config?: { checkpointer?: any }) => {
+  // Explicitly define node names for TypeScript if needed, or rely on string literals
+  const workflow = new StateGraph<IGraphState>({
+    channels: {
+      messages: {
+        value: (x: any[], y: any[]) => {
+          const MAX_MESSAGES = 30;
+          const combined = x.concat(y);
+          if (combined.length <= MAX_MESSAGES) return combined;
+          // Keep first message (system/greeting) + last N-1
+          return [combined[0], ...combined.slice(-(MAX_MESSAGES - 1))];
+        },
+        default: () => [],
+      },
+      phoneNumber: {
+        value: (x: string, y: string) => y, // Always take latest
+        default: () => '',
+      },
+      profile: {
+        value: (x: any, y: any) => ({ ...x, ...y }),
+        default: () => ({}),
+      },
+      recommendations: {
+        value: (x: any, y: any) => (y ? y : x), // Overwrite or Keep
+        default: () => [],
+      },
+      next: {
+        value: (x: string, y: string) => y,
+        default: () => 'greeting',
+      },
+      metadata: {
+        value: (x: any, y: any) => ({ ...x, ...y }),
+        default: () => ({
+          startedAt: Date.now(),
+          lastMessageAt: Date.now(),
+          loopCount: 0,
+          lastLoopNode: undefined,
+          errorCount: 0,
+          flags: [],
+        }),
+      },
+      quiz: {
+        value: (x: any, y: any) => ({ ...x, ...y }),
+        default: () => ({
+          currentQuestion: 1,
+          progress: 0,
+          answers: {},
+          isComplete: false,
+        }),
+      },
+    },
+  });
+
+  // Add Nodes - name them explicitly
+  workflow.addNode('greeting', greetingNode);
+  workflow.addNode('discovery', discoveryNode);
+  workflow.addNode('search', searchNode);
+  workflow.addNode('recommendation', recommendationNode);
+  workflow.addNode('financing', financingNode);
+  workflow.addNode('trade_in', tradeInNode);
+  workflow.addNode('negotiation', negotiationNode);
+  workflow.addNode('auto_handoff', autoHandoffNode);
+
+  // Set Entry Point - Cast to any if strict typing fails inappropriately due to version mismatch
+  workflow.setEntryPoint('greeting' as any);
+
+  // Define Edges with Routing Logic
+  // Using explicit casts to avoid 'not assignable to param' if library expects specific generic keys
+  workflow.addConditionalEdges('greeting' as any, routeNode);
+  workflow.addConditionalEdges('discovery' as any, routeNode);
+  workflow.addConditionalEdges('search' as any, routeNode);
+  workflow.addConditionalEdges('recommendation' as any, routeNode);
+  workflow.addConditionalEdges('financing' as any, routeNode);
+  workflow.addConditionalEdges('trade_in' as any, routeNode);
+  workflow.addConditionalEdges('negotiation' as any, routeNode);
+  workflow.addConditionalEdges('auto_handoff' as any, routeNode);
+
+  // Compile with Checkpointer
+  // Use provided checkpointer or default to PrismaCheckpointer
+  const checkpointer = config?.checkpointer ?? new PrismaCheckpointer();
+
+  return workflow.compile({
+    checkpointer,
+  });
+};

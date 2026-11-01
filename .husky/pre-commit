@@ -1,0 +1,30 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Pre-commit hook: previne commits de segredos
+echo "🔍 Verificando segredos..."
+
+# Verifica se .env existe
+if [ -f .env ]; then
+  echo "❌ ERRO: .env detectado! Nunca commite este arquivo."
+  echo "   Adicione ao .gitignore ou use: git rm --cached .env"
+  exit 1
+fi
+
+# Verifica padrões comuns de segredos
+if grep -rE "(gsk_[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})" --include="*.js" --include="*.ts" --include="*.md" --include="*.json" --include="*.txt" .; then
+  echo "❌ ERRO: Token detectado nos arquivos!"
+  echo "   Remova os segredos antes de commitar."
+  echo "   Use Railway Variables ou .env.local"
+  exit 1
+fi
+
+echo "✅ Nenhum segredo detectado."
+
+# Executa lint-staged se existir
+if [ -f node_modules/.bin/lint-staged ]; then
+  echo "🔍 Executando lint-staged..."
+  npx lint-staged
+fi
+
+echo "✅ Pronto para commit!"

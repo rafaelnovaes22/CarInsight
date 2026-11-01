@@ -1,0 +1,816 @@
+/**
+ * PreferenceExtractorAgent
+ *
+ * Extracts structured customer preferences from natural language messages
+ * using LLM-based semantic understanding.
+ */
+
+import { chatCompletion } from '../lib/llm-router';
+import { logger } from '../lib/logger';
+import { CustomerProfile } from '../types/state.types';
+import { ExtractionResult, ExtractionConfig } from '../types/conversation.types';
+
+export class PreferenceExtractorAgent {
+  private readonly EXTRACTION_PROMPT = `Você é um especialista em extrair preferências estruturadas de mensagens sobre compra de veículos.
+
+TAREFA:
+Analise a mensagem do cliente e extraia TODAS as preferências mencionadas em formato JSON estruturado.
+
+REGRAS:
+1. Extraia apenas informações EXPLICITAMENTE mencionadas
+2. Use null para campos não mencionados
+3. Seja preciso e literal (não invente ou assuma)
+4. Considere sinônimos e variações de escrita
+5. Retorne APENAS JSON válido, sem texto adicional
+6. IMPORTANTE: Se usuário mencionar NOME DE MODELO (ex: Spin, Civic, Corolla), 
+   SEMPRE extraia brand e model. Conheça marcas dos modelos populares:
+   - Spin, Onix, Prisma, Celta, Corsa, Classic, Cobalt, Tracker, S10 = Chevrolet
+   - Civic, City, Fit, HR-V, CR-V = Honda
+   - Corolla, Yaris, Etios, Hilux = Toyota
+   - Gol, Polo, Fox, Voyage, Saveiro, T-Cross = Volkswagen
+   - HB20, Creta, Tucson, i30 = Hyundai
+   - Argo, Cronos, Mobi, Uno, Palio, Siena, Strada, Toro = Fiat
+   - Ka, Fiesta, Focus, EcoSport, Ranger = Ford
+   - Kwid, Sandero, Logan, Duster = Renault
+   etc.
+
+CAMPOS POSSÍVEIS:
+- budget: number (valor em reais - CONVERTER valores por extenso para número!)
+- budgetMin: number (se mencionar "a partir de X")
+- budgetMax: number (se mencionar "até X")
+
+IMPORTANTE - VALORES POR EXTENSO E ERROS DE TRANSCRIÇÃO:
+- Converta SEMPRE valores por extenso para números:
+  - "setenta e cinco mil" → 75000
+  - "cinquenta mil" → 50000
+  - "oitenta mil" → 80000
+  - "cem mil" → 100000
+- CORRIJA erros comuns de transcrição de áudio:
+  - "serentia" ou "serenita" → "setenta" (70)
+  - "sinquenta" ou "cinquanta" → "cinquenta" (50)
+  - "oitento" → "oitenta" (80)
+  - "cento" → "cem" ou "cento" (100)
+- Se a mensagem parece um valor mal transcrito, interprete a intenção!
+- people: number (passageiros + motorista)
+- minSeats: number (número MÍNIMO de lugares, ex: "7 lugares" → minSeats: 7)
+- usage: "cidade" | "viagem" | "trabalho" | "misto" | "diario"
+- usoPrincipal: "uber" | "familia" | "trabalho" | "viagem" | "diario" | "carga" | "entrega" | "outro"
+- tipoUber: "uberx" | "comfort" | "black" (se mencionar Uber/99)
+- appMencionado: "99" | "uber" | "app" (IMPORTANTE: preserve EXATAMENTE o nome do app que o usuário mencionou - se disse "99", use "99", se disse "Uber", use "uber")
+- bodyType: "sedan" | "suv" | "hatch" | "pickup" | "minivan" | "moto"
+- minYear: number (ano mínimo aceito)
+- maxKm: number (quilometragem máxima)
+- transmission: "manual" | "automatico"
+- fuelType: "gasolina" | "flex" | "diesel" | "hibrido" | "eletrico"
+- color: string
+- brand: string (marca preferida)
+- model: string (modelo específico)
+- priorities: string[] (ex: ["economico", "conforto", "espaco", "apto_uber", "familia", "cadeirinha", "crianca", "espaco_traseiro"])
+- dealBreakers: string[] (ex: ["leilao", "alta_quilometragem", "hatch_pequeno"])
+- wantsFinancing: boolean (true se mencionar "financiar", "parcelar", "financiamento", "parcela")
+- financingDownPayment: number (valor da entrada se mencionado)
+- hasTradeIn: boolean (true se mencionar "troca", "tenho um carro", "meu carro", "carro na troca")
+- tradeInBrand: string (marca do carro de troca)
+- tradeInModel: string (modelo do carro de troca)
+- tradeInYear: number (ano do carro de troca)
+
+REGRAS ESPECIAIS:
+- Se mencionar "cadeirinha", "bebê conforto", "criança", "filho", "filhos" → usoPrincipal: "familia", priorities: ["cadeirinha", "espaco_traseiro"]
+- Para família com crianças, NUNCA recomendar hatch pequeno (Mobi, Kwid, Up, Uno)
+- Se mencionar "picape", "pickup", "caminhonete", "caçamba", "carga pesada", "obra", "material", "peso" → usoPrincipal: "carga", bodyType: "pickup", priorities incluir "pickup", "carga"
+- Se mencionar "entrega", "mercado livre", "shopee", "lalamove", "loggi", "entregas", "uber flash" → usoPrincipal: "entrega"
+- Se mencionar "moto", "motocicleta", "scooter", "biz", "titan", "fan", "bros" → bodyType: "moto", priorities incluir "moto"
+- Modelos de pickup conhecidos: Strada, S10, Hilux, Ranger, Saveiro, Toro, L200, Amarok → bodyType: "pickup"
+- IMPORTANTE: Se mencionar "X lugares" (ex: "7 lugares", "5 lugares") → minSeats: X (número inteiro)
+- Modelos conhecidos de 7 lugares: Spin, SW4, Pajero, Outlander, Commander, Taos, Tiggo 8, Captiva → minSeats: 7
+- Modelos conhecidos de 5 lugares são a maioria dos carros, não precisa especificar minSeats
+- Se usuário pedir "carro versátil", "econômico", "dia a dia" e "viagem" (sem mencionar carga/trabalho pesado) → preferir bodyType: "hatch" ou "sedan" (evite pickup para uso pessoal puramente econômico) (PRIORIDADE ALTA, não sugerir PICKUP se não for para carga)
+- Se mencionar características físicas como "sou grande", "sou alto", "tenho 1,80", "1.90" ou similar:
+  - Adicionar "espaco_interno" e "conforto" em priorities
+  - Adicionar "hatch_pequeno" ou "compacto" em dealBreakers (evitar carros apertados)
+- CORREÇÃO DE MODELOS EM DEAL BREAKERS:
+  - "Cwid", "Quid", "Kiwd" → interpretar como "Kwid" (Renault)
+  - "estrada", "a estrada", "na estrada" (em contexto de modelo) → interpretar como "Strada" (Fiat)
+  - "Marcas", "Marcos" (em contexto de carro pequeno) → interpretar como "March" (Nissan) ou ignorar se ambíguo
+  - "Mobi" → Fiat Mobi
+  - Se o usuário disser "não servem" ou "não gosto", adicionar esses modelos em dealBreakers
+- Se mencionar "dia a dia", "uso diário", "ir trabalhar", "trabalhar todo dia" (sem mencionar carga/app/entrega):
+  - usoPrincipal: "diario"
+  - priorities: adicionar "economico", "conforto", "duravel"
+  - evitar "pickup" (a menos que especifique carga)
+- Se mencionar "carro maior", "mais espaço", "ficou pequeno" ou "quero trocar por um maior":
+  - priorities: adicionar "espaco_interno", "porta_malas_grande"
+  - dealBreakers: adicionar "hatch_pequeno", "compacto"
+  - Se não houver bodyType definido, sugerir bodyType: "suv" ou "sedan" (médio)
+
+CONTEXTO DE CONVERSA (IMPORTANTE):
+- Se a ÚLTIMA MENSAGEM do assistente foi perguntando sobre "carro na troca", "troca", "seu carro atual":
+  - A resposta do usuário (ex: "É um Gol 2015", "Tenho um Palio") deve ser extraída como:
+    - tradeInModel: "Gol"
+    - tradeInYear: 2015
+    - tradeInBrand: "Volkswagen"
+  - NÃO preencha 'model' ou 'year' (carro desejado) neste caso, use 'tradeIn...'
+  - hasTradeIn: true
+
+- Se a ÚLTIMA MENSAGEM do assistente mencionou "financiamento", "entrada", "parcela" ou perguntou "quanto quer investir" nesse contexto:
+  - Se a resposta for um valor numérico baixo (<= 25000) -> interpretar como 'financingDownPayment' (entrada) e 'wantsFinancing': true
+  - Se a resposta for um valor numérico alto (> 25000) -> interpretar como 'budget' (orçamento total)
+
+EXEMPLOS:
+
+Entrada: "Quero um carro até 50 mil para 5 pessoas"
+Saída: {
+  "extracted": {
+    "budget": 50000,
+    "budgetMax": 50000,
+    "people": 5
+  },
+  "confidence": 0.95,
+  "reasoning": "Orçamento e quantidade de pessoas claramente especificados",
+  "fieldsExtracted": ["budget", "budgetMax", "people"]
+}
+
+Entrada: "Setenta e cinco mil" ou "75 mil" ou "setenta cinco"
+Saída: {
+  "extracted": {
+    "budget": 75000,
+    "budgetMax": 75000
+  },
+  "confidence": 0.95,
+  "reasoning": "Valor por extenso convertido para número",
+  "fieldsExtracted": ["budget", "budgetMax"]
+}
+
+Entrada: "Serentia e Cinco Mil" (ERRO DE TRANSCRIÇÃO - "serentia" = "setenta")
+Saída: {
+  "extracted": {
+    "budget": 75000,
+    "budgetMax": 75000
+  },
+  "confidence": 0.85,
+  "reasoning": "Corrigido erro de transcrição: 'serentia' interpretado como 'setenta' (70) + 5 = 75 mil",
+  "fieldsExtracted": ["budget", "budgetMax"]
+}
+
+Entrada: "Preciso de um automático econômico para cidade"
+Saída: {
+  "extracted": {
+    "transmission": "automatico",
+    "usage": "cidade",
+    "priorities": ["economico"]
+  },
+  "confidence": 0.9,
+  "reasoning": "Transmissão, uso e prioridade de economia mencionados",
+  "fieldsExtracted": ["transmission", "usage", "priorities"]
+}
+
+Entrada: "Nada de leilão ou muito rodado, prefiro a partir de 2018"
+Saída: {
+  "extracted": {
+    "dealBreakers": ["leilao", "alta_quilometragem"],
+    "minYear": 2018
+  },
+  "confidence": 0.85,
+  "reasoning": "Deal breakers e ano mínimo identificados",
+  "fieldsExtracted": ["dealBreakers", "minYear"]
+}
+
+Entrada: "Preciso de um carro para Uber, até 60 mil"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "appMencionado": "uber",
+    "budget": 60000,
+    "budgetMax": 60000,
+    "priorities": ["apto_uber"],
+    "minYear": 2012
+  },
+  "confidence": 0.95,
+  "reasoning": "Contexto Uber identificado, orçamento definido, ano mínimo implícito",
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "budget", "budgetMax", "priorities", "minYear"]
+}
+
+Entrada: "Quero um carro para fazer 99" ou "Carro pra 99" ou "Quero rodar no 99"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "appMencionado": "99",
+    "priorities": ["apto_uber"],
+    "minYear": 2012
+  },
+  "confidence": 0.95,
+  "reasoning": "Contexto app de transporte (99) identificado - PRESERVAR o nome '99' em appMencionado",
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "priorities", "minYear"]
+}
+
+Entrada: "Quero trabalhar com Uber Black, precisa ser sedan"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "appMencionado": "uber",
+    "tipoUber": "black",
+    "bodyType": "sedan",
+    "priorities": ["apto_uber"],
+    "minYear": 2018
+  },
+  "confidence": 0.9,
+  "reasoning": "Uber Black requer sedan, ano mínimo 2018",
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "tipoUber", "bodyType", "priorities", "minYear"]
+}
+
+Entrada: "Carro pra aplicativo" ou "Trabalhar com app" ou "Motorista de aplicativo"
+Saída: {
+  "extracted": {
+    "usoPrincipal": "uber",
+    "appMencionado": "app",
+    "priorities": ["apto_uber"],
+    "minYear": 2012
+  },
+  "confidence": 0.9,
+  "reasoning": "Contexto app de transporte genérico identificado",
+  "fieldsExtracted": ["usoPrincipal", "appMencionado", "priorities", "minYear"]
+}
+
+Entrada: "Spin" ou "Quero uma Spin" ou "Tem Chevrolet Spin?"
+Saída: {
+  "extracted": {
+    "brand": "chevrolet",
+    "model": "spin"
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo específico mencionado (Spin é da Chevrolet)",
+  "fieldsExtracted": ["brand", "model"]
+}
+
+Entrada: "Civic prata"
+Saída: {
+  "extracted": {
+    "brand": "honda",
+    "model": "civic",
+    "color": "prata"
+  },
+  "confidence": 0.9,
+  "reasoning": "Modelo específico (Civic é da Honda) e cor identificados",
+  "fieldsExtracted": ["brand", "model", "color"]
+}
+
+Entrada: "Onix 2019" ou "Quero um Onix 2019" ou "Tem Onix 2019?"
+Saída: {
+  "extracted": {
+    "brand": "chevrolet",
+    "model": "onix",
+    "minYear": 2019
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo e ano desejados",
+  "fieldsExtracted": ["brand", "model", "minYear"]
+}
+
+Entrada: "É um Sandero 2018" (Com contexto anterior: "Qual carro você tem na troca?")
+Saída: {
+  "extracted": {
+    "hasTradeIn": true,
+    "tradeInBrand": "renault",
+    "tradeInModel": "sandero",
+    "tradeInYear": 2018
+  },
+  "confidence": 0.95,
+  "reasoning": "Resposta sobre carro de troca identificada pelo contexto",
+  "fieldsExtracted": ["hasTradeIn", "tradeInBrand", "tradeInModel", "tradeInYear"]
+}
+
+
+Entrada: "10000" ou "uns 15 mil" (Com contexto anterior: "Quanto você tem de entrada?" ou "Quanto quer investir para financiar?")
+Saída: {
+  "extracted": {
+    "financingDownPayment": 10000,
+    "wantsFinancing": true
+  },
+  "confidence": 0.9,
+  "reasoning": "Valor baixo em contexto de financiamento interpretado como entrada",
+  "fieldsExtracted": ["financingDownPayment", "wantsFinancing"]
+}
+
+Entrada: "Corolla 2020" ou "Civic 2018" ou "HB20 2021"
+Saída: {
+  "extracted": {
+    "brand": "toyota",
+    "model": "corolla",
+    "minYear": 2020
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo específico com ano EXATO solicitado - minYear representa o ano desejado",
+  "fieldsExtracted": ["brand", "model", "minYear"]
+}
+
+Entrada: "Preciso de uma picape para trabalho" ou "Quero uma pickup" ou "Tem caminhonete?"
+Saída: {
+  "extracted": {
+    "bodyType": "pickup",
+    "usage": "trabalho",
+    "priorities": ["pickup", "carga"]
+  },
+  "confidence": 0.95,
+  "reasoning": "Solicitação explícita de pickup/picape/caminhonete",
+  "fieldsExtracted": ["bodyType", "usage", "priorities"]
+}
+
+Entrada: "Tem Strada?" ou "Quero uma S10" ou "Hilux até 80 mil"
+Saída: {
+  "extracted": {
+    "bodyType": "pickup",
+    "model": "strada",
+    "brand": "fiat",
+    "priorities": ["pickup"]
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo de pickup identificado (Strada é Fiat, S10 é Chevrolet, Hilux é Toyota)",
+  "fieldsExtracted": ["bodyType", "model", "brand", "priorities"]
+}
+
+Entrada: "Oi, tudo bem?"
+Saída: {
+  "extracted": {},
+  "confidence": 0.0,
+  "reasoning": "Apenas saudação, sem preferências sobre veículos",
+  "fieldsExtracted": []
+}
+
+Entrada: "Quero uma SUV de 7 lugares"
+Saída: {
+  "extracted": {
+    "bodyType": "suv",
+    "minSeats": 7,
+    "priorities": ["espaco", "familia"]
+  },
+  "confidence": 0.95,
+  "reasoning": "SUV com requisito explícito de 7 lugares - OBRIGATÓRIO",
+  "fieldsExtracted": ["bodyType", "minSeats", "priorities"]
+}
+
+Entrada: "Preciso de um carro de 7 lugares pra família"
+Saída: {
+  "extracted": {
+    "minSeats": 7,
+    "usoPrincipal": "familia",
+    "priorities": ["familia", "espaco"]
+  },
+  "confidence": 0.95,
+  "reasoning": "Requisito explícito de 7 lugares para família",
+  "fieldsExtracted": ["minSeats", "usoPrincipal", "priorities"]
+}
+
+Entrada: "Spin ou algum carro de 7 lugares"
+Saída: {
+  "extracted": {
+    "brand": "chevrolet",
+    "model": "spin",
+    "minSeats": 7
+  },
+  "confidence": 0.95,
+  "reasoning": "Modelo específico (Spin é Chevrolet e tem 7 lugares) ou alternativas de 7 lugares",
+  "fieldsExtracted": ["brand", "model", "minSeats"]
+}`;
+
+  /**
+   * Extract preferences from user message
+   */
+  async extract(message: string, config: ExtractionConfig = {}): Promise<ExtractionResult> {
+    const startTime = Date.now();
+
+    try {
+      // Build context string if available
+      let contextString = '';
+      if (config.currentProfile && Object.keys(config.currentProfile).length > 0) {
+        contextString = `\n\nPERFIL ATUAL DO CLIENTE:\n${JSON.stringify(config.currentProfile, null, 2)}`;
+      }
+
+      if (config.conversationHistory && config.conversationHistory.length > 0) {
+        const recentHistory = config.conversationHistory.slice(-3).join('\n');
+        contextString += `\n\nMENSAGENS RECENTES:\n${recentHistory}`;
+      }
+
+      // Call LLM. Some tests mock chatCompletion as a raw string, while runtime returns an object.
+      const llmResult = await chatCompletion(
+        [
+          {
+            role: 'system',
+            content: this.EXTRACTION_PROMPT + contextString,
+          },
+          {
+            role: 'user',
+            content: `MENSAGEM DO CLIENTE: "${message}"\n\nRetorne APENAS o JSON de extração:`,
+          },
+        ],
+        {
+          temperature: 0.1, // Low temperature for deterministic extraction
+          maxTokens: 400,
+        }
+      );
+
+      const resultContent =
+        typeof llmResult === 'string' ? llmResult : (llmResult as { content?: string })?.content;
+
+      if (!resultContent) {
+        throw new Error('Empty LLM extraction response');
+      }
+
+      // Parse result
+      const parsed = this.parseExtractionResult(resultContent);
+
+      // FALLBACK: If LLM didn't extract bodyType, try deterministic detection
+      if (!parsed.extracted.bodyType) {
+        const detectedBodyType = this.detectBodyTypeFromMessage(message);
+        if (detectedBodyType) {
+          parsed.extracted.bodyType = detectedBodyType as CustomerProfile['bodyType'];
+          if (!parsed.fieldsExtracted.includes('bodyType')) {
+            parsed.fieldsExtracted.push('bodyType');
+          }
+          logger.info(
+            { message: message.substring(0, 100), detectedBodyType },
+            'Deterministic bodyType fallback triggered'
+          );
+        }
+      }
+
+      // Validate confidence
+      const minConfidence = config.minConfidence ?? 0.5;
+      if (parsed.confidence < minConfidence) {
+        logger.warn(
+          {
+            message,
+            confidence: parsed.confidence,
+            minConfidence,
+          },
+          'Extraction confidence below threshold'
+        );
+      }
+
+      // Log extraction
+      logger.info(
+        {
+          message: message.substring(0, 100),
+          extracted: parsed.extracted,
+          confidence: parsed.confidence,
+          processingTime: Date.now() - startTime,
+        },
+        'Preferences extracted'
+      );
+
+      return parsed;
+    } catch (error) {
+      logger.error({ error, message }, 'Failed to extract preferences');
+
+      // Return empty extraction on error
+      return {
+        extracted: {},
+        confidence: 0,
+        reasoning: `Erro na extração: ${error.message}`,
+        fieldsExtracted: [],
+      };
+    }
+  }
+
+  /**
+   * Parse and validate LLM response
+   */
+  private parseExtractionResult(llmResponse: string): ExtractionResult {
+    try {
+      // Clean response (remove markdown code blocks if present)
+      let cleaned = llmResponse.trim();
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/```\n?/g, '');
+      }
+
+      // Parse JSON
+      const parsed = JSON.parse(cleaned);
+
+      // Validate structure
+      if (!parsed.extracted || typeof parsed.confidence !== 'number') {
+        throw new Error('Invalid extraction result structure');
+      }
+
+      // Ensure fieldsExtracted is present
+      if (!parsed.fieldsExtracted) {
+        parsed.fieldsExtracted = Object.keys(parsed.extracted || {});
+      }
+
+      // Normalize confidence to 0-1 range
+      if (parsed.confidence > 1) {
+        parsed.confidence = parsed.confidence / 100;
+      }
+
+      // Sanitize extracted data
+      parsed.extracted = this.sanitizeExtracted(parsed.extracted);
+
+      return parsed as ExtractionResult;
+    } catch (error) {
+      logger.error({ error, llmResponse }, 'Failed to parse extraction result');
+      throw new Error(`Parse error: ${error.message}`);
+    }
+  }
+
+  /**
+   * Sanitize and validate extracted data
+   */
+  private sanitizeExtracted(extracted: Partial<CustomerProfile>): Partial<CustomerProfile> {
+    const sanitized: Partial<CustomerProfile> = {};
+    const maxAcceptedYear = new Date().getFullYear() + 1;
+
+    // Budget validation with suspicious value guardrail
+    // Values <= 1000 are likely missing "mil" (e.g. "100" meaning "100 mil")
+    const SUSPICIOUS_BUDGET_THRESHOLD = 1000;
+    if (extracted.budget !== undefined && extracted.budget !== null) {
+      const budget = Math.max(0, Math.floor(extracted.budget));
+      if (budget > 0 && budget <= SUSPICIOUS_BUDGET_THRESHOLD) {
+        sanitized._suspectedBudget = budget;
+        sanitized._awaitingBudgetConfirmation = true;
+        // Do NOT set budget — wait for user confirmation
+      } else {
+        sanitized.budget = budget;
+      }
+    }
+    if (extracted.budgetMin !== undefined && extracted.budgetMin !== null) {
+      const budgetMin = Math.max(0, Math.floor(extracted.budgetMin));
+      if (budgetMin > SUSPICIOUS_BUDGET_THRESHOLD) {
+        sanitized.budgetMin = budgetMin;
+      }
+    }
+    if (extracted.budgetMax !== undefined && extracted.budgetMax !== null) {
+      const budgetMax = Math.max(0, Math.floor(extracted.budgetMax));
+      if (budgetMax > SUSPICIOUS_BUDGET_THRESHOLD) {
+        sanitized.budgetMax = budgetMax;
+      }
+    }
+
+    // Down payment validation guardrail
+    // Minimum down payment is ~20% of cheapest vehicle (~R$ 10k) = R$ 2k
+    const MIN_DOWN_PAYMENT = 2000;
+    if (extracted.financingDownPayment !== undefined && extracted.financingDownPayment !== null) {
+      const dp = Math.max(0, Math.floor(extracted.financingDownPayment));
+      if (dp > 0 && dp < MIN_DOWN_PAYMENT) {
+        sanitized._suspectedDownPayment = dp;
+        sanitized._awaitingDownPaymentConfirmation = true;
+        // Do NOT set financingDownPayment — wait for user confirmation
+      } else {
+        sanitized.financingDownPayment = dp;
+      }
+    }
+
+    // People validation (1-10)
+    if (extracted.people !== undefined && extracted.people !== null) {
+      sanitized.people = Math.max(1, Math.min(10, Math.floor(extracted.people)));
+    }
+
+    // Usage validation
+    const validUsage = ['cidade', 'viagem', 'trabalho', 'misto', 'diario'];
+    if (extracted.usage && validUsage.includes(extracted.usage)) {
+      sanitized.usage = extracted.usage;
+    }
+
+    // Body type validation
+    const validBodyTypes = ['sedan', 'suv', 'hatch', 'pickup', 'minivan', 'moto'];
+    if (extracted.bodyType && validBodyTypes.includes(extracted.bodyType)) {
+      sanitized.bodyType = extracted.bodyType;
+    }
+
+    // Year validation (1950-2025) - permite carros clássicos e antigos
+    if (extracted.minYear !== undefined && extracted.minYear !== null) {
+      sanitized.minYear = Math.max(1950, Math.min(maxAcceptedYear, Math.floor(extracted.minYear)));
+    }
+
+    // Km validation (0-500000)
+    if (extracted.maxKm !== undefined && extracted.maxKm !== null) {
+      sanitized.maxKm = Math.max(0, Math.min(500000, Math.floor(extracted.maxKm)));
+    }
+
+    // Seats validation (2-9)
+    if (extracted.minSeats !== undefined && extracted.minSeats !== null) {
+      sanitized.minSeats = Math.max(2, Math.min(9, Math.floor(extracted.minSeats)));
+
+      // AUTO-FILL PEOPLE BASED ON MIN_SEATS
+      // If user asks for X seats (e.g. "7 lugares"), imply they need capacity for X people
+      // This prevents asking "how many people?" redundantly
+      if (!sanitized.people && !extracted.people && sanitized.minSeats > 4) {
+        sanitized.people = sanitized.minSeats;
+      }
+    }
+
+    // Transmission validation
+    const validTransmission = ['manual', 'automatico'];
+    if (extracted.transmission && validTransmission.includes(extracted.transmission)) {
+      sanitized.transmission = extracted.transmission;
+    }
+
+    // Fuel type validation
+    const validFuelTypes = ['gasolina', 'flex', 'diesel', 'hibrido', 'eletrico'];
+    if (extracted.fuelType && validFuelTypes.includes(extracted.fuelType)) {
+      sanitized.fuelType = extracted.fuelType;
+    }
+
+    // String fields (sanitize)
+    if (extracted.color) {
+      sanitized.color = extracted.color.toLowerCase().trim();
+    }
+    if (extracted.brand) {
+      sanitized.brand = this.normalizeBrand(extracted.brand);
+    }
+    if (extracted.model) {
+      sanitized.model = extracted.model.trim().toLowerCase();
+
+      // Check if model is a known pickup - infer brand and bodyType
+      const pickupBrand = this.getPickupBrand(sanitized.model);
+      if (pickupBrand) {
+        // Auto-set brand if not already set
+        if (!sanitized.brand) {
+          sanitized.brand = pickupBrand;
+        }
+        // Auto-set bodyType to pickup
+        sanitized.bodyType = 'pickup';
+        // Add to priorities
+        if (!sanitized.priorities) {
+          sanitized.priorities = ['pickup'];
+        } else if (!sanitized.priorities.includes('pickup')) {
+          sanitized.priorities.push('pickup');
+        }
+      }
+    }
+
+    // Array fields
+    if (Array.isArray(extracted.priorities)) {
+      sanitized.priorities = extracted.priorities.filter(
+        p => typeof p === 'string' && p.length > 0
+      );
+    }
+    if (Array.isArray(extracted.dealBreakers)) {
+      sanitized.dealBreakers = extracted.dealBreakers.filter(
+        d => typeof d === 'string' && d.length > 0
+      );
+    }
+
+    // Also copy usoPrincipal, tipoUber and appMencionado if present
+    if (extracted.usoPrincipal) {
+      sanitized.usoPrincipal = extracted.usoPrincipal;
+    }
+    if (extracted.tipoUber) {
+      sanitized.tipoUber = extracted.tipoUber;
+    }
+    // IMPORTANTE: Preservar o nome exato do app mencionado pelo usuário (99, uber, ou app)
+    if (extracted.appMencionado) {
+      const validApps = ['99', 'uber', 'app'];
+      const appLower = extracted.appMencionado.toLowerCase();
+      if (validApps.includes(appLower)) {
+        sanitized.appMencionado = appLower as '99' | 'uber' | 'app';
+      }
+    }
+
+    // Financing fields
+    if (extracted.wantsFinancing !== undefined) {
+      sanitized.wantsFinancing = Boolean(extracted.wantsFinancing);
+    }
+    if (extracted.financingDownPayment !== undefined && extracted.financingDownPayment !== null) {
+      sanitized.financingDownPayment = Math.max(0, Math.floor(extracted.financingDownPayment));
+    }
+
+    // Trade-in fields
+    if (extracted.hasTradeIn !== undefined) {
+      sanitized.hasTradeIn = Boolean(extracted.hasTradeIn);
+    }
+    if (extracted.tradeInBrand) {
+      sanitized.tradeInBrand = this.normalizeBrand(extracted.tradeInBrand);
+    }
+    if (extracted.tradeInModel) {
+      sanitized.tradeInModel = extracted.tradeInModel.trim().toLowerCase();
+    }
+    if (extracted.tradeInYear !== undefined && extracted.tradeInYear !== null) {
+      sanitized.tradeInYear = Math.max(
+        1990,
+        Math.min(maxAcceptedYear, Math.floor(extracted.tradeInYear))
+      );
+    }
+
+    return sanitized;
+  }
+
+  /**
+   * Deterministic body type detection from message keywords
+   * Fallback when LLM extraction misses short body type messages
+   */
+  private detectBodyTypeFromMessage(message: string): string | null {
+    const lower = message.toLowerCase().trim();
+    const words = lower.split(/\s+/);
+
+    // Map of keywords to body types
+    const bodyTypeKeywords: Record<string, string> = {
+      suv: 'suv',
+      suvs: 'suv',
+      utilitário: 'suv',
+      utilitario: 'suv',
+      sedan: 'sedan',
+      sedã: 'sedan',
+      seda: 'sedan',
+      hatch: 'hatch',
+      hatchback: 'hatch',
+      compacto: 'hatch',
+      pickup: 'pickup',
+      picape: 'pickup',
+      caminhonete: 'pickup',
+      camionete: 'pickup',
+      moto: 'moto',
+      motocicleta: 'moto',
+      scooter: 'moto',
+      minivan: 'minivan',
+    };
+
+    for (const word of words) {
+      // Remove common suffixes/noise
+      const cleaned = word.replace(/[.,!?;:]+$/, '');
+      if (bodyTypeKeywords[cleaned]) {
+        return bodyTypeKeywords[cleaned];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Normalize brand names
+   */
+  private normalizeBrand(brand: string): string {
+    const normalized = brand.toLowerCase().trim();
+
+    const brandMap: Record<string, string> = {
+      volkswagen: 'volkswagen',
+      vw: 'volkswagen',
+      gm: 'chevrolet',
+      chevy: 'chevrolet',
+      fiat: 'fiat',
+      honda: 'honda',
+      toyota: 'toyota',
+      hyundai: 'hyundai',
+      ford: 'ford',
+      renault: 'renault',
+      nissan: 'nissan',
+      jeep: 'jeep',
+      citroen: 'citroen',
+      peugeot: 'peugeot',
+      mitsubishi: 'mitsubishi',
+    };
+
+    return brandMap[normalized] || normalized;
+  }
+
+  /**
+   * Map pickup model names to their brands
+   */
+  private getPickupBrand(model: string): string | null {
+    const modelLower = model.toLowerCase().trim();
+
+    const pickupBrandMap: Record<string, string> = {
+      strada: 'fiat',
+      toro: 'fiat',
+      s10: 'chevrolet',
+      montana: 'chevrolet',
+      hilux: 'toyota',
+      ranger: 'ford',
+      maverick: 'ford',
+      saveiro: 'volkswagen',
+      amarok: 'volkswagen',
+      l200: 'mitsubishi',
+      triton: 'mitsubishi',
+      frontier: 'nissan',
+      oroch: 'renault',
+      'duster oroch': 'renault',
+    };
+
+    return pickupBrandMap[modelLower] || null;
+  }
+
+  /**
+   * Merge extracted preferences with existing profile
+   */
+  mergeWithProfile(
+    currentProfile: Partial<CustomerProfile>,
+    extracted: Partial<CustomerProfile>
+  ): Partial<CustomerProfile> {
+    return {
+      ...currentProfile,
+      ...extracted,
+
+      // Merge arrays intelligently
+      priorities: [...(currentProfile.priorities || []), ...(extracted.priorities || [])].filter(
+        (v, i, a) => a.indexOf(v) === i
+      ), // unique
+
+      dealBreakers: [
+        ...(currentProfile.dealBreakers || []),
+        ...(extracted.dealBreakers || []),
+      ].filter((v, i, a) => a.indexOf(v) === i), // unique
+    };
+  }
+}
+
+// Singleton export
+export const preferenceExtractor = new PreferenceExtractorAgent();

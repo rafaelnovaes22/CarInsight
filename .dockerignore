@@ -1,0 +1,87 @@
+# .dockerignore — Padrão para todos os MVPs (otimizado para build rápido e imagem pequena)
+# Coloque na raiz de cada projeto
+
+# Git e CI
+.git
+.github
+.gitignore
+
+# Dependências (instaladas no container)
+node_modules
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+
+# Build outputs
+dist
+build
+*.egg-info
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.temp
+.tmp
+temp
+
+# Testes
+coverage
+.nyc_output
+htmlcov
+.coverage
+
+# Environment (secrets via Railway/ENV, não no build)
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Docker
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+.docker
+
+# Documentação (não necessária no container)
+*.md
+!README.md
+docs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache de ferramentas
+.cache
+.turbo
+.vercel
+.netlify
+
+# Específicos por projeto
+# CarInsight
+prisma/migrations/*
+!prisma/migrations/.gitkeep
+
+# Hermes
+.hermes
+*.sqlite
+*.db
+
+# Multi-agent
+.nucleo
+.brain-*
+relatorios/
+demo/
+workshop/
+
+# Binários grandes
+*.node
+*.wasm

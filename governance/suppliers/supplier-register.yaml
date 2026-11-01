@@ -1,0 +1,105 @@
+# Registro de fornecedores de IA e subprocessadores — ISO/IEC 42001 Anexo A.10
+#
+# Fonte da verdade sobre quem recebe dado. Validado em CI por
+# scripts/governance/validate-suppliers.ts, que compara este arquivo com:
+#   - os provedores realmente usados em src/lib/llm-router.ts e src/lib/embedding-router.ts
+#   - a lista publicada em src/public/privacy-policy.html
+# Divergência falha o build. Foi assim que se descobriu a NC-001.
+version: 1.0
+updated: 2026-07-29
+next_review: 2027-01-29
+
+suppliers:
+  - id: SUP-001
+    name: OpenAI
+    role: Provedor de LLM (primário) e de embeddings (primário)
+    models: [gpt-4.1-mini, text-embedding-3-small]
+    data_sent: Conteúdo da conversa do usuário; texto de catálogo de veículo
+    personal_data: true
+    processing_region: Estados Unidos
+    training_on_customer_data: >
+      Não, para dados enviados via API sob os termos de uso corporativo da OpenAI.
+    terms_reference: https://openai.com/policies/
+    exit_plan: >
+      Cadeia de fallback já ativa (Gemini, Groq). Para embeddings, a troca exige
+      regenerar o índice (dimensionalidade diferente): npm run embeddings:regenerate.
+    declared_in_privacy_policy: true
+
+  - id: SUP-002
+    name: Google (Gemini / Vertex AI)
+    role: Provedor de LLM (fallback nível 2)
+    models: [gemini-2.5-flash]
+    data_sent: Conteúdo da conversa do usuário
+    personal_data: true
+    processing_region: Estados Unidos (multirregião)
+    training_on_customer_data: Não, para uso pago via API.
+    terms_reference: https://ai.google.dev/gemini-api/terms
+    exit_plan: Remover da cadeia em src/lib/llm-router.ts; degrada para Groq.
+    declared_in_privacy_policy: true
+
+  - id: SUP-003
+    name: Groq
+    role: Provedor de LLM (fallback nível 3 e modelo de etapa barata)
+    models: [llama-3.1-8b-instant]
+    data_sent: Conteúdo da conversa do usuário
+    personal_data: true
+    processing_region: Estados Unidos
+    training_on_customer_data: Não, conforme termos de API.
+    terms_reference: https://groq.com/terms-of-sale/
+    exit_plan: >
+      Remover da cadeia. Atenção: é o elo mais frágil em aderência de papel
+      (ver incidente 2026-03-13), e também o que sustenta a economia de custo.
+    declared_in_privacy_policy: true
+
+  - id: SUP-004
+    name: Cohere
+    role: Provedor de embeddings (fallback). NÃO é re-ranker.
+    models: [embed-multilingual-v3.0]
+    data_sent: Texto de catálogo de veículo
+    personal_data: false
+    processing_region: Estados Unidos
+    training_on_customer_data: Não, para uso via API paga.
+    terms_reference: https://cohere.com/terms-of-use
+    exit_plan: Fallback opcional; ausência degrada para mock em embeddings.
+    declared_in_privacy_policy: true
+    note: >
+      Registrado explicitamente porque a formulação "Cohere re-ranking" circulou
+      em material externo e é incorreta: aqui o Cohere gera embeddings.
+
+  - id: SUP-005
+    name: Meta (WhatsApp Business / Cloud API)
+    role: Canal de mensagem
+    models: []
+    data_sent: Mensagens, telefone do usuário
+    personal_data: true
+    processing_region: Estados Unidos e global
+    training_on_customer_data: Conforme termos do WhatsApp Business.
+    terms_reference: https://www.whatsapp.com/legal/business-terms
+    exit_plan: >
+      Não há: é o canal onde o cliente está. Mitigação é operacional
+      (handoff humano por outro meio se o número for bloqueado).
+    declared_in_privacy_policy: true
+
+  - id: SUP-006
+    name: Railway
+    role: Hospedagem de aplicação e banco
+    models: []
+    data_sent: Todo o dado da aplicação (em repouso)
+    personal_data: true
+    processing_region: Estados Unidos
+    training_on_customer_data: Não aplicável
+    terms_reference: https://railway.app/legal/terms
+    exit_plan: Containerizado (Docker); portável para outro provedor.
+    declared_in_privacy_policy: false
+    note: >
+      Infraestrutura, não processamento de IA. Deve constar na política pública
+      como operador de hospedagem, o que ainda não consta (item de NC-001).
+
+removed:
+  - name: Jina AI
+    removed_at: 2026-07-29
+    reason: >
+      Estava declarado na política de privacidade pública como responsável pela
+      busca semântica, mas NÃO existe no código: os embeddings são OpenAI com
+      fallback Cohere. Provavelmente resquício de uma versão anterior.
+      Origem da NC-001.

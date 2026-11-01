@@ -1,0 +1,81 @@
+#!/bin/sh
+# Para Windows (Git Bash)
+exec < /dev/tty
+
+echo "=========================================="
+echo "🔒 SEGURANÇA DE COMMIT - FaciliAuto"
+echo "=========================================="
+echo ""
+echo "Verificando arquivos para commit..."
+echo ""
+
+# Verifica se .env existe
+if [ -f .env ]; then
+  echo "❌ ERRO CRÍTICO: .env detectado!"
+  echo ""
+  echo "NUNCA commite arquivos .env. Eles contêm segredos!"
+  echo ""
+  echo "Ação necessária:"
+  echo "  1. Remova .env: git rm --cached .env"
+  echo "  2. Adicione ao .gitignore: echo '.env' >> .gitignore"
+  echo "  3. Use .env.example como template"
+  echo ""
+  exit 1
+fi
+
+# Verifica tokens Groq
+echo "🔍 Procurando tokens Groq..."
+if grep -r "gsk_[a-zA-Z0-9]" --include="*.js" --include="*.ts" --include="*.md" --include="*.json" --include="*.txt" . 2>/dev/null; then
+  echo ""
+  echo "❌ ERRO CRÍTICO: Token Groq detectado!"
+  echo ""
+  echo "REMOVA TODOS OS TOKENS DOS ARQUIVOS ANTES DE COMMITAR"
+  echo ""
+  echo "Solução:"
+  echo "  1. Substitua tokens reais por placeholders"
+  echo "  2. Use: GROQ_API_KEY="\${{GROQ_API_KEY}}""
+  echo "  3. Defina tokens via Railway Variables"
+  echo ""
+  exit 1
+fi
+echo "✅ Nenhum token Groq detectado"
+echo ""
+
+# Verifica tokens Meta
+echo "🔍 Procurando tokens Meta..."
+if grep -r "EAAAA" --include="*.js" --include="*.ts" --include="*.md" --include="*.json" --include="*.txt" . 2>/dev/null; then
+  echo ""
+  echo "❌ ERRO CRÍTICO: Token Meta detectado!"
+  echo ""
+  echo "REMOVA TODOS OS TOKENS DOS ARQUIVOS ANTES DE COMMITAR"
+  echo ""
+  echo "Solução:"
+  echo "  1. Substitua tokens reais por placeholders"
+  echo "  2. Use: META_WHATSAPP_TOKEN="\${{META_WHATSAPP_TOKEN}}""
+  echo "  3. Defina tokens via Railway Variables"
+  echo ""
+  exit 1
+fi
+echo "✅ Nenhum token Meta detectado"
+echo ""
+
+# Verifica variáveis chave
+echo "🔍 Verificando variáveis de ambiente..."
+if grep -rE "(API_KEY|SECRET|TOKEN|PWD|PASSWORD)=[a-zA-Z0-9]{20,}" --include="*.js" --include="*.ts" --include="*.md" --include="*.json" --include="*.txt" . 2>/dev/null; then
+  echo ""
+  echo "❌ ERRO: Variável sensível detectada!"
+  echo ""
+  echo "NUNMA hardcode credenciais no código"
+  echo ""
+  exit 1
+fi
+echo "✅ Nenhum segredo hardcoded"
+echo ""
+
+echo "=========================================="
+echo "✅ VERIFICAÇÃO DE SEGURANÇA: OK"
+echo "=========================================="
+echo ""
+echo "Pronto para commit! 🚀"
+echo ""
+exit 0

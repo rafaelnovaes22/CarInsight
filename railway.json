@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npx prisma generate"
+  },
+  "deploy": {
+    "startCommand": "node tools/scripts/db/fix-migrations.cjs && npx prisma migrate deploy && npm run start:prod",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}

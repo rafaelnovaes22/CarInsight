@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-09-04T01:38:20.504Z",
+  "results": [
+    {
+      "job": "guardrails",
+      "pass": true,
+      "patterns": 49
+    },
+    {
+      "job": "injection",
+      "pass": true,
+      "patterns": 49,
+      "probes": 36
+    },
+    {
+      "job": "hallucination",
+      "pass": true,
+      "accuracy": 1,
+      "total": 20
+    },
+    {
+      "job": "cost",
+      "pass": true,
+      "costBrl": 0.005280000000000001,
+      "priceBrl": 1,
+      "ratio": 0.005280000000000001
+    }
+  ]
+}
