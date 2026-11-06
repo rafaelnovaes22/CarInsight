@@ -11,7 +11,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -24,7 +24,7 @@ jobs:
     name: Unit tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -37,7 +37,7 @@ jobs:
     name: Eval suite 3 camadas
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -52,7 +52,7 @@ jobs:
     name: ISO 42001 validators via tsx
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -65,7 +65,7 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: |
           if grep -rE "(gsk_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|EAA[a-zA-Z0-9]{100,})" --include='*.ts' --include='*.js' --include='*.json' --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=coverage .; then
             echo "::error::segredo exposto"; exit 1
@@ -76,7 +76,7 @@ jobs:
     name: Docker build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build -t carinsight:ci .
 
   break-before-prod-gate:
@@ -107,7 +107,7 @@ jobs:
     name: Guardrails 3 camadas
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -119,7 +119,7 @@ jobs:
     name: Prompt injection 30+ PT-BR/EN
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -131,7 +131,7 @@ jobs:
     name: Hallucination eval golden (>94%)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
@@ -143,7 +143,7 @@ jobs:
     name: Cost SLM (<25% preco)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
