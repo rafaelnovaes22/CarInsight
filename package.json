@@ -115,7 +115,7 @@
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",
-    "@vitest/coverage-v8": "^4.0.10",
+    "@vitest/coverage-v8": "^5.0.2",
     "@vitest/ui": "^4.0.10",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
